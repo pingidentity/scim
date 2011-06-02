@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema xmlns:tns="urn:scim:schemas:core"
+           elementFormDefault="qualified"
+           targetNamespace="urn:scim:schemas:core"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="user">
+      <xs:complexType>
+          <xs:choice>
+              <xs:element minOccurs="0" maxOccurs="1" name="id" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="externalId" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="userName" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="name" type="tns:Name"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="displayName" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="nickName" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="profileUrl" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="employeeNumber" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="userType" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="title" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="manager" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="preferredLanguage" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="locale" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="utcOffset" type="xs:int"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="costCenter" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="organization" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="division" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="1" name="department" type="xs:string"/>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="emails" type="tns:PluralAttribute"/>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="phoneNumbers" type="tns:PluralAttribute"/>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="ims" type="tns:PluralAttribute"/>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="photoUrls" type="tns:PluralAttribute"/>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="groups" type="tns:PluralAttribute"/>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="addresses" type="tns:Address"/>
+          </xs:choice>
+      </xs:complexType>
+    </xs:element>
+
+    <xs:element name="group" type="tns:Group"/>
+
+    <xs:complexType name="Group">
+        <xs:all>
+            <xs:element minOccurs="0" maxOccurs="1" name="id" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="name" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="Meta">
+        <xs:all>
+            <xs:element minOccurs="0" maxOccurs="1" name="created" type="xs:dateTime"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="lastModified" type="xs:dateTime"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="location" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="eTag" type="xs:string"/>
+
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="Name">
+        <xs:all>
+            <xs:element minOccurs="0" maxOccurs="1" name="formatted" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="familyName" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="givenName" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="middleName" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="honorificPrefix" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="honorificSuffix" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="Address">
+        <xs:all>
+            <xs:element minOccurs="0" maxOccurs="1" name="formatted" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="streetAddress" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="locality" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="region" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="postalCode" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="country" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1"  name="primary" type="xs:boolean"/>
+            <xs:element minOccurs="0" maxOccurs="1"  name="type" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="PluralAttribute">
+        <xs:all>
+            <xs:element minOccurs="0" maxOccurs="1" name="value" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="type" type="xs:string"/>
+            <xs:element minOccurs="0" maxOccurs="1" name="primary" type="xs:boolean"/>
+        </xs:all>
+    </xs:complexType>
+</xs:schema>

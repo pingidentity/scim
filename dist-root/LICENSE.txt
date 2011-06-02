@@ -1,0 +1,7 @@
+UnboundID SCIM Reference Implementation for Java
+Copyright 2011 UnboundID Corp.  All Rights Reserved.
+
+
+The UnboundID SCIM Reference Implementation for Java is available under
+these licenses: TODO
+
