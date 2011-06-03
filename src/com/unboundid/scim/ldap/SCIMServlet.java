@@ -4,10 +4,6 @@
  */
 package com.unboundid.scim.ldap;
 
-import com.unboundid.ldap.sdk.Filter;
-import com.unboundid.ldap.sdk.SearchRequest;
-import com.unboundid.ldap.sdk.SearchResultEntry;
-import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
 import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
@@ -37,19 +33,9 @@ public class SCIMServlet
   private static final long serialVersionUID = 2718930275202254124L;
 
   /**
-   * The name of the LDAP attribute that contains the SCIM User ID.
+   * The backend providing the resource storage repository.
    */
-  private static final String ATTR_ENTRYUUID = "entryUUID";
-
-  /**
-   * The SCIM server configuration.
-   */
-  private SCIMServerConfig serverConfig;
-
-  /**
-   * An LDAP external server to provide the resource storage repository.
-   */
-  private LDAPExternalServer ldapExternalServer;
+  private SCIMBackend backend;
 
   /**
    * A JSON context to read and write JSON.
@@ -61,18 +47,12 @@ public class SCIMServlet
   /**
    * Create a new instance of the SCIM servlet.
    *
-   * @param serverConfig        The configuration of the SCIM server in which
-   *                            this servlet resides.
-   * @param ldapExternalServer  The LDAP external server providing the resource
-   *                            storage repository.
+   * @param backend       The backend providing the resource storage repository.
    */
-  public SCIMServlet(final SCIMServerConfig serverConfig,
-                     final LDAPExternalServer ldapExternalServer)
+  public SCIMServlet(final SCIMBackend backend)
   {
-    this.serverConfig       = serverConfig;
-    this.ldapExternalServer = ldapExternalServer;
-
-    this.jsonContext        = new JSONContext();
+    this.backend       = backend;
+    this.jsonContext   = new JSONContext();
   }
 
 
@@ -200,24 +180,13 @@ public class SCIMServlet
 
     try
     {
-      final Filter filter =
-          Filter.createANDFilter(
-              Filter.createEqualityFilter(ATTR_ENTRYUUID, userID),
-              Filter.createEqualityFilter("objectclass", "inetorgperson"));
-      final SearchRequest searchRequest =
-          new SearchRequest(serverConfig.getDsBaseDN(), SearchScope.SUB,
-                            filter, "*", ATTR_ENTRYUUID);
-      final SearchResultEntry searchResultEntry =
-          ldapExternalServer.searchForEntry(searchRequest);
-      if (searchResultEntry == null)
+      final User user = backend.getUser(userID, queryAttributes);
+      if (user == null)
       {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
       }
       else
       {
-        final User user =
-            LDAPUtil.userFromInetOrgPersonEntry(searchResultEntry,
-                                                queryAttributes);
         response.setContentType(MEDIA_TYPE_JSON);
         response.setCharacterEncoding("UTF-8");
         jsonContext.writeUser(response.getWriter(), user);

@@ -37,6 +37,11 @@ public class SCIMClient
   private Address address;
 
   /**
+   * The base URI of the SCIM interface.
+   */
+  private String baseURI;
+
+  /**
    * A JSON context to read and write JSON.
    */
   private JSONContext jsonContext;
@@ -45,10 +50,11 @@ public class SCIMClient
   /**
    * Create a new SCIM client from the provided information.
    *
-   * @param host  The server host name.
-   * @param port  The server port number.
+   * @param host     The server host name.
+   * @param port     The server port number.
+   * @param baseURI  The base URI of the SCIM interface.
    */
-  public SCIMClient(final String host, final int port)
+  public SCIMClient(final String host, final int port, final String baseURI)
   {
     final HttpClient client = new HttpClient();
     client.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);

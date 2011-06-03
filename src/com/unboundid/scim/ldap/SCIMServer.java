@@ -11,6 +11,10 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import javax.servlet.http.HttpServlet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 
 
@@ -31,13 +35,17 @@ public class SCIMServer
   private Server server;
 
   /**
-   * An LDAP external server to provide the resource storage repository.
+   * The set of backends registered with the server, keyed by the base URI.
    */
-  private LDAPExternalServer ldapExternalServer;
+  private Map<String,SCIMBackend> backends;
+
 
 
   /**
    * Create a new SCIM server with the provided configuration.
+   * All backend must be registered with the server using
+   * {@link #registerBackend(String, SCIMBackend)} before calling
+   * {@link #startListening()}.
    *
    * @param serverConfig  The desired server configuration.
    */
@@ -49,19 +57,45 @@ public class SCIMServer
     final ContextHandlerCollection contexts = new ContextHandlerCollection();
     s.setHandler(contexts);
 
-    final ServletContextHandler rootContext =
-        new ServletContextHandler(contexts,
-                                  normalizeURI(serverConfig.getBaseURI()),
-                                  ServletContextHandler.NO_SESSIONS);
-
-    final LDAPExternalServer les = new LDAPExternalServer(serverConfig);
-    final HttpServlet servlet =
-        new SCIMServlet(serverConfig, les);
-    rootContext.addServlet(new ServletHolder(servlet), "/User/*");
-
     this.config = serverConfig;
     this.server = s;
-    this.ldapExternalServer = les;
+    this.backends = new HashMap<String, SCIMBackend>();
+  }
+
+
+
+  /**
+   * Register a backend with this server under the specified base URI.
+   *
+   * @param baseURI  The base URI with which the backend is associated.
+   * @param backend  The backend to be registered. It must not be {@code null}.
+   */
+  public void registerBackend(final String baseURI,
+                              final SCIMBackend backend)
+  {
+    synchronized (this)
+    {
+      final String normalizedBaseURI = normalizeURI(baseURI);
+      if (backends.containsKey(baseURI))
+      {
+        throw new RuntimeException("There is already a backend registered " +
+                                   "for base URI " + normalizedBaseURI);
+      }
+      final Map<String,SCIMBackend> newBackends =
+          new HashMap<String, SCIMBackend>(backends);
+      newBackends.put(normalizedBaseURI, backend);
+
+      final ServletContextHandler contextHandler =
+          new ServletContextHandler(
+              (ContextHandlerCollection)server.getHandler(),
+              normalizedBaseURI,
+              ServletContextHandler.NO_SESSIONS);
+
+      final HttpServlet servlet = new SCIMServlet(backend);
+      contextHandler.addServlet(new ServletHolder(servlet), "/User/*");
+
+      backends = newBackends;
+    }
   }
 
 
@@ -74,6 +108,11 @@ public class SCIMServer
   public void startListening()
       throws Exception
   {
+    if (backends.isEmpty())
+    {
+      throw new RuntimeException("No backends have been registered with the " +
+                                 "SCIM server");
+    }
     server.start();
   }
 
@@ -104,10 +143,25 @@ public class SCIMServer
       server = null;
     }
 
-    if (ldapExternalServer != null)
+    if (backends != null)
     {
-      ldapExternalServer.close();
-      ldapExternalServer = null;
+      // Make sure that each backend is finalized just once.
+      // The same backend may be referenced more than once.
+      Set<SCIMBackend> allBackends = new HashSet<SCIMBackend>();
+      for (final SCIMBackend b : backends.values())
+      {
+        if (b != null)
+        {
+          allBackends.add(b);
+        }
+      }
+
+      for (final SCIMBackend b : allBackends)
+      {
+        b.finalizeBackend();
+      }
+
+      backends = null;
     }
   }
 

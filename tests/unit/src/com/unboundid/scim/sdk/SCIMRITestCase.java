@@ -37,6 +37,9 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
+import com.unboundid.scim.ldap.LDAPBackend;
+import com.unboundid.scim.ldap.LDAPExternalServerConfig;
+import com.unboundid.scim.ldap.SCIMBackend;
 import com.unboundid.scim.ldap.SCIMServer;
 import com.unboundid.scim.ldap.SCIMServerConfig;
 import org.testng.Assert;
@@ -340,15 +343,21 @@ public abstract class SCIMRITestCase
     ssPort = getFreePort();
     final SCIMServerConfig ssConfig = new SCIMServerConfig();
     ssConfig.setListenPort(ssPort);
-    ssConfig.setBaseURI("/");
     ssConfig.setMaxThreads(16);
-    ssConfig.setDsHost("localhost");
-    ssConfig.setDsPort(testDS.getListenPort("LDAP"));
-    ssConfig.setDsBaseDN("dc=example,dc=com");
-    ssConfig.setDsBindDN("cn=Directory Manager");
-    ssConfig.setDsBindPassword("password");
 
+    final LDAPExternalServerConfig ldapConfig =
+        new LDAPExternalServerConfig();
+    ldapConfig.setDsHost("localhost");
+    ldapConfig.setDsPort(testDS.getListenPort("LDAP"));
+    ldapConfig.setDsBaseDN("dc=example,dc=com");
+    ldapConfig.setDsBindDN("cn=Directory Manager");
+    ldapConfig.setDsBindPassword("password");
+    ldapConfig.setNumConnections(16);
+
+    final SCIMBackend ldapBackend = new LDAPBackend(ldapConfig);
     testSS = new SCIMServer(ssConfig);
+    testSS.registerBackend("/", ldapBackend);
+    testSS.registerBackend("/scim", ldapBackend);
     testSS.startListening();
   }
 

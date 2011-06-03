@@ -28,7 +28,7 @@ public class SCIMServerTestCase
       throws Exception
   {
     // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort());
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "/");
     client.startClient();
 
     // Get a reference to the in-memory test DS.

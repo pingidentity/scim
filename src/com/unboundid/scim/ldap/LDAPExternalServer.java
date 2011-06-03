@@ -34,9 +34,9 @@ public class LDAPExternalServer
   private final AtomicReference<AbstractConnectionPool> connPool;
 
   /**
-   * The configuration of the SCIM server referencing this LDAP server.
+   * The configuration of this LDAP external server.
    */
-  private SCIMServerConfig config;
+  private LDAPExternalServerConfig config;
 
   /**
    * The set of result codes that will cause an LDAP connection to be considered
@@ -68,10 +68,9 @@ public class LDAPExternalServer
    * Create a new instance of an LDAP external server from the provided
    * information.
    *
-   * @param config  The configuration of the SCIM server referencing this
-   *                LDAP server.
+   * @param config  The configuration of this LDAP external server.
    */
-  public LDAPExternalServer(final SCIMServerConfig config)
+  public LDAPExternalServer(final LDAPExternalServerConfig config)
   {
     this.config = config;
     this.connPool = new AtomicReference<AbstractConnectionPool>();
@@ -200,6 +199,6 @@ public class LDAPExternalServer
         new SimpleBindRequest(config.getDsBindDN(),
                               config.getDsBindPassword());
     return new LDAPConnectionPool(dsServerSet, bindRequest,
-                                  config.getMaxThreads());
+                                  config.getNumConnections());
   }
 }
