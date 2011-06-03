@@ -7,6 +7,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.xml.XMLContext;
 import org.eclipse.jetty.client.Address;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
@@ -14,7 +15,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
-import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
+import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
 import java.io.IOException;
 
@@ -46,6 +47,11 @@ public class SCIMClient
    */
   private JSONContext jsonContext;
 
+  /**
+   * An XML context to read and write XML.
+   */
+  private XMLContext xmlContext;
+
 
   /**
    * Create a new SCIM client from the provided information.
@@ -63,8 +69,10 @@ public class SCIMClient
     client.setTimeout(30000);
 
     jsonContext = new JSONContext();
+    xmlContext = new XMLContext();
     address = new Address(host, port);
     httpClient = client;
+    this.baseURI = baseURI;
   }
 
 
@@ -120,7 +128,12 @@ public class SCIMClient
     // For the moment assume that the user ID and attributes do not contain any
     // characters that need to be escaped.
     StringBuilder uriBuilder = new StringBuilder();
-    uriBuilder.append("/User/");
+    uriBuilder.append(baseURI);
+    if (!baseURI.endsWith("/"))
+    {
+      uriBuilder.append('/');
+    }
+    uriBuilder.append("User/");
     uriBuilder.append(userID);
     if (attributes.length > 0)
     {
@@ -147,7 +160,7 @@ public class SCIMClient
     exchange.setAddress(address);
     exchange.setMethod("GET");
     exchange.setURI(uriBuilder.toString());
-    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_JSON);
+    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
 
     httpClient.send(exchange);
     final int exchangeState;
@@ -167,7 +180,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was found.
-            return jsonContext.readUser(exchange.getResponseContent());
+            return xmlContext.readUser(exchange.getResponseContent());
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.

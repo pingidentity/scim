@@ -45,6 +45,67 @@ public final class LDAPUtil
 
 
   /**
+   * Add an address to a SCIM user object.
+   *
+   * @param user     The SCIM user.
+   * @param address  The address to be added.
+   */
+  private static void addAddress(final User user, final Address address)
+  {
+    User.Addresses addresses = user.getAddresses();
+    if (addresses == null)
+    {
+      addresses = new User.Addresses();
+      user.setAddresses(addresses);
+    }
+
+    addresses.getAddress().add(address);
+  }
+
+
+
+  /**
+   * Add an email to a SCIM user object.
+   *
+   * @param user   The SCIM user.
+   * @param email  The email to be added.
+   */
+  private static void addEmail(final User user, final PluralAttribute email)
+  {
+    User.Emails emails = user.getEmails();
+    if (emails == null)
+    {
+      emails = new User.Emails();
+      user.setEmails(emails);
+    }
+
+    emails.getEmail().add(email);
+  }
+
+
+
+  /**
+   * Add a phone number to a SCIM user object.
+   *
+   * @param user         The SCIM user.
+   * @param phoneNumber  The phone number to be added.
+   */
+  private static void addPhoneNumber(final User user,
+                                     final PluralAttribute phoneNumber)
+  {
+    User.PhoneNumbers phoneNumbers = user.getPhoneNumbers();
+    if (phoneNumbers == null)
+    {
+      phoneNumbers = new User.PhoneNumbers();
+      user.setPhoneNumbers(phoneNumbers);
+    }
+
+    phoneNumbers.getPhoneNumber().add(phoneNumber);
+  }
+
+
+
+  /**
    * Map an LDAP entry conforming to the inetOrgPerson object class (defined
    * in RFC 2798) into a SCIM user.
    *
@@ -102,7 +163,7 @@ public final class LDAPUtil
         address.setRegion(entry.getAttributeValue("st"));
         address.setStreetAddress(entry.getAttributeValue("street"));
         address.setType("work");
-        user.getAddresses().add(address);
+        addAddress(user, address);
       }
 
       // Map each value of homePostalAddress as a home, non-primary address.
@@ -114,7 +175,7 @@ public final class LDAPUtil
           final Address address = new Address();
           address.setType("home");
           address.setFormatted(formattedValue);
-          user.getAddresses().add(address);
+          addAddress(user, address);
         }
       }
     }
@@ -129,7 +190,7 @@ public final class LDAPUtil
           final PluralAttribute email = new PluralAttribute();
           email.setType("work");
           email.setValue(value);
-          user.getEmails().add(email);
+          addEmail(user, email);
         }
       }
     }
@@ -144,7 +205,7 @@ public final class LDAPUtil
           final PluralAttribute phoneNumber = new PluralAttribute();
           phoneNumber.setType("work");
           phoneNumber.setValue(value);
-          user.getPhoneNumbers().add(phoneNumber);
+          addPhoneNumber(user, phoneNumber);
         }
       }
 
@@ -158,7 +219,7 @@ public final class LDAPUtil
           final PluralAttribute phoneNumber = new PluralAttribute();
           phoneNumber.setType("fax");
           phoneNumber.setValue(value);
-          user.getPhoneNumbers().add(phoneNumber);
+          addPhoneNumber(user, phoneNumber);
         }
       }
 
@@ -170,7 +231,7 @@ public final class LDAPUtil
           final PluralAttribute phoneNumber = new PluralAttribute();
           phoneNumber.setType("home");
           phoneNumber.setValue(value);
-          user.getPhoneNumbers().add(phoneNumber);
+          addPhoneNumber(user, phoneNumber);
         }
       }
     }

@@ -6,9 +6,12 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.xml.XMLContext;
+
 import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
+import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -42,6 +45,11 @@ public class SCIMServlet
    */
   private JSONContext jsonContext;
 
+  /**
+   * An XML context to read and write XML.
+   */
+  private XMLContext xmlContext;
+
 
 
   /**
@@ -53,6 +61,7 @@ public class SCIMServlet
   {
     this.backend       = backend;
     this.jsonContext   = new JSONContext();
+    this.xmlContext    = new XMLContext();
   }
 
 
@@ -89,12 +98,13 @@ public class SCIMServlet
       return;
     }
 
-    boolean requestJSON = true;
+    boolean xmlSuffix = false;
+    boolean jsonSuffix = false;
     final String userID;
     final String resource = split[1];
     if (resource.endsWith(".xml"))
     {
-      requestJSON = false;
+      xmlSuffix = true;
       if (resource.length() > 4)
       {
         userID = resource.substring(0, resource.length() - 4);
@@ -106,6 +116,7 @@ public class SCIMServlet
     }
     else if (resource.endsWith(".json"))
     {
+      jsonSuffix = true;
       if (resource.length() > 5)
       {
         userID = resource.substring(0, resource.length() - 5);
@@ -120,19 +131,40 @@ public class SCIMServlet
       userID = resource;
     }
 
-    if (!requestJSON)
+    final EnumSet<ContentTypeID> acceptTypes =
+        acceptedContentTypes(request.getHeader(HEADER_NAME_ACCEPT));
+    final boolean jsonAccepted = acceptTypes.contains(ContentTypeID.JSON);
+    final boolean xmlAccepted = acceptTypes.contains(ContentTypeID.XML);
+
+    if (xmlSuffix && !xmlAccepted)
     {
-      response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                         "XML content is not yet implemented");
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                         ".xml conflicts with accepted content types");
       return;
     }
 
-    if (!acceptedContentTypes(request.getHeader(HEADER_NAME_ACCEPT)).contains(
-        ContentTypeID.JSON))
+    if (jsonSuffix && !jsonAccepted)
+    {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                         ".json conflicts with accepted content types");
+      return;
+    }
+
+    if (!xmlAccepted && !jsonAccepted)
     {
       response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                         "Only JSON content is currently implemented");
+                         "Only JSON and XML content types are supported");
       return;
+    }
+
+    boolean returnJSON = true;
+    if (xmlSuffix)
+    {
+      returnJSON = false;
+    }
+    else if (!jsonAccepted)
+    {
+      returnJSON = false;
     }
 
     final String targetAttribute;
@@ -187,11 +219,22 @@ public class SCIMServlet
       }
       else
       {
-        response.setContentType(MEDIA_TYPE_JSON);
-        response.setCharacterEncoding("UTF-8");
-        jsonContext.writeUser(response.getWriter(), user);
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.flushBuffer();
+        if (returnJSON)
+        {
+          response.setContentType(MEDIA_TYPE_JSON);
+          response.setCharacterEncoding("UTF-8");
+          jsonContext.writeUser(response.getWriter(), user);
+          response.setStatus(HttpServletResponse.SC_OK);
+          response.flushBuffer();
+        }
+        else
+        {
+          response.setContentType(MEDIA_TYPE_XML);
+          response.setCharacterEncoding("UTF-8");
+          xmlContext.writeUser(response.getWriter(), user);
+          response.setStatus(HttpServletResponse.SC_OK);
+          response.flushBuffer();
+        }
       }
     }
     catch (Exception e)
