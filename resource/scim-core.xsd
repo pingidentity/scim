@@ -71,7 +71,7 @@
                        <xs:element name="name" type="tns:name" minOccurs="0"/>
                        <xs:element name="userName" type="xs:string" minOccurs="0"/>
                        <xs:element name="externalId" type="xs:string" minOccurs="0"/>
-                       <!--<xs:any namespace="##other" minOccurs="0"/>-->
+                       <xs:any namespace="##other" minOccurs="0"/>
                    </xs:sequence>
                </xs:extension>
            </xs:complexContent>

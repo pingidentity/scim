@@ -33,7 +33,7 @@ public class XMLContext
 
 
   /**
-   * Create a new JSON context.
+   * Create a new XML context.
    */
   public XMLContext()
   {

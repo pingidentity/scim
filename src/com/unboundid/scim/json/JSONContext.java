@@ -61,7 +61,8 @@ public class JSONContext
 
     final Map<String, String> xmlToJsonNamespaces =
         new HashMap<String,String>();
-    xmlToJsonNamespaces.put("urn:scim:schemas:core:1.0", "");
+    xmlToJsonNamespaces.put("urn:scim:schemas:core:1.0",
+                            "urn:scim:schemas:core:1.0");
 
     config = new Configuration();
     config.setXmlToJsonNamespaces(xmlToJsonNamespaces);
