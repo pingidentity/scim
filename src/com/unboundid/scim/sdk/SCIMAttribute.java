@@ -36,19 +36,19 @@ public final class SCIMAttribute
    * The name of the attribute. The name does not indicate which schema the
    * attribute belongs to.
    */
-  private String name;
+  private final String name;
 
   /**
    * The single value of this attribute, or {@code null} if this attribute is
    * a plural attribute.
    */
-  private SCIMAttributeValue singleValue;
+  private final SCIMAttributeValue singleValue;
 
   /**
    * The plural values of this attribute, or {@code null} if this attribute is
    * a singular attribute.
    */
-  private SCIMAttributeValue[] pluralValues;
+  private final SCIMAttributeValue[] pluralValues;
 
 
 

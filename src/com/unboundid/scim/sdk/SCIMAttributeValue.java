@@ -28,13 +28,13 @@ public final class SCIMAttributeValue
    * The simple attribute value, or {@code null} if the attribute value is
    * complex.
    */
-  private Object value;
+  private final Object value;
 
   /**
    * The attributes comprising the complex value, keyed by the name of the
    * attribute, or {@code null} if the attribute value is simple.
    */
-  private Map<String,SCIMAttribute> attributes;
+  private final Map<String,SCIMAttribute> attributes;
 
 
 
