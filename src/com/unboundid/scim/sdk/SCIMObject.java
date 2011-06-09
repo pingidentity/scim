@@ -23,93 +23,27 @@ import java.util.LinkedHashMap;
 public class SCIMObject
 {
   /**
-   * The resource identifier, or {@code null} if this object does not have an
-   * identifier.
+   * The set of attributes from the core schema.
    */
-  private String id;
+  private final LinkedHashMap<String,SCIMAttribute> coreAttributes;
 
   /**
-   * The meta-data attribute, or {@code null} if this object does not have any
-   * meta-data.
-   */
-  private SCIMAttribute meta;
-
-  /**
-   * The set of attributes in this object grouped by the name of the schema to
+   * The set of attributes in this object grouped by the URI of the schema to
    * which they belong.
-   * TODO: Do schema names have to be normalized?
+   * TODO: Do schema URIs have to be normalized?
    */
   private final HashMap<String,LinkedHashMap<String,SCIMAttribute>> attributes;
 
 
 
   /**
-   * Create a SCIM object from the provided information. The object initially
-   * has no attributes other than any provided common schema attributes.
-   *
-   * @param id  The resource identifier, or {@code null} if this object does
-   *            not have an identifier.
-   * @param meta  The meta-data attribute, or {@code null} if this object does
-   *              not have any meta-data.
+   * Create an empty SCIM object that initially has no attributes.
    */
-  public SCIMObject(final String id, final SCIMAttribute meta)
+  public SCIMObject()
   {
-    this.id   = id;
-    this.meta = meta;
+    this.coreAttributes = new LinkedHashMap<String, SCIMAttribute>();
     this.attributes =
         new HashMap<String, LinkedHashMap<String, SCIMAttribute>>();
-  }
-
-
-
-  /**
-   * Retrieves the resource identifier for this object.
-   *
-   * @return  The resource identifier, or {@code null} if this object does not
-   *          have an identifier.
-   */
-  public String getId()
-  {
-    return id;
-  }
-
-
-
-  /**
-   * Specifies the resource identifier for this object.
-   *
-   * @param id  The resource identifier for this object, or {@code null} if
-   *            this object does not have an identifier.
-   */
-  public void setId(final String id)
-  {
-    this.id = id;
-  }
-
-
-
-  /**
-   * Retrieves the meta-data attribute for this object.
-   *
-   * @return  The meta-data attribute for this object, or {@code null} if this
-   *          object does not have any meta-data.
-   */
-  public SCIMAttribute getMeta()
-  {
-    return meta;
-  }
-
-
-
-  /**
-   * Specifies the meta-data attribute for this object.
-   *
-   * @param meta  The meta-data attribute for this object, or {@code null} if
-   *              this object does not have any meta-data.
-   */
-  public void setMeta(final SCIMAttribute meta)
-  {
-    this.meta = meta;
   }
 
 
@@ -118,7 +52,7 @@ public class SCIMObject
    * Retrieves the set of schemas currently contributing attributes to this
    * object.
    *
-   * @return  An immutable collection of the names of schemas currently
+   * @return  An immutable collection of the URIs of schemas currently
    *          contributing attributes to this object.
    */
   public Collection<String> getSchemas()
@@ -132,7 +66,7 @@ public class SCIMObject
    * Determines whether this object contains any attributes in the specified
    * schema.
    *
-   * @param schema  The name of the schema for which to make the determination.
+   * @param schema  The URI of the schema for which to make the determination.
    *                It must not be {@code null}.
    *
    * @return  {@code true} if this object contains any attributes in the
@@ -148,8 +82,9 @@ public class SCIMObject
   /**
    * Retrieves the attribute with the specified name.
    *
-   * @param schema  The name of the schema containing the attribute to retrieve.
-   *                It must not be {@code null}.
+   * @param schema  The URI of the schema containing the attribute to retrieve,
+   *                or {@code null} to indicate core schema attributes.
+   *
    * @param name    The name of the attribute to retrieve. It must not be
    *                {@code null}.
    *
@@ -158,7 +93,16 @@ public class SCIMObject
    */
   public SCIMAttribute getAttribute(final String schema, final String name)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    final LinkedHashMap<String,SCIMAttribute> attrs;
+    if (schema == null)
+    {
+      attrs = coreAttributes;
+    }
+    else
+    {
+      attrs = attributes.get(schema);
+    }
+
     if (attrs == null)
     {
       return null;
@@ -174,14 +118,25 @@ public class SCIMObject
   /**
    * Retrieves the set of attributes in this object from the specified schema.
    *
-   * @param schema  The name of the schema whose attributes are to be retrieved.
+   * @param schema  The URI of the schema whose attributes are to be retrieved,
+   *                or {@code null} to indicate core schema attributes.
+   *
    * @return  An immutable collection of the attributes in this object from the
    *          specified schema, or the empty collection if there are no such
    *          attributes.
    */
   public Collection<SCIMAttribute> getAttributes(final String schema)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    final LinkedHashMap<String,SCIMAttribute> attrs;
+    if (schema == null)
+    {
+      attrs = coreAttributes;
+    }
+    else
+    {
+      attrs = attributes.get(schema);
+    }
+
     if (attrs == null)
     {
       return Collections.emptyList();
@@ -197,8 +152,8 @@ public class SCIMObject
   /**
    * Determines whether this object contains the specified attribute.
    *
-   * @param schema  The name of the schema containing the attribute.
-   *                It must not be {@code null}.
+   * @param schema  The URI of the schema containing the attribute,
+   *                or {@code null} to indicate a core schema attribute.
    * @param name    The name of the attribute for which to make the
    *                determination. It must not be {@code null}.
    *
@@ -207,7 +162,16 @@ public class SCIMObject
    */
   public boolean hasAttribute(final String schema, final String name)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    final LinkedHashMap<String,SCIMAttribute> attrs;
+    if (schema == null)
+    {
+      attrs = coreAttributes;
+    }
+    else
+    {
+      attrs = attributes.get(schema);
+    }
+
     if (attrs == null)
     {
       return false;
@@ -222,19 +186,30 @@ public class SCIMObject
 
   /**
    * Adds the provided attribute to this object. If this object already contains
-   * an attribute with the same name, then the provided attribute will not be
-   * added.
+   * an attribute with the same name from the same schema, then the provided
+   * attribute will not be added.
    *
-   * @param schema     The name of the schema to which the attribute belongs.
-   *                   It must not be {@code null}.
    * @param attribute  The attribute to be added. It must not be {@code null}.
    *
    * @return  {@code true} if the object was updated, or {@code false} if the
    *          object already contained an attribute with the same name.
    */
-  public boolean addAttribute(final String schema,
-                              final SCIMAttribute attribute)
+  public boolean addAttribute(final SCIMAttribute attribute)
   {
+    final String schema = attribute.getSchema();
+    if (schema == null)
+    {
+      if (coreAttributes.containsKey(attribute.getName()))
+      {
+        return false;
+      }
+      else
+      {
+        coreAttributes.put(attribute.getName(), attribute);
+        return true;
+      }
+    }
+
     LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
     if (attrs == null)
     {
@@ -263,13 +238,17 @@ public class SCIMObject
    * Adds the provided attribute to this object, replacing any existing
    * attribute with the same name.
    *
-   * @param schema     The name of the schema to which the attribute belongs.
-   *                   It must not be {@code null}.
    * @param attribute  The attribute to be added. It must not be {@code null}.
    */
-  public void setAttribute(final String schema,
-                           final SCIMAttribute attribute)
+  public void setAttribute(final SCIMAttribute attribute)
   {
+    final String schema = attribute.getSchema();
+    if (schema == null)
+    {
+      coreAttributes.put(attribute.getName(), attribute);
+      return;
+    }
+
     LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
     if (attrs == null)
     {
@@ -288,9 +267,9 @@ public class SCIMObject
   /**
    * Removes the specified attribute from this object.
    *
-   * @param schema  The name of the schema to which the attribute belongs.
-   *                It must not be {@code null}.
-   * @param  name   The name of the attribute to remove. It must not be
+   * @param schema  The URI of the schema to which the attribute belongs,
+   *                or {@code null} to indicate a core schema attribute.
+   * @param name    The name of the attribute to remove. It must not be
    *                {@code null}.
    *
    * @return  {@code true} if the attribute was removed from the object, or
@@ -298,6 +277,11 @@ public class SCIMObject
    */
   public boolean removeAttribute(final String schema, final String name)
   {
+    if (schema == null)
+    {
+      return coreAttributes.remove(name) != null;
+    }
+
     LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
     if (attrs == null)
     {

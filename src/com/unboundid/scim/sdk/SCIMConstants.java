@@ -24,6 +24,18 @@ public final class SCIMConstants
 
 
   /**
+   * The URI of the SCIM Core User schema.
+   */
+  public static final String SCHEMA_URI_CORE_USER =
+      "urn:scim:schemas:core:user:1.0";
+
+  /**
+   * The URI of the SCIM Enterprise User schema.
+   */
+  public static final String SCHEMA_URI_ENTERPRISE_USER =
+      "urn:scim:schemas:extension:user:enterprise:1.0";
+
+  /**
    * The HTTP query string value used in a URI to select specific attributes.
    */
   public static final String ATTRIBUTES_QUERY_STRING = "attributes";

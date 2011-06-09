@@ -33,8 +33,13 @@ package com.unboundid.scim.sdk;
 public final class SCIMAttribute
 {
   /**
-   * The name of the attribute. The name does not indicate which schema the
-   * attribute belongs to.
+   * The name of the schema to which this attribute belongs, or {@code null}
+   * if the attribute is in the core schema.
+   */
+  private final String schema;
+
+  /**
+   * The name of the attribute.
    */
   private final String name;
 
@@ -55,6 +60,9 @@ public final class SCIMAttribute
   /**
    * Create a new instance of an attribute.
    *
+   * @param schema        The name of the schema to which this attribute
+   *                      belongs, or {@code null} if the attribute is in the
+   *                      core schema.
    * @param name          The name of this attribute. The name does not indicate
    *                      which schema the attribute belongs to.
    * @param singleValue   The single value of this attribute, or {@code null}
@@ -62,11 +70,13 @@ public final class SCIMAttribute
    * @param pluralValues  The plural values of this attribute, or empty if this
    *                      attribute is a singular attribute.
    */
-  private SCIMAttribute(final String name,
+  private SCIMAttribute(final String schema,
+                        final String name,
                         final SCIMAttributeValue singleValue,
                         final SCIMAttributeValue ... pluralValues)
   {
-    this.name = name;
+    this.schema      = schema;
+    this.name        = name;
     this.singleValue = singleValue;
     if (singleValue == null)
     {
@@ -83,6 +93,9 @@ public final class SCIMAttribute
   /**
    * Create a singular attribute.
    *
+   * @param schema    The name of the schema to which this attribute
+   *                  belongs, or {@code null} if the attribute is in the core
+   *                  schema.
    * @param name      The name of this attribute. The name does not indicate
    *                  which schema the attribute belongs to.
    * @param value     The value of this attribute.
@@ -90,9 +103,9 @@ public final class SCIMAttribute
    * @return  A new singular attribute.
    */
   public static SCIMAttribute createSingularAttribute(
-      final String name, final SCIMAttributeValue value)
+      final String schema, final String name, final SCIMAttributeValue value)
   {
-    return new SCIMAttribute(name, value);
+    return new SCIMAttribute(schema, name, value);
   }
 
 
@@ -100,6 +113,9 @@ public final class SCIMAttribute
   /**
    * Create a plural attribute.
    *
+   * @param schema    The name of the schema to which this attribute
+   *                  belongs, or {@code null} if the attribute is in the core
+   *                  schema.
    * @param name      The name of this attribute. The name does not indicate
    *                  which schema the attribute belongs to.
    * @param values    The values of this attribute.
@@ -107,9 +123,24 @@ public final class SCIMAttribute
    * @return  A new plural attribute.
    */
   public static SCIMAttribute createPluralAttribute(
-      final String name, final SCIMAttributeValue ... values)
+      final String schema, final String name,
+      final SCIMAttributeValue ... values)
   {
-    return new SCIMAttribute(name, null, values);
+    return new SCIMAttribute(schema, name, null, values);
+  }
+
+
+
+  /**
+   * Retrieve the name of the schema to which this attribute belongs, or
+   * {@code null} if the attribute is in the core schema.
+   *
+   * @return  The name of the schema to which this attribute belongs, or
+   *          {@code null} if the attribute is in the core schema.
+   */
+  public String getSchema()
+  {
+    return schema;
   }
 
 
