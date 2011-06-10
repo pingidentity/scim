@@ -14,6 +14,7 @@ import com.unboundid.scim.schema.User;
 
 
 
+
 /**
  * This class provides an implementation of the SCIM server backend API that
  * uses an external LDAP server as the resource storage repository.
@@ -70,13 +71,14 @@ public class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public User getUser(final String userID, final String... attributes)
+  public User getUser(final GetResourceRequest request)
   {
     try
     {
       final Filter filter =
           Filter.createANDFilter(
-              Filter.createEqualityFilter(ATTR_ENTRYUUID, userID),
+              Filter.createEqualityFilter(ATTR_ENTRYUUID,
+                                          request.getResourceID()),
               Filter.createEqualityFilter("objectclass", "inetorgperson"));
       final SearchRequest searchRequest =
           new SearchRequest(ldapConfig.getDsBaseDN(), SearchScope.SUB,
@@ -90,7 +92,7 @@ public class LDAPBackend
       else
       {
         return LDAPUtil.userFromInetOrgPersonEntry(searchResultEntry,
-                                                   attributes);
+                                                   request.getAttributes());
       }
     }
     catch (LDAPException e)

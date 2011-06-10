@@ -23,6 +23,12 @@ import java.util.LinkedHashMap;
 public class SCIMObject
 {
   /**
+   * The type of SCIM resource represented by this object, or {@code null}
+   * if the resource type is unknown.
+   */
+  private String resourceType;
+
+  /**
    * The set of attributes from the core schema.
    */
   private final LinkedHashMap<String,SCIMAttribute> coreAttributes;
@@ -37,13 +43,56 @@ public class SCIMObject
 
 
   /**
-   * Create an empty SCIM object that initially has no attributes.
+   * Create an empty SCIM object that initially has no attributes. The type of
+   * resource is not specified.
    */
   public SCIMObject()
   {
+    this(null);
+  }
+
+
+
+  /**
+   * Create an empty SCIM object with the specified resource type.
+   *
+   * @param resourceType  The type of SCIM resource represented by this object,
+   *                      or {@code null} if the resource type is unknown.
+   */
+  public SCIMObject(final String resourceType)
+  {
+    this.resourceType = resourceType;
     this.coreAttributes = new LinkedHashMap<String, SCIMAttribute>();
     this.attributes =
         new HashMap<String, LinkedHashMap<String, SCIMAttribute>>();
+  }
+
+
+
+  /**
+   * Retrieves the type of SCIM resource represented by this object, or
+   * {@code null} if the resource type is unknown.
+   *
+   * @return  The type of SCIM resource represented by this object, or
+   *          {@code null} if the resource type is unknown.
+   */
+  public String getResourceType()
+  {
+    return resourceType;
+  }
+
+
+
+  /**
+   * Specifies the type of SCIM resource represented by this object, or
+   * {@code null} if the resource type is unknown.
+   *
+   * @param resourceType  The type of SCIM resource represented by this object,
+   *                      or {@code null} if the resource type is unknown.
+   */
+  public void setResourceType(final String resourceType)
+  {
+    this.resourceType = resourceType;
   }
 
 

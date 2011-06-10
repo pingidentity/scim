@@ -24,16 +24,13 @@ public abstract class SCIMBackend
 
 
   /**
-   * Retrieve all or selected attributes of the user with the specified ID.
+   * Retrieve all or selected attributes of the resource with the specified ID.
    *
-   * @param userID      The ID of the user to be retrieved.
-   * @param attributes  The set of attributes to be retrieved. If empty, then
-   *                    return all attributes.
+   * @param request      The Get Resource request.
    *
-   * @return  The requested user or {@code null} if the user does not exist.
-   *          The user contents are partial if selected attributes were
-   *          requested.
+   * @return  The requested resource or {@code null} if the resource does not
+   *          exist. The resource contents are partial if selected attributes
+   *          were requested.
    */
-  public abstract User getUser(final String userID,
-                               final String ... attributes);
+  public abstract User getUser(final GetResourceRequest request);
 }

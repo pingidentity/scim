@@ -6,6 +6,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.xml.XMLContext;
 
 import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
@@ -185,7 +186,7 @@ public class SCIMServlet
     }
 
     // Parse the query string.
-    final String[] queryAttributes;
+    final String[] attributes;
     final String queryString = request.getQueryString();
     if (queryString != null && !queryString.isEmpty())
     {
@@ -198,21 +199,25 @@ public class SCIMServlet
 
       if (querySplit.length < 2)
       {
-        queryAttributes = new String[0];
+        attributes = new String[0];
       }
       else
       {
-        queryAttributes = querySplit[1].split(",");
+        attributes = querySplit[1].split(",");
       }
     }
     else
     {
-      queryAttributes = new String[0];
+      attributes = new String[0];
     }
 
+    final SCIMQueryAttributes queryAttributes =
+        new SCIMQueryAttributes(attributes);
+    final GetResourceRequest getResourceRequest =
+        new GetResourceRequest("User", userID, queryAttributes);
     try
     {
-      final User user = backend.getUser(userID, queryAttributes);
+      final User user = backend.getUser(getResourceRequest);
       if (user == null)
       {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);

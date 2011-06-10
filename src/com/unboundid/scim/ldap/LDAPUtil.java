@@ -11,11 +11,10 @@ import com.unboundid.scim.schema.Address;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 
 
@@ -109,36 +108,29 @@ public final class LDAPUtil
    * Map an LDAP entry conforming to the inetOrgPerson object class (defined
    * in RFC 2798) into a SCIM user.
    *
-   * @param entry           The LDAP inetOrgPerson entry whose attributes are
-   *                        to be mapped. Not all attributes and values have a
-   *                        mapping.
-   * @param scimAttributes  The SCIM attributes that have been requested, or
-   *                        empty if all available attributes are requested.
+   * @param entry            The LDAP inetOrgPerson entry whose attributes are
+   *                         to be mapped. Not all attributes and values have a
+   *                         mapping.
+   * @param queryAttributes  The SCIM attributes that have been requested.
    *
    * @return  A SCIM user.
    */
   public static User userFromInetOrgPersonEntry(
-      final Entry entry, final String ... scimAttributes)
+      final Entry entry, final SCIMQueryAttributes queryAttributes)
   {
     final User user = new User();
 
-    Set<String> attrSet = new HashSet<String>();
-    for (final String a : scimAttributes)
-    {
-      attrSet.add(a.toLowerCase());
-    }
-
-    if (attrSet.isEmpty() || attrSet.contains("id"))
+    if (queryAttributes.isAttributeRequested("id"))
     {
       user.setId(entry.getAttributeValue("entryUUID"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("username"))
+    if (queryAttributes.isAttributeRequested("userName"))
     {
       user.setUserName(entry.getAttributeValue("uid"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("name"))
+    if (queryAttributes.isAttributeRequested("name"))
     {
       final Name name = new Name();
       name.setFamilyName(entry.getAttributeValue("sn"));
@@ -147,7 +139,7 @@ public final class LDAPUtil
       user.setName(name);
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("addresses"))
+    if (queryAttributes.isAttributeRequested("addresses"))
     {
       // Map just the first value of each inetOrgPerson address-related
       // attribute as a work, non-primary address.
@@ -180,7 +172,7 @@ public final class LDAPUtil
       }
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("emails"))
+    if (queryAttributes.isAttributeRequested("emails"))
     {
       // Map each value of mail as a work, non-primary email.
       if (entry.hasAttribute("mail"))
@@ -195,7 +187,7 @@ public final class LDAPUtil
       }
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("phonenumbers"))
+    if (queryAttributes.isAttributeRequested("phoneNumbers"))
     {
       // Map each value of telephoneNumber as a work, non-primary number.
       if (entry.hasAttribute("telephoneNumber"))
@@ -236,32 +228,32 @@ public final class LDAPUtil
       }
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("department"))
+    if (queryAttributes.isAttributeRequested("department"))
     {
       user.setDepartment(entry.getAttributeValue("departmentNumber"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("displayname"))
+    if (queryAttributes.isAttributeRequested("displayName"))
     {
       user.setDisplayName(entry.getAttributeValue("displayName"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("employeenumber"))
+    if (queryAttributes.isAttributeRequested("employeeNumber"))
     {
       user.setEmployeeNumber(entry.getAttributeValue("employeeNumber"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("organization"))
+    if (queryAttributes.isAttributeRequested("organization"))
     {
       user.setOrganization(entry.getAttributeValue("o"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("preferredlanguage"))
+    if (queryAttributes.isAttributeRequested("preferredLanguage"))
     {
       user.setPreferredLanguage(entry.getAttributeValue("preferredLanguage"));
     }
 
-    if (attrSet.isEmpty() || attrSet.contains("title"))
+    if (queryAttributes.isAttributeRequested("title"))
     {
       user.setTitle(entry.getAttributeValue("title"));
     }
