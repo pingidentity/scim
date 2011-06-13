@@ -307,6 +307,7 @@
               location="${package.dir}/${buildid}" />
 
     <mkdir dir="${ri.package.dir}" />
+    <mkdir dir="${ri.package.dir}/lib" />
     <mkdir dir="${ri.package.dir}/docs" />
     <mkdir dir="${ri.package.dir}/docs/javadoc" />
 
@@ -330,7 +331,11 @@
       </fileset>
     </copy>
 
-    <jar jarfile="${ri.package.dir}/unboundid-scimri.jar"
+    <copy todir="${ri.package.dir}/lib">
+      <path refid="external-jars"/>
+    </copy>
+
+    <jar jarfile="${ri.package.dir}/lib/unboundid-scimri.jar"
          compress="true"
          index="true">
       <fileset dir="${classes.dir}">

@@ -186,23 +186,23 @@ public class GenerateMessages
         w("/*");
         w(" * Copyright (C) ", year, " UnboundID Corp.");
         w(" *");
-        w(" * This program is free software; you can redistribute it and/or " +
-               "modify");
-        w(" * it under the terms of the GNU General Public License (GPLv2 " +
-               "only)");
-        w(" * or the terms of the GNU Lesser General Public License " +
-               "(LGPLv2.1 only)");
-        w(" * as published by the Free Software Foundation.");
-        w(" *");
-        w(" * This program is distributed in the hope that it will be useful,");
-        w(" * but WITHOUT ANY WARRANTY; without even the implied warranty of");
-        w(" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the");
-        w(" * GNU General Public License for more details.");
-        w(" *");
-        w(" * You should have received a copy of the GNU General Public " +
-               "License");
-        w(" * along with this program; if not, see " +
-               "<http://www.gnu.org/licenses>.");
+//        w(" * This program is free software; you can redistribute it and/or " +
+//               "modify");
+//        w(" * it under the terms of the GNU General Public License (GPLv2 " +
+//               "only)");
+//        w(" * or the terms of the GNU Lesser General Public License " +
+//               "(LGPLv2.1 only)");
+//        w(" * as published by the Free Software Foundation.");
+//        w(" *");
+//        w(" * This program is distributed in the hope that it will be useful,");
+//        w(" * but WITHOUT ANY WARRANTY; without even the implied warranty of");
+//        w(" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the");
+//        w(" * GNU General Public License for more details.");
+//        w(" *");
+//        w(" * You should have received a copy of the GNU General Public " +
+//               "License");
+//        w(" * along with this program; if not, see " +
+//               "<http://www.gnu.org/licenses>.");
         w(" */");
         w("package ", packageName, ";");
         w();

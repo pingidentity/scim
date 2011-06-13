@@ -4,6 +4,7 @@
  */
 package com.unboundid.scim.ldap;
 
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -114,6 +115,35 @@ public class SCIMServer
                                  "SCIM server");
     }
     server.start();
+  }
+
+
+
+  /**
+   * Retrieves the configured listen port for the server.
+   *
+   * @return  The configured listen port for the server, or -1 if
+   *          the server is not started.
+   */
+  public int getListenPort()
+  {
+    if (server.isStarted())
+    {
+      for (Connector con : server.getConnectors())
+      {
+        int port = con.getLocalPort();
+        if (port > 0)
+        {
+          return port;
+        }
+      }
+
+      return -1;
+    }
+    else
+    {
+      return -1;
+    }
   }
 
 

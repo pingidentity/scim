@@ -37,7 +37,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
-import com.unboundid.scim.ldap.LDAPBackend;
+import com.unboundid.scim.ldap.ExternalLDAPBackend;
 import com.unboundid.scim.ldap.LDAPExternalServerConfig;
 import com.unboundid.scim.ldap.SCIMBackend;
 import com.unboundid.scim.ldap.SCIMServer;
@@ -354,7 +354,7 @@ public abstract class SCIMRITestCase
     ldapConfig.setDsBindPassword("password");
     ldapConfig.setNumConnections(16);
 
-    final SCIMBackend ldapBackend = new LDAPBackend(ldapConfig);
+    final SCIMBackend ldapBackend = new ExternalLDAPBackend(ldapConfig);
     testSS = new SCIMServer(ssConfig);
     testSS.registerBackend("/", ldapBackend);
     testSS.registerBackend("/scim", ldapBackend);

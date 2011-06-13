@@ -7,12 +7,9 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.AbstractConnectionPool;
 import com.unboundid.ldap.sdk.BindRequest;
-import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SearchRequest;
-import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SimpleBindRequest;
 import com.unboundid.ldap.sdk.SingleServerSet;
 
@@ -93,60 +90,6 @@ public class LDAPExternalServer
 
 
   /**
-   * Processes a search operation with the provided information against the LDAP
-   * external server.  It is expected that at most one entry will be returned
-   * from the search, and that no additional content from the successful search
-   * result (e.g., diagnostic message or response controls) are needed.
-   *
-   * @param  searchRequest  The search request to be processed.  If it is
-   *                        configured with a search result listener or a size
-   *                        limit other than one, then the provided request will
-   *                        be duplicated with the appropriate settings.
-   *
-   * @return  The entry that was returned from the search, or {@code null} if no
-   *          entry was returned or the base entry does not exist.
-   *
-   * @throws  LDAPException        If the search does not complete successfully,
-   *                               if more than a single entry is returned, or
-   *                               if a problem is encountered while parsing the
-   *                               provided filter string, sending the request,
-   *                               or reading the response.
-   */
-  public SearchResultEntry searchForEntry(final SearchRequest searchRequest)
-      throws LDAPException
-  {
-    final AbstractConnectionPool pool = getLDAPConnectionPool();
-    final LDAPConnection conn = pool.getConnection();
-
-    boolean failed = true;
-    try
-    {
-      final SearchResultEntry searchResultEntry =
-          pool.searchForEntry(searchRequest);
-      failed = false;
-      return searchResultEntry;
-    }
-    catch (LDAPException le)
-    {
-      failed = defunctResultCodes.contains(le.getResultCode());
-      throw le;
-    }
-    finally
-    {
-      if (failed)
-      {
-        pool.releaseDefunctConnection(conn);
-      }
-      else
-      {
-        pool.releaseConnection(conn);
-      }
-    }
-  }
-
-
-
-  /**
    * Retrieves the connection pool that may be used for LDAP operations.
    *
    * @return  The connection pool that may be used for LDAP operations.
@@ -154,7 +97,7 @@ public class LDAPExternalServer
    * @throws LDAPException  If the pool is not already connected and a new pool
    *                        cannot be created.
    */
-  private AbstractConnectionPool getLDAPConnectionPool()
+  public AbstractConnectionPool getLDAPConnectionPool()
       throws LDAPException
   {
     AbstractConnectionPool p = connPool.get();
