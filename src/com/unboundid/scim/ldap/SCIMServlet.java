@@ -8,6 +8,7 @@ import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.xml.XMLContext;
+import org.eclipse.jetty.util.UrlEncoded;
 
 import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
@@ -190,20 +191,33 @@ public class SCIMServlet
     final String queryString = request.getQueryString();
     if (queryString != null && !queryString.isEmpty())
     {
-      final String[] querySplit = queryString.split("=", 2);
-      if (!querySplit[0].equalsIgnoreCase(ATTRIBUTES_QUERY_STRING))
+      final UrlEncoded queryMap = new UrlEncoded(queryString);
+      for (final Object k : queryMap.keySet())
       {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                           "The query string is not valid");
+        if (k instanceof String)
+        {
+          if (!k.equals(ATTRIBUTES_QUERY_STRING))
+          {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                               "The query string is not valid");
+          }
+        }
       }
-
-      if (querySplit.length < 2)
+      if (queryMap.containsKey(ATTRIBUTES_QUERY_STRING))
       {
-        attributes = new String[0];
+        final String commaList = queryMap.getString(ATTRIBUTES_QUERY_STRING);
+        if (commaList != null && !commaList.isEmpty())
+        {
+          attributes = commaList.split(",");
+        }
+        else
+        {
+          attributes = new String[0];
+        }
       }
       else
       {
-        attributes = querySplit[1].split(",");
+        attributes = new String[0];
       }
     }
     else

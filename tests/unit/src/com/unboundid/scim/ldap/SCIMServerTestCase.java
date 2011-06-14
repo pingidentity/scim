@@ -36,28 +36,27 @@ public class SCIMServerTestCase
     testDS.add(generateDomainEntry("example", "dc=com"));
 
     // A user ID that does not exist should not return anything.
-    assertNull(client.getUser("does-not-exist"));
+    assertNull(client.getUser("cn=does-not-exist"));
 
     // Create a user directly on the test DS and ensure it can be fetched
     // using the SCIM client.
-    testDS.add(generateUserEntry("bjensen", "dc=example,dc=com",
+    testDS.add(generateUserEntry("b jensen", "dc=example,dc=com",
                                  "Barbara", "Jensen", "password"));
-    final String entryUUID1 =
-        testDS.getEntry("uid=bjensen,dc=example,dc=com", "entryUUID").
-            getAttributeValue("entryUUID");
-    final User user1 = client.getUser(entryUUID1);
+    final User user1 = client.getUser("uid=b jensen,dc=example,dc=com");
     assertNotNull(user1);
-    assertEquals(user1.getId(), entryUUID1);
+    assertEquals(user1.getId(), "uid=b jensen,dc=example,dc=com");
     assertEquals(user1.getName().getFamilyName(), "Jensen");
     assertEquals(user1.getName().getGivenName(), "Barbara");
-    assertEquals(user1.getUserName(), "bjensen");
+    assertEquals(user1.getUserName(), "b jensen");
 
     // Fetch selected attributes only.
-    final User partialUser1 = client.getUser(entryUUID1, "username");
+    final User partialUser1 =
+        client.getUser("uid=b jensen,dc=example,dc=com", "username",
+                       "good night + good luck?");
     assertNotNull(partialUser1);
     assertNull(partialUser1.getId());
     assertNull(partialUser1.getName());
-    assertEquals(partialUser1.getUserName(), "bjensen");
+    assertEquals(partialUser1.getUserName(), "b jensen");
 
     // Tidy up.
     client.stopClient();

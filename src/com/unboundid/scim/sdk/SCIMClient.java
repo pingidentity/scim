@@ -12,6 +12,8 @@ import org.eclipse.jetty.client.Address;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.URIUtil;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
@@ -125,16 +127,14 @@ public class SCIMClient
   public User getUser(final String userID, final String ... attributes)
       throws IOException
   {
-    // For the moment assume that the user ID and attributes do not contain any
-    // characters that need to be escaped.
-    StringBuilder uriBuilder = new StringBuilder();
-    uriBuilder.append(baseURI);
+    final StringBuilder uriBuilder = new StringBuilder();
+    URIUtil.encodePath(uriBuilder, baseURI);
     if (!baseURI.endsWith("/"))
     {
       uriBuilder.append('/');
     }
     uriBuilder.append("User/");
-    uriBuilder.append(userID);
+    URIUtil.encodePath(uriBuilder, userID);
     if (attributes.length > 0)
     {
       uriBuilder.append('?');
@@ -152,7 +152,7 @@ public class SCIMClient
         {
           uriBuilder.append(',');
         }
-        uriBuilder.append(a);
+        uriBuilder.append(UrlEncoded.encodeString(a));
       }
     }
 
@@ -196,8 +196,15 @@ public class SCIMClient
           default:
             final String statusMessage =
                 HttpStatus.getMessage(exchange.getResponseStatus());
-            throw new IOException(statusMessage + ": " +
-                                  exchange.getResponseContent());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
         }
 
       case HttpExchange.STATUS_EXCEPTED:

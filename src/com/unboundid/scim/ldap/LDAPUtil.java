@@ -122,7 +122,7 @@ public final class LDAPUtil
 
     if (queryAttributes.isAttributeRequested("id"))
     {
-      user.setId(entry.getAttributeValue("entryUUID"));
+      user.setId(entry.getDN());
     }
 
     if (queryAttributes.isAttributeRequested("userName"))
@@ -146,7 +146,7 @@ public final class LDAPUtil
       if (entry.hasAttribute("postalAddress") || entry.hasAttribute("street"))
       {
         final String formattedValue =
-            entry.getAttributeValue("postalAddress").replaceAll("$", "\n");
+            entry.getAttributeValue("postalAddress").replaceAll("\\$", "\n");
         final Address address = new Address();
         address.setCountry(entry.getAttributeValue("c"));
         address.setFormatted(formattedValue);
@@ -163,7 +163,7 @@ public final class LDAPUtil
       {
         for (final String value : entry.getAttributeValues("homePostalAddress"))
         {
-          final String formattedValue = value.replaceAll("$", "\n");
+          final String formattedValue = value.replaceAll("\\$", "\n");
           final Address address = new Address();
           address.setType("home");
           address.setFormatted(formattedValue);

@@ -24,11 +24,6 @@ public abstract class LDAPBackend
   extends SCIMBackend
 {
   /**
-   * The name of the LDAP attribute that contains the SCIM User ID.
-   */
-  private static final String ATTR_ENTRYUUID = "entryUUID";
-
-  /**
    * The base DN of the LDAP server.
    */
   private String baseDN;
@@ -68,14 +63,10 @@ public abstract class LDAPBackend
   {
     try
     {
-      final Filter filter =
-          Filter.createANDFilter(
-              Filter.createEqualityFilter(ATTR_ENTRYUUID,
-                                          request.getResourceID()),
-              Filter.createEqualityFilter("objectclass", "inetorgperson"));
+      final Filter filter = Filter.createPresenceFilter("objectclass");
       final SearchRequest searchRequest =
-          new SearchRequest(baseDN, SearchScope.SUB,
-                            filter, "*", ATTR_ENTRYUUID);
+          new SearchRequest(request.getResourceID(), SearchScope.BASE,
+                            filter);
       final SearchResultEntry searchResultEntry =
           getLDAPInterface().searchForEntry(searchRequest);
       if (searchResultEntry == null)

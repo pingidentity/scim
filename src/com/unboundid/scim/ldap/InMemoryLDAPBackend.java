@@ -19,11 +19,6 @@ public class InMemoryLDAPBackend
   extends LDAPBackend
 {
   /**
-   * The name of the LDAP attribute that contains the SCIM User ID.
-   */
-  private static final String ATTR_ENTRYUUID = "entryUUID";
-
-  /**
    * An in-memory LDAP server providing the resource storage repository.
    */
   private InMemoryDirectoryServer ldapServer;
