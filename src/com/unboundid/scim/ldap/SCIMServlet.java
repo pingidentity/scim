@@ -6,7 +6,11 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
+import com.unboundid.scim.marshall.Context;
+import com.unboundid.scim.marshall.Marshaller;
+import com.unboundid.scim.marshall.Unmarshaller;
 import com.unboundid.scim.xml.XMLContext;
 import org.eclipse.jetty.util.UrlEncoded;
 
@@ -263,7 +267,19 @@ public class SCIMServlet
     }
   }
 
-
+  @Override
+  protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    try {
+      // pull in a resource and echo it back
+      Unmarshaller unmarshaller = Context.instance().unmarshaller();
+      SCIMObject scimObject = unmarshaller.unmarshall(request.getInputStream());
+      // dump it out
+      Marshaller marshaller = Context.instance().marshaller();
+      marshaller.marshall(scimObject, response.getWriter());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
   /**
    * An enumeration of possible content types.

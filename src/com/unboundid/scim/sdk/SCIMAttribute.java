@@ -6,6 +6,7 @@
 package com.unboundid.scim.sdk;
 
 
+import com.unboundid.scim.config.AttributeDescriptor;
 
 /**
  * This class represents a Simple Cloud Identity Management (SCIM) attribute.
@@ -33,11 +34,6 @@ package com.unboundid.scim.sdk;
 public final class SCIMAttribute
 {
   /**
-   * The type of the attribute.
-   */
-  private final SCIMAttributeType type;
-
-  /**
    * The single value of this attribute, or {@code null} if this attribute is
    * a plural attribute.
    */
@@ -49,26 +45,23 @@ public final class SCIMAttribute
    */
   private final SCIMAttributeValue[] pluralValues;
 
+  private final AttributeDescriptor attributeDescriptor;
 
 
   /**
    * Create a new instance of an attribute.
    *
-   * @param schema        The name of the schema to which this attribute
-   *                      belongs, or {@code null} if the attribute is in the
-   *                      core schema.
-   * @param name          The name of this attribute.
+   * @param descriptor  The mappibg descriptor of this value
    * @param singleValue   The single value of this attribute, or {@code null}
    *                      if this attribute is a plural attribute.
    * @param pluralValues  The plural values of this attribute, or empty if this
    *                      attribute is a singular attribute.
    */
-  private SCIMAttribute(final String schema,
-                        final String name,
+  private SCIMAttribute(final AttributeDescriptor descriptor,
                         final SCIMAttributeValue singleValue,
                         final SCIMAttributeValue ... pluralValues)
   {
-    this.type        = new SCIMAttributeType(schema, name);
+    this.attributeDescriptor = descriptor;
     this.singleValue = singleValue;
     if (singleValue == null)
     {
@@ -84,19 +77,15 @@ public final class SCIMAttribute
 
   /**
    * Create a singular attribute.
-   *
-   * @param schema    The name of the schema to which this attribute
-   *                  belongs, or {@code null} if the attribute is in the core
-   *                  schema.
-   * @param name      The name of this attribute.
+   * @param descriptor The mapping descriptorof this attribute.
    * @param value     The value of this attribute.
    *
    * @return  A new singular attribute.
    */
   public static SCIMAttribute createSingularAttribute(
-      final String schema, final String name, final SCIMAttributeValue value)
+     final AttributeDescriptor descriptor, final SCIMAttributeValue value)
   {
-    return new SCIMAttribute(schema, name, value);
+    return new SCIMAttribute(descriptor, value);
   }
 
 
@@ -104,19 +93,16 @@ public final class SCIMAttribute
   /**
    * Create a plural attribute.
    *
-   * @param schema    The name of the schema to which this attribute
-   *                  belongs, or {@code null} if the attribute is in the core
-   *                  schema.
-   * @param name      The name of this attribute.
+   * @param values    The mapping descriptor for this attribute.
    * @param values    The values of this attribute.
    *
    * @return  A new plural attribute.
    */
   public static SCIMAttribute createPluralAttribute(
-      final String schema, final String name,
+      final AttributeDescriptor descriptor,
       final SCIMAttributeValue ... values)
   {
-    return new SCIMAttribute(schema, name, null, values);
+    return new SCIMAttribute(descriptor, null, values);
   }
 
 
@@ -130,7 +116,7 @@ public final class SCIMAttribute
    */
   public String getSchema()
   {
-    return type.getSchema();
+    return this.attributeDescriptor.getSchema();
   }
 
 
@@ -143,7 +129,7 @@ public final class SCIMAttribute
    */
   public String getName()
   {
-    return type.getName();
+    return this.attributeDescriptor.getExternalAttributeName();
   }
 
 
@@ -187,5 +173,14 @@ public final class SCIMAttribute
   public SCIMAttributeValue[] getPluralValues()
   {
     return pluralValues;
+  }
+
+  /**
+   * Retrieves the SCIM attribute mapping of this this attribute.
+   *
+   * @return The attribute descriptor
+   */
+  public AttributeDescriptor getAttributeDescriptor() {
+    return attributeDescriptor;
   }
 }

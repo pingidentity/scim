@@ -346,4 +346,12 @@ public class SCIMObject
       return removed;
     }
   }
+
+  @Override
+  public String toString() {
+    return "SCIMObject{" +
+      "coreAttributes=" + coreAttributes +
+      ", attributes=" + attributes +
+      '}';
+  }
 }

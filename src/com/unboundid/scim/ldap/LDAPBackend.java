@@ -12,8 +12,7 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.schema.User;
-
-
+import com.unboundid.scim.sdk.SCIMObject;
 
 
 /**
@@ -54,6 +53,33 @@ public abstract class LDAPBackend
       throws LDAPException;
 
 
+
+  @Override
+  public SCIMObject getObject(GetResourceRequest request) {
+  try
+    {
+      final Filter filter = Filter.createPresenceFilter("objectclass");
+      final SearchRequest searchRequest =
+          new SearchRequest(request.getResourceID(), SearchScope.BASE,
+                            filter);
+      final SearchResultEntry searchResultEntry =
+          getLDAPInterface().searchForEntry(searchRequest);
+      if (searchResultEntry == null)
+      {
+        return null;
+      }
+      else
+      {
+        return null;
+//        return LDAPUtil.userFromInetOrgPersonEntry(searchResultEntry,
+//                                                   request.getAttributes());
+      }
+    }
+    catch (LDAPException e)
+    {
+      throw new RuntimeException(e); // TODO
+    }
+  }
 
   /**
    * {@inheritDoc}

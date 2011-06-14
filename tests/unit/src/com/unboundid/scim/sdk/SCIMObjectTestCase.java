@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.config.AttributeDescriptor;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
@@ -39,78 +40,43 @@ public class SCIMObjectTestCase
 
     final SCIMAttribute userID =
         SCIMAttribute.createSingularAttribute(
-            null, "id", SCIMAttributeValue.createStringValue(uuid.toString()));
+          new AttributeDescriptor(new AttributeDescriptor.Builder(null,"dn",
+            "id")),SCIMAttributeValue.createStringValue(uuid.toString()));
 
     final SCIMAttribute name =
-        SCIMAttribute.createSingularAttribute(
-            userSchema,
-            "name",
+        SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"name")),
             SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
-                    userSchema,
-                    "formatted",
+                SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"displayName","formatted")),
                     SCIMAttributeValue.createStringValue(
                         "Ms. Barbara J Jensen III")),
                 SCIMAttribute.createSingularAttribute(
-                    userSchema,
-                    "familyName",
+                  new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"sn","familyName")),
                     SCIMAttributeValue.createStringValue("Jensen")),
                 SCIMAttribute.createSingularAttribute(
-                    userSchema,
-                    "givenName",
-                    SCIMAttributeValue.createStringValue("Barbara")),
-                SCIMAttribute.createSingularAttribute(
-                    userSchema,
-                    "middleName",
-                    SCIMAttributeValue.createStringValue("Jane")),
-                SCIMAttribute.createSingularAttribute(
-                    userSchema,
-                    "honorificPrefix",
-                    SCIMAttributeValue.createStringValue("Ms.")),
-                SCIMAttribute.createSingularAttribute(
-                    userSchema,
-                    "honorificSuffix",
-                    SCIMAttributeValue.createStringValue("III"))));
+                  new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"givenName","givenName")),
+                  SCIMAttributeValue.createStringValue("Barbara"))));
 
     final List<SCIMAttribute> emailAttrs = new ArrayList<SCIMAttribute>();
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        coreSchema,
-        "value",
-        SCIMAttributeValue.createStringValue(
+    emailAttrs.add(SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"mail","email")),
+      SCIMAttributeValue.createStringValue(
             "bjensen@example.com")));
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        coreSchema,
-        "type",
-        SCIMAttributeValue.createStringValue("work")));
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        coreSchema,
-        "primary",
-        SCIMAttributeValue.createBooleanValue(true)));
     final SCIMAttribute emails =
-        SCIMAttribute.createPluralAttribute(
-            userSchema,
-            "emails",
+        SCIMAttribute.createPluralAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"emails").plural(true)),
             SCIMAttributeValue.createComplexValue(emailAttrs));
 
     final Date date = new Date(System.currentTimeMillis());
     final SCIMAttribute meta =
         SCIMAttribute.createSingularAttribute(
-            coreSchema,
-            "meta",
-            SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
-                    coreSchema,
-                    "created",
+          new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"meta").complex(true)),
+          SCIMAttributeValue.createComplexValue(
+                SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"created").complex(true)),
                     SCIMAttributeValue.createDateValue(date)),
-                SCIMAttribute.createSingularAttribute(
-                    coreSchema,
-                    "lastModified",
+                SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"lastModified")),
                     SCIMAttributeValue.createDateValue(date))));
 
     final SCIMAttribute employeeNumber =
         SCIMAttribute.createSingularAttribute(
-            enterpriseUserSchema,
-            "employeeNumber",
+          new AttributeDescriptor(new AttributeDescriptor.Builder(enterpriseUserSchema,"employeeNumber","employeeNumber")),
             SCIMAttributeValue.createStringValue("1000001"));
 
     final SCIMObject user = new SCIMObject();

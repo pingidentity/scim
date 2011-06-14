@@ -107,6 +107,13 @@ public final class SCIMAttributeValue
   }
 
 
+  @Override
+  public String toString() {
+    return "SCIMAttributeValue{" +
+      "value=" + value +
+      ", attributes=" + attributes +
+      '}';
+  }
 
   /**
    * Create a new complex attribute value from the provided attributes.
