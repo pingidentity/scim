@@ -54,20 +54,24 @@ public class XmlUnmarshaller implements Unmarshaller {
       .getAttributeDescriptors()) {
       String externalAttributeName =
         attributeDescriptor.getExternalAttributeName();
-      SCIMAttribute attr;
 
       NodeList elem = doc.getElementsByTagName(externalAttributeName);
       Node element = elem.item(0);
-      if (attributeDescriptor.isPlural()) {
-        attr = createPluralAttribute(element, attributeDescriptor);
-      } else if (attributeDescriptor.isComplex()) {
-        attr = createComplexAttribute(element, attributeDescriptor);
-      } else {
-        attr = this.createSimpleAttribute(element, attributeDescriptor);
-      }
-      if (attr != null) {
+      if (element != null)
+      {
+        SCIMAttribute attr;
+
+        if (attributeDescriptor.isPlural()) {
+          attr = createPluralAttribute(element, attributeDescriptor);
+        } else if (attributeDescriptor.isComplex()) {
+          attr = createComplexAttribute(element, attributeDescriptor);
+        } else {
+          attr = this.createSimpleAttribute(element, attributeDescriptor);
+        }
+
         scimObject.addAttribute(attr);
       }
+
     }
     return scimObject;
   }

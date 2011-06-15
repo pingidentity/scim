@@ -3599,4 +3599,18 @@ public abstract class SCIMRITestCase
     return serverSocket;
   }
 
+
+
+  /**
+   * Obtain a reference to a file under the test resource directory.
+   *
+   * @param fileName  The name of the desired file.
+   *
+   * @return  A reference to the desired test resource file.
+   */
+  protected static File getTestResource(final String fileName)
+  {
+    final File resourceDir = new File(System.getProperty("unit.resource.dir"));
+    return new File(resourceDir, fileName);
+  }
 }

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+<scim:user xmlns:scim="urn:scim:schemas:core:1.0">
+  <id>uid=user.0,ou=People,dc=example,dc=com</id>
+  <addresses>
+    <address>
+      <type>work</type>
+      <postalCode>24769</postalCode>
+      <region>IL</region>
+      <locality>Sioux City</locality>
+      <streetAddress>46045 Locust Street</streetAddress>
+      <formatted>
+        Aaren Atp
+        46045 Locust Street
+        Sioux City, IL  24769
+      </formatted>
+    </address>
+  </addresses>
+  <phoneNumbers>
+    <phoneNumber>
+      <primary>false</primary>
+      <type>work</type>
+      <value>+1 319 805 3070</value>
+    </phoneNumber>
+    <phoneNumber>
+      <primary>false</primary>
+      <type>home</type>
+      <value>+1 003 490 8631</value>
+    </phoneNumber>
+  </phoneNumbers>
+  <emails>
+    <email>
+      <primary>false</primary>
+      <type>work</type>
+      <value>user.0@example.com</value>
+    </email>
+  </emails>
+  <employeeNumber>0</employeeNumber>
+  <name>
+    <givenName>Aaren</givenName>
+    <familyName>Atp</familyName>
+    <formatted>Aaren Atp</formatted>
+  </name>
+  <userName>user.0</userName>
+</scim:user>
