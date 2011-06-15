@@ -21,23 +21,54 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+
+
+/**
+ * This class provides a SCIM object marshaller implementation to write SCIM
+ * objects to their XML representation.
+ */
 public class XmlMarshaller implements Marshaller {
-  public void marshall(SCIMObject o, OutputStream outputStream) throws Exception {
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final SCIMObject o, final OutputStream outputStream)
+      throws Exception {
     XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-    XMLStreamWriter xmlStreamWriter = outputFactory.createXMLStreamWriter(System.out, "UTF-8");
-    this.marshall(o, xmlStreamWriter);
+    XMLStreamWriter xmlStreamWriter =
+        outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
+    this.marshal(o, xmlStreamWriter);
   }
 
-  public void marshall(SCIMObject o, File file) throws Exception {
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final SCIMObject o, final File file)
+      throws Exception {
   }
 
-  public void marshall(SCIMObject o, Writer writer) throws Exception {
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final SCIMObject o, final Writer writer)
+      throws Exception {
     XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-    XMLStreamWriter xmlStreamWriter = outputFactory.createXMLStreamWriter(writer);
-    this.marshall(o, xmlStreamWriter);
+    XMLStreamWriter xmlStreamWriter =
+        outputFactory.createXMLStreamWriter(writer);
+    this.marshal(o, xmlStreamWriter);
   }
 
-  private void marshall(SCIMObject o, XMLStreamWriter xmlStreamWriter) throws XMLStreamException {
+  /**
+   * Write a SCIM object to an XML stream.
+   *
+   * @param o                The SCIM object to be written.
+   * @param xmlStreamWriter  The stream to which the SCIM object should be
+   *                         written.
+   *
+   * @throws XMLStreamException  If the object could not be written.
+   */
+  private void marshal(final SCIMObject o,
+                       final XMLStreamWriter xmlStreamWriter)
+      throws XMLStreamException {
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
     int i = 0;
     String nsPrefix;
@@ -45,9 +76,11 @@ public class XmlMarshaller implements Marshaller {
     xmlStreamWriter.writeStartElement("user");
     for (String schema : o.getSchemas()) {
       if (schema.equals(Context.DEFAULT_SCHEMA_URN)) {
-        xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX, Context.DEFAULT_SCHEMA_URN);
+        xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
+                                  Context.DEFAULT_SCHEMA_URN);
 
-        xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX, Context.DEFAULT_SCHEMA_URN);
+        xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
+                                       Context.DEFAULT_SCHEMA_URN);
         nsPrefix = Context.DEFAULT_SCHEMA_PREFIX;
       } else {
         nsPrefix = "n" + i++;
@@ -67,21 +100,49 @@ public class XmlMarshaller implements Marshaller {
     xmlStreamWriter.flush();
   }
 
-  private void writePluralAttribute(SCIMAttribute scimAttribute, XMLStreamWriter xmlStreamWriter) throws XMLStreamException {
+  /**
+   * Write a plural attribute to an XML stream.
+   *
+   * @param scimAttribute    The attribute to be written.
+   * @param xmlStreamWriter  The stream to which the attribute should be
+   *                         written.
+   *
+   * @throws XMLStreamException  If the attribute could not be written.
+   */
+  private void writePluralAttribute(final SCIMAttribute scimAttribute,
+                                    final XMLStreamWriter xmlStreamWriter)
+      throws XMLStreamException {
     SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
     xmlStreamWriter.writeStartElement(scimAttribute.getName());
-    Set<AttributeDescriptor> mappedAttributeDescriptors = scimAttribute.getAttributeDescriptor().getComplexAttributeDescriptors();
+    Set<AttributeDescriptor> mappedAttributeDescriptors =
+        scimAttribute.getAttributeDescriptor().getComplexAttributeDescriptors();
     for (SCIMAttributeValue pluralValue : pluralValues) {
-      for (AttributeDescriptor attributeDescriptor : mappedAttributeDescriptors) {
-        SCIMAttribute attribute = pluralValue.getAttribute(attributeDescriptor.getExternalAttributeName());
+      for (AttributeDescriptor attributeDescriptor :
+          mappedAttributeDescriptors) {
+        SCIMAttribute attribute =
+            pluralValue.getAttribute(
+                attributeDescriptor.getExternalAttributeName());
         this.writeComplexAttribute(attribute, xmlStreamWriter);
       }
     }
     xmlStreamWriter.writeEndElement();
   }
 
-  private void writeSingularAttribute(SCIMAttribute scimAttribute, XMLStreamWriter xmlStreamWriter) throws XMLStreamException {
-    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX, scimAttribute.getName(), Context.DEFAULT_SCHEMA_URN);
+  /**
+   * Write a singular attribute to an XML stream.
+   *
+   * @param scimAttribute    The attribute to be written.
+   * @param xmlStreamWriter  The stream to which the attribute should be
+   *                         written.
+   *
+   * @throws XMLStreamException  If the attribute could not be written.
+   */
+  private void writeSingularAttribute(final SCIMAttribute scimAttribute,
+                                      final XMLStreamWriter xmlStreamWriter)
+      throws XMLStreamException {
+    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
+                                      scimAttribute.getName(),
+                                      Context.DEFAULT_SCHEMA_URN);
     SCIMAttributeValue val = scimAttribute.getSingularValue();
     if(val.isComplex()) {
       for(SCIMAttribute a:val.getAttributes().values()) {
@@ -94,9 +155,20 @@ public class XmlMarshaller implements Marshaller {
     xmlStreamWriter.writeEndElement();
   }
 
-  private void writeComplexAttribute(SCIMAttribute scimAttribute, XMLStreamWriter xmlStreamWriter) throws XMLStreamException {
-    SCIMAttributeValue pluralValues = scimAttribute.getSingularValue();
-    Map<String, SCIMAttribute> attributes = pluralValues.getAttributes();
+  /**
+   * Write a complex attribute to an XML stream.
+   *
+   * @param scimAttribute    The attribute to be written.
+   * @param xmlStreamWriter  The stream to which the attribute should be
+   *                         written.
+   *
+   * @throws XMLStreamException  If the attribute could not be written.
+   */
+  private void writeComplexAttribute(final SCIMAttribute scimAttribute,
+                                     final XMLStreamWriter xmlStreamWriter)
+      throws XMLStreamException {
+    SCIMAttributeValue value = scimAttribute.getSingularValue();
+    Map<String, SCIMAttribute> attributes = value.getAttributes();
     xmlStreamWriter.writeStartElement(scimAttribute.getName());
     for (SCIMAttribute attribute : attributes.values()) {
       writeSingularAttribute(attribute, xmlStreamWriter);

@@ -55,7 +55,7 @@ public abstract class LDAPBackend
 
 
   @Override
-  public SCIMObject getObject(GetResourceRequest request) {
+  public SCIMObject getObject(final GetResourceRequest request) {
   try
     {
       final Filter filter = Filter.createPresenceFilter("objectclass");

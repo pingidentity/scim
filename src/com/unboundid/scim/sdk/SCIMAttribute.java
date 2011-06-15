@@ -34,6 +34,11 @@ import com.unboundid.scim.config.AttributeDescriptor;
 public final class SCIMAttribute
 {
   /**
+   * The mapping descriptor of this attribute.
+   */
+  private final AttributeDescriptor attributeDescriptor;
+
+  /**
    * The single value of this attribute, or {@code null} if this attribute is
    * a plural attribute.
    */
@@ -45,13 +50,11 @@ public final class SCIMAttribute
    */
   private final SCIMAttributeValue[] pluralValues;
 
-  private final AttributeDescriptor attributeDescriptor;
-
 
   /**
    * Create a new instance of an attribute.
    *
-   * @param descriptor  The mappibg descriptor of this value
+   * @param descriptor    The mapping descriptor of this value.
    * @param singleValue   The single value of this attribute, or {@code null}
    *                      if this attribute is a plural attribute.
    * @param pluralValues  The plural values of this attribute, or empty if this
@@ -93,8 +96,8 @@ public final class SCIMAttribute
   /**
    * Create a plural attribute.
    *
-   * @param values    The mapping descriptor for this attribute.
-   * @param values    The values of this attribute.
+   * @param descriptor   The mapping descriptor for this attribute.
+   * @param values       The values of this attribute.
    *
    * @return  A new plural attribute.
    */

@@ -8,6 +8,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.LinkedList;
 import java.util.List;
 
+
+
+/**
+ * This class provides methods that describe the schema for a SCIM resource.
+ * It may be used to help read and write SCIM objects in their external XML
+ * and JSON representation, and to convert SCIM objects to and from LDAP
+ * entries.
+ */
 @XmlRootElement
 public class ResourceDescriptor {
   private String objectClass;
@@ -15,7 +23,16 @@ public class ResourceDescriptor {
   private List<AttributeDescriptor> attributeDescriptors =
     new LinkedList<AttributeDescriptor>();
 
-  public AttributeDescriptor getAttribute(String name) {
+
+
+  /**
+   * Retrieve the attribute descriptor for a specified attribute.
+   *
+   * @param name  The name of the attribute whose descriptor is to be retrieved.
+   * @return  The attribute descriptor for the specified attribute, or {@code
+   *          null} if there is no such attribute.
+   */
+  public AttributeDescriptor getAttribute(final String name) {
     for (AttributeDescriptor attributeDescriptor : attributeDescriptors) {
       if (attributeDescriptor.getExternalAttributeName().equals(name)) {
         return attributeDescriptor;
@@ -24,33 +41,91 @@ public class ResourceDescriptor {
     return null;
   }
 
+
+
+  /**
+   * Retrieve the name of the LDAP structural object class that may be used
+   * for LDAP entries representing the SCIM resource.
+   *
+   * @return  The name of the LDAP structural object class that may be used
+   *          for LDAP entries representing the SCIM resource, or {@code null}
+   *          if there is none.
+   */
   public String getObjectClass() {
     return objectClass;
   }
 
-  public void setObjectClass(String objectClass) {
+  /**
+   * Specifies the name of the LDAP structural object class that may be used
+   * for LDAP entries representing the SCIM resource.
+   *
+   * @param objectClass  The name of the LDAP structural object class that may
+   *                     be used for LDAP entries representing the SCIM
+   *                     resource, or {@code null} if there is none.
+   */
+  public void setObjectClass(final String objectClass) {
     this.objectClass = objectClass;
   }
 
+  /**
+   * Retrieve the name of the resource to be used in any external
+   * representation of the resource.
+   *
+   * @return  Retrieve the name of the resource to be used in any external
+   *          representation of the resource. It is never {@code null}.
+   */
   public String getExternalName() {
     return externalName;
   }
 
-  public void setExternalName(String externalName) {
+  /**
+   * Specifies the name of the resource to be used in any external
+   * representation of the resource.
+   *
+   * @param externalName  Specifies the name of the resource to be used in any
+   *                      external representation of the resource. It must not
+   *                      be {@code null}.
+   */
+  public void setExternalName(final String externalName) {
     this.externalName = externalName;
   }
 
+
+
+  /**
+   * Retrieves the list of attribute descriptors for the resource.
+   *
+   * @return  The list of attribute descriptors for the resource.
+   *          It is never {@code null}.
+   */
   public List<AttributeDescriptor> getAttributeDescriptors() {
     return attributeDescriptors;
   }
 
+  /**
+   * Specifies the list of attribute descriptors for the resource.
+   *
+   * @param attributeDescriptors  The list of attribute descriptors for the
+   *                              resource. It must not be {@code null}.
+   */
   public void setAttributeDescriptors(
-    List<AttributeDescriptor> attributeDescriptors) {
+    final List<AttributeDescriptor> attributeDescriptors) {
     this.attributeDescriptors = attributeDescriptors;
   }
 
-  public static ResourceDescriptor create(String externalName) {
-    // read config file/ldap to determine what objectclass the external resource is associated to
+
+
+  /**
+   * Retrieve a resource descriptor for a specified resource type.
+   *
+   * @param externalName  The external name of the resource for which a
+   *                      descriptor is required.
+   *
+   * @return  A resource descriptor for the specified resource type.
+   */
+  public static ResourceDescriptor create(final String externalName) {
+    // read config file/ldap to determine what objectclass the external
+    // resource is associated to.
     // presumably this stuff is relatively static (cacheable)
 
     ResourceDescriptor resourceDescriptor = new ResourceDescriptor();
@@ -138,6 +213,11 @@ public class ResourceDescriptor {
     return resourceDescriptor;
   }
 
+
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "ResourceDescriptor{" +

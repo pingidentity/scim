@@ -268,14 +268,16 @@ public class SCIMServlet
   }
 
   @Override
-  protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+  protected void doPost(final HttpServletRequest request,
+                        final HttpServletResponse response)
+      throws ServletException, IOException {
     try {
       // pull in a resource and echo it back
       Unmarshaller unmarshaller = Context.instance().unmarshaller();
-      SCIMObject scimObject = unmarshaller.unmarshall(request.getInputStream());
+      SCIMObject scimObject = unmarshaller.unmarshal(request.getInputStream());
       // dump it out
       Marshaller marshaller = Context.instance().marshaller();
-      marshaller.marshall(scimObject, response.getWriter());
+      marshaller.marshal(scimObject, response.getWriter());
     } catch (Exception e) {
       e.printStackTrace();
     }

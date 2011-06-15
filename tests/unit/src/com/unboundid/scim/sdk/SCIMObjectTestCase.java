@@ -30,8 +30,7 @@ public class SCIMObjectTestCase
   {
     final UUID uuid = UUID.randomUUID();
 
-    final String coreSchema = null;
-    final String userSchema =
+    final String coreSchema =
         SCIMConstants.SCHEMA_URI_CORE_USER;
     final String enterpriseUserSchema =
         SCIMConstants.SCHEMA_URI_ENTERPRISE_USER;
@@ -40,43 +39,68 @@ public class SCIMObjectTestCase
 
     final SCIMAttribute userID =
         SCIMAttribute.createSingularAttribute(
-          new AttributeDescriptor(new AttributeDescriptor.Builder(null,"dn",
-            "id")),SCIMAttributeValue.createStringValue(uuid.toString()));
+            new AttributeDescriptor(
+                new AttributeDescriptor.Builder(coreSchema, "dn", "id")),
+            SCIMAttributeValue.createStringValue(uuid.toString()));
 
     final SCIMAttribute name =
-        SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"name")),
+        SCIMAttribute.createSingularAttribute(
+            new AttributeDescriptor(
+                new AttributeDescriptor.Builder(coreSchema,null,"name")),
             SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"displayName","formatted")),
+                SCIMAttribute.createSingularAttribute(
+                    new AttributeDescriptor(
+                        new AttributeDescriptor.Builder(
+                            coreSchema,"displayName","formatted")),
                     SCIMAttributeValue.createStringValue(
                         "Ms. Barbara J Jensen III")),
                 SCIMAttribute.createSingularAttribute(
-                  new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"sn","familyName")),
+                  new AttributeDescriptor(
+                      new AttributeDescriptor.Builder(
+                          coreSchema,"sn","familyName")),
                     SCIMAttributeValue.createStringValue("Jensen")),
                 SCIMAttribute.createSingularAttribute(
-                  new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"givenName","givenName")),
+                  new AttributeDescriptor(
+                      new AttributeDescriptor.Builder(
+                          coreSchema,"givenName","givenName")),
                   SCIMAttributeValue.createStringValue("Barbara"))));
 
     final List<SCIMAttribute> emailAttrs = new ArrayList<SCIMAttribute>();
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,"mail","email")),
+    emailAttrs.add(SCIMAttribute.createSingularAttribute(
+        new AttributeDescriptor(new AttributeDescriptor.Builder(
+            coreSchema,"mail","email")),
       SCIMAttributeValue.createStringValue(
-            "bjensen@example.com")));
+          "bjensen@example.com")));
     final SCIMAttribute emails =
-        SCIMAttribute.createPluralAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"emails").plural(true)),
+        SCIMAttribute.createPluralAttribute(
+            new AttributeDescriptor(
+                new AttributeDescriptor.Builder(
+                    coreSchema,null,"emails").plural(true)),
             SCIMAttributeValue.createComplexValue(emailAttrs));
 
     final Date date = new Date(System.currentTimeMillis());
     final SCIMAttribute meta =
         SCIMAttribute.createSingularAttribute(
-          new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"meta").complex(true)),
+          new AttributeDescriptor(
+              new AttributeDescriptor.Builder(
+                  coreSchema,null,"meta").complex(true)),
           SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"created").complex(true)),
+                SCIMAttribute.createSingularAttribute(
+                    new AttributeDescriptor(
+                        new AttributeDescriptor.Builder(
+                            coreSchema,null,"created")),
                     SCIMAttributeValue.createDateValue(date)),
-                SCIMAttribute.createSingularAttribute(new AttributeDescriptor(new AttributeDescriptor.Builder(userSchema,null,"lastModified")),
+                SCIMAttribute.createSingularAttribute(
+                    new AttributeDescriptor(
+                        new AttributeDescriptor.Builder(
+                            coreSchema,null,"lastModified")),
                     SCIMAttributeValue.createDateValue(date))));
 
     final SCIMAttribute employeeNumber =
         SCIMAttribute.createSingularAttribute(
-          new AttributeDescriptor(new AttributeDescriptor.Builder(enterpriseUserSchema,"employeeNumber","employeeNumber")),
+          new AttributeDescriptor(
+              new AttributeDescriptor.Builder(
+                  enterpriseUserSchema,"employeeNumber","employeeNumber")),
             SCIMAttributeValue.createStringValue("1000001"));
 
     final SCIMObject user = new SCIMObject();
@@ -91,20 +115,20 @@ public class SCIMObjectTestCase
     final Collection<String> schemas = user.getSchemas();
     assertNotNull(schemas);
     assertEquals(schemas.size(), 2);
-    assertTrue(schemas.contains(userSchema));
+    assertTrue(schemas.contains(coreSchema));
     assertTrue(schemas.contains(enterpriseUserSchema));
 
-    assertTrue(user.hasSchema(userSchema));
+    assertTrue(user.hasSchema(coreSchema));
     assertTrue(user.hasSchema(enterpriseUserSchema));
 
     assertEquals(user.getAttribute(coreSchema, "id"), userID);
     assertEquals(user.getAttribute(coreSchema, "meta"), meta);
 
-    assertEquals(user.getAttribute(userSchema, "name"), name);
-    assertEquals(user.getAttribute(userSchema, "emails"), emails);
+    assertEquals(user.getAttribute(coreSchema, "name"), name);
+    assertEquals(user.getAttribute(coreSchema, "emails"), emails);
     assertEquals(user.getAttribute(enterpriseUserSchema, "employeeNumber"),
                  employeeNumber);
-    assertNull(user.getAttribute(userSchema, "employeeNumber"));
+    assertNull(user.getAttribute(coreSchema, "employeeNumber"));
     assertNull(user.getAttribute(enterpriseUserSchema, "name"));
     assertNull(user.getAttribute(customSchema, "name"));
 
@@ -114,7 +138,7 @@ public class SCIMObjectTestCase
     assertTrue(coreAttrs.contains(userID));
     assertTrue(coreAttrs.contains(meta));
 
-    final Collection<SCIMAttribute> userAttrs = user.getAttributes(userSchema);
+    final Collection<SCIMAttribute> userAttrs = user.getAttributes(coreSchema);
     assertNotNull(userAttrs);
     assertEquals(userAttrs.size(), 2);
     assertTrue(userAttrs.contains(name));
@@ -130,10 +154,10 @@ public class SCIMObjectTestCase
 
     assertTrue(user.hasAttribute(coreSchema, "id"));
     assertTrue(user.hasAttribute(coreSchema, "meta"));
-    assertTrue(user.hasAttribute(userSchema, "name"));
-    assertTrue(user.hasAttribute(userSchema, "emails"));
+    assertTrue(user.hasAttribute(coreSchema, "name"));
+    assertTrue(user.hasAttribute(coreSchema, "emails"));
     assertTrue(user.hasAttribute(enterpriseUserSchema, "employeeNumber"));
-    assertFalse(user.hasAttribute(userSchema, "employeeNumber"));
+    assertFalse(user.hasAttribute(coreSchema, "employeeNumber"));
     assertFalse(user.hasAttribute(enterpriseUserSchema, "name"));
     assertFalse(user.hasAttribute(customSchema, "name"));
 
@@ -146,11 +170,11 @@ public class SCIMObjectTestCase
     assertFalse(user.removeAttribute(coreSchema, "id"));
     assertTrue(user.removeAttribute(coreSchema, "meta"));
     assertFalse(user.removeAttribute(coreSchema, "meta"));
-    assertTrue(user.removeAttribute(userSchema, "name"));
-    assertFalse(user.removeAttribute(userSchema, "name"));
-    assertTrue(user.removeAttribute(userSchema, "emails"));
-    assertFalse(user.removeAttribute(userSchema, "emails"));
-    assertFalse(user.hasSchema(userSchema));
+    assertTrue(user.removeAttribute(coreSchema, "name"));
+    assertFalse(user.removeAttribute(coreSchema, "name"));
+    assertTrue(user.removeAttribute(coreSchema, "emails"));
+    assertFalse(user.removeAttribute(coreSchema, "emails"));
+    assertFalse(user.hasSchema(coreSchema));
 
     assertTrue(user.removeAttribute(enterpriseUserSchema, "employeeNumber"));
     assertFalse(user.hasSchema(enterpriseUserSchema));

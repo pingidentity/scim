@@ -23,13 +23,23 @@ import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * This class provides a SCIM object un-marshaller implementation to read SCIM
+ * objects from their XML representation.
+ */
 public class XmlUnmarshaller implements Unmarshaller {
 
-  public SCIMObject unmarshall(final File file) throws Exception {
-    return this.unmarshall(new FileInputStream(file));
+  /**
+   * {@inheritDoc}
+   */
+  public SCIMObject unmarshal(final File file) throws Exception {
+    return this.unmarshal(new FileInputStream(file));
   }
 
-  public SCIMObject unmarshall(final InputStream inputStream) throws Exception {
+  /**
+   * {@inheritDoc}
+   */
+  public SCIMObject unmarshal(final InputStream inputStream) throws Exception {
     SCIMObject scimObject = new SCIMObject();
     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
     dbFactory.setNamespaceAware(true);
@@ -62,12 +72,30 @@ public class XmlUnmarshaller implements Unmarshaller {
     return scimObject;
   }
 
+
+
+  /**
+   * Parse a simple attribute from its representation as a DOM node.
+   *
+   * @param node                 The DOM node representing the attribute.
+   * @param attributeDescriptor  The attribute descriptor.
+   *
+   * @return  The parsed attribute.
+   */
   private SCIMAttribute createSimpleAttribute(final Node node,
     final AttributeDescriptor attributeDescriptor) {
     return SCIMAttribute.createSingularAttribute(attributeDescriptor,
       SCIMAttributeValue.createStringValue(node.getTextContent()));
   }
 
+  /**
+   * Parse a plural attribute from its representation as a DOM node.
+   *
+   * @param node                 The DOM node representing the attribute.
+   * @param attributeDescriptor  The attribute descriptor.
+   *
+   * @return  The parsed attribute.
+   */
   private SCIMAttribute createPluralAttribute(final Node node,
     final AttributeDescriptor attributeDescriptor) {
     NodeList pluralAttributes = node.getChildNodes();
@@ -87,6 +115,14 @@ public class XmlUnmarshaller implements Unmarshaller {
     return SCIMAttribute.createPluralAttribute(attributeDescriptor, vals);
   }
 
+  /**
+   * Parse a complex attribute from its representation as a DOM node.
+   *
+   * @param node                 The DOM node representing the attribute.
+   * @param attributeDescriptor  The attribute descriptor.
+   *
+   * @return  The parsed attribute.
+   */
   private SCIMAttribute createComplexAttribute(final Node node,
     final AttributeDescriptor attributeDescriptor) {
     SCIMAttribute complexScimAttr;
