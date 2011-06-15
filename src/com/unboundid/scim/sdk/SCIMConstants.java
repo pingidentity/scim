@@ -24,13 +24,13 @@ public final class SCIMConstants
 
 
   /**
-   * The URI of the SCIM Core User schema.
+   * The URI of the SCIM Core schema.
    */
-  public static final String SCHEMA_URI_CORE_USER =
-      "urn:scim:schemas:core:user:1.0";
+  public static final String SCHEMA_URI_CORE =
+      "urn:scim:schemas:core:1.0";
 
   /**
-   * The URI of the SCIM Enterprise User schema.
+   * The URI of the SCIM Enterprise User schema extension.
    */
   public static final String SCHEMA_URI_ENTERPRISE_USER =
       "urn:scim:schemas:extension:user:enterprise:1.0";

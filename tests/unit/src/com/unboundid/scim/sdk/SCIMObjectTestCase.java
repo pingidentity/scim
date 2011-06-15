@@ -31,7 +31,7 @@ public class SCIMObjectTestCase
     final UUID uuid = UUID.randomUUID();
 
     final String coreSchema =
-        SCIMConstants.SCHEMA_URI_CORE_USER;
+        SCIMConstants.SCHEMA_URI_CORE;
     final String enterpriseUserSchema =
         SCIMConstants.SCHEMA_URI_ENTERPRISE_USER;
     final String customSchema =
@@ -134,15 +134,11 @@ public class SCIMObjectTestCase
 
     final Collection<SCIMAttribute> coreAttrs = user.getAttributes(coreSchema);
     assertNotNull(coreAttrs);
-    assertEquals(coreAttrs.size(), 2);
+    assertEquals(coreAttrs.size(), 4);
     assertTrue(coreAttrs.contains(userID));
     assertTrue(coreAttrs.contains(meta));
-
-    final Collection<SCIMAttribute> userAttrs = user.getAttributes(coreSchema);
-    assertNotNull(userAttrs);
-    assertEquals(userAttrs.size(), 2);
-    assertTrue(userAttrs.contains(name));
-    assertTrue(userAttrs.contains(emails));
+    assertTrue(coreAttrs.contains(name));
+    assertTrue(coreAttrs.contains(emails));
 
     final Collection<SCIMAttribute> enterpriseUserAttrs =
         user.getAttributes(enterpriseUserSchema);

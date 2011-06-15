@@ -28,7 +28,7 @@ public class SCIMAttributeTestCase
   public void testExampleAttributes()
   {
     final String coreSchema =
-        SCIMConstants.SCHEMA_URI_CORE_USER;
+        SCIMConstants.SCHEMA_URI_CORE;
     final String customSchema =
         "http://myextension";
 
@@ -39,7 +39,7 @@ public class SCIMAttributeTestCase
             new AttributeDescriptor(
                 new AttributeDescriptor.Builder(coreSchema,"dn", "id")),
             SCIMAttributeValue.createStringValue(uuid.toString()));
-    assertNull(userID.getSchema());
+    assertEquals(userID.getSchema(), coreSchema);
     assertEquals(userID.getName(), "id");
     assertFalse(userID.isPlural());
     assertNull(userID.getPluralValues());
@@ -52,7 +52,7 @@ public class SCIMAttributeTestCase
         SCIMAttribute.createPluralAttribute(
             new AttributeDescriptor(
                 new AttributeDescriptor.Builder(
-                    coreSchema, null, "schema").plural(true)),
+                    coreSchema, null, "schemas").plural(true)),
             SCIMAttributeValue.createStringValue(coreSchema),
             SCIMAttributeValue.createStringValue(customSchema));
     assertEquals(schemas.getName(), "schemas");
