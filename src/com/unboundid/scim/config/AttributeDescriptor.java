@@ -4,10 +4,9 @@
  */
 package com.unboundid.scim.config;
 
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.*;
 import java.util.HashSet;
 import java.util.Set;
-
 
 
 /**
@@ -16,27 +15,28 @@ import java.util.Set;
  * and JSON representation, and to convert SCIM attributes to and from LDAP
  * attributes.
  */
+@XmlType
+@XmlAccessorType(XmlAccessType.FIELD)
 public class AttributeDescriptor {
 
-  @XmlElement
+  @XmlAttribute(required = true)
   private String schema;
 
-  @XmlElement
+  @XmlAttribute
   private String ldapAttributeName;
 
-  @XmlElement
+  @XmlAttribute(required = true)
   private String externalAttributeName;
 
-  @XmlElement
+  @XmlAttribute
   private boolean complex;
 
-  @XmlElement
+  @XmlAttribute
   private boolean plural;
 
   @XmlElement
   private Set<AttributeDescriptor> complexAttributeDescriptors =
     new HashSet<AttributeDescriptor>();
-
 
 
   /**
@@ -46,11 +46,10 @@ public class AttributeDescriptor {
   }
 
 
-
   /**
    * Create a new attribute descriptor from its builder.
    *
-   * @param builder  The attribute descriptor builder.
+   * @param builder The attribute descriptor builder.
    */
   public AttributeDescriptor(final Builder builder) {
     this.schema = builder.schema;
@@ -60,7 +59,6 @@ public class AttributeDescriptor {
     this.plural = builder.plural;
     this.complexAttributeDescriptors = builder.complexAttributeDescriptors;
   }
-
 
 
   /**
@@ -75,19 +73,18 @@ public class AttributeDescriptor {
     private Set<AttributeDescriptor> complexAttributeDescriptors;
 
 
-
     /**
      * Create a new attribute descriptor builder.
      *
-     * @param schema                 The URI for the schema that defines the
-     *                               SCIM attribute. It must not be {@code
-     *                               null}.
-     * @param ldapAttributeName      The name of the LDAP attribute to which
-     *                               the SCIM attribute can be mapped, or
-     *                               {@code null} if there is no mapping.
-     * @param externalAttributeName  The attribute name to be used in any
-     *                               external representation of the SCIM
-     *                               attribute. It must not be {@code null}.
+     * @param schema                The URI for the schema that defines the
+     *                              SCIM attribute. It must not be {@code
+     *                              null}.
+     * @param ldapAttributeName     The name of the LDAP attribute to which
+     *                              the SCIM attribute can be mapped, or
+     *                              {@code null} if there is no mapping.
+     * @param externalAttributeName The attribute name to be used in any
+     *                              external representation of the SCIM
+     *                              attribute. It must not be {@code null}.
      */
     public Builder(final String schema, final String ldapAttributeName,
                    final String externalAttributeName) {
@@ -97,13 +94,11 @@ public class AttributeDescriptor {
     }
 
 
-
     /**
      * Specifies whether the attribute is a complex attribute.
      *
-     * @param complex  {@code true} if the attribute is complex.
-     *
-     * @return  This attribute descriptor builder.
+     * @param complex {@code true} if the attribute is complex.
+     * @return This attribute descriptor builder.
      */
     public Builder complex(final boolean complex) {
       this.complex = complex;
@@ -113,9 +108,8 @@ public class AttributeDescriptor {
     /**
      * Specifies whether the attribute is a plural attribute.
      *
-     * @param plural  {@code true} if the attribute is plural.
-     *
-     * @return  This attribute descriptor builder.
+     * @param plural {@code true} if the attribute is plural.
+     * @return This attribute descriptor builder.
      */
     public Builder plural(final boolean plural) {
       this.plural = plural;
@@ -123,16 +117,14 @@ public class AttributeDescriptor {
     }
 
 
-
     /**
      * Specifies the set of descriptors for subordinate attributes of a
      * complex attribute.
      *
-     * @param descriptors  The set of descriptors for subordinate attributes of
-     *                     a complex attribute, or {@code null} if the attribute
-     *                     is not a complex attribute.
-     *
-     * @return  This attribute descriptor builder.
+     * @param descriptors The set of descriptors for subordinate attributes of
+     *                    a complex attribute, or {@code null} if the attribute
+     *                    is not a complex attribute.
+     * @return This attribute descriptor builder.
      */
     public Builder complexAttributeDescriptors(
       final Set<AttributeDescriptor> descriptors) {
@@ -142,89 +134,82 @@ public class AttributeDescriptor {
   }
 
 
-
   /**
    * The URI for the schema that defines the SCIM attribute.
    *
-   * @return  The URI for the schema that defines the SCIM attribute.
-   *          It is never {@code null}.
+   * @return The URI for the schema that defines the SCIM attribute.
+   *         It is never {@code null}.
    */
   public String getSchema() {
     return schema;
   }
 
 
-
   /**
    * Specifies the URI for the schema that defines the SCIM attribute.
    *
-   * @param schema  The URI for the schema that defines the SCIM attribute.
-   *                It must not be {@code null}.
+   * @param schema The URI for the schema that defines the SCIM attribute.
+   *               It must not be {@code null}.
    */
   public void setSchema(final String schema) {
     this.schema = schema;
   }
 
 
-
   /**
    * Retrieves the name of the LDAP attribute to which the SCIM attribute can
    * be mapped.
    *
-   * @return  The  name of the LDAP attribute to which the SCIM attribute can
-   *          be mapped, or {@code null} if there is no mapping.
+   * @return The  name of the LDAP attribute to which the SCIM attribute can
+   *         be mapped, or {@code null} if there is no mapping.
    */
   public String getLdapAttributeName() {
     return ldapAttributeName;
   }
 
 
-
   /**
    * Specifies the name of the LDAP attribute to which the SCIM attribute can
    * be mapped.
    *
-   * @param ldapAttributeName  The name of the LDAP attribute to which the
-   *                           SCIM attribute can be mapped, or {@code null}
-   *                           if there is no mapping.
+   * @param ldapAttributeName The name of the LDAP attribute to which the
+   *                          SCIM attribute can be mapped, or {@code null}
+   *                          if there is no mapping.
    */
   public void setLdapAttributeName(final String ldapAttributeName) {
     this.ldapAttributeName = ldapAttributeName;
   }
 
 
-
   /**
    * The attribute name to be used in any external representation of the SCIM
    * attribute.
    *
-   * @return  The attribute name to be used in any external representation of
-   *          the SCIM attribute. It is never {@code null}.
+   * @return The attribute name to be used in any external representation of
+   *         the SCIM attribute. It is never {@code null}.
    */
   public String getExternalAttributeName() {
     return externalAttributeName;
   }
 
 
-
   /**
    * Specifies the attribute name to be used in any external representation of
    * the SCIM attribute.
    *
-   * @param externalAttributeName  The attribute name to be used in any external
-   *                               representation of the SCIM attribute. It must
-   *                               not be {@code null}.
+   * @param externalAttributeName The attribute name to be used in any external
+   *                              representation of the SCIM attribute. It must
+   *                              not be {@code null}.
    */
   public void setExternalAttributeName(final String externalAttributeName) {
     this.externalAttributeName = externalAttributeName;
   }
 
 
-
   /**
    * Indicates whether the attribute is a complex attribute.
    *
-   * @return  {@code true} if the attribute is complex.
+   * @return {@code true} if the attribute is complex.
    */
   public boolean isComplex() {
     return complex;
@@ -233,7 +218,7 @@ public class AttributeDescriptor {
   /**
    * Specifies whether the attribute is a complex attribute.
    *
-   * @param complex  {@code true} if the attribute is complex.
+   * @param complex {@code true} if the attribute is complex.
    */
   public void setComplex(final boolean complex) {
     this.complex = complex;
@@ -242,7 +227,7 @@ public class AttributeDescriptor {
   /**
    * Indicates whether the attribute is a plural attribute.
    *
-   * @return  {@code true} if the attribute is plural.
+   * @return {@code true} if the attribute is plural.
    */
   public boolean isPlural() {
     return plural;
@@ -251,35 +236,33 @@ public class AttributeDescriptor {
   /**
    * Specifies whether the attribute is a plural attribute.
    *
-   * @param plural  {@code true} if the attribute is plural.
+   * @param plural {@code true} if the attribute is plural.
    */
   public void setPlural(final boolean plural) {
     this.plural = plural;
   }
 
 
-
   /**
    * Retrieves the set of descriptors for subordinate attributes of a complex
    * attribute.
    *
-   * @return  The set of descriptors for subordinate attributes of a complex
-   *          attribute, or {@code null} if the attribute is not a complex
-   *          attribute.
+   * @return The set of descriptors for subordinate attributes of a complex
+   *         attribute, or {@code null} if the attribute is not a complex
+   *         attribute.
    */
   public Set<AttributeDescriptor> getComplexAttributeDescriptors() {
     return complexAttributeDescriptors;
   }
 
 
-
   /**
    * Specifies the set of descriptors for subordinate attributes of a complex
    * attribute.
    *
-   * @param descriptors  The set of descriptors for subordinate attributes of
-   *                     a complex attribute, or {@code null} if the attribute
-   *                     is not a complex attribute.
+   * @param descriptors The set of descriptors for subordinate attributes of
+   *                    a complex attribute, or {@code null} if the attribute
+   *                    is not a complex attribute.
    */
   public void setComplexAttributeDescriptors(
     final Set<AttributeDescriptor> descriptors) {
@@ -287,16 +270,14 @@ public class AttributeDescriptor {
   }
 
 
-
   /**
    * Retrieves the attribute descriptor for a specified subordinate attribute
    * of a complex attribute.
    *
-   * @param externalName  The external name of the subordinate attribute for
-   *                      which a descriptor is required.
-   *
-   * @return  The attribute descriptor for the specified subordinate attribute,
-   *          or {@code null} if there is no such subordinate attribute.
+   * @param externalName The external name of the subordinate attribute for
+   *                     which a descriptor is required.
+   * @return The attribute descriptor for the specified subordinate attribute,
+   *         or {@code null} if there is no such subordinate attribute.
    */
   public AttributeDescriptor getAttribute(final String externalName) {
     for (AttributeDescriptor r : this.complexAttributeDescriptors) {
@@ -306,7 +287,6 @@ public class AttributeDescriptor {
     }
     return null;
   }
-
 
 
   /**
