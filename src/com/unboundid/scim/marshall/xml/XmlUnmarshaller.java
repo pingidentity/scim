@@ -107,6 +107,9 @@ public class XmlUnmarshaller implements Unmarshaller {
       new LinkedList<SCIMAttributeValue>();
     for (int i = 0; i < pluralAttributes.getLength(); i++) {
       Node pluralAttribute = pluralAttributes.item(i);
+      if(pluralAttribute.getNodeType()!=Node.ELEMENT_NODE) {
+        continue;
+      }
       AttributeDescriptor pluralAttributeDescriptorInstance =
         attributeDescriptor.getAttribute(pluralAttribute.getNodeName());
       pluralScimAttributes.add(SCIMAttributeValue.createComplexValue(
