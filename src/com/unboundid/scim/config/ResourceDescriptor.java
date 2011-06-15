@@ -4,7 +4,7 @@
  */
 package com.unboundid.scim.config;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,9 +17,20 @@ import java.util.List;
  * entries.
  */
 @XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class ResourceDescriptor {
+
+  @XmlAttribute
+  private String schema;
+
+  @XmlAttribute(required = true)
   private String objectClass;
+
+  @XmlAttribute(required = true)
   private String externalName;
+
+  @XmlElementWrapper(name = "attributes",required = true)
+  @XmlElement(name="attribute",required = true)
   private List<AttributeDescriptor> attributeDescriptors =
     new LinkedList<AttributeDescriptor>();
 
@@ -199,6 +210,9 @@ public class ResourceDescriptor {
 
     resourceAttributeDescriptor = new AttributeDescriptor();
     resourceAttributeDescriptor.setExternalAttributeName("primary");
+    email.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
+    resourceAttributeDescriptor = new AttributeDescriptor();
+    resourceAttributeDescriptor.setExternalAttributeName("type");
     email.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
     resourceAttributeDescriptor = new AttributeDescriptor();
     resourceAttributeDescriptor.setExternalAttributeName("value");
