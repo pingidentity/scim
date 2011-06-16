@@ -24,7 +24,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.EnumSet;
 
 
 
@@ -104,13 +103,13 @@ public class SCIMServlet
       return;
     }
 
-    boolean xmlSuffix = false;
-    boolean jsonSuffix = false;
+    // Determine the media type to return.
+    String mediaType = null;
     final String userID;
     final String resource = split[1];
     if (resource.endsWith(".xml"))
     {
-      xmlSuffix = true;
+      mediaType = MEDIA_TYPE_XML;
       if (resource.length() > 4)
       {
         userID = resource.substring(0, resource.length() - 4);
@@ -122,7 +121,7 @@ public class SCIMServlet
     }
     else if (resource.endsWith(".json"))
     {
-      jsonSuffix = true;
+      mediaType = MEDIA_TYPE_JSON;
       if (resource.length() > 5)
       {
         userID = resource.substring(0, resource.length() - 5);
@@ -137,41 +136,21 @@ public class SCIMServlet
       userID = resource;
     }
 
-    final EnumSet<ContentTypeID> acceptTypes =
-        acceptedContentTypes(request.getHeader(HEADER_NAME_ACCEPT));
-    final boolean jsonAccepted = acceptTypes.contains(ContentTypeID.JSON);
-    final boolean xmlAccepted = acceptTypes.contains(ContentTypeID.XML);
-
-    if (xmlSuffix && !xmlAccepted)
+    if (mediaType == null)
     {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                         ".xml conflicts with accepted content types");
-      return;
+      final HttpAcceptHeader acceptHeader =
+          HttpAcceptHeader.parse(request.getHeader(HEADER_NAME_ACCEPT));
+      mediaType = acceptHeader.findBestMatch(MEDIA_TYPE_JSON, MEDIA_TYPE_XML);
     }
 
-    if (jsonSuffix && !jsonAccepted)
+    if (mediaType == null)
     {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                         ".json conflicts with accepted content types");
-      return;
-    }
-
-    if (!xmlAccepted && !jsonAccepted)
-    {
-      response.sendError(HttpServletResponse.SC_FORBIDDEN,
+      response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE,
                          "Only JSON and XML content types are supported");
       return;
     }
 
-    boolean returnJSON = true;
-    if (xmlSuffix)
-    {
-      returnJSON = false;
-    }
-    else if (!jsonAccepted)
-    {
-      returnJSON = false;
-    }
+    boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
 
     final String targetAttribute;
     if (split.length > 2)
@@ -196,17 +175,6 @@ public class SCIMServlet
     if (queryString != null && !queryString.isEmpty())
     {
       final UrlEncoded queryMap = new UrlEncoded(queryString);
-      for (final Object k : queryMap.keySet())
-      {
-        if (k instanceof String)
-        {
-          if (!k.equals(ATTRIBUTES_QUERY_STRING))
-          {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                               "The query string is not valid");
-          }
-        }
-      }
       if (queryMap.containsKey(ATTRIBUTES_QUERY_STRING))
       {
         final String commaList = queryMap.getString(ATTRIBUTES_QUERY_STRING);
@@ -283,66 +251,4 @@ public class SCIMServlet
     }
   }
 
-  /**
-   * An enumeration of possible content types.
-   */
-  protected enum ContentTypeID
-  {
-    /**
-     * The application/json content type.
-     */
-    JSON,
-
-    /**
-     * The application/xml content type.
-     */
-    XML
-  }
-
-
-
-  /**
-   * Determine which of our supported content types are accepted by the client.
-   * Note that this method does not yet handle the full generality of RFC2616,
-   * Section 14.1.
-   *
-   * @param acceptHeader  The value of the Accept header provided by the client
-   *                      or {@code null} if there is no Accept header.
-   *
-   * @return  The set of content types accepted by the client.
-   */
-  protected EnumSet<ContentTypeID> acceptedContentTypes(
-      final String acceptHeader)
-  {
-    if (acceptHeader == null || acceptHeader.equals("*/*"))
-    {
-      return EnumSet.allOf(ContentTypeID.class);
-    }
-
-    final String[] split = acceptHeader.split("/");
-    if (split.length < 2)
-    {
-      return EnumSet.noneOf(ContentTypeID.class);
-    }
-
-    if (split[0].equalsIgnoreCase("application"))
-    {
-      if (split[1].equals("*"))
-      {
-        return EnumSet.of(ContentTypeID.JSON, ContentTypeID.XML);
-      }
-      else if (split[1].equalsIgnoreCase("json"))
-      {
-        return EnumSet.of(ContentTypeID.JSON);
-      }
-      else if (split[1].equalsIgnoreCase("xml"))
-      {
-        return EnumSet.of(ContentTypeID.XML);
-      }
-
-      return EnumSet.noneOf(ContentTypeID.class);
-    }
-
-    return EnumSet.noneOf(ContentTypeID.class);
-  }
 }
