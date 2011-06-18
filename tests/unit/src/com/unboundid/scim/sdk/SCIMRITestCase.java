@@ -37,6 +37,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
+import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.ldap.ExternalLDAPBackend;
 import com.unboundid.scim.ldap.LDAPExternalServerConfig;
 import com.unboundid.scim.ldap.SCIMBackend;
@@ -321,6 +322,10 @@ public abstract class SCIMRITestCase
          new StandardErrorListenerExceptionHandler());
 
     final File resourceDir = new File(System.getProperty("unit.resource.dir"));
+
+        final File schemaFile = getPackageResource("scim-core.xsd");
+    ResourceDescriptorManager.init(new File[]{schemaFile});
+
     final File serverKeyStore   = new File(resourceDir, "server.keystore");
 
     final SSLUtil serverSSLUtil = new SSLUtil(
@@ -3600,6 +3605,19 @@ public abstract class SCIMRITestCase
   }
 
 
+  /**
+   * Obtain a reference to a file under the test resource directory.
+   *
+   * @param fileName  The name of the desired file.
+   *
+   * @return  A reference to the desired test resource file.
+   */
+  protected static File getPackageResource(final String fileName)
+  {
+    final File resourceDir =
+      new File(System.getProperty("package.resource.dir"));
+    return new File(resourceDir, fileName);
+  }
 
   /**
    * Obtain a reference to a file under the test resource directory.

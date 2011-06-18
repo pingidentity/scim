@@ -5,32 +5,43 @@
 
 package com.unboundid.scim.marshall.xml;
 
+import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.marshall.Context;
 import com.unboundid.scim.marshall.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMRITestCase;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
 
 
-
 /**
  * This clas provides test coverage for the {@link XmlUnmarshaller}.
  */
+@Test
 public class UnmarshallerTestCase
-    extends SCIMRITestCase
-{
+  extends SCIMRITestCase {
+
+  /**
+   * Bootstrap the unmarshaller with a configured resource descriptor.
+   * @throws Exception if error initializing descriptor manager.
+   */
+  @BeforeMethod
+  public void setUp() throws Exception {
+    final File schemaFile = getPackageResource("scim-core.xsd");
+    ResourceDescriptorManager.init(new File[]{schemaFile});
+  }
+
   /**
    * Verify that a known valid user can be read from XML.
    *
-   * @throws Exception  If the test fails.
+   * @throws Exception If the test fails.
    */
-  @Test(enabled=false)
+  @Test(enabled = true)
   public void testUnmarshal()
-      throws Exception
-  {
+    throws Exception {
     final File testXML = getTestResource("marshal/core-user.xml");
 
     final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
