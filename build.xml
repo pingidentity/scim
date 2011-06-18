@@ -27,6 +27,8 @@
   <property name="jetty.dir"       location="ext/jetty" />
   <property name="jettison.dir"    location="ext/jettison" />
   <property name="jaxb.dir"        location="ext/jaxb" />
+  <property name="package.resource.dir"    location="${resource.dir}" />
+
 
 
   <!-- Define properties used for processing message files. -->
@@ -50,7 +52,6 @@
   <property name="unit.report.dir"   location="${build.dir}/test/report" />
   <property name="unit.temp.dir"     location="${build.dir}/test/temp" />
   <property name="unit.resource.dir" location="tests/unit/resource" />
-
 
   <!-- Define properties used for code coverage. -->
   <property name="emma.dir"               location="ext/emma" />

@@ -8,7 +8,6 @@ import com.unboundid.scim.marshall.xml.XmlMarshaller;
 import com.unboundid.scim.marshall.xml.XmlUnmarshaller;
 
 
-
 /**
  * This class provides a factory for SCIM object marshaller and un-marshaller
  * instances. Currently a singleton instance creates a marshaller and

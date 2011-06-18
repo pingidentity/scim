@@ -4,14 +4,8 @@
  */
 package com.unboundid.scim.config;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
-import java.util.HashSet;
-import java.util.Set;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class provides methods that describe the schema for a SCIM attribute.
@@ -19,28 +13,76 @@ import java.util.Set;
  * and JSON representation, and to convert SCIM attributes to and from LDAP
  * attributes.
  */
-@XmlType
-@XmlAccessorType(XmlAccessType.FIELD)
 public class AttributeDescriptor {
 
-  @XmlAttribute(required = true)
+  /**
+   * Defines the set of well known SCIM supported datatypes.
+   */
+  public enum DataType {
+    /**
+     * String data type.
+     */
+    STRING("xs:string"),
+    /**
+     * Boolean data type.
+     */
+    BOOLEAN("xs:boolean"),
+    /**
+     * Date Time data type.
+     */
+    DATETIME("xs:dateTime"),
+    /**
+     * Integer data type.
+     */
+    INTEGER("xs:integer"),;
+
+    private final String xmlType;
+
+    /**
+     * Constructs a new DataType.
+     * @param type The external data type.
+     */
+    DataType(final String type) {
+      xmlType = type;
+    }
+
+    /**
+     * Returns the type in XML schema syntax; e.g., 'string' > 'xs:string'.
+     *
+     * @return XML The external data type.
+     */
+    public String getXmlType() {
+      return xmlType;
+    }
+
+    /**
+     * Parses a supplied data type into a SCIM defined data type.
+     * @param type The type to convert
+     *
+     * @return The DataType or null if not supported
+     */
+    public static DataType parse(final String type) {
+      try {
+        return DataType.valueOf(type.toUpperCase());
+      } catch (Exception e) {
+        return null;
+      }
+    }
+
+  }
+
   private String schema;
 
-  @XmlAttribute
-  private String ldapAttributeName;
+  private String name;
 
-  @XmlAttribute(required = true)
-  private String externalAttributeName;
-
-  @XmlAttribute
   private boolean complex;
 
-  @XmlAttribute
   private boolean plural;
 
-  @XmlElement
-  private Set<AttributeDescriptor> complexAttributeDescriptors =
-    new HashSet<AttributeDescriptor>();
+  private DataType dataType;
+
+  private List<AttributeDescriptor> complexAttributeDescriptors =
+    new ArrayList<AttributeDescriptor>();
 
 
   /**
@@ -57,10 +99,10 @@ public class AttributeDescriptor {
    */
   public AttributeDescriptor(final Builder builder) {
     this.schema = builder.schema;
-    this.ldapAttributeName = builder.ldapAttributeName;
-    this.externalAttributeName = builder.externalAttributeName;
+    this.name = builder.externalAttributeName;
     this.complex = builder.complex;
     this.plural = builder.plural;
+    this.dataType = builder.dataType;
     this.complexAttributeDescriptors = builder.complexAttributeDescriptors;
   }
 
@@ -70,11 +112,11 @@ public class AttributeDescriptor {
    */
   public static class Builder {
     private final String schema;
-    private final String ldapAttributeName;
     private final String externalAttributeName;
     private boolean complex;
     private boolean plural;
-    private Set<AttributeDescriptor> complexAttributeDescriptors;
+    private DataType dataType;
+    private List<AttributeDescriptor> complexAttributeDescriptors;
 
 
     /**
@@ -83,17 +125,12 @@ public class AttributeDescriptor {
      * @param schema                The URI for the schema that defines the
      *                              SCIM attribute. It must not be {@code
      *                              null}.
-     * @param ldapAttributeName     The name of the LDAP attribute to which
-     *                              the SCIM attribute can be mapped, or
-     *                              {@code null} if there is no mapping.
      * @param externalAttributeName The attribute name to be used in any
      *                              external representation of the SCIM
      *                              attribute. It must not be {@code null}.
      */
-    public Builder(final String schema, final String ldapAttributeName,
-                   final String externalAttributeName) {
+    public Builder(final String schema, final String externalAttributeName) {
       this.schema = schema;
-      this.ldapAttributeName = ldapAttributeName;
       this.externalAttributeName = externalAttributeName;
     }
 
@@ -120,6 +157,15 @@ public class AttributeDescriptor {
       return this;
     }
 
+    /**
+     * Specifies the attribute data type.
+     * @param dataType the attribute descriptor data type.
+     * @return This attribute descriptor builder.
+     */
+    public Builder dataType(final DataType dataType) {
+      this.dataType = dataType;
+      return this;
+    }
 
     /**
      * Specifies the set of descriptors for subordinate attributes of a
@@ -131,7 +177,7 @@ public class AttributeDescriptor {
      * @return This attribute descriptor builder.
      */
     public Builder complexAttributeDescriptors(
-      final Set<AttributeDescriptor> descriptors) {
+      final List<AttributeDescriptor> descriptors) {
       this.complexAttributeDescriptors = descriptors;
       return this;
     }
@@ -159,32 +205,6 @@ public class AttributeDescriptor {
     this.schema = schema;
   }
 
-
-  /**
-   * Retrieves the name of the LDAP attribute to which the SCIM attribute can
-   * be mapped.
-   *
-   * @return The  name of the LDAP attribute to which the SCIM attribute can
-   *         be mapped, or {@code null} if there is no mapping.
-   */
-  public String getLdapAttributeName() {
-    return ldapAttributeName;
-  }
-
-
-  /**
-   * Specifies the name of the LDAP attribute to which the SCIM attribute can
-   * be mapped.
-   *
-   * @param ldapAttributeName The name of the LDAP attribute to which the
-   *                          SCIM attribute can be mapped, or {@code null}
-   *                          if there is no mapping.
-   */
-  public void setLdapAttributeName(final String ldapAttributeName) {
-    this.ldapAttributeName = ldapAttributeName;
-  }
-
-
   /**
    * The attribute name to be used in any external representation of the SCIM
    * attribute.
@@ -192,8 +212,8 @@ public class AttributeDescriptor {
    * @return The attribute name to be used in any external representation of
    *         the SCIM attribute. It is never {@code null}.
    */
-  public String getExternalAttributeName() {
-    return externalAttributeName;
+  public String getName() {
+    return name;
   }
 
 
@@ -201,12 +221,12 @@ public class AttributeDescriptor {
    * Specifies the attribute name to be used in any external representation of
    * the SCIM attribute.
    *
-   * @param externalAttributeName The attribute name to be used in any external
-   *                              representation of the SCIM attribute. It must
-   *                              not be {@code null}.
+   * @param name The attribute name to be used in any external
+   *             representation of the SCIM attribute. It must
+   *             not be {@code null}.
    */
-  public void setExternalAttributeName(final String externalAttributeName) {
-    this.externalAttributeName = externalAttributeName;
+  public void setName(final String name) {
+    this.name = name;
   }
 
 
@@ -255,7 +275,7 @@ public class AttributeDescriptor {
    *         attribute, or {@code null} if the attribute is not a complex
    *         attribute.
    */
-  public Set<AttributeDescriptor> getComplexAttributeDescriptors() {
+  public List<AttributeDescriptor> getComplexAttributeDescriptors() {
     return complexAttributeDescriptors;
   }
 
@@ -269,7 +289,7 @@ public class AttributeDescriptor {
    *                    is not a complex attribute.
    */
   public void setComplexAttributeDescriptors(
-    final Set<AttributeDescriptor> descriptors) {
+    final List<AttributeDescriptor> descriptors) {
     this.complexAttributeDescriptors = descriptors;
   }
 
@@ -285,25 +305,21 @@ public class AttributeDescriptor {
    */
   public AttributeDescriptor getAttribute(final String externalName) {
     for (AttributeDescriptor r : this.complexAttributeDescriptors) {
-      if (r.getExternalAttributeName().equals(externalName)) {
+      if (r.getName().equals(externalName)) {
         return r;
       }
     }
     return null;
   }
 
-
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public String toString() {
     return "AttributeDescriptor{" +
       "schema='" + schema + '\'' +
-      ", ldapAttributeName='" + ldapAttributeName + '\'' +
-      ", externalAttributeName='" + externalAttributeName + '\'' +
+      ", name='" + name + '\'' +
       ", complex=" + complex +
       ", plural=" + plural +
+      ", dataType=" + dataType +
       ", complexAttributeDescriptors=" + complexAttributeDescriptors +
       '}';
   }

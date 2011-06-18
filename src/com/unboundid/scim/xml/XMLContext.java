@@ -5,9 +5,11 @@
 
 package com.unboundid.scim.xml;
 
+import com.unboundid.scim.schema.ObjectFactory;
 import com.unboundid.scim.schema.User;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
@@ -63,7 +65,7 @@ public class XMLContext
     try
     {
       final Marshaller marshaller = jaxbContext.createMarshaller();
-      marshaller.marshal(user, writer);
+      marshaller.marshal(new ObjectFactory().createUser(user), writer);
     }
     catch (Exception e)
     {
@@ -93,7 +95,8 @@ public class XMLContext
       try
       {
         final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        return (User)unmarshaller.unmarshal(reader);
+        Object unmarshal = unmarshaller.unmarshal(reader);
+          return (User)((JAXBElement) unmarshal).getValue();
       }
       finally
       {

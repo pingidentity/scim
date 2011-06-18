@@ -4,15 +4,8 @@
  */
 package com.unboundid.scim.config;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.LinkedList;
 import java.util.List;
-
 
 
 /**
@@ -21,36 +14,25 @@ import java.util.List;
  * and JSON representation, and to convert SCIM objects to and from LDAP
  * entries.
  */
-@XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 public class ResourceDescriptor {
 
-  @XmlAttribute
   private String schema;
 
-  @XmlAttribute(required = true)
-  private String objectClass;
+  private String name;
 
-  @XmlAttribute(required = true)
-  private String externalName;
-
-  @XmlElementWrapper(name = "attributes",required = true)
-  @XmlElement(name="attribute",required = true)
   private List<AttributeDescriptor> attributeDescriptors =
     new LinkedList<AttributeDescriptor>();
-
-
 
   /**
    * Retrieve the attribute descriptor for a specified attribute.
    *
-   * @param name  The name of the attribute whose descriptor is to be retrieved.
-   * @return  The attribute descriptor for the specified attribute, or {@code
-   *          null} if there is no such attribute.
+   * @param name The name of the attribute whose descriptor is to be retrieved.
+   * @return The attribute descriptor for the specified attribute, or {@code
+   *         null} if there is no such attribute.
    */
   public AttributeDescriptor getAttribute(final String name) {
     for (AttributeDescriptor attributeDescriptor : attributeDescriptors) {
-      if (attributeDescriptor.getExternalAttributeName().equals(name)) {
+      if (attributeDescriptor.getName().equals(name)) {
         return attributeDescriptor;
       }
     }
@@ -58,61 +40,35 @@ public class ResourceDescriptor {
   }
 
 
-
-  /**
-   * Retrieve the name of the LDAP structural object class that may be used
-   * for LDAP entries representing the SCIM resource.
-   *
-   * @return  The name of the LDAP structural object class that may be used
-   *          for LDAP entries representing the SCIM resource, or {@code null}
-   *          if there is none.
-   */
-  public String getObjectClass() {
-    return objectClass;
-  }
-
-  /**
-   * Specifies the name of the LDAP structural object class that may be used
-   * for LDAP entries representing the SCIM resource.
-   *
-   * @param objectClass  The name of the LDAP structural object class that may
-   *                     be used for LDAP entries representing the SCIM
-   *                     resource, or {@code null} if there is none.
-   */
-  public void setObjectClass(final String objectClass) {
-    this.objectClass = objectClass;
-  }
-
   /**
    * Retrieve the name of the resource to be used in any external
    * representation of the resource.
    *
-   * @return  Retrieve the name of the resource to be used in any external
-   *          representation of the resource. It is never {@code null}.
+   * @return Retrieve the name of the resource to be used in any external
+   *         representation of the resource. It is never {@code null}.
    */
-  public String getExternalName() {
-    return externalName;
+  public String getName() {
+    return name;
   }
 
   /**
    * Specifies the name of the resource to be used in any external
    * representation of the resource.
    *
-   * @param externalName  Specifies the name of the resource to be used in any
-   *                      external representation of the resource. It must not
-   *                      be {@code null}.
+   * @param name Specifies the name of the resource to be used in any
+   *             external representation of the resource. It must not
+   *             be {@code null}.
    */
-  public void setExternalName(final String externalName) {
-    this.externalName = externalName;
+  public void setName(final String name) {
+    this.name = name;
   }
-
 
 
   /**
    * Retrieves the list of attribute descriptors for the resource.
    *
-   * @return  The list of attribute descriptors for the resource.
-   *          It is never {@code null}.
+   * @return The list of attribute descriptors for the resource.
+   *         It is never {@code null}.
    */
   public List<AttributeDescriptor> getAttributeDescriptors() {
     return attributeDescriptors;
@@ -121,127 +77,37 @@ public class ResourceDescriptor {
   /**
    * Specifies the list of attribute descriptors for the resource.
    *
-   * @param attributeDescriptors  The list of attribute descriptors for the
-   *                              resource. It must not be {@code null}.
+   * @param attributeDescriptors The list of attribute descriptors for the
+   *                             resource. It must not be {@code null}.
    */
   public void setAttributeDescriptors(
     final List<AttributeDescriptor> attributeDescriptors) {
     this.attributeDescriptors = attributeDescriptors;
   }
 
-
-
   /**
-   * Retrieve a resource descriptor for a specified resource type.
+   * Returns the resource's XML schema (namespace) name.
    *
-   * @param externalName  The external name of the resource for which a
-   *                      descriptor is required.
-   *
-   * @return  A resource descriptor for the specified resource type.
+   * @return The XML namespace name.
    */
-  public static ResourceDescriptor create(final String externalName) {
-    // read config file/ldap to determine what objectclass the external
-    // resource is associated to.
-    // presumably this stuff is relatively static (cacheable)
-
-    ResourceDescriptor resourceDescriptor = new ResourceDescriptor();
-    resourceDescriptor.setExternalName("user");
-    resourceDescriptor.setObjectClass("inetorgperson");
-
-    AttributeDescriptor resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("id");
-    resourceAttributeDescriptor.setLdapAttributeName("entryUUID");
-    resourceDescriptor.getAttributeDescriptors()
-      .add(resourceAttributeDescriptor);
-
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("userName");
-    resourceAttributeDescriptor.setLdapAttributeName("uid");
-    resourceDescriptor.getAttributeDescriptors()
-      .add(resourceAttributeDescriptor);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("title");
-    resourceAttributeDescriptor.setLdapAttributeName("title");
-    resourceDescriptor.getAttributeDescriptors()
-      .add(resourceAttributeDescriptor);
-
-    AttributeDescriptor name = new AttributeDescriptor();
-    name.setExternalAttributeName("name");
-    name.setComplex(true);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("formatted");
-    resourceAttributeDescriptor.setLdapAttributeName("display");
-    name.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("familyName");
-    resourceAttributeDescriptor.setLdapAttributeName("sn");
-    name.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("givenName");
-    resourceAttributeDescriptor.setLdapAttributeName("givenName");
-    name.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("middleName");
-    resourceAttributeDescriptor.setLdapAttributeName("middle");
-    name.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("honorificPrefix");
-    resourceAttributeDescriptor.setLdapAttributeName("x");
-
-    name.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("honorificSuffix");
-    resourceAttributeDescriptor.setLdapAttributeName("y");
-    name.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-
-    resourceDescriptor.getAttributeDescriptors().add(name);
-
-
-    AttributeDescriptor emails = new AttributeDescriptor();
-    emails.setExternalAttributeName("emails");
-    emails.setPlural(true);
-
-    AttributeDescriptor email = new AttributeDescriptor();
-    email.setExternalAttributeName("email");
-    email.setLdapAttributeName("mail");
-    email.setComplex(true);
-
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("primary");
-    email.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("type");
-    email.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-    resourceAttributeDescriptor = new AttributeDescriptor();
-    resourceAttributeDescriptor.setExternalAttributeName("value");
-    email.getComplexAttributeDescriptors().add(resourceAttributeDescriptor);
-
-
-    emails.getComplexAttributeDescriptors().add(email);
-
-    resourceDescriptor.getAttributeDescriptors().add(emails);
-
-
-    return resourceDescriptor;
+  public String getSchema() {
+    return schema;
   }
 
-
-
   /**
-   * {@inheritDoc}
+   *  Sets the resource's XML schema (namespace) name.
+   *
+   * @param schema The XML namespace name.
    */
+  public void setSchema(final String schema) {
+    this.schema = schema;
+  }
+
   @Override
   public String toString() {
     return "ResourceDescriptor{" +
-      "objectClass='" + objectClass + '\'' +
-      ", externalName='" + externalName + '\'' +
+      "schema='" + schema + '\'' +
+      ", name='" + name + '\'' +
       ", attributeDescriptors=" + attributeDescriptors +
       '}';
   }

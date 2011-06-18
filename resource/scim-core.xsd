@@ -1,140 +1,161 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xs:schema xmlns:tns="urn:scim:schemas:core:1.0"
-          targetNamespace="urn:scim:schemas:core:1.0"
-          xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
-   <xs:element name="user">
-       <xs:complexType>
-           <xs:complexContent>
-               <xs:extension base="tns:resource">
-                   <xs:sequence>
-                       <xs:element name="addresses" minOccurs="0">
-                           <xs:complexType>
-                               <xs:sequence>
-                                   <xs:element name="address" type="tns:address" minOccurs="0" maxOccurs="unbounded"/>
-                               </xs:sequence>
-                           </xs:complexType>
-                       </xs:element>
-                       <xs:element name="photoUrls" minOccurs="0">
-                           <xs:complexType>
-                               <xs:sequence>
-                                   <xs:element name="photoUrl" type="tns:pluralAttribute" minOccurs="0"
-                                               maxOccurs="unbounded"/>
-                               </xs:sequence>
-                           </xs:complexType>
-                       </xs:element>
-                       <xs:element name="ims" minOccurs="0">
-                           <xs:complexType>
-                               <xs:sequence>
-                                   <xs:element name="im" type="tns:pluralAttribute" minOccurs="0"
-                                               maxOccurs="unbounded"/>
-                               </xs:sequence>
-                           </xs:complexType>
-                       </xs:element>
-                       <xs:element name="groups" minOccurs="0">
-                           <xs:complexType>
-                               <xs:sequence>
-                                   <xs:element name="group" type="tns:pluralAttribute" minOccurs="0"
-                                               maxOccurs="unbounded"/>
-                               </xs:sequence>
-                           </xs:complexType>
-                       </xs:element>
-                       <xs:element name="phoneNumbers" minOccurs="0">
-                           <xs:complexType>
-                               <xs:sequence>
-                                   <xs:element name="phoneNumber" type="tns:pluralAttribute" minOccurs="0"
-                                               maxOccurs="unbounded"/>
-                               </xs:sequence>
-                           </xs:complexType>
-                       </xs:element>
-                       <xs:element name="emails" minOccurs="0">
-                           <xs:complexType>
-                               <xs:sequence>
-                                   <xs:element name="email" type="tns:pluralAttribute" minOccurs="0"
-                                               maxOccurs="unbounded"/>
-                               </xs:sequence>
-                           </xs:complexType>
-                       </xs:element>
-                       <xs:element name="department" type="xs:string" minOccurs="0"/>
-                       <xs:element name="division" type="xs:string" minOccurs="0"/>
-                       <xs:element name="organization" type="xs:string" minOccurs="0"/>
-                       <xs:element name="costCenter" type="xs:string" minOccurs="0"/>
-                       <xs:element name="utcOffset" type="xs:int" minOccurs="0"/>
-                       <xs:element name="locale" type="xs:string" minOccurs="0"/>
-                       <xs:element name="preferredLanguage" type="xs:string" minOccurs="0"/>
-                       <xs:element name="manager" type="xs:string" minOccurs="0"/>
-                       <xs:element name="title" type="xs:string" minOccurs="0"/>
-                       <xs:element name="userType" type="xs:string" minOccurs="0"/>
-                       <xs:element name="employeeNumber" type="xs:string" minOccurs="0"/>
-                       <xs:element name="profileUrl" type="xs:string" minOccurs="0"/>
-                       <xs:element name="nickName" type="xs:string" minOccurs="0"/>
-                       <xs:element name="displayName" type="xs:string" minOccurs="0"/>
-                       <xs:element name="name" type="tns:name" minOccurs="0"/>
-                       <xs:element name="userName" type="xs:string" minOccurs="0"/>
-                       <xs:element name="externalId" type="xs:string" minOccurs="0"/>
-                       <xs:any namespace="##other" minOccurs="0"/>
-                   </xs:sequence>
-               </xs:extension>
-           </xs:complexContent>
-       </xs:complexType>
-   </xs:element>
+           targetNamespace="urn:scim:schemas:core:1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+
+    <xs:complexType name="user">
+        <xs:complexContent>
+            <xs:extension base="tns:resource">
+                <xs:sequence>
+                    <xs:element name="addresses" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="address" type="tns:address"
+                                            minOccurs="0"
+                                            maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="photoUrls" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="photoUrl"
+                                            type="tns:pluralAttribute"
+                                            minOccurs="0"
+                                            maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="ims" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="im" type="tns:pluralAttribute"
+                                            minOccurs="0"
+                                            maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="groups" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="group"
+                                            type="tns:pluralAttribute"
+                                            minOccurs="0"
+                                            maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="phoneNumbers" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="phoneNumber"
+                                            type="tns:pluralAttribute"
+                                            minOccurs="0"
+                                            maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="emails" minOccurs="0">
+                        <xs:complexType>
+                            <xs:sequence>
+                                <xs:element name="email"
+                                            type="tns:pluralAttribute"
+                                            minOccurs="0"
+                                            maxOccurs="unbounded"/>
+                            </xs:sequence>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="department" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="division" type="xs:string" minOccurs="0"/>
+                    <xs:element name="organization" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="costCenter" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="utcOffset" type="xs:int" minOccurs="0"/>
+                    <xs:element name="locale" type="xs:string" minOccurs="0"/>
+                    <xs:element name="preferredLanguage" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="manager" type="xs:string" minOccurs="0"/>
+                    <xs:element name="title" type="xs:string" minOccurs="0"/>
+                    <xs:element name="userType" type="xs:string" minOccurs="0"/>
+                    <xs:element name="employeeNumber" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="profileUrl" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="nickName" type="xs:string" minOccurs="0"/>
+                    <xs:element name="displayName" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:element name="name" type="tns:name" minOccurs="0"/>
+                    <xs:element name="userName" type="xs:string" minOccurs="0"/>
+                    <xs:element name="externalId" type="xs:string"
+                                minOccurs="0"/>
+                    <xs:any namespace="##other" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="group">
+        <xs:complexContent>
+            <xs:extension base="tns:resource">
+                <xs:sequence>
+                    <xs:any namespace="##other" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="user" type="tns:user"/>
+    <xs:element name="group" type="tns:group"/>
+
+    <xs:complexType name="resource">
+        <xs:sequence>
+            <xs:element name="meta" type="tns:meta" minOccurs="0"
+                        maxOccurs="1"/>
+            <xs:element name="id" type="xs:string" minOccurs="0"
+                        maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="address">
+        <xs:sequence>
+            <xs:element name="type" type="xs:string" minOccurs="0"/>
+            <xs:element name="primary" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="country" type="xs:string" minOccurs="0"/>
+            <xs:element name="postalCode" type="xs:string" minOccurs="0"/>
+            <xs:element name="region" type="xs:string" minOccurs="0"/>
+            <xs:element name="locality" type="xs:string" minOccurs="0"/>
+            <xs:element name="streetAddress" type="xs:string" minOccurs="0"/>
+            <xs:element name="formatted" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
 
 
-   <xs:element name="group">
-       <xs:complexType>
-           <xs:complexContent>
-               <xs:extension base="tns:resource">
-                   <xs:sequence>
-                       <xs:any namespace="##other" minOccurs="0"/>
-                   </xs:sequence>
-               </xs:extension>
-           </xs:complexContent>
-       </xs:complexType>
-   </xs:element>
+    <xs:complexType name="pluralAttribute">
+        <xs:sequence>
+            <xs:element name="primary" type="xs:boolean"/>
+            <xs:element name="type" type="xs:string" minOccurs="0"/>
+            <xs:element name="value" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
 
-   <xs:complexType name="resource">
-       <xs:sequence>
-           <xs:element name="meta" type="tns:meta" minOccurs="0"/>
-           <xs:element name="id" type="xs:string" minOccurs="0"/>
-       </xs:sequence>
-   </xs:complexType>
+    <xs:complexType name="name">
+        <xs:sequence>
+            <xs:element name="honorificSuffix" type="xs:string" minOccurs="0"/>
+            <xs:element name="honorificPrefix" type="xs:string" minOccurs="0"/>
+            <xs:element name="middleName" type="xs:string" minOccurs="0"/>
+            <xs:element name="givenName" type="xs:string" minOccurs="0"/>
+            <xs:element name="familyName" type="xs:string" minOccurs="0"/>
+            <xs:element name="formatted" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
 
-   <xs:complexType name="address">
-       <xs:sequence>
-           <xs:element name="type" type="xs:string" minOccurs="0"/>
-           <xs:element name="primary" type="xs:boolean" minOccurs="0"/>
-           <xs:element name="country" type="xs:string" minOccurs="0"/>
-           <xs:element name="postalCode" type="xs:string" minOccurs="0"/>
-           <xs:element name="region" type="xs:string" minOccurs="0"/>
-           <xs:element name="locality" type="xs:string" minOccurs="0"/>
-           <xs:element name="streetAddress" type="xs:string" minOccurs="0"/>
-           <xs:element name="formatted" type="xs:string" minOccurs="0"/>
-       </xs:sequence>
-   </xs:complexType>
-
-   <xs:complexType name="pluralAttribute">
-       <xs:sequence>
-           <xs:element name="primary" type="xs:boolean"/>
-           <xs:element name="type" type="xs:string" minOccurs="0"/>
-           <xs:element name="value" type="xs:string" minOccurs="0"/>
-       </xs:sequence>
-   </xs:complexType>
-
-   <xs:complexType name="name">
-       <xs:sequence>
-           <xs:element name="honorificSuffix" type="xs:string" minOccurs="0"/>
-           <xs:element name="honorificPrefix" type="xs:string" minOccurs="0"/>
-           <xs:element name="middleName" type="xs:string" minOccurs="0"/>
-           <xs:element name="givenName" type="xs:string" minOccurs="0"/>
-           <xs:element name="familyName" type="xs:string" minOccurs="0"/>
-           <xs:element name="formatted" type="xs:string" minOccurs="0"/>
-       </xs:sequence>
-   </xs:complexType>
-
-   <xs:complexType name="meta">
-       <xs:sequence>
-           <xs:element name="location" type="xs:string" minOccurs="0"/>
-           <xs:element name="lastModified" type="xs:dateTime" minOccurs="0"/>
-           <xs:element name="created" type="xs:dateTime" minOccurs="0"/>
-       </xs:sequence>
-   </xs:complexType>
+    <xs:complexType name="meta">
+        <xs:sequence>
+            <xs:element name="location" type="xs:string" minOccurs="0"/>
+            <xs:element name="lastModified" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="created" type="xs:dateTime" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
 </xs:schema>

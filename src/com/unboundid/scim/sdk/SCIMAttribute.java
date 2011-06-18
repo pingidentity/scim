@@ -132,7 +132,7 @@ public final class SCIMAttribute
    */
   public String getName()
   {
-    return this.attributeDescriptor.getExternalAttributeName();
+    return this.attributeDescriptor.getName();
   }
 
 
