@@ -77,7 +77,7 @@ public class XmlMarshaller implements Marshaller {
     // object
     // need to be able to identify schema properly
     xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
-      o.getResourceType(),Context.DEFAULT_SCHEMA_URN);
+      o.getResourceType(), Context.DEFAULT_SCHEMA_URN);
     for (String schema : o.getSchemas()) {
       if (schema.equals(Context.DEFAULT_SCHEMA_URN)) {
         xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
@@ -116,7 +116,7 @@ public class XmlMarshaller implements Marshaller {
                                     final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException {
     SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
-    xmlStreamWriter.writeStartElement(scimAttribute.getName());
+    writeStartElement(scimAttribute, xmlStreamWriter);
     List<AttributeDescriptor> mappedAttributeDescriptors =
       scimAttribute.getAttributeDescriptor().getComplexAttributeDescriptors();
     for (SCIMAttributeValue pluralValue : pluralValues) {
@@ -142,9 +142,7 @@ public class XmlMarshaller implements Marshaller {
   private void writeSingularAttribute(final SCIMAttribute scimAttribute,
                                       final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException {
-    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
-      scimAttribute.getName(),
-      Context.DEFAULT_SCHEMA_URN);
+    writeStartElement(scimAttribute, xmlStreamWriter);
     SCIMAttributeValue val = scimAttribute.getSingularValue();
     if (val.isComplex()) {
       for (SCIMAttribute a : val.getAttributes().values()) {
@@ -170,10 +168,27 @@ public class XmlMarshaller implements Marshaller {
     throws XMLStreamException {
     SCIMAttributeValue value = scimAttribute.getSingularValue();
     Map<String, SCIMAttribute> attributes = value.getAttributes();
-    xmlStreamWriter.writeStartElement(scimAttribute.getName());
+    writeStartElement(scimAttribute, xmlStreamWriter);
     for (SCIMAttribute attribute : attributes.values()) {
       writeSingularAttribute(attribute, xmlStreamWriter);
     }
     xmlStreamWriter.writeEndElement();
+  }
+
+  /**
+   * Helper that writes namespace when needed.
+   * @param scimAttribute Attribute tag to write.
+   * @param xmlStreamWriter Writer to write with.
+   * @throws XMLStreamException thrown if error writing the tag element.
+   */
+  private void writeStartElement(final SCIMAttribute scimAttribute,
+                                 final XMLStreamWriter xmlStreamWriter)
+    throws XMLStreamException {
+    if (scimAttribute.getSchema().equals(Context.DEFAULT_SCHEMA_URN)) {
+      xmlStreamWriter.writeStartElement(scimAttribute.getName());
+    } else {
+      xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),
+        scimAttribute.getName());
+    }
   }
 }
