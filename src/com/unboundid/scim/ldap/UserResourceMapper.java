@@ -332,22 +332,10 @@ public class UserResourceMapper extends ResourceMapper
 
     final ResourceDescriptor resourceDescriptor =
         ResourceDescriptorManager.instance().getResourceDescriptor(
-            resourceName.toLowerCase()); // TODO align endpoint with schema name
-    if (resourceName == null)
+            resourceName);
+    if (resourceDescriptor == null)
     {
       return attributes;
-    }
-
-    if (queryAttributes.isAttributeRequested("userName"))
-    {
-      final String uid = entry.getAttributeValue("uid");
-      if (uid != null)
-      {
-        attributes.add(
-            SCIMAttribute.createSingularAttribute(
-                resourceDescriptor.getAttribute("userName"),
-                SCIMAttributeValue.createStringValue(uid)));
-      }
     }
 
     if (queryAttributes.isAttributeRequested("name"))
@@ -654,6 +642,18 @@ public class UserResourceMapper extends ResourceMapper
             SCIMAttribute.createSingularAttribute(
                 resourceDescriptor.getAttribute("title"),
                 SCIMAttributeValue.createStringValue(title)));
+      }
+    }
+
+    if (queryAttributes.isAttributeRequested("userName"))
+    {
+      final String uid = entry.getAttributeValue("uid");
+      if (uid != null)
+      {
+        attributes.add(
+            SCIMAttribute.createSingularAttribute(
+                resourceDescriptor.getAttribute("userName"),
+                SCIMAttributeValue.createStringValue(uid)));
       }
     }
 

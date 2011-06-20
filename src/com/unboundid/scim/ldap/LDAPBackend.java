@@ -11,8 +11,11 @@ import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.scim.config.ResourceDescriptor;
+import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.List;
@@ -77,14 +80,28 @@ public abstract class LDAPBackend
       {
         final SCIMServer scimServer = SCIMServer.getInstance();
         final Set<ResourceMapper> mappers =
-            scimServer.getResourceMappers(request.getResourceType());
+            scimServer.getResourceMappers(request.getResourceName());
+
+        final ResourceDescriptor resourceDescriptor =
+            ResourceDescriptorManager.instance().getResourceDescriptor(
+                request.getResourceName());
 
         final SCIMObject scimObject = new SCIMObject();
-        scimObject.setResourceType(request.getResourceType());
+        scimObject.setResourceType(request.getResourceName());
+
+        if (request.getAttributes().isAttributeRequested("id"))
+        {
+          scimObject.addAttribute(
+              SCIMAttribute.createSingularAttribute(
+                  resourceDescriptor.getAttribute("id"),
+                  SCIMAttributeValue.createStringValue(
+                      searchResultEntry.getDN())));
+        }
+
         for (final ResourceMapper m : mappers)
         {
           final List<SCIMAttribute> attributes =
-              m.toSCIMAttributes(request.getResourceType(), searchResultEntry,
+              m.toSCIMAttributes(request.getResourceName(), searchResultEntry,
                                  request.getAttributes());
           for (final SCIMAttribute a : attributes)
           {

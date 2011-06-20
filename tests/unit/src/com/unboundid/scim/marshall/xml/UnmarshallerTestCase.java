@@ -11,6 +11,7 @@ import com.unboundid.scim.marshall.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMRITestCase;
+import com.unboundid.scim.xml.XMLContext;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -18,7 +19,7 @@ import java.io.File;
 
 
 /**
- * This clas provides test coverage for the {@link XmlUnmarshaller}.
+ * This class provides test coverage for the {@link XmlUnmarshaller}.
  */
 @Test
 public class UnmarshallerTestCase

@@ -18,10 +18,10 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 public class GetResourceRequest
 {
   /**
-   * The type of resource identified by the request endpoint.
+   * The name of the resource identified by the request endpoint.
    * e.g. User or Group.
    */
-  private String resourceType;
+  private String resourceName;
 
   /**
    * The requested resource ID.
@@ -38,16 +38,16 @@ public class GetResourceRequest
   /**
    * Create a new SCIM Get Resource request from the provided information.
    *
-   * @param resourceType  The type of resource identified by the request
+   * @param resourceName  The name of the resource identified by the request
    *                      endpoint. e.g. User or Group.
    * @param resourceID    The requested resource ID.
    * @param attributes    The set of requested attributes.
    */
-  public GetResourceRequest(final String resourceType,
+  public GetResourceRequest(final String resourceName,
                             final String resourceID,
                             final SCIMQueryAttributes attributes)
   {
-    this.resourceType = resourceType;
+    this.resourceName = resourceName;
     this.resourceID   = resourceID;
     this.attributes   = attributes;
   }
@@ -55,14 +55,14 @@ public class GetResourceRequest
 
 
   /**
-   * Get the type of resource identified by the request endpoint. e.g. User or
-   * Group.
+   * Get the name of the resource identified by the request endpoint. e.g.
+   * User or Group.
    *
-   * @return  The type of resource identified by the request endpoint.
+   * @return  The name of the resource identified by the request endpoint.
    */
-  public String getResourceType()
+  public String getResourceName()
   {
-    return resourceType;
+    return resourceName;
   }
 
 
