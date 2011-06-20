@@ -5,8 +5,10 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.scim.marshall.Context;
+import com.unboundid.scim.marshall.Marshaller;
 import com.unboundid.scim.marshall.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -17,6 +19,9 @@ import com.unboundid.scim.sdk.SCIMRITestCase;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.List;
 
 
 
@@ -104,7 +109,7 @@ public class UserResourceMapperTestCase
 
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
-        mapper.toSCIMAttributes(entry, new SCIMQueryAttributes()))
+        mapper.toSCIMAttributes("User", entry, new SCIMQueryAttributes()))
     {
       user2.addAttribute(a);
     }
@@ -150,5 +155,51 @@ public class UserResourceMapperTestCase
     assertTrue(entry.hasAttributeValue("postalCode", "24769"));
     assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 319 805 3070"));
     assertTrue(entry.hasAttributeValue("homePhone", "+1 003 490 8631"));
+  }
+
+
+
+  /**
+   * Verify that a core user that was mapped from an LDAP entry can be written
+   * to XML.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testMapperWithMarshaller()
+      throws Exception
+  {
+    final Entry entry =
+        generateUserEntry(
+            "user.0", "ou=People,dc=example,dc=com", "Aaren",
+            "Atp", "password",
+            new Attribute(
+                "postalAddress",
+                "Aaren Atp$46045 Locust Street$Sioux City, IL  24769"),
+            new Attribute("mail", "user.0@example.com"),
+            new Attribute("street", "46045 Locust Street"),
+            new Attribute("l", "Sioux City"),
+            new Attribute("st", "IL"),
+            new Attribute("postalCode", "24769"),
+            new Attribute("telephoneNumber", "+1 319 805 3070"),
+            new Attribute("homePhone", "+1 003 490 8631"));
+
+    final UserResourceMapper mapper = new UserResourceMapper();
+    mapper.initializeMapper();
+
+    List<SCIMAttribute> attributes =
+        mapper.toSCIMAttributes("User", entry, new SCIMQueryAttributes());
+
+    final SCIMObject object = new SCIMObject();
+    object.setResourceType("User");
+    for (final SCIMAttribute a : attributes)
+    {
+      object.addAttribute(a);
+    }
+
+    final Context context = Context.instance();
+    final Marshaller marshaller = context.marshaller();
+    final Writer writer = new StringWriter();
+    marshaller.marshal(object, writer);
   }
 }

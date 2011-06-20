@@ -84,7 +84,8 @@ public abstract class LDAPBackend
         for (final ResourceMapper m : mappers)
         {
           final List<SCIMAttribute> attributes =
-              m.toSCIMAttributes(searchResultEntry, request.getAttributes());
+              m.toSCIMAttributes(request.getResourceType(), searchResultEntry,
+                                 request.getAttributes());
           for (final SCIMAttribute a : attributes)
           {
             scimObject.addAttribute(a);

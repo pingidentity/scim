@@ -89,7 +89,6 @@ public class XMLContext
   public User readUser(final String xmlString)
       throws IOException
   {
-    System.out.println("Read User: " + xmlString);
     try
     {
       final Reader reader = new StringReader(xmlString);

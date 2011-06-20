@@ -7,6 +7,9 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.config.ResourceDescriptor;
+import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -322,10 +325,18 @@ public class UserResourceMapper extends ResourceMapper
    */
   @Override
   public List<SCIMAttribute> toSCIMAttributes(
+      final String resourceName,
       final Entry entry, final SCIMQueryAttributes queryAttributes)
   {
-    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
     final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>();
+
+    final ResourceDescriptor resourceDescriptor =
+        ResourceDescriptorManager.instance().getResourceDescriptor(
+            resourceName.toLowerCase()); // TODO align endpoint with schema name
+    if (resourceName == null)
+    {
+      return attributes;
+    }
 
     if (queryAttributes.isAttributeRequested("userName"))
     {
@@ -334,21 +345,23 @@ public class UserResourceMapper extends ResourceMapper
       {
         attributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "userName",
+                resourceDescriptor.getAttribute("userName"),
                 SCIMAttributeValue.createStringValue(uid)));
       }
     }
 
     if (queryAttributes.isAttributeRequested("name"))
     {
-      List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
+      final AttributeDescriptor descriptor =
+          resourceDescriptor.getAttribute("name");
+      final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
 
       final String cn = entry.getAttributeValue("cn");
       if (cn != null)
       {
         subAttributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "formatted",
+                descriptor.getAttribute("formatted"),
                 SCIMAttributeValue.createStringValue(cn)));
       }
 
@@ -357,7 +370,7 @@ public class UserResourceMapper extends ResourceMapper
       {
         subAttributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "familyName",
+                descriptor.getAttribute("familyName"),
                 SCIMAttributeValue.createStringValue(sn)));
       }
 
@@ -366,19 +379,23 @@ public class UserResourceMapper extends ResourceMapper
       {
         subAttributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "givenName",
+                descriptor.getAttribute("givenName"),
                 SCIMAttributeValue.createStringValue(givenName)));
       }
 
       final SCIMAttributeValue value =
           SCIMAttributeValue.createComplexValue(subAttributes);
       final SCIMAttribute name =
-          SCIMAttribute.createSingularAttribute(coreSchema, "name", value);
+          SCIMAttribute.createSingularAttribute(descriptor, value);
       attributes.add(name);
     }
 
     if (queryAttributes.isAttributeRequested("addresses"))
     {
+      final AttributeDescriptor addressesDescriptor =
+          resourceDescriptor.getAttribute("addresses");
+      final AttributeDescriptor addressDescriptor =
+          addressesDescriptor.getAttribute("address");
       final ArrayList<SCIMAttributeValue> addresses =
           new ArrayList<SCIMAttributeValue>();
 
@@ -395,7 +412,7 @@ public class UserResourceMapper extends ResourceMapper
 
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
-                  coreSchema, "formatted",
+                  addressDescriptor.getAttribute("formatted"),
                   SCIMAttributeValue.createStringValue(
                       formatted)));
         }
@@ -405,7 +422,7 @@ public class UserResourceMapper extends ResourceMapper
         {
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
-                  coreSchema, "country",
+                  addressDescriptor.getAttribute("country"),
                   SCIMAttributeValue.createStringValue(country)));
         }
 
@@ -414,7 +431,7 @@ public class UserResourceMapper extends ResourceMapper
         {
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
-                  coreSchema, "locality",
+                  addressDescriptor.getAttribute("locality"),
                   SCIMAttributeValue.createStringValue(locality)));
         }
 
@@ -423,7 +440,7 @@ public class UserResourceMapper extends ResourceMapper
         {
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
-                  coreSchema, "postalCode",
+                  addressDescriptor.getAttribute("postalCode"),
                   SCIMAttributeValue.createStringValue(postalCode)));
         }
 
@@ -432,7 +449,7 @@ public class UserResourceMapper extends ResourceMapper
         {
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
-                  coreSchema, "region",
+                  addressDescriptor.getAttribute("region"),
                   SCIMAttributeValue.createStringValue(region)));
         }
 
@@ -441,19 +458,19 @@ public class UserResourceMapper extends ResourceMapper
         {
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
-                  coreSchema, "streetAddress",
+                  addressDescriptor.getAttribute("streetAddress"),
                   SCIMAttributeValue.createStringValue(streetAddress)));
         }
 
         subAttributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "type",
+                addressDescriptor.getAttribute("type"),
                 SCIMAttributeValue.createStringValue("work")));
 
         addresses.add(
             SCIMAttributeValue.createComplexValue(
                 SCIMAttribute.createSingularAttribute(
-                    coreSchema, "address",
+                    addressDescriptor,
                     SCIMAttributeValue.createComplexValue(subAttributes))));
       }
 
@@ -467,14 +484,14 @@ public class UserResourceMapper extends ResourceMapper
           addresses.add(
               SCIMAttributeValue.createComplexValue(
                   SCIMAttribute.createSingularAttribute(
-                      coreSchema, "address",
+                      addressDescriptor,
                       SCIMAttributeValue.createComplexValue(
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "formatted",
+                              addressDescriptor.getAttribute("formatted"),
                               SCIMAttributeValue.createStringValue(
                                   formattedValue)),
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "type",
+                              addressDescriptor.getAttribute("type"),
                               SCIMAttributeValue.createStringValue("home"))))));
         }
       }
@@ -483,7 +500,7 @@ public class UserResourceMapper extends ResourceMapper
       {
         attributes.add(
             SCIMAttribute.createPluralAttribute(
-                coreSchema, "addresses",
+                addressesDescriptor,
                 addresses.toArray(new SCIMAttributeValue[addresses.size()])));
       }
     }
@@ -493,6 +510,11 @@ public class UserResourceMapper extends ResourceMapper
       // Map each value of mail as a work, non-primary email.
       if (entry.hasAttribute("mail"))
       {
+        final AttributeDescriptor emailsDescriptor =
+            resourceDescriptor.getAttribute("emails");
+        final AttributeDescriptor emailDescriptor =
+            emailsDescriptor.getAttribute("email");
+
         final ArrayList<SCIMAttributeValue> emails =
             new ArrayList<SCIMAttributeValue>();
 
@@ -501,13 +523,13 @@ public class UserResourceMapper extends ResourceMapper
           emails.add(
               SCIMAttributeValue.createComplexValue(
                   SCIMAttribute.createSingularAttribute(
-                      coreSchema, "email",
+                      emailDescriptor,
                       SCIMAttributeValue.createComplexValue(
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "value",
+                              emailDescriptor.getAttribute("value"),
                               SCIMAttributeValue.createStringValue(value)),
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "type",
+                              emailDescriptor.getAttribute("type"),
                               SCIMAttributeValue.createStringValue("work"))))));
         }
 
@@ -515,7 +537,7 @@ public class UserResourceMapper extends ResourceMapper
         {
           attributes.add(
               SCIMAttribute.createPluralAttribute(
-                  coreSchema, "emails",
+                  emailsDescriptor,
                   emails.toArray(new SCIMAttributeValue[emails.size()])));
         }
       }
@@ -523,6 +545,10 @@ public class UserResourceMapper extends ResourceMapper
 
     if (queryAttributes.isAttributeRequested("phoneNumbers"))
     {
+      final AttributeDescriptor phoneNumbersDescriptor =
+          resourceDescriptor.getAttribute("phoneNumbers");
+      final AttributeDescriptor phoneNumberDescriptor =
+          phoneNumbersDescriptor.getAttribute("phoneNumber");
       final ArrayList<SCIMAttributeValue> numbers =
           new ArrayList<SCIMAttributeValue>();
 
@@ -534,13 +560,13 @@ public class UserResourceMapper extends ResourceMapper
           numbers.add(
               SCIMAttributeValue.createComplexValue(
                   SCIMAttribute.createSingularAttribute(
-                      coreSchema, "phoneNumber",
+                      phoneNumberDescriptor,
                       SCIMAttributeValue.createComplexValue(
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "value",
+                              phoneNumberDescriptor.getAttribute("value"),
                               SCIMAttributeValue.createStringValue(value)),
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "type",
+                              phoneNumberDescriptor.getAttribute("type"),
                               SCIMAttributeValue.createStringValue("work"))))));
         }
       }
@@ -555,13 +581,13 @@ public class UserResourceMapper extends ResourceMapper
           numbers.add(
               SCIMAttributeValue.createComplexValue(
                   SCIMAttribute.createSingularAttribute(
-                      coreSchema, "phoneNumber",
+                      phoneNumberDescriptor,
                       SCIMAttributeValue.createComplexValue(
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "value",
+                              phoneNumberDescriptor.getAttribute("value"),
                               SCIMAttributeValue.createStringValue(value)),
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "type",
+                              phoneNumberDescriptor.getAttribute("type"),
                               SCIMAttributeValue.createStringValue("fax"))))));
         }
       }
@@ -574,13 +600,13 @@ public class UserResourceMapper extends ResourceMapper
           numbers.add(
               SCIMAttributeValue.createComplexValue(
                   SCIMAttribute.createSingularAttribute(
-                      coreSchema, "phoneNumber",
+                      phoneNumberDescriptor,
                       SCIMAttributeValue.createComplexValue(
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "value",
+                              phoneNumberDescriptor.getAttribute("value"),
                               SCIMAttributeValue.createStringValue(value)),
                           SCIMAttribute.createSingularAttribute(
-                              coreSchema, "type",
+                              phoneNumberDescriptor.getAttribute("type"),
                               SCIMAttributeValue.createStringValue("home"))))));
         }
       }
@@ -589,7 +615,7 @@ public class UserResourceMapper extends ResourceMapper
       {
         attributes.add(
             SCIMAttribute.createPluralAttribute(
-                coreSchema, "phoneNumbers",
+                phoneNumbersDescriptor,
                 numbers.toArray(new SCIMAttributeValue[numbers.size()])));
       }
     }
@@ -601,7 +627,7 @@ public class UserResourceMapper extends ResourceMapper
       {
         attributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "displayName",
+                resourceDescriptor.getAttribute("displayName"),
                 SCIMAttributeValue.createStringValue(displayName)));
       }
     }
@@ -614,7 +640,7 @@ public class UserResourceMapper extends ResourceMapper
       {
         attributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "preferredLanguage",
+                resourceDescriptor.getAttribute("preferredLanguage"),
                 SCIMAttributeValue.createStringValue(preferredLanguage)));
       }
     }
@@ -626,7 +652,7 @@ public class UserResourceMapper extends ResourceMapper
       {
         attributes.add(
             SCIMAttribute.createSingularAttribute(
-                coreSchema, "title",
+                resourceDescriptor.getAttribute("title"),
                 SCIMAttributeValue.createStringValue(title)));
       }
     }
