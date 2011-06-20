@@ -4,26 +4,23 @@
  */
 package com.unboundid.scim.ldap;
 
-import com.unboundid.scim.json.JSONContext;
-import com.unboundid.scim.schema.User;
-import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.marshall.Context;
 import com.unboundid.scim.marshall.Marshaller;
 import com.unboundid.scim.marshall.Unmarshaller;
-import com.unboundid.scim.xml.XMLContext;
+import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import org.eclipse.jetty.util.UrlEncoded;
-
-import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
-import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
-import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
-import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
+import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
+import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
+import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
 
 
@@ -45,16 +42,6 @@ public class SCIMServlet
    */
   private SCIMBackend backend;
 
-  /**
-   * A JSON context to read and write JSON.
-   */
-  private JSONContext jsonContext;
-
-  /**
-   * An XML context to read and write XML.
-   */
-  private XMLContext xmlContext;
-
 
 
   /**
@@ -65,8 +52,6 @@ public class SCIMServlet
   public SCIMServlet(final SCIMBackend backend)
   {
     this.backend       = backend;
-    this.jsonContext   = new JSONContext();
-    this.xmlContext    = new XMLContext();
   }
 
 
@@ -203,8 +188,8 @@ public class SCIMServlet
         new GetResourceRequest("User", userID, queryAttributes);
     try
     {
-      final User user = backend.getUser(getResourceRequest);
-      if (user == null)
+      final SCIMObject scimObject = backend.getObject(getResourceRequest);
+      if (scimObject == null)
       {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
       }
@@ -214,7 +199,9 @@ public class SCIMServlet
         {
           response.setContentType(MEDIA_TYPE_JSON);
           response.setCharacterEncoding("UTF-8");
-          jsonContext.writeUser(response.getWriter(), user);
+
+          // TODO JSON marshaller not yet implemented
+
           response.setStatus(HttpServletResponse.SC_OK);
           response.flushBuffer();
         }
@@ -222,7 +209,10 @@ public class SCIMServlet
         {
           response.setContentType(MEDIA_TYPE_XML);
           response.setCharacterEncoding("UTF-8");
-          xmlContext.writeUser(response.getWriter(), user);
+
+          Context.instance().marshaller().marshal(
+              scimObject, response.getOutputStream());
+
           response.setStatus(HttpServletResponse.SC_OK);
           response.flushBuffer();
         }

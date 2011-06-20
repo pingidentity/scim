@@ -27,7 +27,6 @@
   <property name="jetty.dir"       location="ext/jetty" />
   <property name="jettison.dir"    location="ext/jettison" />
   <property name="jaxb.dir"        location="ext/jaxb" />
-  <property name="package.resource.dir"    location="${resource.dir}" />
 
 
 
@@ -543,6 +542,7 @@
       <jvmarg value="-Demma.coverage.out.merge=false" />
       <jvmarg value="-Dbasedir=${basedir}" />
       <jvmarg value="-Dunit.resource.dir=${unit.resource.dir}" />
+      <jvmarg value="-Dpackage.resource.dir=${resource.dir}" />
       <jvmarg value="-Djava.io.tmpdir=${unit.temp.dir}" />
       <jvmarg value="-Dds.host=${ds.host}" />
       <jvmarg value="-Dds.port=${ds.port}" />

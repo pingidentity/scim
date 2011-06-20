@@ -146,7 +146,7 @@ public final class SCIMAttributeValue
    *
    * @param attributes  The attributes comprising the complex value.
    *
-   * @return  The new complex attribute.
+   * @return  The new complex attribute value.
    */
   public static SCIMAttributeValue createComplexValue(
       final Collection<SCIMAttribute> attributes)
@@ -162,6 +162,41 @@ public final class SCIMAttributeValue
       }
       map.put(a.getName(), a);
     }
+    return new SCIMAttributeValue(Collections.unmodifiableMap(map));
+  }
+
+
+
+  /**
+   * Create a new complex attribute value from a collection of attributes.
+   *
+   * @param schema   The URI for the schema that defines the attribute.
+   * @param value    The string value of the attribute.
+   * @param type     The value of the "type" sub-attribute.
+   * @param primary  Specifies whether this value is the primary value.
+   *
+   * @return  The new plural attribute value.
+   */
+  public static SCIMAttributeValue createPluralStringValue(
+      final String schema, final String value,
+      final String type, final boolean primary)
+  {
+    final Map<String,SCIMAttribute> map =
+        new LinkedHashMap<String, SCIMAttribute>();
+
+    map.put("value",
+            SCIMAttribute.createSingularStringAttribute(
+                schema, "value", value));
+    map.put("type",
+            SCIMAttribute.createSingularStringAttribute(schema, "type", type));
+
+    if (primary)
+    {
+      map.put("primary",
+              SCIMAttribute.createSingularBooleanAttribute(
+                  schema, "primary", primary));
+    }
+
     return new SCIMAttributeValue(Collections.unmodifiableMap(map));
   }
 

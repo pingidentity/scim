@@ -334,7 +334,8 @@ public class InMemoryServerTool
     final SCIMBackend backend =
         new InMemoryLDAPBackend(baseDN.toString(), directoryServer);
 
-    scimServer = new SCIMServer(serverConfig);
+    scimServer = SCIMServer.getInstance();
+    scimServer.initializeServer(serverConfig);
     scimServer.registerBackend(baseURI, backend);
 
     // Start the server.

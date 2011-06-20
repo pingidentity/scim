@@ -8,10 +8,8 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.config.AttributeDescriptor;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -38,45 +36,20 @@ public class SCIMObjectTestCase
         "http://myextension";
 
     final SCIMAttribute userID =
-        SCIMAttribute.createSingularAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(coreSchema, "id")),
-            SCIMAttributeValue.createStringValue(uuid.toString()));
+        SCIMAttribute.createSingularStringAttribute(
+            coreSchema, "id", uuid.toString());
 
     final SCIMAttribute name =
-        SCIMAttribute.createSingularAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(coreSchema,"name")),
-            SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"formatted")),
-                    SCIMAttributeValue.createStringValue(
-                        "Ms. Barbara J Jensen III")),
-                SCIMAttribute.createSingularAttribute(
-                  new AttributeDescriptor(
-                      new AttributeDescriptor.Builder(
-                          coreSchema,"familyName")),
-                    SCIMAttributeValue.createStringValue("Jensen")),
-                SCIMAttribute.createSingularAttribute(
-                  new AttributeDescriptor(
-                      new AttributeDescriptor.Builder(
-                          coreSchema,"givenName")),
-                  SCIMAttributeValue.createStringValue("Barbara"))));
+        generateName("Ms. Barbara J Jensen III",
+                     "Jensen", "Barbara", null, null, null);
 
-    final List<SCIMAttribute> emailAttrs = new ArrayList<SCIMAttribute>();
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        new AttributeDescriptor(new AttributeDescriptor.Builder(
-            coreSchema,"email")),
-      SCIMAttributeValue.createStringValue(
-          "bjensen@example.com")));
     final SCIMAttribute emails =
         SCIMAttribute.createPluralAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(
-                    coreSchema,"emails").plural(true)),
-            SCIMAttributeValue.createComplexValue(emailAttrs));
+            coreSchema,"emails",
+            SCIMAttributeValue.createPluralStringValue(
+                coreSchema, "bjensen@example.com", "work", true),
+            SCIMAttributeValue.createPluralStringValue(
+                coreSchema, "babs@jensen.org", "home", false));
 
     final Date date = new Date(System.currentTimeMillis());
     final SCIMAttribute meta =
@@ -97,11 +70,8 @@ public class SCIMObjectTestCase
                     SCIMAttributeValue.createDateValue(date))));
 
     final SCIMAttribute employeeNumber =
-        SCIMAttribute.createSingularAttribute(
-          new AttributeDescriptor(
-              new AttributeDescriptor.Builder(
-                  enterpriseUserSchema,"employeeNumber")),
-            SCIMAttributeValue.createStringValue("1000001"));
+        SCIMAttribute.createSingularStringAttribute(
+            enterpriseUserSchema, "employeeNumber", "1000001");
 
     final SCIMObject user = new SCIMObject();
     user.setResourceType("User");

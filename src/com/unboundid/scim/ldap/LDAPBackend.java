@@ -12,7 +12,12 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMObject;
+
+import java.util.List;
+import java.util.Set;
+
 
 
 /**
@@ -70,9 +75,23 @@ public abstract class LDAPBackend
       }
       else
       {
-        return null;
-//        return LDAPUtil.userFromInetOrgPersonEntry(searchResultEntry,
-//                                                   request.getAttributes());
+        final SCIMServer scimServer = SCIMServer.getInstance();
+        final Set<ResourceMapper> mappers =
+            scimServer.getResourceMappers(request.getResourceType());
+
+        final SCIMObject scimObject = new SCIMObject();
+        scimObject.setResourceType(request.getResourceType());
+        for (final ResourceMapper m : mappers)
+        {
+          final List<SCIMAttribute> attributes =
+              m.toSCIMAttributes(searchResultEntry, request.getAttributes());
+          for (final SCIMAttribute a : attributes)
+          {
+            scimObject.addAttribute(a);
+          }
+        }
+
+        return scimObject;
       }
     }
     catch (LDAPException e)

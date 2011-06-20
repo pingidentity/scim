@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -323,7 +324,7 @@ public abstract class SCIMRITestCase
 
     final File resourceDir = new File(System.getProperty("unit.resource.dir"));
 
-        final File schemaFile = getPackageResource("scim-core.xsd");
+    final File schemaFile = getPackageResource("scim-core.xsd");
     ResourceDescriptorManager.init(new File[]{schemaFile});
 
     final File serverKeyStore   = new File(resourceDir, "server.keystore");
@@ -360,7 +361,8 @@ public abstract class SCIMRITestCase
     ldapConfig.setNumConnections(16);
 
     final SCIMBackend ldapBackend = new ExternalLDAPBackend(ldapConfig);
-    testSS = new SCIMServer(ssConfig);
+    testSS = SCIMServer.getInstance();
+    testSS.initializeServer(ssConfig);
     testSS.registerBackend("/", ldapBackend);
     testSS.registerBackend("/scim", ldapBackend);
     testSS.startListening();
@@ -381,6 +383,7 @@ public abstract class SCIMRITestCase
     if (testSS != null)
     {
       testSS.shutdown();
+      testSS = null;
     }
 
     if (testDS != null)
@@ -3630,5 +3633,176 @@ public abstract class SCIMRITestCase
   {
     final File resourceDir = new File(System.getProperty("unit.resource.dir"));
     return new File(resourceDir, fileName);
+  }
+
+
+
+  /**
+   * Generate a SCIM core user 'name' attribute. Any of the arguments may be
+   * {@code null} if they are not to be included.
+   *
+   * @param formatted        The The full name, including all middle names,
+   *                         titles, and suffixes as appropriate, formatted
+   *                         for display.
+   * @param familyName       The family name of the User, or "Last Name" in
+   *                         most Western languages.
+   * @param givenName        The given name of the User, or "First Name" in
+   *                         most Western languages.
+   * @param middleName       The middle name(s) of the User.
+   * @param honorificPrefix  The honorific prefix(es) of the User, or "Title"
+   *                         in most Western languages.
+   * @param honorificSuffix  The honorifix suffix(es) of the User, or "Suffix"
+   *                         in most Western languages.
+   *
+   * @return  A name attribute constructed from the provided values.
+   */
+  protected static SCIMAttribute generateName(final String formatted,
+                                              final String familyName,
+                                              final String givenName,
+                                              final String middleName,
+                                              final String honorificPrefix,
+                                              final String honorificSuffix)
+  {
+    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
+
+    final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
+
+    if (formatted != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "formatted", formatted));
+    }
+
+    if (givenName != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "givenName", givenName));
+    }
+
+    if (familyName != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "familyName", familyName));
+    }
+
+    if (middleName != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "middleName", middleName));
+    }
+
+    if (honorificPrefix != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "honorificPrefix", honorificPrefix));
+    }
+
+    if (honorificSuffix != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "honorificSuffix", honorificSuffix));
+    }
+
+    return SCIMAttribute.createSingularAttribute(
+        coreSchema,"name",
+        SCIMAttributeValue.createComplexValue(subAttributes));
+  }
+
+  /**
+   * Generate a value of the SCIM addresses attribute.
+   *
+   * @param type           The type of address, "work", "home" or "other".
+   * @param formatted      The full mailing address, formatted for display or
+   *                       use with a mailing label.
+   * @param streetAddress  The full street address component, which may include
+   *                       house number, street name, PO BOX, and multi-line
+   *                       extended street address information.
+   * @param locality       The city or locality component.
+   * @param region         The state or region component.
+   * @param postalCode     The zip code or postal code component.
+   * @param country        The country name component.
+   * @param primary        Specifies whether this value is the primary value.
+   *
+   * @return  An attribute values constructed from the provided information.
+   */
+  protected static SCIMAttributeValue generateAddress(
+      final String type,
+      final String formatted,
+      final String streetAddress,
+      final String locality,
+      final String region,
+      final String postalCode,
+      final String country,
+      final boolean primary)
+  {
+    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
+
+    final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
+
+    if (type != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularAttribute(
+              coreSchema, "type",
+              SCIMAttributeValue.createStringValue(type)));
+    }
+
+    if (formatted != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "formatted", formatted));
+    }
+
+    if (streetAddress != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "streetAddress", streetAddress));
+    }
+
+    if (locality != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "locality", locality));
+    }
+
+    if (region != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "region", region));
+    }
+
+    if (postalCode != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "postalCode", postalCode));
+    }
+
+    if (country != null)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularStringAttribute(
+              coreSchema, "country", country));
+    }
+
+    if (primary)
+    {
+      subAttributes.add(
+          SCIMAttribute.createSingularAttribute(
+              coreSchema, "primary",
+              SCIMAttributeValue.createBooleanValue(primary)));
+    }
+
+    return SCIMAttributeValue.createComplexValue(subAttributes);
   }
 }

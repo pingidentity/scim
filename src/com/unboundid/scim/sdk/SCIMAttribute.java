@@ -79,15 +79,78 @@ public final class SCIMAttribute
 
 
   /**
+   * Create a simple singular attribute from a string value.
+   *
+   * @param schema  The URI for the schema that defines the attribute.
+   * @param name    The name of the attribute.
+   * @param value   The value of the attribute.
+   *
+   * @return  A new simple singular attribute containing a string value.
+   */
+  public static SCIMAttribute createSingularStringAttribute(
+      final String schema, final String name, final String value)
+  {
+    final AttributeDescriptor descriptor =
+        new AttributeDescriptor(
+            new AttributeDescriptor.Builder(schema, name));
+    return new SCIMAttribute(descriptor,
+                             SCIMAttributeValue.createStringValue(value));
+  }
+
+
+
+  /**
+   * Create a simple singular attribute from a boolean value.
+   *
+   * @param schema  The URI for the schema that defines the attribute.
+   * @param name    The name of the attribute.
+   * @param value   The value of the attribute.
+   *
+   * @return  A new simple singular attribute containing a string value.
+   */
+  public static SCIMAttribute createSingularBooleanAttribute(
+      final String schema, final String name, final boolean value)
+  {
+    final AttributeDescriptor descriptor =
+        new AttributeDescriptor(
+            new AttributeDescriptor.Builder(schema, name));
+    return new SCIMAttribute(descriptor,
+                             SCIMAttributeValue.createBooleanValue(value));
+  }
+
+
+
+  /**
    * Create a singular attribute.
-   * @param descriptor The mapping descriptorof this attribute.
-   * @param value     The value of this attribute.
+   *
+   * @param descriptor The mapping descriptor of this attribute.
+   * @param value      The value of this attribute.
    *
    * @return  A new singular attribute.
    */
   public static SCIMAttribute createSingularAttribute(
      final AttributeDescriptor descriptor, final SCIMAttributeValue value)
   {
+    return new SCIMAttribute(descriptor, value);
+  }
+
+
+
+  /**
+   * Create a singular attribute.
+   *
+   * @param schema  The URI for the schema that defines the attribute.
+   * @param name    The name of the attribute.
+   * @param value   The value of the attribute.
+   *
+   * @return  A new singular attribute.
+   */
+  public static SCIMAttribute createSingularAttribute(
+     final String schema, final String name, final SCIMAttributeValue value)
+  {
+    final AttributeDescriptor descriptor =
+        new AttributeDescriptor(
+            new AttributeDescriptor.Builder(schema, name));
     return new SCIMAttribute(descriptor, value);
   }
 
@@ -105,6 +168,27 @@ public final class SCIMAttribute
       final AttributeDescriptor descriptor,
       final SCIMAttributeValue ... values)
   {
+    return new SCIMAttribute(descriptor, null, values);
+  }
+
+
+
+  /**
+   * Create a plural attribute.
+   *
+   * @param schema  The URI for the schema that defines the attribute.
+   * @param name    The name of the attribute.
+   * @param values  The values of this attribute.
+   *
+   * @return  A new plural attribute.
+   */
+  public static SCIMAttribute createPluralAttribute(
+      final String schema, final String name,
+      final SCIMAttributeValue ... values)
+  {
+    final AttributeDescriptor descriptor =
+        new AttributeDescriptor(
+            new AttributeDescriptor.Builder(schema, name));
     return new SCIMAttribute(descriptor, null, values);
   }
 

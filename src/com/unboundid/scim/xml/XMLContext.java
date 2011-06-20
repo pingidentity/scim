@@ -89,6 +89,7 @@ public class XMLContext
   public User readUser(final String xmlString)
       throws IOException
   {
+    System.out.println("Read User: " + xmlString);
     try
     {
       final Reader reader = new StringReader(xmlString);
@@ -96,7 +97,7 @@ public class XMLContext
       {
         final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         Object unmarshal = unmarshaller.unmarshal(reader);
-          return (User)((JAXBElement) unmarshal).getValue();
+        return (User)((JAXBElement) unmarshal).getValue();
       }
       finally
       {

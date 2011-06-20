@@ -12,6 +12,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import javax.servlet.http.HttpServlet;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,6 +27,15 @@ import java.util.Set;
 public class SCIMServer
 {
   /**
+   * The singleton instance of the SCIM server.
+   */
+  private static SCIMServer scimServer;
+  static
+  {
+    scimServer = new SCIMServer();
+  }
+
+  /**
    * The configuration of this SCIM server.
    */
   private SCIMServerConfig config;
@@ -38,19 +48,25 @@ public class SCIMServer
   /**
    * The set of backends registered with the server, keyed by the base URI.
    */
-  private Map<String,SCIMBackend> backends;
+  private volatile Map<String,SCIMBackend> backends;
+
+
+  /**
+   * The set of resource mappers registered for SCIM endpoints.
+   */
+  private volatile Map<String,Set<ResourceMapper>> resourceMappers;
 
 
 
   /**
-   * Create a new SCIM server with the provided configuration.
+   * Initialize the SCIM server with the provided configuration.
    * All backend must be registered with the server using
    * {@link #registerBackend(String, SCIMBackend)} before calling
    * {@link #startListening()}.
    *
    * @param serverConfig  The desired server configuration.
    */
-  public SCIMServer(final SCIMServerConfig serverConfig)
+  public void initializeServer(final SCIMServerConfig serverConfig)
   {
     final Server s = new Server(serverConfig.getListenPort());
     s.setThreadPool(new QueuedThreadPool(serverConfig.getMaxThreads()));
@@ -60,7 +76,22 @@ public class SCIMServer
 
     this.config = serverConfig;
     this.server = s;
-    this.backends = new HashMap<String, SCIMBackend>();
+    this.backends        = new HashMap<String, SCIMBackend>();
+    this.resourceMappers = new HashMap<String,Set<ResourceMapper>>();
+
+    this.registerResourceMapper(new UserResourceMapper(), "User");
+  }
+
+
+
+  /**
+   * Retrieves the singleton instance of the SCIM server.
+   *
+   * @return  The singleton instance of the SCIM server.
+   */
+  public static SCIMServer getInstance()
+  {
+    return scimServer;
   }
 
 
@@ -96,6 +127,77 @@ public class SCIMServer
       contextHandler.addServlet(new ServletHolder(servlet), "/User/*");
 
       backends = newBackends;
+    }
+  }
+
+
+
+  /**
+   * Register a resource mapper with this server for the specified SCIM
+   * resource end point. e.g. User or Group. Multiple resource mappers may be
+   * registered for a single resource end point.
+   *
+   * @param resourceMapper    The resource mapper to be registered. It must not
+   *                          be {@code null}.
+   * @param resourceEndPoint  The SCIM resource end point with which the mapper
+   *                          is associated. It must not be {@code null}.
+   */
+  public void registerResourceMapper(final ResourceMapper resourceMapper,
+                                     final String resourceEndPoint)
+  {
+    synchronized (this)
+    {
+      Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
+      if (mappers != null && mappers.contains(resourceMapper))
+      {
+        throw new RuntimeException("The resource mapper was already " +
+                                   "registered for resource end point " +
+                                   resourceEndPoint);
+      }
+
+      final Map<String,Set<ResourceMapper>> newResourceMappers =
+          new HashMap<String, Set<ResourceMapper>>();
+      for (Map.Entry<String,Set<ResourceMapper>> e : resourceMappers.entrySet())
+      {
+        newResourceMappers.put(e.getKey(),
+                               new HashSet<ResourceMapper>(e.getValue()));
+      }
+
+      mappers = newResourceMappers.get(resourceEndPoint);
+      if (mappers == null)
+      {
+        mappers = new HashSet<ResourceMapper>();
+        newResourceMappers.put(resourceEndPoint, mappers);
+      }
+
+      mappers.add(resourceMapper);
+
+      resourceMappers = newResourceMappers;
+    }
+  }
+
+
+
+  /**
+   * Retrieve the set of resource mappers registered for the provided resource
+   * end point.
+   *
+   * @param resourceEndPoint  The resource end point for which the registered
+   *                          resource mappers are requested.
+   *
+   * @return  The set of resource mappers registered for the provided resource
+   *          end point. This is never {@code null} but it may be empty.
+   */
+  public Set<ResourceMapper> getResourceMappers(final String resourceEndPoint)
+  {
+    final Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
+    if (mappers == null)
+    {
+      return Collections.emptySet();
+    }
+    else
+    {
+      return Collections.unmodifiableSet(mappers);
     }
   }
 
@@ -192,6 +294,26 @@ public class SCIMServer
       }
 
       backends = null;
+    }
+
+    if (resourceMappers != null)
+    {
+      // Make sure that each resource mapper is finalized exactly once.
+      Set<ResourceMapper> allMappers = new HashSet<ResourceMapper>();
+      for (final Set<ResourceMapper> mappers : resourceMappers.values())
+      {
+        if (mappers != null)
+        {
+          allMappers.addAll(mappers);
+        }
+      }
+
+      for (final ResourceMapper b : allMappers)
+      {
+        b.finalizeMapper();
+      }
+
+      resourceMappers = null;
     }
   }
 

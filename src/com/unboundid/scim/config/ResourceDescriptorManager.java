@@ -2,6 +2,7 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
+
 package com.unboundid.scim.config;
 
 import java.io.File;
