@@ -70,8 +70,14 @@ public class XmlMarshaller implements Marshaller {
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
     int i = 0;
     String nsPrefix;
+
     xmlStreamWriter.setDefaultNamespace(Context.DEFAULT_SCHEMA_URN);
-    xmlStreamWriter.writeStartElement("user");
+
+    // todo: at the moment the scim object is assumed to be a core schema
+    // object
+    // need to be able to identify schema properly
+    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
+      o.getResourceType(),Context.DEFAULT_SCHEMA_URN);
     for (String schema : o.getSchemas()) {
       if (schema.equals(Context.DEFAULT_SCHEMA_URN)) {
         xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
