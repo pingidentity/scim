@@ -3,7 +3,7 @@
            targetNamespace="urn:scim:schemas:core:1.0"
            xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
 
-    <xs:complexType name="user">
+    <xs:complexType name="User">
         <xs:complexContent>
             <xs:extension base="tns:resource">
                 <xs:sequence>
@@ -96,7 +96,7 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="group">
+    <xs:complexType name="Group">
         <xs:complexContent>
             <xs:extension base="tns:resource">
                 <xs:sequence>
@@ -106,8 +106,8 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:element name="user" type="tns:user"/>
-    <xs:element name="group" type="tns:group"/>
+    <xs:element name="User" type="tns:User"/>
+    <xs:element name="Group" type="tns:Group"/>
 
     <xs:complexType name="resource">
         <xs:sequence>

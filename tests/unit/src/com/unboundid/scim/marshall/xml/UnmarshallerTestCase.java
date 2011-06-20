@@ -55,6 +55,6 @@ public class UnmarshallerTestCase
     assertTrue(o.hasAttribute(coreSchema, "emails"));
     assertTrue(o.hasAttribute(coreSchema, "name"));
     assertNotNull(o.getResourceType());
-    assertEquals(o.getResourceType(), "user");
+    assertEquals(o.getResourceType(), "User");
   }
 }

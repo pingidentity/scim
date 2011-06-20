@@ -3,7 +3,7 @@
   ~ Copyright 2011 UnboundID Corp.
   ~ All Rights Reserved.
   -->
-<scim:user xmlns:scim="urn:scim:schemas:core:1.0">
+<scim:User xmlns:scim="urn:scim:schemas:core:1.0">
   <id>uid=user.0,ou=People,dc=example,dc=com</id>
   <addresses>
     <address>
@@ -45,4 +45,4 @@
     <formatted>Aaren Atp</formatted>
   </name>
   <userName>user.0</userName>
-</scim:user>
+</scim:User>
