@@ -15,8 +15,7 @@ package com.unboundid.scim.sdk;
 public final class SCIMAttributeType
 {
   /**
-   * The URI of the schema to which this attribute belongs, or {@code null}
-   * to indicate the core schema.
+   * The URI of the schema to which this attribute belongs.
    */
   private final String schema;
 
@@ -30,13 +29,17 @@ public final class SCIMAttributeType
    */
   private final String normalizedName;
 
+  /**
+   * The qualified name of the attribute.
+   */
+  private final String qualifiedName;
+
 
 
   /**
    * Create a new SCIM attribute type from the provided information.
    *
-   * @param schema  The URI of the schema to which this attribute belongs, or
-   *                {@code null} to indicate the core schema.
+   * @param schema  The URI of the schema to which this attribute belongs.
    * @param name    The name of the attribute.
    *
    */
@@ -45,6 +48,20 @@ public final class SCIMAttributeType
     this.schema = schema;
     this.name   = name;
     this.normalizedName = name.toLowerCase();
+    this.qualifiedName  = buildQualifiedName();
+  }
+
+
+
+  /**
+   * Create a new SCIM core attribute type.
+   *
+   * @param name    The name of the attribute from the core schema.
+   *
+   */
+  public SCIMAttributeType(final String name)
+  {
+    this(SCIMConstants.SCHEMA_URI_CORE, name);
   }
 
 
@@ -61,7 +78,7 @@ public final class SCIMAttributeType
     int lastColonPos = qualifiedName.lastIndexOf(':');
     if (lastColonPos == -1)
     {
-      return new SCIMAttributeType(null, qualifiedName);
+      return new SCIMAttributeType(qualifiedName);
     }
     else
     {
@@ -73,11 +90,9 @@ public final class SCIMAttributeType
 
 
   /**
-   * Retrieve the name of the schema to which this attribute belongs, or
-   * {@code null} if the attribute is in the core schema.
+   * Retrieve the name of the schema to which this attribute belongs.
    *
-   * @return  The name of the schema to which this attribute belongs, or
-   *          {@code null} if the attribute is in the core schema.
+   * @return  The name of the schema to which this attribute belongs.
    */
   public String getSchema()
   {
@@ -95,6 +110,28 @@ public final class SCIMAttributeType
   public String getName()
   {
     return name;
+  }
+
+
+
+  /**
+   * Returns the qualified name of this attribute type.
+   *
+   * @return  The qualified name of this attribute type.
+   */
+  public String toQualifiedName()
+  {
+    return qualifiedName;
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public String toString()
+  {
+    return toQualifiedName();
   }
 
 
@@ -139,10 +176,7 @@ public final class SCIMAttributeType
   {
     int hashCode = 0;
 
-    if (schema != null)
-    {
-      hashCode += schema.hashCode();
-    }
+    hashCode += schema.hashCode();
     hashCode += normalizedName.hashCode();
 
     return hashCode;
@@ -229,5 +263,26 @@ public final class SCIMAttributeType
       return this.schema.equals(that.schema) &&
              this.name.equalsIgnoreCase(that.name);
     }
+  }
+
+
+
+  /**
+   * Builds the qualified name of the attribute.
+   *
+   * @return  The qualified name of the attribute.
+   */
+  public String buildQualifiedName()
+  {
+    final StringBuilder builder = new StringBuilder();
+
+    if (!schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+    {
+      builder.append(schema);
+      builder.append(':');
+    }
+
+    builder.append(name);
+    return builder.toString();
   }
 }

@@ -5,13 +5,14 @@
 
 package com.unboundid.scim.sdk;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 
 /**
- * This class represents a set of query attributes taken from the attributes
+ * This class represents a list of query attributes taken from the attributes
  * query parameter. e.g. attributes=displayName,userName
  */
 public class SCIMQueryAttributes
@@ -20,19 +21,20 @@ public class SCIMQueryAttributes
    * The set of attributes explicitly requested, or empty if all attributes are
    * requested.
    */
-  private final Set<SCIMAttributeType> types;
+  private final List<SCIMAttributeType> types;
 
 
   /**
    * Create a new instance of query attributes from their string representation.
    *
    * @param attributes     The set of attributes requested, or empty if all
-   *                       attributes are requested. The attributes may be
-   *                       qualified by their schema URI.
+   *                       attributes are requested. The attributes must be
+   *                       qualified by their schema URI if they are not in the
+   *                       core schema.
    */
   public SCIMQueryAttributes(final String ... attributes)
   {
-    types = new HashSet<SCIMAttributeType>();
+    types = new ArrayList<SCIMAttributeType>();
     if (attributes.length > 0)
     {
       for (final String a : attributes)
@@ -40,6 +42,19 @@ public class SCIMQueryAttributes
         types.add(SCIMAttributeType.fromQualifiedName(a));
       }
     }
+  }
+
+
+
+  /**
+   * Retrieve the list of query attributes.
+   *
+   * @return  The list of query attributes, or an empty list if all attributes
+   *          are requested.
+   */
+  public List<SCIMAttributeType> getAttributeTypes()
+  {
+    return Collections.unmodifiableList(types);
   }
 
 
@@ -119,6 +134,6 @@ public class SCIMQueryAttributes
       return true;
     }
 
-    return types.contains(new SCIMAttributeType(null, name));
+    return types.contains(new SCIMAttributeType(name));
   }
 }

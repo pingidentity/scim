@@ -15,23 +15,23 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
  * This class represents a SCIM Get Resource request to retrieve all or
  * selected attributes from a single resource.
  */
-public class GetResourceRequest
+public final class GetResourceRequest
 {
   /**
    * The name of the resource identified by the request endpoint.
    * e.g. User or Group.
    */
-  private String resourceName;
+  private final String resourceName;
 
   /**
    * The requested resource ID.
    */
-  private String resourceID;
+  private final String resourceID;
 
   /**
    * The set of requested attributes.
    */
-  private SCIMQueryAttributes attributes;
+  private final SCIMQueryAttributes attributes;
 
 
 

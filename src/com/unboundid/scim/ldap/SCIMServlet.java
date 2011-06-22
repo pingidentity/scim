@@ -7,9 +7,10 @@ package com.unboundid.scim.ldap;
 import com.unboundid.scim.marshall.Context;
 import com.unboundid.scim.marshall.Marshaller;
 import com.unboundid.scim.marshall.Unmarshaller;
+import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.SCIMQueryAttributes;
-import org.eclipse.jetty.util.UrlEncoded;
+import com.unboundid.scim.sdk.ScimURI;
+import com.unboundid.util.StaticUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -17,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
@@ -64,130 +64,40 @@ public class SCIMServlet
                        final HttpServletResponse response)
       throws ServletException, IOException
   {
-    // Get the part of the path that identifies the resource.
-    final String pathInfo = request.getPathInfo();
-    if (pathInfo == null)
-    {
-      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      return;
-    }
-
-    // Split up the components of the resource identifier.
-    final String[] split = pathInfo.split("/");
-    if (split.length < 2 || split[1].isEmpty())
-    {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                         "The operation does not specify a user ID");
-      return;
-    }
-
-    if (split.length > 3 || !split[0].isEmpty())
-    {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                         "The URI does not specify a valid user operation");
-      return;
-    }
-
-    // Determine the media type to return.
-    String mediaType = null;
-    final String userID;
-    final String resource = split[1];
-    if (resource.endsWith(".xml"))
-    {
-      mediaType = MEDIA_TYPE_XML;
-      if (resource.length() > 4)
-      {
-        userID = resource.substring(0, resource.length() - 4);
-      }
-      else
-      {
-        userID = "";
-      }
-    }
-    else if (resource.endsWith(".json"))
-    {
-      mediaType = MEDIA_TYPE_JSON;
-      if (resource.length() > 5)
-      {
-        userID = resource.substring(0, resource.length() - 5);
-      }
-      else
-      {
-        userID = "";
-      }
-    }
-    else
-    {
-      userID = resource;
-    }
-
-    if (mediaType == null)
-    {
-      final HttpAcceptHeader acceptHeader =
-          HttpAcceptHeader.parse(request.getHeader(HEADER_NAME_ACCEPT));
-      mediaType = acceptHeader.findBestMatch(MEDIA_TYPE_JSON, MEDIA_TYPE_XML);
-    }
-
-    if (mediaType == null)
-    {
-      response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE,
-                         "Only JSON and XML content types are supported");
-      return;
-    }
-
-    boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
-
-    final String targetAttribute;
-    if (split.length > 2)
-    {
-      targetAttribute = split[2];
-    }
-    else
-    {
-      targetAttribute = null;
-    }
-
-    if (targetAttribute != null && !targetAttribute.isEmpty())
-    {
-      response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                         "Operations on user attributes are not implemented");
-      return;
-    }
-
-    // Parse the query string.
-    final String[] attributes;
-    final String queryString = request.getQueryString();
-    if (queryString != null && !queryString.isEmpty())
-    {
-      final UrlEncoded queryMap = new UrlEncoded(queryString);
-      if (queryMap.containsKey(ATTRIBUTES_QUERY_STRING))
-      {
-        final String commaList = queryMap.getString(ATTRIBUTES_QUERY_STRING);
-        if (commaList != null && !commaList.isEmpty())
-        {
-          attributes = commaList.split(",");
-        }
-        else
-        {
-          attributes = new String[0];
-        }
-      }
-      else
-      {
-        attributes = new String[0];
-      }
-    }
-    else
-    {
-      attributes = new String[0];
-    }
-
-    final SCIMQueryAttributes queryAttributes =
-        new SCIMQueryAttributes(attributes);
-    final GetResourceRequest getResourceRequest =
-        new GetResourceRequest("User", userID, queryAttributes);
     try
     {
+      final ScimURI uri = ScimURI.parseURI("", "User",
+                                           request.getPathInfo(),
+                                           request.getQueryString());
+      if (uri.getResourceID() == null)
+      {
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                           "The operation does not specify a resource ID");
+        return;
+      }
+
+      final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
+      if (resourceAttribute != null)
+      {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                           "Operations on user attributes are not implemented");
+        return;
+      }
+
+      // Determine the media type to return.
+      final String mediaType = getMediaType(uri, request);
+      if (mediaType == null)
+      {
+        response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE,
+                           "Only JSON and XML content types are supported");
+        return;
+      }
+
+      final boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
+
+      final GetResourceRequest getResourceRequest =
+          new GetResourceRequest(uri.getResourceName(), uri.getResourceID(),
+                                 uri.getQueryAttributes());
       final SCIMObject scimObject = backend.getObject(getResourceRequest);
       if (scimObject == null)
       {
@@ -210,8 +120,8 @@ public class SCIMServlet
           response.setContentType(MEDIA_TYPE_XML);
           response.setCharacterEncoding("UTF-8");
 
-          Context.instance().marshaller().marshal(
-              scimObject, response.getOutputStream());
+          final Marshaller marshaller = Context.instance().marshaller();
+          marshaller.marshal(scimObject, response.getOutputStream());
 
           response.setStatus(HttpServletResponse.SC_OK);
           response.flushBuffer();
@@ -221,24 +131,120 @@ public class SCIMServlet
     catch (Exception e)
     {
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                         e.getMessage());
+                         StaticUtils.getExceptionMessage(e));
     }
   }
 
+
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void doPost(final HttpServletRequest request,
                         final HttpServletResponse response)
-      throws ServletException, IOException {
-    try {
-      // pull in a resource and echo it back
+      throws ServletException, IOException
+  {
+    try
+    {
+      final ScimURI uri = ScimURI.parseURI("", "User",
+                                           request.getPathInfo(),
+                                           request.getQueryString());
+
+      final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
+      if (resourceAttribute != null)
+      {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                           "Operations on user attributes are not implemented");
+        return;
+      }
+
+      // Determine the media type to return.
+      final String mediaType = getMediaType(uri, request);
+      if (mediaType == null)
+      {
+        response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE,
+                           "Only JSON and XML content types are supported");
+        return;
+      }
+
+      final boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
+
+      // Parse the resource.
       Unmarshaller unmarshaller = Context.instance().unmarshaller();
-      SCIMObject scimObject = unmarshaller.unmarshal(request.getInputStream());
-      // dump it out
-      Marshaller marshaller = Context.instance().marshaller();
-      marshaller.marshal(scimObject, response.getWriter());
-    } catch (Exception e) {
-      e.printStackTrace();
+      final SCIMObject requestObject =
+          unmarshaller.unmarshal(request.getInputStream());
+
+      final PostResourceRequest postResourceRequest =
+          new PostResourceRequest(uri.getResourceName(), requestObject,
+                                  uri.getQueryAttributes());
+
+      final SCIMObject returnObject = backend.postObject(postResourceRequest);
+      if (returnJSON)
+      {
+        response.setContentType(MEDIA_TYPE_JSON);
+        response.setCharacterEncoding("UTF-8");
+
+        // TODO JSON marshaller not yet implemented
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.flushBuffer();
+      }
+      else
+      {
+        response.setContentType(MEDIA_TYPE_XML);
+        response.setCharacterEncoding("UTF-8");
+
+        final Marshaller marshaller = Context.instance().marshaller();
+        marshaller.marshal(returnObject, response.getOutputStream());
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.flushBuffer();
+      }
+    }
+    catch (Exception e)
+    {
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                         StaticUtils.getExceptionMessage(e));
     }
   }
 
+
+
+  /**
+   * Determine the media type that should be used in a response.
+   *
+   * @param uri      The request URI.
+   * @param request  The servlet request.
+   *
+   * @return  The media type (e.g. application/xml) or {@code null} if an
+   *          acceptable media type cannot be determined.
+   */
+  private String getMediaType(final ScimURI uri,
+                              final HttpServletRequest request)
+  {
+    String mediaType = null;
+
+    final String mediaTypeSuffix = uri.getMediaTypeSuffix();
+    if (mediaTypeSuffix != null)
+    {
+      if (mediaTypeSuffix.equalsIgnoreCase("xml"))
+      {
+        mediaType = MEDIA_TYPE_XML;
+      }
+      else if (mediaTypeSuffix.equalsIgnoreCase("json"))
+      {
+        mediaType = MEDIA_TYPE_JSON;
+      }
+    }
+
+    if (mediaType == null)
+    {
+      final HttpAcceptHeader acceptHeader =
+          HttpAcceptHeader.parse(request.getHeader(HEADER_NAME_ACCEPT));
+      mediaType = acceptHeader.findBestMatch(MEDIA_TYPE_JSON, MEDIA_TYPE_XML);
+    }
+
+    return mediaType;
+  }
 }

@@ -41,7 +41,9 @@ public class XMLContext
   {
     try
     {
-      jaxbContext = JAXBContext.newInstance(User.class);
+      final ObjectFactory jaxbFactory = new ObjectFactory();
+      String packageName = jaxbFactory.getClass().getPackage().getName();
+      jaxbContext = JAXBContext.newInstance(packageName);
     }
     catch (JAXBException e)
     {

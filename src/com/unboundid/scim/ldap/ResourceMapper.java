@@ -7,6 +7,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
@@ -51,6 +52,33 @@ public abstract class ResourceMapper
 
 
   /**
+   * Indicates whether this mapper supports creation of new resources through
+   * {@link #toLDAPEntry(com.unboundid.scim.sdk.SCIMObject, String)}.
+   *
+   * @return  {@code true} if this mapper supports resource creation.
+   */
+  public abstract boolean supportsCreate();
+
+
+
+  /**
+   * Construct an LDAP entry from the provided SCIM object.
+   *
+   * @param scimObject  The SCIM object to form the contents of the entry.
+   * @param baseDN      The base DN below which all entries are created.
+   *
+   * @return  An LDAP entry.
+   *
+   * @throws LDAPException  If the entry could not be constructed.
+   */
+  public abstract Entry toLDAPEntry(final SCIMObject scimObject,
+                                    final String baseDN)
+      throws LDAPException;
+
+
+
+
+  /**
    * Map the attributes in a SCIM object to LDAP attributes.
    *
    * @param scimObject  The object containing attributes to be mapped.
@@ -59,9 +87,6 @@ public abstract class ResourceMapper
    *          never be {@code null} but may be empty.
    */
   public abstract List<Attribute> toLDAPAttributes(final SCIMObject scimObject);
-
-
-
 
 
 

@@ -12,14 +12,15 @@ import org.eclipse.jetty.client.Address;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
 import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.util.URIUtil;
-import org.eclipse.jetty.util.UrlEncoded;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 
 
@@ -127,39 +128,13 @@ public class SCIMClient
   public User getUser(final String userID, final String ... attributes)
       throws IOException
   {
-    final StringBuilder uriBuilder = new StringBuilder();
-    URIUtil.encodePath(uriBuilder, baseURI);
-    if (!baseURI.endsWith("/"))
-    {
-      uriBuilder.append('/');
-    }
-    uriBuilder.append("User/");
-    URIUtil.encodePath(uriBuilder, userID);
-    if (attributes.length > 0)
-    {
-      uriBuilder.append('?');
-      uriBuilder.append(ATTRIBUTES_QUERY_STRING);
-      uriBuilder.append('=');
-
-      boolean first = true;
-      for (final String a : attributes)
-      {
-        if (first)
-        {
-          first = false;
-        }
-        else
-        {
-          uriBuilder.append(',');
-        }
-        uriBuilder.append(UrlEncoded.encodeString(a));
-      }
-    }
-
+    final ScimURI uri =
+        new ScimURI(baseURI, "User", userID, null, null,
+                    new SCIMQueryAttributes(attributes));
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     exchange.setAddress(address);
     exchange.setMethod("GET");
-    exchange.setURI(uriBuilder.toString());
+    exchange.setURI(uri.toString());
     exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
 
     httpClient.send(exchange);
@@ -186,6 +161,107 @@ public class SCIMClient
             // The user was not found.
             return null;
 
+          case HttpStatus.BAD_REQUEST_400:
+          case HttpStatus.UNAUTHORIZED_401:
+          case HttpStatus.FORBIDDEN_403:
+          case HttpStatus.CONFLICT_409:
+          case HttpStatus.PRECONDITION_FAILED_412:
+          case HttpStatus.INTERNAL_SERVER_ERROR_500:
+          case HttpStatus.NOT_IMPLEMENTED_501:
+          default:
+            final String statusMessage =
+                HttpStatus.getMessage(exchange.getResponseStatus());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
+        }
+
+      case HttpExchange.STATUS_EXCEPTED:
+        throw new IOException("Exception during HTTP exchange",
+                              exchange.getException());
+
+      case HttpExchange.STATUS_EXPIRED:
+        throw new IOException("HTTP request expired");
+
+      default:
+        // This should not happen.
+        throw new IOException(
+            "Unexpected HTTP exchange state: " + exchangeState);
+    }
+  }
+
+
+
+  /**
+   * Create a new user. A POST operation is invoked on the User resource
+   * endpoint. The content type (JSON or XML) used for the operation is not
+   * specified by the caller.
+   *
+   * @param user        The contents of the user to be created.
+   * @param attributes  The set of attributes to be retrieved. If empty, then
+   *                    the server returns all attributes.
+   *
+   * @return  The user that was created, containing the requested attributes.
+   *
+   * @throws IOException  If an error occurred while creating the user.
+   */
+  public User postUser(final User user, final String ... attributes)
+      throws IOException
+  {
+    final ScimURI uri =
+        new ScimURI(baseURI, "User", null, null, null,
+                    new SCIMQueryAttributes(attributes));
+
+    final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    exchange.setAddress(address);
+    exchange.setMethod("POST");
+    exchange.setURI(uri.toString());
+    exchange.setRequestContentType(MEDIA_TYPE_XML);
+    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    // TODO set character encoding utf-8
+
+    // TODO we should re-use the buffer
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    final Writer writer = new OutputStreamWriter(out, "UTF-8");
+    try
+    {
+      xmlContext.writeUser(writer, user);
+    }
+    catch (IOException e)
+    {
+      writer.close();
+    }
+
+    final ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+    exchange.setRequestContentSource(in);
+
+    httpClient.send(exchange);
+    final int exchangeState;
+    try
+    {
+      exchangeState = exchange.waitForDone();
+    }
+    catch (InterruptedException e)
+    {
+      throw new IOException("HTTP exchange interrupted", e);
+    }
+
+    switch (exchangeState)
+    {
+      case HttpExchange.STATUS_COMPLETED:
+        switch (exchange.getResponseStatus())
+        {
+          case HttpStatus.OK_200:
+            // The user was created.
+            return xmlContext.readUser(exchange.getResponseContent());
+
+          case HttpStatus.NOT_FOUND_404:
           case HttpStatus.BAD_REQUEST_400:
           case HttpStatus.UNAUTHORIZED_401:
           case HttpStatus.FORBIDDEN_403:

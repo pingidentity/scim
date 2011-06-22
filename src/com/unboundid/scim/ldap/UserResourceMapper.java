@@ -6,7 +6,10 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
 import com.unboundid.scim.config.ResourceDescriptorManager;
@@ -54,6 +57,52 @@ public class UserResourceMapper extends ResourceMapper
   public void finalizeMapper()
   {
     // No implementation required.
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean supportsCreate()
+  {
+    return true;
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Entry toLDAPEntry(final SCIMObject scimObject, final String baseDN)
+      throws LDAPException
+  {
+    final Entry entry = new Entry("");
+    entry.addAttribute("objectClass", "top", "person",
+                       "organizationalPerson", "inetOrgPerson");
+    for (final Attribute a : toLDAPAttributes(scimObject))
+    {
+      entry.addAttribute(a);
+    }
+
+    RDN rdn = null;
+    if (entry.hasAttribute("uid"))
+    {
+      rdn = new RDN("uid", entry.getAttributeValue("uid"));
+    }
+    else if (entry.hasAttribute("cn"))
+    {
+      rdn = new RDN("cn", entry.getAttributeValue("cn"));
+    }
+
+    if (rdn != null)
+    {
+      entry.setDN(new DN(rdn, new DN(baseDN)));
+    }
+
+    return entry;
   }
 
 
