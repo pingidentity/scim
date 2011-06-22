@@ -51,7 +51,12 @@ public final class SCIMConstants
   public static final String MEDIA_TYPE_XML = "application/xml";
 
   /**
-   * The name of the Accept header field in HTTP.
+   * The name of the HTTP Accept header field.
    */
   public static final String HEADER_NAME_ACCEPT = "Accept";
+
+  /**
+   * The name of the HTTP Location header field.
+   */
+  public static final String HEADER_NAME_LOCATION = "Location";
 }

@@ -14,6 +14,7 @@ import org.eclipse.jetty.client.HttpExchange;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
+import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
 import java.io.ByteArrayInputStream;
@@ -199,6 +200,78 @@ public class SCIMClient
 
 
   /**
+   * Retrieve a user using a resource URI.
+   *
+   * @param resourceURI  The resource URI of a user.
+   *
+   * @return  The requested user or {@code null} if the user does not exist.
+   *          The user may be incomplete if not all attributes were returned.
+   *
+   * @throws IOException  If an error occurred while retrieving the user.
+   */
+  public User getUserByURI(final String resourceURI)
+      throws IOException
+  {
+    final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    exchange.setURL(resourceURI);
+    exchange.setMethod("GET");
+    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+
+    httpClient.send(exchange);
+    final int exchangeState;
+    try
+    {
+      exchangeState = exchange.waitForDone();
+    }
+    catch (InterruptedException e)
+    {
+      throw new IOException("HTTP exchange interrupted", e);
+    }
+
+    switch (exchangeState)
+    {
+      case HttpExchange.STATUS_COMPLETED:
+        switch (exchange.getResponseStatus())
+        {
+          case HttpStatus.OK_200:
+            // The user was found.
+            return xmlContext.readUser(exchange.getResponseContent());
+
+          case HttpStatus.NOT_FOUND_404:
+            // The user was not found.
+            return null;
+
+          default:
+            final String statusMessage =
+                HttpStatus.getMessage(exchange.getResponseStatus());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
+        }
+
+      case HttpExchange.STATUS_EXCEPTED:
+        throw new IOException("Exception during HTTP exchange",
+                              exchange.getException());
+
+      case HttpExchange.STATUS_EXPIRED:
+        throw new IOException("HTTP request expired");
+
+      default:
+        // This should not happen.
+        throw new IOException(
+            "Unexpected HTTP exchange state: " + exchangeState);
+    }
+  }
+
+
+
+  /**
    * Create a new user. A POST operation is invoked on the User resource
    * endpoint. The content type (JSON or XML) used for the operation is not
    * specified by the caller.
@@ -207,11 +280,11 @@ public class SCIMClient
    * @param attributes  The set of attributes to be retrieved. If empty, then
    *                    the server returns all attributes.
    *
-   * @return  The user that was created, containing the requested attributes.
+   * @return  The response from the request.
    *
    * @throws IOException  If an error occurred while creating the user.
    */
-  public User postUser(final User user, final String ... attributes)
+  public PostUserResponse postUser(final User user, final String ... attributes)
       throws IOException
   {
     final ScimURI uri =
@@ -259,7 +332,13 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was created.
-            return xmlContext.readUser(exchange.getResponseContent());
+            final String resourceURI =
+                exchange.getResponseFields().getStringField(
+                    HEADER_NAME_LOCATION);
+            final User returnUser =
+                xmlContext.readUser(exchange.getResponseContent());
+
+            return new PostUserResponse(resourceURI, returnUser);
 
           case HttpStatus.NOT_FOUND_404:
           case HttpStatus.BAD_REQUEST_400:

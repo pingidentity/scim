@@ -8,6 +8,7 @@ import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.PostUserResponse;
 import com.unboundid.scim.sdk.SCIMClient;
 import com.unboundid.scim.sdk.SCIMRITestCase;
 import org.testng.annotations.Test;
@@ -93,7 +94,8 @@ public class SCIMServerTestCase
     user.setName(name);
 
     // Post the user via SCIM.
-    final User user1 = client.postUser(user, "id");
+    final PostUserResponse response = client.postUser(user, "id");
+    final User user1 = response.getUser();
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=bjensen,dc=example,dc=com");
     assertNull(user1.getName());
@@ -105,6 +107,9 @@ public class SCIMServerTestCase
     assertTrue(entry.hasAttributeValue("sn", "Jensen"));
     assertTrue(entry.hasAttributeValue("cn", "Ms. Barbara J Jensen III"));
     assertTrue(entry.hasAttributeValue("givenName", "Barbara"));
+
+    // Verify that we can fetch the user using the returned resource URI.
+    assertNotNull(client.getUserByURI(response.getResourceURI()));
 
     // Tidy up.
     client.stopClient();

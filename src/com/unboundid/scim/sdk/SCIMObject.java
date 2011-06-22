@@ -98,6 +98,29 @@ public class SCIMObject
 
 
   /**
+   * Retrieve the resource ID.
+   *
+   * @return  The resource ID, or {@code null} if the object does not have an
+   *          'id' attribute.
+   */
+  public String getResourceID()
+  {
+    final SCIMAttribute a = getAttribute(SCIMConstants.SCHEMA_URI_CORE, "id");
+    if (a != null)
+    {
+      final SCIMAttributeValue v = a.getSingularValue();
+      if (v != null)
+      {
+        return v.getStringValue();
+      }
+    }
+
+    return null;
+  }
+
+
+
+  /**
    * Retrieves the set of schemas currently contributing attributes to this
    * object.
    *

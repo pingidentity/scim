@@ -9,6 +9,7 @@ import com.unboundid.scim.marshall.Marshaller;
 import com.unboundid.scim.marshall.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.ScimURI;
 import com.unboundid.util.StaticUtils;
 
@@ -17,8 +18,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
+import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
@@ -66,7 +70,10 @@ public class SCIMServlet
   {
     try
     {
-      final ScimURI uri = ScimURI.parseURI("", "User",
+      final String resourceName = request.getServletPath().substring(1);
+
+      final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
+                                           resourceName,
                                            request.getPathInfo(),
                                            request.getQueryString());
       if (uri.getResourceID() == null)
@@ -147,7 +154,10 @@ public class SCIMServlet
   {
     try
     {
-      final ScimURI uri = ScimURI.parseURI("", "User",
+      final String resourceName = request.getServletPath().substring(1);
+
+      final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
+                                           resourceName,
                                            request.getPathInfo(),
                                            request.getQueryString());
 
@@ -180,6 +190,11 @@ public class SCIMServlet
                                   uri.getQueryAttributes());
 
       final SCIMObject returnObject = backend.postObject(postResourceRequest);
+
+      final String location =
+          getLocationURL(request, resourceName, returnObject.getResourceID());
+      response.addHeader(HEADER_NAME_LOCATION, location);
+
       if (returnJSON)
       {
         response.setContentType(MEDIA_TYPE_JSON);
@@ -220,8 +235,8 @@ public class SCIMServlet
    * @return  The media type (e.g. application/xml) or {@code null} if an
    *          acceptable media type cannot be determined.
    */
-  private String getMediaType(final ScimURI uri,
-                              final HttpServletRequest request)
+  private static String getMediaType(final ScimURI uri,
+                                     final HttpServletRequest request)
   {
     String mediaType = null;
 
@@ -246,5 +261,38 @@ public class SCIMServlet
     }
 
     return mediaType;
+  }
+
+
+
+  /**
+   * Construct an absolute URL string representing the location of a specific
+   * resource.
+   *
+   * @param request       The HTTP servlet request.
+   * @param resourceName  The name of the resource.
+   * @param resourceID    The resource ID.
+   *
+   * @return  The URL string.
+   *
+   * @throws MalformedURLException  If an error occurred while constructing the
+   *                                URL.
+   */
+  private static String getLocationURL(final HttpServletRequest request,
+                                       final String resourceName,
+                                       final String resourceID)
+      throws MalformedURLException
+  {
+    final ScimURI relativeURI =
+        new ScimURI(request.getContextPath(), resourceName, resourceID,
+                    null, null, new SCIMQueryAttributes());
+
+    final URL url = new URL(request.getRequestURL().toString());
+    final URL locationURL = new URL(url.getProtocol(),
+                                    url.getHost(),
+                                    url.getPort(),
+                                    relativeURI.toString());
+
+    return locationURL.toString();
   }
 }
