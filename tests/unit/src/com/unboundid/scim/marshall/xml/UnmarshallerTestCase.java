@@ -8,9 +8,10 @@ package com.unboundid.scim.marshall.xml;
 import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.marshall.Context;
 import com.unboundid.scim.marshall.Unmarshaller;
-import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMRITestCase;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -44,7 +45,7 @@ public class UnmarshallerTestCase
     throws Exception {
     final File testXML = getTestResource("marshal/core-user.xml");
 
-    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
+    final String coreSchema = SCHEMA_URI_CORE;
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
     final SCIMObject o = unmarshaller.unmarshal(testXML);
@@ -55,6 +56,6 @@ public class UnmarshallerTestCase
     assertTrue(o.hasAttribute(coreSchema, "emails"));
     assertTrue(o.hasAttribute(coreSchema, "name"));
     assertNotNull(o.getResourceName());
-    assertEquals(o.getResourceName(), "User");
+    assertEquals(o.getResourceName(), RESOURCE_NAME_USER);
   }
 }

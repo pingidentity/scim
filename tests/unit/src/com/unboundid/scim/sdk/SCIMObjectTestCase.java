@@ -7,6 +7,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.config.AttributeDescriptor;
 import org.testng.annotations.Test;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 import java.util.Collection;
 import java.util.Date;
@@ -74,14 +75,14 @@ public class SCIMObjectTestCase
             enterpriseUserSchema, "employeeNumber", "1000001");
 
     final SCIMObject user = new SCIMObject();
-    user.setResourceName("User");
+    user.setResourceName(RESOURCE_NAME_USER);
     assertTrue(user.addAttribute(userID));
     assertTrue(user.addAttribute(meta));
     assertTrue(user.addAttribute(name));
     assertTrue(user.addAttribute(emails));
     user.setAttribute(employeeNumber);
 
-    assertEquals(user.getResourceName(), "User");
+    assertEquals(user.getResourceName(), RESOURCE_NAME_USER);
     final Collection<String> schemas = user.getSchemas();
     assertNotNull(schemas);
     assertEquals(schemas.size(), 2);

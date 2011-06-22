@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 import javax.servlet.http.HttpServlet;
 import java.util.Collections;
@@ -79,7 +80,8 @@ public class SCIMServer
     this.backends        = new HashMap<String, SCIMBackend>();
     this.resourceMappers = new HashMap<String,Set<ResourceMapper>>();
 
-    this.registerResourceMapper(new UserResourceMapper(), "User");
+    this.registerResourceMapper(new UserResourceMapper(),
+                                RESOURCE_NAME_USER);
   }
 
 

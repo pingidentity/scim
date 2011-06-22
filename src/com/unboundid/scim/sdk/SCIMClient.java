@@ -16,6 +16,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -130,7 +131,7 @@ public class SCIMClient
       throws IOException
   {
     final ScimURI uri =
-        new ScimURI(baseURI, "User", userID, null, null,
+        new ScimURI(baseURI, RESOURCE_NAME_USER, userID, null, null,
                     new SCIMQueryAttributes(attributes));
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     exchange.setAddress(address);
@@ -288,7 +289,7 @@ public class SCIMClient
       throws IOException
   {
     final ScimURI uri =
-        new ScimURI(baseURI, "User", null, null, null,
+        new ScimURI(baseURI, RESOURCE_NAME_USER, null, null, null,
                     new SCIMQueryAttributes(attributes));
 
     final ExceptionContentExchange exchange = new ExceptionContentExchange();

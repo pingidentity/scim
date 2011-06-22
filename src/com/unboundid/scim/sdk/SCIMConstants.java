@@ -36,6 +36,11 @@ public final class SCIMConstants
       "urn:scim:schemas:extension:user:enterprise:1.0";
 
   /**
+   * The resource name for the User resource in the core schema.
+   */
+  public static final String RESOURCE_NAME_USER = "User";
+
+  /**
    * The HTTP query string value used in a URI to select specific attributes.
    */
   public static final String ATTRIBUTES_QUERY_STRING = "attributes";

@@ -12,10 +12,11 @@ import com.unboundid.scim.marshall.Marshaller;
 import com.unboundid.scim.marshall.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
-import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMRITestCase;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -40,10 +41,10 @@ public class UserResourceMapperTestCase
   public void testUserMapper()
       throws Exception
   {
-    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
+    final String coreSchema = SCHEMA_URI_CORE;
 
     final SCIMObject user = new SCIMObject();
-    user.setResourceName("User");
+    user.setResourceName(RESOURCE_NAME_USER);
 
     user.addAttribute(
         SCIMAttribute.createSingularStringAttribute(
@@ -109,7 +110,8 @@ public class UserResourceMapperTestCase
 
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
-        mapper.toSCIMAttributes("User", entry, new SCIMQueryAttributes()))
+        mapper.toSCIMAttributes(RESOURCE_NAME_USER,
+                                entry, new SCIMQueryAttributes()))
     {
       user2.addAttribute(a);
     }
@@ -188,10 +190,11 @@ public class UserResourceMapperTestCase
     mapper.initializeMapper();
 
     List<SCIMAttribute> attributes =
-        mapper.toSCIMAttributes("User", entry, new SCIMQueryAttributes());
+        mapper.toSCIMAttributes(RESOURCE_NAME_USER, entry,
+                                new SCIMQueryAttributes());
 
     final SCIMObject object = new SCIMObject();
-    object.setResourceName("User");
+    object.setResourceName(RESOURCE_NAME_USER);
     for (final SCIMAttribute a : attributes)
     {
       object.addAttribute(a);
