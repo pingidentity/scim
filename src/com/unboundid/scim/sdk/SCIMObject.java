@@ -26,12 +26,7 @@ public class SCIMObject
    * The type of SCIM resource represented by this object, or {@code null}
    * if the resource type is unknown.
    */
-  private String resourceType;
-
-  /**
-   * The set of attributes from the core schema.
-   */
-  private final LinkedHashMap<String,SCIMAttribute> coreAttributes;
+  private String resourceName;
 
   /**
    * The set of attributes in this object grouped by the URI of the schema to
@@ -54,15 +49,15 @@ public class SCIMObject
 
 
   /**
-   * Create an empty SCIM object with the specified resource type.
+   * Create an empty SCIM object with the specified resource name.
    *
-   * @param resourceType  The type of SCIM resource represented by this object,
-   *                      or {@code null} if the resource type is unknown.
+   * @param resourceName  The name of the SCIM resource represented by this
+   *                      object, or {@code null} if the resource name is
+   *                      unknown.
    */
-  public SCIMObject(final String resourceType)
+  public SCIMObject(final String resourceName)
   {
-    this.resourceType = resourceType;
-    this.coreAttributes = new LinkedHashMap<String, SCIMAttribute>();
+    this.resourceName = resourceName;
     this.attributes =
         new HashMap<String, LinkedHashMap<String, SCIMAttribute>>();
   }
@@ -70,38 +65,39 @@ public class SCIMObject
 
 
   /**
-   * Retrieves the type of SCIM resource represented by this object, or
-   * {@code null} if the resource type is unknown.
+   * Retrieves the name of the SCIM resource represented by this object, or
+   * {@code null} if the resource name is unknown.
    *
-   * @return  The type of SCIM resource represented by this object, or
-   *          {@code null} if the resource type is unknown.
+   * @return  The name of the SCIM resource represented by this object, or
+   *          {@code null} if the resource name is unknown.
    */
-  public String getResourceType()
+  public String getResourceName()
   {
-    return resourceType;
+    return resourceName;
   }
 
 
 
   /**
-   * Specifies the type of SCIM resource represented by this object, or
-   * {@code null} if the resource type is unknown.
+   * Specifies the name of the SCIM resource represented by this object, or
+   * {@code null} if the resource name is unknown.
    *
-   * @param resourceType  The type of SCIM resource represented by this object,
-   *                      or {@code null} if the resource type is unknown.
+   * @param resourceName  The name of the SCIM resource represented by this
+   *                      object, or {@code null} if the resource name is
+   *                      unknown.
    */
-  public void setResourceType(final String resourceType)
+  public void setResourceName(final String resourceName)
   {
-    this.resourceType = resourceType;
+    this.resourceName = resourceName;
   }
 
 
 
   /**
-   * Retrieve the resource ID.
+   * Retrieve the resource ID for this object.
    *
-   * @return  The resource ID, or {@code null} if the object does not have an
-   *          'id' attribute.
+   * @return  The resource ID for this object, or {@code null} if the object
+   *          does not have an 'id' attribute.
    */
   public String getResourceID()
   {
@@ -165,15 +161,7 @@ public class SCIMObject
    */
   public SCIMAttribute getAttribute(final String schema, final String name)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs;
-    if (schema == null)
-    {
-      attrs = coreAttributes;
-    }
-    else
-    {
-      attrs = attributes.get(schema);
-    }
+    final LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
 
     if (attrs == null)
     {
@@ -199,15 +187,7 @@ public class SCIMObject
    */
   public Collection<SCIMAttribute> getAttributes(final String schema)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs;
-    if (schema == null)
-    {
-      attrs = coreAttributes;
-    }
-    else
-    {
-      attrs = attributes.get(schema);
-    }
+    final LinkedHashMap<String, SCIMAttribute> attrs = attributes.get(schema);
 
     if (attrs == null)
     {
@@ -234,15 +214,7 @@ public class SCIMObject
    */
   public boolean hasAttribute(final String schema, final String name)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs;
-    if (schema == null)
-    {
-      attrs = coreAttributes;
-    }
-    else
-    {
-      attrs = attributes.get(schema);
-    }
+    final LinkedHashMap<String, SCIMAttribute> attrs = attributes.get(schema);
 
     if (attrs == null)
     {
@@ -269,18 +241,6 @@ public class SCIMObject
   public boolean addAttribute(final SCIMAttribute attribute)
   {
     final String schema = attribute.getSchema();
-    if (schema == null)
-    {
-      if (coreAttributes.containsKey(attribute.getName()))
-      {
-        return false;
-      }
-      else
-      {
-        coreAttributes.put(attribute.getName(), attribute);
-        return true;
-      }
-    }
 
     LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
     if (attrs == null)
@@ -315,11 +275,6 @@ public class SCIMObject
   public void setAttribute(final SCIMAttribute attribute)
   {
     final String schema = attribute.getSchema();
-    if (schema == null)
-    {
-      coreAttributes.put(attribute.getName(), attribute);
-      return;
-    }
 
     LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
     if (attrs == null)
@@ -339,8 +294,7 @@ public class SCIMObject
   /**
    * Removes the specified attribute from this object.
    *
-   * @param schema  The URI of the schema to which the attribute belongs,
-   *                or {@code null} to indicate a core schema attribute.
+   * @param schema  The URI of the schema to which the attribute belongs.
    * @param name    The name of the attribute to remove. It must not be
    *                {@code null}.
    *
@@ -349,11 +303,6 @@ public class SCIMObject
    */
   public boolean removeAttribute(final String schema, final String name)
   {
-    if (schema == null)
-    {
-      return coreAttributes.remove(name) != null;
-    }
-
     LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
     if (attrs == null)
     {
@@ -373,8 +322,7 @@ public class SCIMObject
   @Override
   public String toString() {
     return "SCIMObject{" +
-      "coreAttributes=" + coreAttributes +
-      ", attributes=" + attributes +
+      "attributes=" + attributes +
       '}';
   }
 }

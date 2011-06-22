@@ -93,7 +93,7 @@ public abstract class LDAPBackend
                 request.getResourceName());
 
         final SCIMObject scimObject = new SCIMObject();
-        scimObject.setResourceType(request.getResourceName());
+        scimObject.setResourceName(request.getResourceName());
 
         if (request.getAttributes().isAttributeRequested("id"))
         {
@@ -185,7 +185,7 @@ public abstract class LDAPBackend
     }
 
     final SCIMObject returnObject = new SCIMObject();
-    returnObject.setResourceType(request.getResourceName());
+    returnObject.setResourceName(request.getResourceName());
 
     if (request.getAttributes().isAttributeRequested("id"))
     {

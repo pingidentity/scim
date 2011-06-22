@@ -43,7 +43,7 @@ public class UserResourceMapperTestCase
     final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
 
     final SCIMObject user = new SCIMObject();
-    user.setResourceType("User");
+    user.setResourceName("User");
 
     user.addAttribute(
         SCIMAttribute.createSingularStringAttribute(
@@ -191,7 +191,7 @@ public class UserResourceMapperTestCase
         mapper.toSCIMAttributes("User", entry, new SCIMQueryAttributes());
 
     final SCIMObject object = new SCIMObject();
-    object.setResourceType("User");
+    object.setResourceName("User");
     for (final SCIMAttribute a : attributes)
     {
       object.addAttribute(a);

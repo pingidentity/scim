@@ -77,7 +77,7 @@ public class XmlMarshaller implements Marshaller {
     // object
     // need to be able to identify schema properly
     xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
-      o.getResourceType(), Context.DEFAULT_SCHEMA_URN);
+      o.getResourceName(), Context.DEFAULT_SCHEMA_URN);
     for (String schema : o.getSchemas()) {
       if (schema.equals(Context.DEFAULT_SCHEMA_URN)) {
         xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,

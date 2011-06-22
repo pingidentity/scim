@@ -53,7 +53,7 @@ public class XmlUnmarshaller implements Unmarshaller {
     Element documentElement = doc.getDocumentElement();
     ResourceDescriptor resourceDescriptor = ResourceDescriptorManager
       .instance().getResourceDescriptor(documentElement.getLocalName());
-    scimObject.setResourceType(resourceDescriptor.getName());
+    scimObject.setResourceName(resourceDescriptor.getName());
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor
       .getAttributeDescriptors()) {
       String externalAttributeName =

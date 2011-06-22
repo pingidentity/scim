@@ -195,11 +195,9 @@ public final class SCIMAttribute
 
 
   /**
-   * Retrieve the name of the schema to which this attribute belongs, or
-   * {@code null} if the attribute is in the core schema.
+   * Retrieve the name of the schema to which this attribute belongs.
    *
-   * @return  The name of the schema to which this attribute belongs, or
-   *          {@code null} if the attribute is in the core schema.
+   * @return  The name of the schema to which this attribute belongs.
    */
   public String getSchema()
   {

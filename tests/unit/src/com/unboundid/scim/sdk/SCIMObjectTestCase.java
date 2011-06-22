@@ -74,14 +74,14 @@ public class SCIMObjectTestCase
             enterpriseUserSchema, "employeeNumber", "1000001");
 
     final SCIMObject user = new SCIMObject();
-    user.setResourceType("User");
+    user.setResourceName("User");
     assertTrue(user.addAttribute(userID));
     assertTrue(user.addAttribute(meta));
     assertTrue(user.addAttribute(name));
     assertTrue(user.addAttribute(emails));
     user.setAttribute(employeeNumber);
 
-    assertEquals(user.getResourceType(), "User");
+    assertEquals(user.getResourceName(), "User");
     final Collection<String> schemas = user.getSchemas();
     assertNotNull(schemas);
     assertEquals(schemas.size(), 2);
