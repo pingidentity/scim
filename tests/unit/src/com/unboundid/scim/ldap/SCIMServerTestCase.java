@@ -114,4 +114,61 @@ public class SCIMServerTestCase
     // Tidy up.
     client.stopClient();
   }
+
+
+
+  /**
+   * Provides test coverage for the DELETE operation on a user resource.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testDeleteUser()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.startClient();
+
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+
+    // Create a user directly on the test DS.
+    final String userDN = "uid=bjensen,dc=example,dc=com";
+    testDS.add(generateUserEntry("bjensen", "dc=example,dc=com",
+                                 "Barbara", "Jensen", "password"));
+
+
+    // Delete the user through SCIM.
+    assertTrue(client.deleteUser(userDN));
+
+    // Attempt to delete the user again.
+    assertFalse(client.deleteUser(userDN));
+
+    // Verify that the entry was actually deleted.
+    final Entry entry = testDS.getEntry(userDN);
+    assertNull(entry);
+
+    // Create the contents for a user to be created via SCIM.
+    final User user = new User();
+    final Name name = new Name();
+    name.setFamilyName("Jensen");
+    name.setFormatted("Ms. Barbara J Jensen III");
+    name.setGivenName("Barbara");
+    user.setUserName("bjensen");
+    user.setName(name);
+
+    // Create the user via SCIM.
+    final PostUserResponse response = client.postUser(user, "id");
+
+    // Delete the user by providing the returned resource URI.
+    assertTrue(client.deleteResourceByURI(response.getResourceURI()));
+
+    // Verify that the entry was actually deleted.
+    assertNull(testDS.getEntry(userDN));
+
+    // Tidy up.
+    client.stopClient();
+  }
 }

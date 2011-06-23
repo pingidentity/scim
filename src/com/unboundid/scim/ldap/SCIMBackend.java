@@ -43,4 +43,16 @@ public abstract class SCIMBackend
    * @return  The resource that was created.
    */
   public abstract SCIMObject postObject(final PostResourceRequest request);
+
+
+
+  /**
+   * Delete a specific resource.
+   *
+   * @param request      The Delete Resource request.
+   *
+   * @return  {@code true} if the resource was deleted, or {@code false} if the
+   *          resource did not exist.
+   */
+  public abstract boolean deleteObject(final DeleteResourceRequest request);
 }

@@ -341,14 +341,6 @@ public class SCIMClient
 
             return new PostUserResponse(resourceURI, returnUser);
 
-          case HttpStatus.NOT_FOUND_404:
-          case HttpStatus.BAD_REQUEST_400:
-          case HttpStatus.UNAUTHORIZED_401:
-          case HttpStatus.FORBIDDEN_403:
-          case HttpStatus.CONFLICT_409:
-          case HttpStatus.PRECONDITION_FAILED_412:
-          case HttpStatus.INTERNAL_SERVER_ERROR_500:
-          case HttpStatus.NOT_IMPLEMENTED_501:
           default:
             final String statusMessage =
                 HttpStatus.getMessage(exchange.getResponseStatus());
@@ -376,4 +368,173 @@ public class SCIMClient
             "Unexpected HTTP exchange state: " + exchangeState);
     }
   }
+
+
+
+  /**
+   * Delete a specified user.
+   *
+   * @param userID    The ID of the user to be deleted.
+   *
+   * @return  {@code true} if the resource was deleted, or {@code false} if
+   *          the resource did not exist.
+   *
+   * @throws IOException  If an error occurred while deleting the user.
+   */
+  public boolean deleteUser(final String userID)
+      throws IOException
+  {
+    return deleteResource(RESOURCE_NAME_USER, userID);
+  }
+
+
+
+  /**
+   * Delete a specified resource.
+   *
+   * @param resourceName  The name of the resource (e.g. User).
+   * @param resourceID    The ID of the resource to be deleted.
+   *
+   * @return  {@code true} if the resource was deleted, or {@code false} if
+   *          the resource did not exist.
+   *
+   * @throws IOException  If an error occurred while deleting the resource.
+   */
+  public boolean deleteResource(final String resourceName,
+                                final String resourceID)
+      throws IOException
+  {
+    final ScimURI uri =
+        new ScimURI(baseURI, resourceName, resourceID, null, null,
+                    new SCIMQueryAttributes());
+    final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    exchange.setAddress(address);
+    exchange.setMethod("DELETE");
+    exchange.setURI(uri.toString());
+
+    httpClient.send(exchange);
+    final int exchangeState;
+    try
+    {
+      exchangeState = exchange.waitForDone();
+    }
+    catch (InterruptedException e)
+    {
+      throw new IOException("HTTP exchange interrupted", e);
+    }
+
+    switch (exchangeState)
+    {
+      case HttpExchange.STATUS_COMPLETED:
+        switch (exchange.getResponseStatus())
+        {
+          case HttpStatus.OK_200:
+            // The resource was deleted.
+            return true;
+
+          case HttpStatus.NOT_FOUND_404:
+            // The resource was not found.
+            return false;
+
+          default:
+            final String statusMessage =
+                HttpStatus.getMessage(exchange.getResponseStatus());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
+        }
+
+      case HttpExchange.STATUS_EXCEPTED:
+        throw new IOException("Exception during HTTP exchange",
+                              exchange.getException());
+
+      case HttpExchange.STATUS_EXPIRED:
+        throw new IOException("HTTP request expired");
+
+      default:
+        // This should not happen.
+        throw new IOException(
+            "Unexpected HTTP exchange state: " + exchangeState);
+    }
+  }
+
+
+
+  /**
+   * Delete a resource identified by the specified URI.
+   *
+   * @param resourceURI  The URI of the resource to be deleted.
+   *
+   * @return  {@code true} if the resource was deleted, or {@code false} if
+   *          the resource did not exist.
+   *
+   * @throws IOException  If an error occurred while deleting the resource.
+   */
+  public boolean deleteResourceByURI(final String resourceURI)
+      throws IOException
+  {
+    final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    exchange.setURL(resourceURI);
+    exchange.setMethod("DELETE");
+
+    httpClient.send(exchange);
+    final int exchangeState;
+    try
+    {
+      exchangeState = exchange.waitForDone();
+    }
+    catch (InterruptedException e)
+    {
+      throw new IOException("HTTP exchange interrupted", e);
+    }
+
+    switch (exchangeState)
+    {
+      case HttpExchange.STATUS_COMPLETED:
+        switch (exchange.getResponseStatus())
+        {
+          case HttpStatus.OK_200:
+            // The user was deleted.
+            return true;
+
+          case HttpStatus.NOT_FOUND_404:
+            // The user was not found.
+            return false;
+
+          default:
+            final String statusMessage =
+                HttpStatus.getMessage(exchange.getResponseStatus());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
+        }
+
+      case HttpExchange.STATUS_EXCEPTED:
+        throw new IOException("Exception during HTTP exchange",
+                              exchange.getException());
+
+      case HttpExchange.STATUS_EXPIRED:
+        throw new IOException("HTTP request expired");
+
+      default:
+        // This should not happen.
+        throw new IOException(
+            "Unexpected HTTP exchange state: " + exchangeState);
+    }
+  }
+
+
+
 }

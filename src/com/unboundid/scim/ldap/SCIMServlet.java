@@ -227,6 +227,58 @@ public class SCIMServlet
 
 
   /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected void doDelete(final HttpServletRequest request,
+                          final HttpServletResponse response)
+      throws ServletException, IOException
+  {
+    try
+    {
+      final String resourceName = request.getServletPath().substring(1);
+
+      final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
+                                           resourceName,
+                                           request.getPathInfo(),
+                                           null);
+      if (uri.getResourceID() == null)
+      {
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                           "The operation does not specify a resource ID");
+        return;
+      }
+
+      final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
+      if (resourceAttribute != null)
+      {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                           "Operations on user attributes are not implemented");
+        return;
+      }
+
+      final DeleteResourceRequest deleteResourceRequest =
+          new DeleteResourceRequest(uri.getResourceName(), uri.getResourceID());
+      final boolean found = backend.deleteObject(deleteResourceRequest);
+      if (!found)
+      {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      }
+      else
+      {
+        response.setStatus(HttpServletResponse.SC_OK);
+      }
+    }
+    catch (Exception e)
+    {
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                         StaticUtils.getExceptionMessage(e));
+    }
+  }
+
+
+
+  /**
    * Determine the media type that should be used in a response.
    *
    * @param uri      The request URI.

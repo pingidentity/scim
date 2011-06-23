@@ -12,6 +12,7 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPResult;
+import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 
+// TODO Throw checked exceptions instead of runtime exceptions
 
 /**
  * This abstract class is a base class for implementations of the SCIM server
@@ -120,7 +122,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
-      throw new RuntimeException(e); // TODO
+      throw new RuntimeException(e);
     }
   }
 
@@ -181,7 +183,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
-      throw new RuntimeException(e); // TODO
+      throw new RuntimeException(e);
     }
 
     final SCIMObject returnObject = new SCIMObject();
@@ -211,4 +213,32 @@ public abstract class LDAPBackend
 
 
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean deleteObject(final DeleteResourceRequest request)
+  {
+    try
+    {
+      final LDAPResult result =
+          getLDAPInterface().delete(request.getResourceID());
+      if (result.getResultCode().equals(ResultCode.SUCCESS))
+      {
+        return true;
+      }
+      else
+      {
+        throw new LDAPException(result.getResultCode());
+      }
+    }
+    catch (LDAPException e)
+    {
+      if (e.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
+      {
+        return false;
+      }
+      throw new RuntimeException(e);
+    }
+  }
 }
