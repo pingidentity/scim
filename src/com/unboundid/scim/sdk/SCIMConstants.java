@@ -64,4 +64,10 @@ public final class SCIMConstants
    * The name of the HTTP Location header field.
    */
   public static final String HEADER_NAME_LOCATION = "Location";
+
+  /**
+   * The name of the HTTP Method Override field.
+   */
+  public static final String HEADER_NAME_METHOD_OVERRIDE =
+      "X-HTTP-Method-Override";
 }

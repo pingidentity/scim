@@ -23,6 +23,7 @@ import java.net.URL;
 
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
+import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_METHOD_OVERRIDE;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 
@@ -154,6 +155,23 @@ public class SCIMServlet
   {
     try
     {
+      // Handle any method override.
+      final String methodOverride =
+          request.getHeader(HEADER_NAME_METHOD_OVERRIDE);
+      if (methodOverride != null)
+      {
+        if (methodOverride.equalsIgnoreCase("PUT"))
+        {
+          doPut(request, response);
+          return;
+        }
+        else if (methodOverride.equalsIgnoreCase("DELETE"))
+        {
+          doDelete(request, response);
+          return;
+        }
+      }
+
       final String resourceName = request.getServletPath().substring(1);
 
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),

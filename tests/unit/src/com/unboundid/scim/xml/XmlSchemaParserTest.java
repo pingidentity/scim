@@ -11,6 +11,10 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+
 
 /**
  * Verifies xsd based resource descriptor parsing.
@@ -30,6 +34,17 @@ public class XmlSchemaParserTest extends SCIMRITestCase {
     XmlSchemaParser parser = new
       XmlSchemaParser(coreSchemas);
     Collection<ResourceDescriptor> descriptors = parser.getDescriptors();
-    assertTrue(descriptors.size() == 2);
+
+    assertTrue(descriptors.size() > 1);
+
+    final Map<String,ResourceDescriptor> map =
+        new HashMap<String, ResourceDescriptor>();
+    for (final ResourceDescriptor descriptor : descriptors)
+    {
+      map.put(descriptor.getName(), descriptor);
+    }
+
+    assertNotNull(map.containsKey("User"));
+    assertNotNull(map.containsKey("Group"));
   }
 }

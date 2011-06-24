@@ -345,4 +345,57 @@ public class SCIMServerTestCase
 
 
 
+  /**
+   * Provides test coverage for PUT and DELETE operations on a user resource
+   * invoking the operations using POST with a method override.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testMethodOverride()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.startClient();
+
+    // Tell the client to use method override.
+    client.setPutUsesMethodOverride(true);
+    client.setDeleteUsesMethodOverride(true);
+
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+
+    // The ID of the test user.
+    final String userDN = "uid=bjensen,dc=example,dc=com";
+
+    // Create the contents for a new user.
+    final User user = new User();
+    final Name name = new Name();
+    name.setFormatted("Ms. Barbara J Jensen III");
+    name.setFamilyName("Jensen");
+    user.setUserName("bjensen");
+    user.setName(name);
+
+    // Post a new user.
+    final PostUserResponse response = client.postUser(user);
+    final User user1 = response.getUser();
+    assertNotNull(user1);
+
+    // Add some values to the user.
+    user1.getName().setGivenName("Barbara");
+
+    // Put the updated user.
+    client.putUser(user1.getId(), user1);
+
+    // Delete the user.
+    client.deleteUser(userDN);
+
+    // Tidy up.
+    client.stopClient();
+  }
+
+
+
 }

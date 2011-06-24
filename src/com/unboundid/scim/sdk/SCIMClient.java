@@ -15,6 +15,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
+import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_METHOD_OVERRIDE;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
@@ -56,6 +57,25 @@ public class SCIMClient
    * An XML context to read and write XML.
    */
   private XMLContext xmlContext;
+
+  /**
+   * Indicates whether the PUT operation is invoked using POST with
+   * a method override.
+   */
+  private boolean putUsesMethodOverride = false;
+
+  /**
+   * Indicates whether the PATCH operation is invoked using POST with
+   * a method override.
+   */
+  private boolean patchUsesMethodOverride = false;
+
+  /**
+   * Indicates whether the DELETE operation is invoked using POST with
+   * a method override.
+   */
+  private boolean deleteUsesMethodOverride = false;
+
 
 
   /**
@@ -109,6 +129,101 @@ public class SCIMClient
 
       httpClient = null;
     }
+  }
+
+
+
+  /**
+   * Indicates whether the PUT operation is invoked using POST with
+   * a method override.
+   *
+   * @return  {@code true} if the PUT operation is invoked using POST with
+   *          a method override, or {@code false} if PUT is not invoked
+   *          through POST.
+   */
+  public boolean isPutUsesMethodOverride()
+  {
+    return putUsesMethodOverride;
+  }
+
+
+
+  /**
+   * Specifies whether the PUT operation is invoked using POST with
+   * a method override.
+   *
+   * @param putUsesMethodOverride  {@code true} if the PUT operation is invoked
+   *                                using POST with a method override, or
+   *                                {@code false} if PUT is not invoked through
+   *                                POST.
+   */
+  public void setPutUsesMethodOverride(final boolean putUsesMethodOverride)
+  {
+    this.putUsesMethodOverride = putUsesMethodOverride;
+  }
+
+
+
+  /**
+   * Indicates whether the PATCH operation is invoked using POST with
+   * a method override.
+   *
+   * @return  {@code true} if the PATCH operation is invoked using POST with
+   *          a method override, or {@code false} if PATCH is not invoked
+   *          through POST.
+   */
+  public boolean isPatchUsesMethodOverride()
+  {
+    return patchUsesMethodOverride;
+  }
+
+
+
+  /**
+   * Specifies whether the PATCH operation is invoked using POST with
+   * a method override.
+   *
+   * @param patchUsesMethodOverride  {@code true} if the PATCH operation is
+   *                                  invoked using POST with a method override,
+   *                                  or {@code false} if PATCH is not invoked
+   *                                  through POST.
+   */
+  public void setPatchUsesMethodOverride(
+      final boolean patchUsesMethodOverride)
+  {
+    this.patchUsesMethodOverride = patchUsesMethodOverride;
+  }
+
+
+
+  /**
+   * Indicates whether the DELETE operation is invoked using POST with
+   * a method override.
+   *
+   * @return  {@code true} if the DELETE operation is invoked using POST with
+   *          a method override, or {@code false} if DELETE is not invoked
+   *          through POST.
+   */
+  public boolean isDeleteUsesMethodOverride()
+  {
+    return deleteUsesMethodOverride;
+  }
+
+
+
+  /**
+   * Specifies whether the DELETE operation is invoked using POST with
+   * a method override.
+   *
+   * @param deleteUsesMethodOverride  {@code true} if the DELETE operation is
+   *                                   invoked using POST with a method
+   *                                   override, or {@code false} if DELETE is
+   *                                   not invoked through POST.
+   */
+  public void setDeleteUsesMethodOverride(
+      final boolean deleteUsesMethodOverride)
+  {
+    this.deleteUsesMethodOverride = deleteUsesMethodOverride;
   }
 
 
@@ -409,7 +524,15 @@ public class SCIMClient
                     new SCIMQueryAttributes());
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     exchange.setAddress(address);
-    exchange.setMethod("DELETE");
+    if (deleteUsesMethodOverride)
+    {
+      exchange.setMethod("POST");
+      exchange.setRequestHeader(HEADER_NAME_METHOD_OVERRIDE, "DELETE");
+    }
+    else
+    {
+      exchange.setMethod("DELETE");
+    }
     exchange.setURI(uri.toString());
 
     httpClient.send(exchange);
@@ -481,7 +604,15 @@ public class SCIMClient
   {
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     exchange.setURL(resourceURI);
-    exchange.setMethod("DELETE");
+    if (deleteUsesMethodOverride)
+    {
+      exchange.setMethod("POST");
+      exchange.setRequestHeader(HEADER_NAME_METHOD_OVERRIDE, "DELETE");
+    }
+    else
+    {
+      exchange.setMethod("DELETE");
+    }
 
     httpClient.send(exchange);
     final int exchangeState;
@@ -562,7 +693,15 @@ public class SCIMClient
 
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     exchange.setAddress(address);
-    exchange.setMethod("PUT");
+    if (putUsesMethodOverride)
+    {
+      exchange.setMethod("POST");
+      exchange.setRequestHeader(HEADER_NAME_METHOD_OVERRIDE, "PUT");
+    }
+    else
+    {
+      exchange.setMethod("PUT");
+    }
     exchange.setURI(uri.toString());
     exchange.setRequestContentType(MEDIA_TYPE_XML);
     exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
