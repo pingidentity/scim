@@ -537,4 +537,104 @@ public class SCIMClient
 
 
 
+  /**
+   * Replace the contents of an existing user. A PUT operation is invoked on
+   * the User resource endpoint. The content type (JSON or XML) used for the
+   * operation is not specified by the caller.
+   *
+   * @param userID      The ID of the user to be replaced.
+   * @param user        The new contents of the user.
+   * @param attributes  The set of attributes to be returned. If empty, then
+   *                    the server returns all attributes.
+   *
+   * @return  The updated contents of the user, or {@code null} if the user
+   *          did not exist.
+   *
+   * @throws IOException  If an error occurred while replacing the user.
+   */
+  public User putUser(final String userID, final User user,
+                      final String ... attributes)
+      throws IOException
+  {
+    final ScimURI uri =
+        new ScimURI(baseURI, RESOURCE_NAME_USER, userID, null, null,
+                    new SCIMQueryAttributes(attributes));
+
+    final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    exchange.setAddress(address);
+    exchange.setMethod("PUT");
+    exchange.setURI(uri.toString());
+    exchange.setRequestContentType(MEDIA_TYPE_XML);
+    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    // TODO set character encoding utf-8
+
+    // TODO we should re-use the buffer
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    final Writer writer = new OutputStreamWriter(out, "UTF-8");
+    try
+    {
+      xmlContext.writeUser(writer, user);
+    }
+    catch (IOException e)
+    {
+      writer.close();
+    }
+
+    final ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+    exchange.setRequestContentSource(in);
+
+    httpClient.send(exchange);
+    final int exchangeState;
+    try
+    {
+      exchangeState = exchange.waitForDone();
+    }
+    catch (InterruptedException e)
+    {
+      throw new IOException("HTTP exchange interrupted", e);
+    }
+
+    switch (exchangeState)
+    {
+      case HttpExchange.STATUS_COMPLETED:
+        switch (exchange.getResponseStatus())
+        {
+          case HttpStatus.OK_200:
+            // The user was replaced.
+            return xmlContext.readUser(exchange.getResponseContent());
+
+          case HttpStatus.NOT_FOUND_404:
+            // The user was not found.
+            return null;
+
+          default:
+            final String statusMessage =
+                HttpStatus.getMessage(exchange.getResponseStatus());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
+        }
+
+      case HttpExchange.STATUS_EXCEPTED:
+        throw new IOException("Exception during HTTP exchange",
+                              exchange.getException());
+
+      case HttpExchange.STATUS_EXPIRED:
+        throw new IOException("HTTP request expired");
+
+      default:
+        // This should not happen.
+        throw new IOException(
+            "Unexpected HTTP exchange state: " + exchangeState);
+    }
+  }
+
+
+
 }

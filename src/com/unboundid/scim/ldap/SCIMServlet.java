@@ -279,6 +279,90 @@ public class SCIMServlet
 
 
   /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected void doPut(final HttpServletRequest request,
+                       final HttpServletResponse response)
+      throws ServletException, IOException
+  {
+    try
+    {
+      final String resourceName = request.getServletPath().substring(1);
+
+      final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
+                                           resourceName,
+                                           request.getPathInfo(),
+                                           request.getQueryString());
+
+      final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
+      if (resourceAttribute != null)
+      {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                           "Operations on user attributes are not implemented");
+        return;
+      }
+
+      // Determine the media type to return.
+      final String mediaType = getMediaType(uri, request);
+      if (mediaType == null)
+      {
+        response.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE,
+                           "Only JSON and XML content types are supported");
+        return;
+      }
+
+      final boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
+
+      // Parse the resource.
+      Unmarshaller unmarshaller = Context.instance().unmarshaller();
+      final SCIMObject requestObject =
+          unmarshaller.unmarshal(request.getInputStream());
+
+      final PutResourceRequest putResourceRequest =
+          new PutResourceRequest(uri.getResourceName(), uri.getResourceID(),
+                                 requestObject, uri.getQueryAttributes());
+
+      final SCIMObject returnObject = backend.putObject(putResourceRequest);
+      if (returnObject == null)
+      {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      }
+      else
+      {
+        if (returnJSON)
+        {
+          response.setContentType(MEDIA_TYPE_JSON);
+          response.setCharacterEncoding("UTF-8");
+
+          // TODO JSON marshaller not yet implemented
+
+          response.setStatus(HttpServletResponse.SC_OK);
+          response.flushBuffer();
+        }
+        else
+        {
+          response.setContentType(MEDIA_TYPE_XML);
+          response.setCharacterEncoding("UTF-8");
+
+          final Marshaller marshaller = Context.instance().marshaller();
+          marshaller.marshal(returnObject, response.getOutputStream());
+
+          response.setStatus(HttpServletResponse.SC_OK);
+          response.flushBuffer();
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                         StaticUtils.getExceptionMessage(e));
+    }
+  }
+
+
+
+  /**
    * Determine the media type that should be used in a response.
    *
    * @param uri      The request URI.

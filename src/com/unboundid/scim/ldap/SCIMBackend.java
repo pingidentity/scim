@@ -55,4 +55,16 @@ public abstract class SCIMBackend
    *          resource did not exist.
    */
   public abstract boolean deleteObject(final DeleteResourceRequest request);
+
+
+
+  /**
+   * Replace the contents of an existing resource.
+   *
+   * @param request  The Put Resource request.
+   *
+   * @return  The updated contents of the resource, or {@code null} if the
+   *          resource did not exist.
+   */
+  public abstract SCIMObject putObject(final PutResourceRequest request);
 }

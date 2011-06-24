@@ -105,7 +105,6 @@ public class UserResourceMapperTestCase
     assertTrue(entry.hasAttributeValue("l", "Hollywood"));
     assertTrue(entry.hasAttributeValue("st", "CA"));
     assertTrue(entry.hasAttributeValue("postalCode", "91608"));
-    assertTrue(entry.hasAttributeValue("c", "USA"));
     assertTrue(entry.hasAttributeValue("telephoneNumber", "800-864-8377"));
 
     final SCIMObject user2 = new SCIMObject();

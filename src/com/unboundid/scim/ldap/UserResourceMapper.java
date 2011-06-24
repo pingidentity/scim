@@ -9,6 +9,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
@@ -30,12 +31,12 @@ import java.util.List;
  * fixed and can not be changed through configuration. This mapping is not able
  * to preserve all information from SCIM to LDAP, nor from LDAP to SCIM.
  *
- * The following attributes are mapped:
+ * The following SCIM attributes are mapped:
  * userName, name, addresses, emails, phoneNumbers, displayName,
  * preferredLanguage, title.
  *
- * These attributes are not mapped: externalId, nickName, profileUrl, userType,
- * locale, utcOffset, ims, photos, memberOf.
+ * These SCIM attributes are not currently mapped: externalId, nickName,
+ * profileUrl, userType, locale, utcOffset, ims, photos, memberOf.
  */
 public class UserResourceMapper extends ResourceMapper
 {
@@ -187,14 +188,6 @@ public class UserResourceMapper extends ResourceMapper
                                   s.replaceAll("\n", "\\$")));
               }
 
-              final SCIMAttribute country = v.getAttribute("country");
-              if (country != null)
-              {
-                attributes.add(
-                    new Attribute("c",
-                                  country.getSingularValue().getStringValue()));
-              }
-
               final SCIMAttribute locality = v.getAttribute("locality");
               if (locality != null)
               {
@@ -338,7 +331,7 @@ public class UserResourceMapper extends ResourceMapper
     }
 
     final SCIMAttribute displayName =
-        scimObject.getAttribute(coreSchema, "userName");
+        scimObject.getAttribute(coreSchema, "displayName");
     if (displayName != null)
     {
       attributes.add(
@@ -365,6 +358,28 @@ public class UserResourceMapper extends ResourceMapper
     }
 
     return attributes;
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Modification> toLDAPModifications(final Entry currentEntry,
+                                                final SCIMObject scimObject)
+  {
+    final String[] allLDAPAttributes = new String[] {
+        "uid", "cn", "sn", "givenName",
+        "postalAddress", "street", "l", "postalCode", "st",
+        "homePostalAddress", "mail", "telephoneNumber",
+        "homePhone", "facsimileTelephoneNumber",
+        "displayName", "preferredLanguage", "title"};
+
+    final List<Attribute> attributes = toLDAPAttributes(scimObject);
+    final Entry entry = new Entry(currentEntry.getDN(), attributes);
+
+    return Entry.diff(currentEntry, entry, true, false, allLDAPAttributes);
   }
 
 
@@ -452,15 +467,6 @@ public class UserResourceMapper extends ResourceMapper
                   addressDescriptor.getAttribute("formatted"),
                   SCIMAttributeValue.createStringValue(
                       formatted)));
-        }
-
-        final String country = entry.getAttributeValue("c");
-        if (country != null)
-        {
-          subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
-                  addressDescriptor.getAttribute("country"),
-                  SCIMAttributeValue.createStringValue(country)));
         }
 
         final String locality = entry.getAttributeValue("l");

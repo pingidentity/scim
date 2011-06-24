@@ -8,6 +8,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
@@ -87,6 +88,21 @@ public abstract class ResourceMapper
    *          never be {@code null} but may be empty.
    */
   public abstract List<Attribute> toLDAPAttributes(final SCIMObject scimObject);
+
+
+
+  /**
+   * Map the replacement attributes in a SCIM object to LDAP modifications.
+   *
+   * @param currentEntry  The current LDAP entry representing the SCIM object.
+   * @param scimObject  The object containing attributes to be mapped.
+   *
+   * @return  A list of LDAP modifications mapped from the SCIM object. This
+   *          should never be {@code null} but may be empty.
+   */
+  public abstract List<Modification> toLDAPModifications(
+      final Entry currentEntry,
+      final SCIMObject scimObject);
 
 
 

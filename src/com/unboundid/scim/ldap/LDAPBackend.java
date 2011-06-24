@@ -12,6 +12,8 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPResult;
+import com.unboundid.ldap.sdk.Modification;
+import com.unboundid.ldap.sdk.ModifyRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResultEntry;
@@ -240,5 +242,78 @@ public abstract class LDAPBackend
       }
       throw new RuntimeException(e);
     }
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public SCIMObject putObject(final PutResourceRequest request)
+  {
+    final SCIMServer scimServer = SCIMServer.getInstance();
+    final Set<ResourceMapper> mappers =
+        scimServer.getResourceMappers(request.getResourceName());
+
+    final ResourceDescriptor resourceDescriptor =
+        ResourceDescriptorManager.instance().getResourceDescriptor(
+            request.getResourceName());
+
+    final String entryDN = request.getResourceID();
+    final List<Modification> mods = new ArrayList<Modification>();
+    Entry modifiedEntry = null;
+    try
+    {
+      final Entry currentEntry = getLDAPInterface().getEntry(entryDN);
+      if (currentEntry == null)
+      {
+        return null;
+      }
+
+      for (final ResourceMapper m : mappers)
+      {
+        mods.addAll(m.toLDAPModifications(currentEntry,
+                                          request.getResourceObject()));
+      }
+
+      final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
+      modifyRequest.addControl(new PostReadRequestControl());
+      LDAPResult addResult = getLDAPInterface().modify(modifyRequest);
+
+      final PostReadResponseControl c = PostReadResponseControl.get(addResult);
+      if (c != null)
+      {
+        modifiedEntry = c.getEntry();
+      }
+    }
+    catch (LDAPException e)
+    {
+      throw new RuntimeException(e);
+    }
+
+    final SCIMObject returnObject = new SCIMObject();
+    returnObject.setResourceName(request.getResourceName());
+
+    if (request.getAttributes().isAttributeRequested("id"))
+    {
+      returnObject.addAttribute(
+          SCIMAttribute.createSingularAttribute(
+              resourceDescriptor.getAttribute("id"),
+              SCIMAttributeValue.createStringValue(entryDN)));
+    }
+
+    for (final ResourceMapper m : mappers)
+    {
+      final List<SCIMAttribute> scimAttributes =
+          m.toSCIMAttributes(request.getResourceName(), modifiedEntry,
+                             request.getAttributes());
+      for (final SCIMAttribute a : scimAttributes)
+      {
+        returnObject.addAttribute(a);
+      }
+    }
+
+    return returnObject;
   }
 }

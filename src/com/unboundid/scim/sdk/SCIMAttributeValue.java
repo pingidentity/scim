@@ -291,4 +291,28 @@ public final class SCIMAttributeValue
       return null;
     }
   }
+
+
+
+  /**
+   * Indicates whether a complex value has an attribute with the provided name.
+   *
+   * @param attributeName  The attribute name for which to make the
+   *                       determination.
+   *
+   * @return  {@code true} if there is an attribute with the provided name,
+   *          {@code false} if there is no such attribute or this attribute
+   *          value is simple.
+   */
+  public boolean hasAttribute(final String attributeName)
+  {
+    if (attributes != null)
+    {
+      return attributes.containsKey(attributeName);
+    }
+    else
+    {
+      return false;
+    }
+  }
 }
