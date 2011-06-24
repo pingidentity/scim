@@ -27,6 +27,7 @@
   <property name="jetty.dir"       location="ext/jetty" />
   <property name="jettison.dir"    location="ext/jettison" />
   <property name="jaxb.dir"        location="ext/jaxb" />
+  <property name="json.dir"        location="ext/json" />
 
 
 
@@ -75,6 +76,11 @@
 
 
   <!-- Define a number of project-wide classpath values. -->
+    <path id="json-jars">
+      <fileset dir="${json.dir}">
+        <include name="*.jar" />
+      </fileset>
+    </path>
   <path id="jettison-jars">
     <fileset dir="${jettison.dir}">
       <include name="*.jar" />
@@ -102,6 +108,7 @@
     <path refid="jettison-jars"/>
     <path refid="jetty-jars"/>
     <path refid="ldapsdk-jars"/>
+    <path refid="json-jars"/>
   </path>
 
 
