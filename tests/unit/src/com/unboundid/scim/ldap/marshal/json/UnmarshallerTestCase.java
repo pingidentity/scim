@@ -2,11 +2,12 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.ldap.marshall.json;
+
+package com.unboundid.scim.ldap.marshal.json;
 
 import com.unboundid.scim.config.ResourceDescriptorManager;
-import com.unboundid.scim.marshall.Context;
-import com.unboundid.scim.marshall.Unmarshaller;
+import com.unboundid.scim.marshal.Context;
+import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMRITestCase;
 import org.testng.annotations.BeforeMethod;
@@ -28,7 +29,7 @@ public class UnmarshallerTestCase extends SCIMRITestCase {
   }
 
   /**
-   * Verify that a known valid user can be read from XML.
+   * Verify that a known valid user can be read from JSON.
    *
    * @throws Exception If the test fails.
    */

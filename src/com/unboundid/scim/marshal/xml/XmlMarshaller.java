@@ -2,11 +2,11 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.marshall.xml;
+package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.marshall.Context;
-import com.unboundid.scim.marshall.Marshaller;
+import com.unboundid.scim.marshal.Context;
+import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -31,7 +31,8 @@ import java.util.Map;
  * This class provides a SCIM object marshaller implementation to write SCIM
  * objects to their XML representation.
  */
-public class XmlMarshaller implements Marshaller {
+public class XmlMarshaller implements Marshaller
+{
   /**
    * {@inheritDoc}
    */

@@ -2,12 +2,13 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.marshall;
+package com.unboundid.scim.marshal;
 
-import com.unboundid.scim.marshall.json.JsonMarshaller;
-import com.unboundid.scim.marshall.json.JsonUnmarshaller;
-import com.unboundid.scim.marshall.xml.XmlMarshaller;
-import com.unboundid.scim.marshall.xml.XmlUnmarshaller;
+import com.unboundid.scim.marshal.json.JsonMarshaller;
+import com.unboundid.scim.marshal.json.JsonUnmarshaller;
+import com.unboundid.scim.marshal.xml.XmlMarshaller;
+import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
+
 
 
 /**

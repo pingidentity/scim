@@ -2,10 +2,10 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.marshall.json;
+package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.marshall.Marshaller;
+import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -25,7 +25,8 @@ import java.util.Map;
  * This class provides a SCIM object marshaller implementation to write SCIM
  * objects to their Json representation.
  */
-public class JsonMarshaller implements Marshaller {
+public class JsonMarshaller implements Marshaller
+{
   /**
    * {@inheritDoc}
    */

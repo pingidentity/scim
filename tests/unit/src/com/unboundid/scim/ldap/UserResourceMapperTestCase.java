@@ -7,9 +7,9 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.scim.marshall.Context;
-import com.unboundid.scim.marshall.Marshaller;
-import com.unboundid.scim.marshall.Unmarshaller;
+import com.unboundid.scim.marshal.Context;
+import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;

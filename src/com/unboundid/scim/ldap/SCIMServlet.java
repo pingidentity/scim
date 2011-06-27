@@ -4,9 +4,9 @@
  */
 package com.unboundid.scim.ldap;
 
-import com.unboundid.scim.marshall.Context;
-import com.unboundid.scim.marshall.Marshaller;
-import com.unboundid.scim.marshall.Unmarshaller;
+import com.unboundid.scim.marshal.Context;
+import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;

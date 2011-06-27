@@ -2,7 +2,7 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.marshall;
+package com.unboundid.scim.marshal;
 
 import com.unboundid.scim.sdk.SCIMObject;
 
