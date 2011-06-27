@@ -4,45 +4,43 @@
   ~ All Rights Reserved.
   -->
 <scim:User xmlns:scim="urn:scim:schemas:core:1.0">
-  <id>uid=user.0,ou=People,dc=example,dc=com</id>
-  <addresses>
-    <address>
-      <type>work</type>
-      <postalCode>24769</postalCode>
-      <region>IL</region>
-      <locality>Sioux City</locality>
-      <streetAddress>46045 Locust Street</streetAddress>
-      <formatted>
-        Aaren Atp
-        46045 Locust Street
-        Sioux City, IL  24769
-      </formatted>
-    </address>
-  </addresses>
-  <phoneNumbers>
-    <phoneNumber>
-      <primary>false</primary>
-      <type>work</type>
-      <value>+1 319 805 3070</value>
-    </phoneNumber>
-    <phoneNumber>
-      <primary>false</primary>
-      <type>home</type>
-      <value>+1 003 490 8631</value>
-    </phoneNumber>
-  </phoneNumbers>
-  <emails>
-    <email>
-      <primary>false</primary>
-      <type>work</type>
-      <value>user.0@example.com</value>
-    </email>
-  </emails>
-  <employeeNumber>0</employeeNumber>
-  <name>
-    <givenName>Aaren</givenName>
-    <familyName>Atp</familyName>
-    <formatted>Aaren Atp</formatted>
-  </name>
-  <userName>user.0</userName>
+    <id>uid=user.0,ou=People,dc=example,dc=com</id>
+    <userName>user.0</userName>
+    <name>
+        <formatted>Aaren Atp</formatted>
+        <familyName>Atp</familyName>
+        <givenName>Aaren</givenName>
+    </name>
+    <emails>
+        <email>
+            <value>user.0@example.com</value>
+            <primary>false</primary>
+            <type>work</type>
+        </email>
+    </emails>
+    <phoneNumbers>
+        <phoneNumber>
+            <value>+1 319 805 3070</value>
+            <primary>false</primary>
+            <type>work</type>
+        </phoneNumber>
+        <phoneNumber>
+            <value>+1 003 490 8631</value>
+            <primary>false</primary>
+            <type>home</type>
+        </phoneNumber>
+    </phoneNumbers>
+    <addresses>
+        <address>
+            <formatted>
+                Aaren Atp 46045 Locust Street Sioux City, IL 24769
+            </formatted>
+            <streetAddress>46045 Locust Street</streetAddress>
+            <locality>Sioux City</locality>
+            <region>IL</region>
+            <type>work</type>
+        </address>
+    </addresses>
+
+
 </scim:User>

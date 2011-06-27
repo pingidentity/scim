@@ -22,6 +22,17 @@ import java.util.LinkedHashMap;
  */
 public class SCIMObject
 {
+
+  /**
+   * The SCIM name for the schemas attribute.
+   */
+  public static final String SCHEMAS_ATTRIBUTE_NAME = "schemas";
+
+  /**
+   * The SCIM name for the schemas attribute.
+   */
+  public static final String SCHEMAS_ATTRIBUTE_URI_NAME = "uri";
+
   /**
    * The type of SCIM resource represented by this object, or {@code null}
    * if the resource type is unknown.

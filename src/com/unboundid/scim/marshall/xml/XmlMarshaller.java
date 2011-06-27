@@ -9,6 +9,7 @@ import com.unboundid.scim.marshall.Context;
 import com.unboundid.scim.marshall.Marshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import javax.xml.stream.XMLOutputFactory;
@@ -71,20 +72,20 @@ public class XmlMarshaller implements Marshaller {
     int i = 0;
     String nsPrefix;
 
-    xmlStreamWriter.setDefaultNamespace(Context.DEFAULT_SCHEMA_URN);
+    xmlStreamWriter.setDefaultNamespace(SCIMConstants.SCHEMA_URI_CORE);
 
     // todo: at the moment the scim object is assumed to be a core schema
     // object
     // need to be able to identify schema properly
     xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
-      o.getResourceName(), Context.DEFAULT_SCHEMA_URN);
+      o.getResourceName(), SCIMConstants.SCHEMA_URI_CORE);
     for (String schema : o.getSchemas()) {
-      if (schema.equals(Context.DEFAULT_SCHEMA_URN)) {
+      if (schema.equals(SCIMConstants.SCHEMA_URI_CORE)) {
         xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
-          Context.DEFAULT_SCHEMA_URN);
+          SCIMConstants.SCHEMA_URI_CORE);
 
         xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
-          Context.DEFAULT_SCHEMA_URN);
+          SCIMConstants.SCHEMA_URI_CORE);
         nsPrefix = Context.DEFAULT_SCHEMA_PREFIX;
       } else {
         nsPrefix = "n" + i++;
@@ -184,7 +185,7 @@ public class XmlMarshaller implements Marshaller {
   private void writeStartElement(final SCIMAttribute scimAttribute,
                                  final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException {
-    if (scimAttribute.getSchema().equals(Context.DEFAULT_SCHEMA_URN)) {
+    if (scimAttribute.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE)) {
       xmlStreamWriter.writeStartElement(scimAttribute.getName());
     } else {
       xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),

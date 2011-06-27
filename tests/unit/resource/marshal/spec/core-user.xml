@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scim:User xmlns:scim="urn:scim:schemas:core:1.0">
+    <meta>
+        <lastModified>2011-05-13T04:42:34Z</lastModified>
+        <created>2010-01-23T04:56:22Z</created>
+        <location>
+            http://example.com/User/uid=005D0000001Az1u,
+            ou=People,dc=example,dc=com
+        </location>
+    </meta>
+    <id>uid=005D0000001Az1u,ou=People,dc=example,dc=com</id>
+    <userName>bjensen@example.com</userName>
+    <externalId>701984</externalId>
+    <name>
+        <formatted>Ms. Babs J Jensen III</formatted>
+        <familyName>Jensen</familyName>
+        <givenName>Barbara</givenName>
+        <middleName>Jane</middleName>
+        <honorificPrefix>Ms.</honorificPrefix>
+        <honorificSuffix>III</honorificSuffix>
+    </name>
+    <displayName>Babs Jensen</displayName>
+    <nickName>Babs</nickName>
+    <profileUrl>https://example.com/bjensen</profileUrl>
+    <title>Tour Guide</title>
+    <userType>Employee</userType>
+    <preferredLanguage>en_US</preferredLanguage>
+    <locale>en_US</locale>
+    <utcOffset>
+        <hours>-8</hours>
+        <minutes>00</minutes>
+    </utcOffset>
+    <emails>
+        <email>
+            <value>bjensen@example.com</value>
+            <primary>true</primary>
+            <type>work</type>
+        </email>
+        <email>
+            <value>babs@jensen</value>
+            <type>home</type>
+        </email>
+    </emails>
+    <phoneNumbers>
+        <phoneNumber>
+            <value>800-864-8377</value>
+            <primary>true</primary>
+            <type>work</type>
+        </phoneNumber>
+        <phoneNumber>
+            <value>818-123-4567</value>
+            <type>mobile</type>
+        </phoneNumber>
+    </phoneNumbers>
+    <ims>
+        <im>
+            <value>someaimhandle</value>
+            <type>aim</type>
+        </im>
+    </ims>
+    <photoUrls>
+        <photoUrl>
+            <value>
+                https://photos.example.com/profilephoto/uid=005D0000001Az1u,
+                ou=People,dc=example,dc=com/F"
+            </value>
+            <type>photo</type>
+        </photoUrl>
+        <photoUrl>
+            <value>
+                https://photos.example.com/profilephoto/uid=005D0000001Az1u,
+                ou=People,dc=example,dc=com/T"
+            </value>
+            <type>thumbnail</type>
+        </photoUrl>
+    </photoUrls>
+    <addresses>
+        <address>
+            <formatted>100 Universal City Plaza Hollywood, CA 91608 USA
+            </formatted>
+            <streetAddress>100 Universal City Plaza</streetAddress>
+            <locality>Hollywood</locality>
+            <region>CA</region>
+            <postalCode>91608</postalCode>
+            <country>USA</country>
+            <primary>true</primary>
+            <type>work</type>
+        </address>
+        <address>
+            <formatted>456 Hollywood Blvd Hollywood, CA 91608 USA</formatted>
+            <streetAddress>456 Hollywood Blvd</streetAddress>
+            <locality>San Francisco</locality>
+            <region>CA</region>
+            <postalCode>91608</postalCode>
+            <country>USA</country>
+            <type>home</type>
+        </address>
+    </addresses>
+    <memberOf>
+        <group>
+            <value>00300000005N2Y6AA</value>
+            <primary>true</primary>
+            <type>Tour Guides</type>
+        </group>
+        <group>
+            <value>00300000005N34H78</value>
+            <primary>true</primary>
+            <type>Employees</type>
+        </group>
+        <group>
+            <value>00300000005N98YT1</value>
+            <type>US Employees</type>
+        </group>
+    </memberOf>
+</scim:User>

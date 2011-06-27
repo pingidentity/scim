@@ -1,0 +1,45 @@
+/*
+ * Copyright 2011 UnboundID Corp.
+ * All Rights Reserved.
+ */
+package com.unboundid.scim.ldap.marshall.json;
+
+import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.marshall.Context;
+import com.unboundid.scim.marshall.Unmarshaller;
+import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SCIMRITestCase;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.io.File;
+
+@Test
+public class UnmarshallerTestCase extends SCIMRITestCase {
+  /**
+   * Bootstrap the unmarshaller with a configured resource descriptor.
+   *
+   * @throws Exception if error initializing descriptor manager.
+   */
+  @BeforeMethod
+  public void setUp() throws Exception {
+    final File schemaFile = getPackageResource("scim-core.xsd");
+    ResourceDescriptorManager.init(new File[]{schemaFile});
+  }
+
+  /**
+   * Verify that a known valid user can be read from XML.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test(enabled = true)
+  public void testUnmarshal() throws Exception {
+    final File testJson = getTestResource("marshal/spec/core-user.json");
+    final Context context = Context.instance();
+    final Unmarshaller unmarshaller = context.unmarshaller(Context.Format
+      .Json);
+    final SCIMObject o = unmarshaller.unmarshal(testJson);
+    // weak need todo a deep assert
+    assertNotNull(o);
+  }
+}
