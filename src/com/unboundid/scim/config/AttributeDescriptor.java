@@ -312,6 +312,21 @@ public class AttributeDescriptor {
     return null;
   }
 
+
+
+  /**
+   * Retrieve the data type for this attribute.
+   *
+   * @return  The data type for this attribute, or {@code null} if the attribute
+   *          is not a simple attribute.
+   */
+  public DataType getDataType()
+  {
+    return dataType;
+  }
+
+
+
   @Override
   public String toString() {
     return "AttributeDescriptor{" +

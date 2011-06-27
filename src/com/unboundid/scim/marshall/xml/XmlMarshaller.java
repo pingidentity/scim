@@ -12,13 +12,17 @@ import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
@@ -150,8 +154,28 @@ public class XmlMarshaller implements Marshaller {
         this.writeSingularAttribute(a, xmlStreamWriter);
       }
     } else {
-      String stringValue = scimAttribute.getSingularValue().getStringValue();
-      xmlStreamWriter.writeCharacters(stringValue);
+      switch (scimAttribute.getAttributeDescriptor().getDataType()) {
+        case INTEGER: // TODO
+        case STRING:
+          String stringValue =
+              scimAttribute.getSingularValue().getStringValue();
+          xmlStreamWriter.writeCharacters(stringValue);
+          break;
+        case DATETIME:
+          Date dateValue =
+              scimAttribute.getSingularValue().getDateValue();
+          Calendar calendar = new GregorianCalendar();
+          calendar.setTime(dateValue);
+          xmlStreamWriter.writeCharacters(
+              DatatypeConverter.printDateTime(calendar));
+          break;
+        case BOOLEAN:
+          Boolean booleanValue =
+              scimAttribute.getSingularValue().getBooleanValue();
+          xmlStreamWriter.writeCharacters(
+              DatatypeConverter.printBoolean(booleanValue));
+          break;
+      }
     }
     xmlStreamWriter.writeEndElement();
   }

@@ -17,6 +17,9 @@ import com.unboundid.scim.sdk.SCIMClient;
 import com.unboundid.scim.sdk.SCIMRITestCase;
 import org.testng.annotations.Test;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 
 
@@ -46,16 +49,39 @@ public class SCIMServerTestCase
     // A user ID that does not exist should not return anything.
     assertNull(client.getUser("cn=does-not-exist"));
 
-    // Create a user directly on the test DS and ensure it can be fetched
-    // using the SCIM client.
+    // Create a user directly on the test DS.
+    final GregorianCalendar timeBeforeCreation = new GregorianCalendar();
+    timeBeforeCreation.setTime(new Date());
+    timeBeforeCreation.set(Calendar.MILLISECOND, 0);
     testDS.add(generateUserEntry("b jensen", "dc=example,dc=com",
                                  "Barbara", "Jensen", "password"));
+    final GregorianCalendar timeAfterCreation = new GregorianCalendar();
+    timeAfterCreation.setTime(new Date());
+    timeAfterCreation.set(Calendar.MILLISECOND, 0);
+
+    // Fetch the user through the SCIm client.
     final User user1 = client.getUser("uid=b jensen,dc=example,dc=com");
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=b jensen,dc=example,dc=com");
     assertEquals(user1.getName().getFamilyName(), "Jensen");
     assertEquals(user1.getName().getGivenName(), "Barbara");
     assertEquals(user1.getUserName(), "b jensen");
+    assertNotNull(user1.getMeta());
+    assertNotNull(user1.getMeta().getCreated());
+    assertNotNull(user1.getMeta().getLastModified());
+
+    // Check the timestamp values in the meta information.
+    final GregorianCalendar created =
+        user1.getMeta().getCreated().toGregorianCalendar();
+    created.set(Calendar.MILLISECOND, 0);
+    assertTrue(created.compareTo(timeBeforeCreation) >= 0);
+    assertTrue(created.compareTo(timeAfterCreation) <= 0);
+
+    final GregorianCalendar lastModified =
+        user1.getMeta().getLastModified().toGregorianCalendar();
+    lastModified.set(Calendar.MILLISECOND, 0);
+    assertTrue(lastModified.compareTo(timeBeforeCreation) >= 0);
+    assertTrue(lastModified.compareTo(timeAfterCreation) <= 0);
 
     // Fetch selected attributes only.
     final User partialUser1 =
@@ -98,13 +124,37 @@ public class SCIMServerTestCase
     user.setUserName("bjensen");
     user.setName(name);
 
-    // Post the user via SCIM.
-    final PostUserResponse response = client.postUser(user, "id");
+    // Post the user via SCIM, returning selected attributes.
+    final GregorianCalendar timeBeforeCreation = new GregorianCalendar();
+    timeBeforeCreation.setTime(new Date());
+    timeBeforeCreation.set(Calendar.MILLISECOND, 0);
+    final PostUserResponse response = client.postUser(user, "id", "meta");
+    final GregorianCalendar timeAfterCreation = new GregorianCalendar();
+    timeAfterCreation.setTime(new Date());
+    timeAfterCreation.set(Calendar.MILLISECOND, 0);
+
+    // Check the returned user.
     final User user1 = response.getUser();
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=bjensen,dc=example,dc=com");
     assertNull(user1.getName());
     assertNull(user1.getUserName());
+    assertNotNull(user1.getMeta());
+    assertNotNull(user1.getMeta().getCreated());
+    assertNotNull(user1.getMeta().getLastModified());
+
+    // Check the timestamp values in the meta information.
+    final GregorianCalendar created =
+        user1.getMeta().getCreated().toGregorianCalendar();
+    created.set(Calendar.MILLISECOND, 0);
+    assertTrue(created.compareTo(timeBeforeCreation) >= 0);
+    assertTrue(created.compareTo(timeAfterCreation) <= 0);
+
+    final GregorianCalendar lastModified =
+        user1.getMeta().getLastModified().toGregorianCalendar();
+    lastModified.set(Calendar.MILLISECOND, 0);
+    assertTrue(lastModified.compareTo(timeBeforeCreation) >= 0);
+    assertTrue(lastModified.compareTo(timeAfterCreation) <= 0);
 
     // Verify that the entry was actually created.
     final Entry entry = testDS.getEntry("uid=bjensen,dc=example,dc=com");
@@ -259,7 +309,13 @@ public class SCIMServerTestCase
     user1.setAddresses(addresses);
 
     // Put the updated user.
+    final GregorianCalendar timeBeforeUpdate = new GregorianCalendar();
+    timeBeforeUpdate.setTime(new Date());
+    timeBeforeUpdate.set(Calendar.MILLISECOND, 0);
     final User user2 = client.putUser(user1.getId(), user1);
+    final GregorianCalendar timeAfterUpdate = new GregorianCalendar();
+    timeAfterUpdate.setTime(new Date());
+    timeAfterUpdate.set(Calendar.MILLISECOND, 0);
 
     // Verify that the LDAP entry was updated correctly.
     final Entry entry2 = testDS.getEntry(userDN);
@@ -276,6 +332,13 @@ public class SCIMServerTestCase
     assertTrue(entry2.hasAttributeValue(
         "homePostalAddress", "456 Hollywood Blvd$Hollywood, CA 91608 USA"));
     assertTrue(entry2.hasAttribute("description"));
+
+    // Check the timestamp values in the meta information.
+    final GregorianCalendar lastModified =
+        user1.getMeta().getLastModified().toGregorianCalendar();
+    lastModified.set(Calendar.MILLISECOND, 0);
+    assertTrue(lastModified.compareTo(timeBeforeUpdate) >= 0);
+    assertTrue(lastModified.compareTo(timeAfterUpdate) <= 0);
 
     // Remove some values from the user.
 

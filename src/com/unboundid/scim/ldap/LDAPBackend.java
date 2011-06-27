@@ -20,15 +20,21 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
+import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
 import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 
 
 // TODO Throw checked exceptions instead of runtime exceptions
@@ -44,6 +50,18 @@ public abstract class LDAPBackend
    * The base DN of the LDAP server.
    */
   private String baseDN;
+
+
+  /**
+   * A date format to parse LDAP values in Generalized Time syntax.
+   */
+  private static final SimpleDateFormat generalizedTimeDateFormat;
+
+  static
+  {
+    generalizedTimeDateFormat = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'");
+    generalizedTimeDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+  }
 
 
   /**
@@ -79,7 +97,7 @@ public abstract class LDAPBackend
       final Filter filter = Filter.createPresenceFilter("objectclass");
       final SearchRequest searchRequest =
           new SearchRequest(request.getResourceID(), SearchScope.BASE,
-                            filter);
+                            filter, "*", "createTimestamp", "modifyTimestamp");
       final SearchResultEntry searchResultEntry =
           getLDAPInterface().searchForEntry(searchRequest);
       if (searchResultEntry == null)
@@ -92,21 +110,11 @@ public abstract class LDAPBackend
         final Set<ResourceMapper> mappers =
             scimServer.getResourceMappers(request.getResourceName());
 
-        final ResourceDescriptor resourceDescriptor =
-            ResourceDescriptorManager.instance().getResourceDescriptor(
-                request.getResourceName());
-
         final SCIMObject scimObject = new SCIMObject();
         scimObject.setResourceName(request.getResourceName());
 
-        if (request.getAttributes().isAttributeRequested("id"))
-        {
-          scimObject.addAttribute(
-              SCIMAttribute.createSingularAttribute(
-                  resourceDescriptor.getAttribute("id"),
-                  SCIMAttributeValue.createStringValue(
-                      searchResultEntry.getDN())));
-        }
+        setIdAndMetaAttributes(scimObject, searchResultEntry,
+                               request.getAttributes());
 
         for (final ResourceMapper m : mappers)
         {
@@ -140,10 +148,6 @@ public abstract class LDAPBackend
     final Set<ResourceMapper> mappers =
         scimServer.getResourceMappers(request.getResourceName());
 
-    final ResourceDescriptor resourceDescriptor =
-        ResourceDescriptorManager.instance().getResourceDescriptor(
-            request.getResourceName());
-
     Entry entry = null;
     Entry addedEntry = null;
     List<Attribute> attributes = new ArrayList<Attribute>();
@@ -174,7 +178,9 @@ public abstract class LDAPBackend
       }
 
       final AddRequest addRequest = new AddRequest(entry);
-      addRequest.addControl(new PostReadRequestControl());
+      addRequest.addControl(
+          new PostReadRequestControl("*", "createTimestamp",
+                                     "modifyTimestamp"));
       LDAPResult addResult = getLDAPInterface().add(addRequest);
 
       final PostReadResponseControl c = PostReadResponseControl.get(addResult);
@@ -191,13 +197,7 @@ public abstract class LDAPBackend
     final SCIMObject returnObject = new SCIMObject();
     returnObject.setResourceName(request.getResourceName());
 
-    if (request.getAttributes().isAttributeRequested("id"))
-    {
-      returnObject.addAttribute(
-          SCIMAttribute.createSingularAttribute(
-              resourceDescriptor.getAttribute("id"),
-              SCIMAttributeValue.createStringValue(addedEntry.getDN())));
-    }
+    setIdAndMetaAttributes(returnObject, addedEntry, request.getAttributes());
 
     for (final ResourceMapper m : mappers)
     {
@@ -256,10 +256,6 @@ public abstract class LDAPBackend
     final Set<ResourceMapper> mappers =
         scimServer.getResourceMappers(request.getResourceName());
 
-    final ResourceDescriptor resourceDescriptor =
-        ResourceDescriptorManager.instance().getResourceDescriptor(
-            request.getResourceName());
-
     final String entryDN = request.getResourceID();
     final List<Modification> mods = new ArrayList<Modification>();
     Entry modifiedEntry = null;
@@ -278,7 +274,9 @@ public abstract class LDAPBackend
       }
 
       final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
-      modifyRequest.addControl(new PostReadRequestControl());
+      modifyRequest.addControl(
+          new PostReadRequestControl("*", "createTimestamp",
+                                     "modifyTimestamp"));
       LDAPResult addResult = getLDAPInterface().modify(modifyRequest);
 
       final PostReadResponseControl c = PostReadResponseControl.get(addResult);
@@ -295,13 +293,8 @@ public abstract class LDAPBackend
     final SCIMObject returnObject = new SCIMObject();
     returnObject.setResourceName(request.getResourceName());
 
-    if (request.getAttributes().isAttributeRequested("id"))
-    {
-      returnObject.addAttribute(
-          SCIMAttribute.createSingularAttribute(
-              resourceDescriptor.getAttribute("id"),
-              SCIMAttributeValue.createStringValue(entryDN)));
-    }
+    setIdAndMetaAttributes(returnObject, modifiedEntry,
+                           request.getAttributes());
 
     for (final ResourceMapper m : mappers)
     {
@@ -315,5 +308,102 @@ public abstract class LDAPBackend
     }
 
     return returnObject;
+  }
+
+
+
+  /**
+   * Set the id and meta attributes in a SCIM object from the provided LDAP
+   * entry.
+   *
+   * @param scimObject       The SCIM object whose id and meta attributes are
+   *                         to be set.
+   * @param entry            The LDAP entry from which the attribute values are
+   *                         to be derived.
+   * @param queryAttributes  The attributes requested by the client.
+   */
+  private static void setIdAndMetaAttributes(
+      final SCIMObject scimObject,
+      final Entry entry,
+      final SCIMQueryAttributes queryAttributes)
+  {
+    final ResourceDescriptor resourceDescriptor =
+        ResourceDescriptorManager.instance().getResourceDescriptor(
+            scimObject.getResourceName());
+
+    if (queryAttributes.isAttributeRequested("id"))
+    {
+      scimObject.addAttribute(
+          SCIMAttribute.createSingularAttribute(
+              resourceDescriptor.getAttribute("id"),
+              SCIMAttributeValue.createStringValue(
+                  entry.getDN())));
+    }
+
+    if (queryAttributes.isAttributeRequested("meta"))
+    {
+      final AttributeDescriptor metaDescriptor =
+          resourceDescriptor.getAttribute("meta");
+      final List<SCIMAttribute> metaAttrs = new ArrayList<SCIMAttribute>();
+
+      final String createTimestamp =
+          entry.getAttributeValue("createTimestamp");
+      if (createTimestamp != null)
+      {
+        final Date date = parseGeneralizedTime(createTimestamp);
+        if (date != null)
+        {
+          metaAttrs.add(
+              SCIMAttribute.createSingularAttribute(
+                  metaDescriptor.getAttribute("created"),
+                  SCIMAttributeValue.createDateValue(date)));
+        }
+      }
+
+      final String modifyTimestamp =
+          entry.getAttributeValue("modifyTimestamp");
+      if (modifyTimestamp != null)
+      {
+        final Date date = parseGeneralizedTime(modifyTimestamp);
+        if (date != null)
+        {
+          metaAttrs.add(
+              SCIMAttribute.createSingularAttribute(
+                  metaDescriptor.getAttribute("lastModified"),
+                  SCIMAttributeValue.createDateValue(date)));
+        }
+      }
+
+      scimObject.addAttribute(
+          SCIMAttribute.createSingularAttribute(
+              resourceDescriptor.getAttribute("meta"),
+              SCIMAttributeValue.createComplexValue(metaAttrs)));
+    }
+  }
+
+
+
+  /**
+   * Parse a timestamp value in Generalized Time syntax.
+   *
+   * @param timestamp  The value in Generalized Time syntax.
+   *
+   * @return A date representing the parsed timestamp, or {@code null} if the
+   *         value could not be parsed.
+   */
+  private static Date parseGeneralizedTime(final String timestamp)
+  {
+    // SimpleDateFormat is not thread-safe.
+    synchronized (generalizedTimeDateFormat)
+    {
+      try
+      {
+        return generalizedTimeDateFormat.parse(timestamp);
+      }
+      catch (ParseException e)
+      {
+        return null;
+      }
+    }
   }
 }
