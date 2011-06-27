@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema targetNamespace="http://hr.example.org"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+    <xs:element name="gender" type="xs:string"/>
+    <xs:element name="paygrade" type="xs:string"/>
+</xs:schema>
