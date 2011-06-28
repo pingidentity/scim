@@ -25,7 +25,6 @@
   <property name="package.dir"     location="${build.dir}/package" />
   <property name="ldapsdk.dir"     location="ext/ldapsdk" />
   <property name="jetty.dir"       location="ext/jetty" />
-  <property name="jettison.dir"    location="ext/jettison" />
   <property name="jaxb.dir"        location="ext/jaxb" />
   <property name="json.dir"        location="ext/json" />
 
@@ -81,11 +80,6 @@
         <include name="*.jar" />
       </fileset>
     </path>
-  <path id="jettison-jars">
-    <fileset dir="${jettison.dir}">
-      <include name="*.jar" />
-    </fileset>
-  </path>
   <path id="jetty-jars">
     <fileset dir="${jetty.dir}/lib">
       <include name="jetty-client-*.jar"/>
@@ -105,7 +99,6 @@
     </fileset>
   </path>
   <path id="external-jars">
-    <path refid="jettison-jars"/>
     <path refid="jetty-jars"/>
     <path refid="ldapsdk-jars"/>
     <path refid="json-jars"/>
