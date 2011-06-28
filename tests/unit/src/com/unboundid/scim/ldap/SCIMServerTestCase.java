@@ -42,6 +42,130 @@ public class SCIMServerTestCase
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
     client.startClient();
 
+    try
+    {
+      // Test receiving XML content.
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testGetUser(client);
+
+      // Test receiving JSON content.
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testGetUser(client);
+    }
+    finally
+    {
+      client.stopClient();
+    }
+  }
+
+
+
+  /**
+   * Provides test coverage for the POST operation on a user resource.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testPostUser()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.startClient();
+
+    try
+    {
+      // Test sending and receiving XML content.
+      client.setSendJSON(false);
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testPostUser(client);
+
+      // Test sending and receiving JSON content.
+      client.setSendJSON(true);
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testPostUser(client);
+
+      // Test sending XML and receiving JSON content.
+      client.setSendJSON(false);
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
+      testPostUser(client);
+
+      // Test sending JSON and receiving XML content.
+      client.setSendJSON(true);
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testPostUser(client);
+    }
+    finally
+    {
+      client.stopClient();
+    }
+  }
+
+
+
+  /**
+   * Provides test coverage for the PUT operation on a user resource.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testPutUser()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.startClient();
+
+    try
+    {
+      // Test sending and receiving XML content.
+      client.setSendJSON(false);
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testPutUser(client);
+
+      // Test sending and receiving JSON content.
+      client.setSendJSON(true);
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testPutUser(client);
+
+      // Test sending XML and receiving JSON content.
+      client.setSendJSON(false);
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
+      testPutUser(client);
+
+      // Test sending JSON and receiving XML content.
+      client.setSendJSON(true);
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testPutUser(client);
+    }
+    finally
+    {
+      client.stopClient();
+    }
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation on a user resource.
+   *
+   * @param client  The SCIM client to use during the test.
+   *
+   * @throws Exception  If the test failed.
+   */
+  private void testGetUser(final SCIMClient client)
+      throws Exception
+  {
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
@@ -91,9 +215,6 @@ public class SCIMServerTestCase
     assertNull(partialUser1.getId());
     assertNull(partialUser1.getName());
     assertEquals(partialUser1.getUserName(), "b jensen");
-
-    // Tidy up.
-    client.stopClient();
   }
 
 
@@ -101,16 +222,13 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the POST operation on a user resource.
    *
+   * @param client  The SCIM client to use during the test.
+   *
    * @throws Exception  If the test failed.
    */
-  @Test
-  public void testPostUser()
+  private void testPostUser(final SCIMClient client)
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.startClient();
-
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
@@ -165,9 +283,6 @@ public class SCIMServerTestCase
 
     // Verify that we can fetch the user using the returned resource URI.
     assertNotNull(client.getUserByURI(response.getResourceURI()));
-
-    // Tidy up.
-    client.stopClient();
   }
 
 
@@ -232,16 +347,13 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the PUT operation on a user resource.
    *
+   * @param client  The SCIM client to use during the test.
+   *
    * @throws Exception  If the test failed.
    */
-  @Test
-  public void testPutUser()
+  private void testPutUser(final SCIMClient client)
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.startClient();
-
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
@@ -401,9 +513,6 @@ public class SCIMServerTestCase
     assertFalse(entry4.hasAttribute("postalCode"));
     assertFalse(entry4.hasAttribute("homePostalAddress"));
     assertTrue(entry4.hasAttribute("description"));
-
-    // Tidy up.
-    client.stopClient();
   }
 
 

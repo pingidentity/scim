@@ -17,9 +17,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,8 +88,33 @@ public class JsonUnmarshaller implements Unmarshaller
    */
   private SCIMAttribute createSimpleAttribute(final Object jsonAttribute,
     final AttributeDescriptor attributeDescriptor) {
-    return SCIMAttribute.createSingularAttribute(attributeDescriptor,
-      SCIMAttributeValue.createStringValue(jsonAttribute.toString()));
+
+    final SCIMAttributeValue v;
+
+    if (attributeDescriptor.getDataType() != null)
+    {
+      switch (attributeDescriptor.getDataType()) {
+        case DATETIME:
+          final Calendar calendar =
+              DatatypeConverter.parseDateTime(jsonAttribute.toString());
+          v = SCIMAttributeValue.createDateValue(calendar.getTime());
+          break;
+
+        case BOOLEAN:
+          v = SCIMAttributeValue.createBooleanValue((Boolean)jsonAttribute);
+          break;
+
+        default:
+          v = SCIMAttributeValue.createStringValue(jsonAttribute.toString());
+          break;
+      }
+    }
+    else
+    {
+      v = SCIMAttributeValue.createStringValue(jsonAttribute.toString());
+    }
+
+    return SCIMAttribute.createSingularAttribute(attributeDescriptor, v);
   }
 
   /**
@@ -141,9 +168,11 @@ public class JsonUnmarshaller implements Unmarshaller
       String key = (String) keys.next();
       Object o = jsonAttribute.get(key);
       AttributeDescriptor complexAttr = attributeDescriptor.getAttribute(key);
-      SCIMAttribute childAttr = SCIMAttribute.createSingularAttribute(
-        complexAttr, SCIMAttributeValue.createStringValue(o.toString()));
-      complexAttrs.add(childAttr);
+      if (complexAttr != null)
+      {
+        SCIMAttribute childAttr = createSimpleAttribute(o, complexAttr);
+        complexAttrs.add(childAttr);
+      }
     }
 
     complexScimAttr = SCIMAttribute.createSingularAttribute(attributeDescriptor,

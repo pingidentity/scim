@@ -101,39 +101,37 @@ public class SCIMServlet
         return;
       }
 
-      final boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
-
+      // Process the request.
       final GetResourceRequest getResourceRequest =
           new GetResourceRequest(uri.getResourceName(), uri.getResourceID(),
                                  uri.getQueryAttributes());
       final SCIMObject scimObject = backend.getObject(getResourceRequest);
+
+      // Return the response.
       if (scimObject == null)
       {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
       }
       else
       {
-        if (returnJSON)
+        final Marshaller marshaller;
+        if (mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON))
         {
           response.setContentType(MEDIA_TYPE_JSON);
           response.setCharacterEncoding("UTF-8");
-
-          // TODO JSON marshaller not yet implemented
-
-          response.setStatus(HttpServletResponse.SC_OK);
-          response.flushBuffer();
+          marshaller = Context.instance().marshaller(Context.Format.Json);
         }
         else
         {
           response.setContentType(MEDIA_TYPE_XML);
           response.setCharacterEncoding("UTF-8");
-
-          final Marshaller marshaller = Context.instance().marshaller();
-          marshaller.marshal(scimObject, response.getOutputStream());
-
-          response.setStatus(HttpServletResponse.SC_OK);
-          response.flushBuffer();
+          marshaller = Context.instance().marshaller(Context.Format.Xml);
         }
+
+        marshaller.marshal(scimObject, response.getOutputStream());
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.flushBuffer();
       }
     }
     catch (Exception e)
@@ -196,44 +194,50 @@ public class SCIMServlet
         return;
       }
 
-      final boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
-
       // Parse the resource.
-      Unmarshaller unmarshaller = Context.instance().unmarshaller();
+      final Unmarshaller unmarshaller;
+      final String contentType = request.getContentType();
+      if (contentType != null && contentType.equalsIgnoreCase(MEDIA_TYPE_XML))
+      {
+        unmarshaller = Context.instance().unmarshaller(Context.Format.Xml);
+      }
+      else
+      {
+        unmarshaller = Context.instance().unmarshaller(Context.Format.Json);
+      }
+
       final SCIMObject requestObject =
           unmarshaller.unmarshal(request.getInputStream());
 
+      // Process the request.
       final PostResourceRequest postResourceRequest =
           new PostResourceRequest(uri.getResourceName(), requestObject,
                                   uri.getQueryAttributes());
-
       final SCIMObject returnObject = backend.postObject(postResourceRequest);
 
+      // Return the response.
       final String location =
           getLocationURL(request, resourceName, returnObject.getResourceID());
       response.addHeader(HEADER_NAME_LOCATION, location);
 
-      if (returnJSON)
+      final Marshaller marshaller;
+      if (mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON))
       {
         response.setContentType(MEDIA_TYPE_JSON);
         response.setCharacterEncoding("UTF-8");
-
-        // TODO JSON marshaller not yet implemented
-
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.flushBuffer();
+        marshaller = Context.instance().marshaller(Context.Format.Json);
       }
       else
       {
         response.setContentType(MEDIA_TYPE_XML);
         response.setCharacterEncoding("UTF-8");
-
-        final Marshaller marshaller = Context.instance().marshaller();
-        marshaller.marshal(returnObject, response.getOutputStream());
-
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.flushBuffer();
+        marshaller = Context.instance().marshaller(Context.Format.Xml);
       }
+
+      marshaller.marshal(returnObject, response.getOutputStream());
+
+      response.setStatus(HttpServletResponse.SC_OK);
+      response.flushBuffer();
     }
     catch (Exception e)
     {
@@ -275,9 +279,12 @@ public class SCIMServlet
         return;
       }
 
+      // Process the request.
       final DeleteResourceRequest deleteResourceRequest =
           new DeleteResourceRequest(uri.getResourceName(), uri.getResourceID());
       final boolean found = backend.deleteObject(deleteResourceRequest);
+
+      // Return the response.
       if (!found)
       {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -330,45 +337,52 @@ public class SCIMServlet
         return;
       }
 
-      final boolean returnJSON = mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON);
-
       // Parse the resource.
-      Unmarshaller unmarshaller = Context.instance().unmarshaller();
+      final Unmarshaller unmarshaller;
+      final String contentType = request.getContentType();
+      if (contentType != null && contentType.equalsIgnoreCase(MEDIA_TYPE_XML))
+      {
+        unmarshaller = Context.instance().unmarshaller(Context.Format.Xml);
+      }
+      else
+      {
+        unmarshaller = Context.instance().unmarshaller(Context.Format.Json);
+      }
+
       final SCIMObject requestObject =
           unmarshaller.unmarshal(request.getInputStream());
 
+      // Process the request.
       final PutResourceRequest putResourceRequest =
           new PutResourceRequest(uri.getResourceName(), uri.getResourceID(),
                                  requestObject, uri.getQueryAttributes());
-
       final SCIMObject returnObject = backend.putObject(putResourceRequest);
+
+      // Return the response.
       if (returnObject == null)
       {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
       }
       else
       {
-        if (returnJSON)
+        final Marshaller marshaller;
+        if (mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON))
         {
           response.setContentType(MEDIA_TYPE_JSON);
           response.setCharacterEncoding("UTF-8");
-
-          // TODO JSON marshaller not yet implemented
-
-          response.setStatus(HttpServletResponse.SC_OK);
-          response.flushBuffer();
+          marshaller = Context.instance().marshaller(Context.Format.Json);
         }
         else
         {
           response.setContentType(MEDIA_TYPE_XML);
           response.setCharacterEncoding("UTF-8");
-
-          final Marshaller marshaller = Context.instance().marshaller();
-          marshaller.marshal(returnObject, response.getOutputStream());
-
-          response.setStatus(HttpServletResponse.SC_OK);
-          response.flushBuffer();
+          marshaller = Context.instance().marshaller(Context.Format.Xml);
         }
+
+        marshaller.marshal(returnObject, response.getOutputStream());
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.flushBuffer();
       }
     }
     catch (Exception e)

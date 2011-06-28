@@ -9,13 +9,16 @@ import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.xml.XMLContext;
 import org.eclipse.jetty.client.Address;
+import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_METHOD_OVERRIDE;
+import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
@@ -24,6 +27,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 
 
 
@@ -47,6 +52,22 @@ public class SCIMClient
    * The base URI of the SCIM interface.
    */
   private String baseURI;
+
+  /**
+   * Indicates whether JSON or XML representation should be used to send
+   * information to the server.
+   */
+  private volatile boolean sendJSON = false;
+
+  /**
+   * Indicates whether JSON representation is accepted from the server.
+   */
+  private volatile boolean acceptJSON = true;
+
+  /**
+   * Indicates whether XML representation is accepted from the server.
+   */
+  private volatile boolean acceptXML = true;
 
   /**
    * A JSON context to read and write JSON.
@@ -129,6 +150,88 @@ public class SCIMClient
 
       httpClient = null;
     }
+  }
+
+
+
+  /**
+   * Indicates whether JSON representation should be used to send
+   * information to the server.
+   *
+   * @return  {@code true} if JSON representation should be used to send
+   *          information to the server, or {@code false} if XML
+   *          representation should be used.
+   */
+  public boolean isSendJSON()
+  {
+    return sendJSON;
+  }
+
+
+
+  /**
+   * Specifies whether JSON representation should be used to exchange
+   * information with the server.
+   *
+   * @param sendJSON  {@code true} if JSON representation should be used to
+   *                  send information to the server, or {@code false}
+   *                  if XML representation should be used.
+   */
+  public void setSendJSON(final boolean sendJSON)
+  {
+    this.sendJSON = sendJSON;
+  }
+
+
+
+  /**
+   * Indicates whether JSON representation is accepted from the server.
+   *
+   * @return  {@code true} if JSON representation is accepted from the server,
+   *          or {@code false} otherwise.
+   */
+  public boolean isAcceptJSON()
+  {
+    return acceptJSON;
+  }
+
+
+
+  /**
+   * Specifies whether JSON representation is accepted from the server.
+   *
+   * @param acceptJSON  {@code true} if JSON representation is accepted from
+   *                    the server, or {@code false} otherwise.
+   */
+  public void setAcceptJSON(final boolean acceptJSON)
+  {
+    this.acceptJSON = acceptJSON;
+  }
+
+
+
+  /**
+   * Indicates whether XML representation is accepted from the server.
+   *
+   * @return  {@code true} if XML representation is accepted from the server,
+   *          or {@code false} otherwise.
+   */
+  public boolean isAcceptXML()
+  {
+    return acceptXML;
+  }
+
+
+
+  /**
+   * Specifies whether XML representation is accepted from the server.
+   *
+   * @param acceptXML  {@code true} if XML representation is accepted from
+   *                   the server, or {@code false} otherwise.
+   */
+  public void setAcceptXML(final boolean acceptXML)
+  {
+    this.acceptXML = acceptXML;
   }
 
 
@@ -252,7 +355,20 @@ public class SCIMClient
     exchange.setAddress(address);
     exchange.setMethod("GET");
     exchange.setURI(uri.toString());
-    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+
+    if (acceptJSON && acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT,
+                                MEDIA_TYPE_JSON + ',' + MEDIA_TYPE_XML);
+    }
+    else if (acceptJSON)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_JSON);
+    }
+    else if (acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    }
 
     httpClient.send(exchange);
     final int exchangeState;
@@ -272,7 +388,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was found.
-            return xmlContext.readUser(exchange.getResponseContent());
+            return readUser(exchange);
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -331,7 +447,20 @@ public class SCIMClient
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     exchange.setURL(resourceURI);
     exchange.setMethod("GET");
-    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+
+    if (acceptJSON && acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT,
+                                MEDIA_TYPE_JSON + ',' + MEDIA_TYPE_XML);
+    }
+    else if (acceptJSON)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_JSON);
+    }
+    else if (acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    }
 
     httpClient.send(exchange);
     final int exchangeState;
@@ -351,7 +480,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was found.
-            return xmlContext.readUser(exchange.getResponseContent());
+            return readUser(exchange);
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -411,8 +540,31 @@ public class SCIMClient
     exchange.setAddress(address);
     exchange.setMethod("POST");
     exchange.setURI(uri.toString());
-    exchange.setRequestContentType(MEDIA_TYPE_XML);
-    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+
+    final boolean emitJSON = sendJSON;
+    if (emitJSON)
+    {
+      exchange.setRequestContentType(MEDIA_TYPE_JSON);
+    }
+    else
+    {
+      exchange.setRequestContentType(MEDIA_TYPE_XML);
+    }
+
+    if (acceptJSON && acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT,
+                                MEDIA_TYPE_JSON + ',' + MEDIA_TYPE_XML);
+    }
+    else if (acceptJSON)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_JSON);
+    }
+    else if (acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    }
+
     // TODO set character encoding utf-8
 
     // TODO we should re-use the buffer
@@ -420,9 +572,16 @@ public class SCIMClient
     final Writer writer = new OutputStreamWriter(out, "UTF-8");
     try
     {
-      xmlContext.writeUser(writer, user);
+      if (emitJSON)
+      {
+        jsonContext.writeUser(writer, user);
+      }
+      else
+      {
+        xmlContext.writeUser(writer, user);
+      }
     }
-    catch (IOException e)
+    finally
     {
       writer.close();
     }
@@ -451,8 +610,7 @@ public class SCIMClient
             final String resourceURI =
                 exchange.getResponseFields().getStringField(
                     HEADER_NAME_LOCATION);
-            final User returnUser =
-                xmlContext.readUser(exchange.getResponseContent());
+            final User returnUser = readUser(exchange);
 
             return new PostUserResponse(resourceURI, returnUser);
 
@@ -703,8 +861,29 @@ public class SCIMClient
       exchange.setMethod("PUT");
     }
     exchange.setURI(uri.toString());
-    exchange.setRequestContentType(MEDIA_TYPE_XML);
-    exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    final boolean emitJSON = sendJSON;
+    if (emitJSON)
+    {
+      exchange.setRequestContentType(MEDIA_TYPE_JSON);
+    }
+    else
+    {
+      exchange.setRequestContentType(MEDIA_TYPE_XML);
+    }
+
+    if (acceptJSON && acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT,
+                                MEDIA_TYPE_JSON + ',' + MEDIA_TYPE_XML);
+    }
+    else if (acceptJSON)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_JSON);
+    }
+    else if (acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    }
     // TODO set character encoding utf-8
 
     // TODO we should re-use the buffer
@@ -712,9 +891,16 @@ public class SCIMClient
     final Writer writer = new OutputStreamWriter(out, "UTF-8");
     try
     {
-      xmlContext.writeUser(writer, user);
+      if (emitJSON)
+      {
+        jsonContext.writeUser(writer, user);
+      }
+      else
+      {
+        xmlContext.writeUser(writer, user);
+      }
     }
-    catch (IOException e)
+    finally
     {
       writer.close();
     }
@@ -740,7 +926,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was replaced.
-            return xmlContext.readUser(exchange.getResponseContent());
+            return readUser(exchange);
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -776,4 +962,30 @@ public class SCIMClient
 
 
 
+  /**
+   * Read a User from the response of a HTTP exchange.
+   *
+   * @param exchange  The HTTP exchange containing the response.
+   *
+   * @return  The user provided in the response.
+   *
+   * @throws IOException  If a user could not be read from the response.
+   */
+  private User readUser(final ContentExchange exchange)
+      throws IOException
+  {
+    final String contentType =
+        exchange.getResponseFields().getStringField("Content-Type");
+    final Map <String,String> parameters = new HashMap<String, String>();
+    final String mediaType =
+        HttpFields.valueParameters(contentType, parameters);
+    if (mediaType != null && mediaType.equalsIgnoreCase(MEDIA_TYPE_XML))
+    {
+      return xmlContext.readUser(exchange.getResponseContent());
+    }
+    else
+    {
+      return jsonContext.readUser(exchange.getResponseContent());
+    }
+  }
 }

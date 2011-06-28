@@ -25,6 +25,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
+
 
 
 /**
@@ -33,6 +35,13 @@ import java.util.Map;
  */
 public class XmlMarshaller implements Marshaller
 {
+  /**
+   * The UTC time zone.
+   */
+  private static TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+
+
+
   /**
    * {@inheritDoc}
    */
@@ -155,28 +164,42 @@ public class XmlMarshaller implements Marshaller
         this.writeSingularAttribute(a, xmlStreamWriter);
       }
     } else {
-      switch (scimAttribute.getAttributeDescriptor().getDataType()) {
-        case INTEGER: // TODO
-        case STRING:
-          String stringValue =
-              scimAttribute.getSingularValue().getStringValue();
-          xmlStreamWriter.writeCharacters(stringValue);
-          break;
-        case DATETIME:
-          Date dateValue =
-              scimAttribute.getSingularValue().getDateValue();
-          Calendar calendar = new GregorianCalendar();
-          calendar.setTime(dateValue);
-          xmlStreamWriter.writeCharacters(
-              DatatypeConverter.printDateTime(calendar));
-          break;
-        case BOOLEAN:
-          Boolean booleanValue =
-              scimAttribute.getSingularValue().getBooleanValue();
-          xmlStreamWriter.writeCharacters(
-              DatatypeConverter.printBoolean(booleanValue));
-          break;
+
+      if (scimAttribute.getAttributeDescriptor().getDataType() != null)
+      {
+        switch (scimAttribute.getAttributeDescriptor().getDataType()) {
+          case DATETIME:
+            final Date dateValue =
+                scimAttribute.getSingularValue().getDateValue();
+            final Calendar calendar = new GregorianCalendar(utcTimeZone);
+            calendar.setTime(dateValue);
+            xmlStreamWriter.writeCharacters(
+                DatatypeConverter.printDateTime(calendar));
+            break;
+
+          case BOOLEAN:
+            Boolean booleanValue =
+                scimAttribute.getSingularValue().getBooleanValue();
+            xmlStreamWriter.writeCharacters(
+                DatatypeConverter.printBoolean(booleanValue));
+            break;
+
+          case INTEGER: // TODO
+          case STRING:
+          default:
+            final String stringValue =
+                scimAttribute.getSingularValue().getStringValue();
+            xmlStreamWriter.writeCharacters(stringValue);
+            break;
+        }
       }
+      else
+      {
+        final String stringValue =
+            scimAttribute.getSingularValue().getStringValue();
+        xmlStreamWriter.writeCharacters(stringValue);
+      }
+
     }
     xmlStreamWriter.writeEndElement();
   }
