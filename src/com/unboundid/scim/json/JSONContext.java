@@ -9,6 +9,7 @@ import com.unboundid.scim.schema.Address;
 import com.unboundid.scim.schema.Meta;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.SCIMConstants;
 import org.json.JSONArray;
@@ -80,7 +81,33 @@ public class JSONContext
     }
     catch (Exception e)
     {
-      throw new IOException("Error reading JSON from a string", e);
+      throw new IOException("Error reading a user from a JSON string", e);
+    }
+  }
+
+
+
+  /**
+   * Reads a SCIM response from a string containing the response's JSON
+   * representation.
+   *
+   * @param jsonString  The string from which the JSON representation will be
+   *                    read.
+   *
+   * @return  The SCIM response that was read.
+   *
+   * @throws IOException  If an error occurs while reading the response.
+   */
+  public Response readResponse(final String jsonString)
+      throws IOException
+  {
+    try
+    {
+      return readResponse(new JSONTokener(jsonString));
+    }
+    catch (Exception e)
+    {
+      throw new IOException("Error reading a response from a JSON string", e);
     }
   }
 
@@ -426,6 +453,23 @@ public class JSONContext
   private User readUser(final JSONTokener tokener)
       throws Exception
   {
+    return readUser(new JSONObject(tokener));
+  }
+
+
+
+  /**
+   * Reads a SCIM user from a JSON object.
+   *
+   * @param jsonObject  The JSON object from which the user will be read.
+   *
+   * @return  The SCIM user that was read.
+   *
+   * @throws Exception  If an error occurs while reading the user.
+   */
+  private User readUser(final JSONObject jsonObject)
+      throws Exception
+  {
     final DatatypeFactory datatypeFactory;
     try
     {
@@ -435,8 +479,6 @@ public class JSONContext
     {
       throw new RuntimeException("Unable to create a DatatypeFactory", e);
     }
-
-    final JSONObject jsonObject = new JSONObject(tokener);
     final User user = new User();
 
     user.setId(jsonObject.optString("id", null));
@@ -591,6 +633,34 @@ public class JSONContext
     }
 
     return user;
+  }
+
+
+
+  /**
+   * Reads a SCIM response from a JSON tokener.
+   *
+   * @param tokener  The tokener from which the response will be read.
+   *
+   * @return  The SCIM response that was read.
+   *
+   * @throws Exception  If an error occurs while reading the response.
+   */
+  private Response readResponse(final JSONTokener tokener)
+      throws Exception
+  {
+    final JSONObject jsonObject = new JSONObject(tokener);
+    final Response response = new Response();
+
+    final JSONObject resourceObject = jsonObject.optJSONObject("Resource");
+    if (resourceObject != null)
+    {
+      final JSONObject userObject =
+          resourceObject.getJSONObject(SCIMConstants.RESOURCE_NAME_USER);
+      response.setResource(readUser(userObject));
+    }
+
+    return response;
   }
 
 

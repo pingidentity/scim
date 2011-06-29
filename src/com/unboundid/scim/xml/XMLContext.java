@@ -6,6 +6,8 @@
 package com.unboundid.scim.xml;
 
 import com.unboundid.scim.schema.ObjectFactory;
+import com.unboundid.scim.schema.Resource;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
 
 import javax.xml.bind.JAXBContext;
@@ -107,7 +109,63 @@ public class XMLContext
     }
     catch (Exception e)
     {
-      throw new IOException("Error reading XML from a string", e);
+      throw new IOException("Error reading a user from an XML string", e);
+    }
+  }
+
+
+
+  /**
+   * Reads a SCIM response from a string containing the XML representation
+   * of the response.
+   *
+   * @param xmlString  The string from which the response will be read.
+   *
+   * @return  The SCIM response that was read.
+   *
+   * @throws IOException  If an error occurs while reading the response.
+   */
+  public Response readResponse(final String xmlString)
+      throws IOException
+  {
+    try
+    {
+      final Reader reader = new StringReader(xmlString);
+      try
+      {
+        final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        final JAXBElement jaxbElement =
+            (JAXBElement) unmarshaller.unmarshal(reader);
+
+        // Note that a single resource is encoded without the response wrapper.
+        final Object value = jaxbElement.getValue();
+        if (value instanceof Response)
+        {
+          return (Response) value;
+        }
+        else if (value instanceof Resource)
+        {
+          final Response response = new Response();
+          response.setResource((User) value);
+
+          return response;
+        }
+        else
+        {
+          throw new IOException(
+              "Expected a Response or Resource in the server response but " +
+              "received the element type: " +
+              jaxbElement.getDeclaredType().getCanonicalName());
+        }
+      }
+      finally
+      {
+        reader.close();
+      }
+    }
+    catch (Exception e)
+    {
+      throw new IOException("Error reading a response from an XML string", e);
     }
   }
 }

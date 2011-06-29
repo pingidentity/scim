@@ -449,8 +449,14 @@ public class SCIMServerTestCase
     final GregorianCalendar lastModified =
         user1.getMeta().getLastModified().toGregorianCalendar();
     lastModified.set(Calendar.MILLISECOND, 0);
-    assertTrue(lastModified.compareTo(timeBeforeUpdate) >= 0);
-    assertTrue(lastModified.compareTo(timeAfterUpdate) <= 0);
+    assertTrue(lastModified.compareTo(timeBeforeUpdate) >= 0,
+               "The lastModified time (" + lastModified + ") was earlier " +
+               "than the timestamp (" + timeBeforeUpdate + ") taken before " +
+               "the update");
+    assertTrue(lastModified.compareTo(timeAfterUpdate) <= 0,
+               "The lastModified time (" + lastModified + ") was later " +
+               "than the timestamp (" + timeAfterUpdate + ") taken after " +
+               "the update");
 
     // Remove some values from the user.
 

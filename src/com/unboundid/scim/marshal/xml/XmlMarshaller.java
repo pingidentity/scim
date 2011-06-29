@@ -5,8 +5,14 @@
 package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.config.ResourceDescriptor;
+import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.ldap.GenericResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.schema.Error;
+import com.unboundid.scim.schema.Resource;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -58,6 +64,8 @@ public class XmlMarshaller implements Marshaller
    */
   public void marshal(final SCIMObject o, final File file)
     throws Exception {
+    throw new UnsupportedOperationException(
+        "XML marshal to file is not implemented");
   }
 
   /**
@@ -69,6 +77,28 @@ public class XmlMarshaller implements Marshaller
     XMLStreamWriter xmlStreamWriter =
       outputFactory.createXMLStreamWriter(writer);
     this.marshal(o, xmlStreamWriter);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final Response response, final OutputStream outputStream)
+    throws Exception {
+    XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    XMLStreamWriter xmlStreamWriter =
+      outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
+    this.marshal(response, xmlStreamWriter);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final Response response, final Writer writer)
+    throws Exception {
+    XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    XMLStreamWriter xmlStreamWriter =
+      outputFactory.createXMLStreamWriter(writer);
+    this.marshal(response, xmlStreamWriter);
   }
 
   /**
@@ -118,6 +148,136 @@ public class XmlMarshaller implements Marshaller
     xmlStreamWriter.writeEndDocument();
     xmlStreamWriter.flush();
   }
+
+
+
+  /**
+   * Write a SCIM Response to an XML stream.
+   *
+   * @param response        The SCIM response to be written.
+   * @param xmlStreamWriter The stream to which the SCIM response should be
+   *                        written.
+   *
+   * @throws XMLStreamException If the response could not be written.
+   */
+  private void marshal(final Response response,
+                       final XMLStreamWriter xmlStreamWriter)
+    throws XMLStreamException
+  {
+    // If the response is a single resource then we omit the response wrapper.
+    if (response.getResource() != null)
+    {
+      final GenericResource resource = (GenericResource)response.getResource();
+      marshal(resource.getScimObject(), xmlStreamWriter);
+      return;
+    }
+
+    final String xsiURI = "http://www.w3.org/2001/XMLSchema-instance";
+    final ResourceDescriptorManager descriptorManager =
+        ResourceDescriptorManager.instance();
+
+    xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
+
+    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
+                              SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
+                                      "Response");
+    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
+                                   SCIMConstants.SCHEMA_URI_CORE);
+
+    final Resource resource = response.getResource();
+    final Response.Errors errors = response.getErrors();
+    if (resource != null)
+    {
+      xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
+                                        "Resource");
+
+      xmlStreamWriter.setPrefix("xsi", xsiURI);
+      xmlStreamWriter.writeNamespace("xsi", xsiURI);
+
+      if (resource instanceof GenericResource)
+      {
+        final GenericResource genericResource = (GenericResource) resource;
+        final SCIMObject scimObject = genericResource.getScimObject();
+
+        xmlStreamWriter.writeAttribute(xsiURI, "type",
+                                       Context.DEFAULT_SCHEMA_PREFIX + ':' +
+                                       scimObject.getResourceName());
+
+        final ResourceDescriptor resourceDescriptor =
+            descriptorManager.getResourceDescriptor(
+                scimObject.getResourceName());
+        if (resourceDescriptor != null)
+        {
+          for (final AttributeDescriptor attributeDescriptor :
+              resourceDescriptor.getAttributeDescriptors())
+          {
+            final SCIMAttribute a =
+                scimObject.getAttribute(attributeDescriptor.getSchema(),
+                                        attributeDescriptor.getName());
+            if (a != null)
+            {
+              if (a.isPlural()) {
+                this.writePluralAttribute(a, xmlStreamWriter);
+              } else {
+                this.writeSingularAttribute(a, xmlStreamWriter);
+              }
+            }
+          }
+        }
+      }
+
+      xmlStreamWriter.writeEndElement();
+    }
+    else if (errors != null)
+    {
+      xmlStreamWriter.writeStartElement(
+          SCIMConstants.SCHEMA_URI_CORE, "Errors");
+
+      for (final Error error : errors.getError())
+      {
+        xmlStreamWriter.writeStartElement(
+            SCIMConstants.SCHEMA_URI_CORE, "Error");
+
+        final String description = error.getDescription();
+        if (description != null)
+        {
+          xmlStreamWriter.writeStartElement(
+              SCIMConstants.SCHEMA_URI_CORE, "description");
+          xmlStreamWriter.writeCharacters(description);
+          xmlStreamWriter.writeEndElement();
+        }
+
+        final String code = error.getCode();
+        if (code != null)
+        {
+          xmlStreamWriter.writeStartElement(
+              SCIMConstants.SCHEMA_URI_CORE, "code");
+          xmlStreamWriter.writeCharacters(code);
+          xmlStreamWriter.writeEndElement();
+        }
+
+        final String uri = error.getUri();
+        if (uri != null)
+        {
+          xmlStreamWriter.writeStartElement(
+              SCIMConstants.SCHEMA_URI_CORE, "uri");
+          xmlStreamWriter.writeCharacters(uri);
+          xmlStreamWriter.writeEndElement();
+        }
+
+        xmlStreamWriter.writeEndElement();
+      }
+
+      xmlStreamWriter.writeEndElement();
+    }
+
+    xmlStreamWriter.writeEndElement();
+    xmlStreamWriter.writeEndDocument();
+    xmlStreamWriter.flush();
+  }
+
+
 
   /**
    * Write a plural attribute to an XML stream.

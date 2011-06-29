@@ -5,9 +5,6 @@
 
 package com.unboundid.scim.ldap;
 
-import com.unboundid.scim.sdk.SCIMObject;
-
-
 /**
  * This class defines an API for a backend that can be plugged into the SCIM
  * server.
@@ -25,13 +22,11 @@ public abstract class SCIMBackend
   /**
    * Retrieve all or selected attributes of a resource.
    *
-   * @param request      The Get Resource request.
+   * @param request  The Get Resource request.
    *
-   * @return  The requested resource or {@code null} if the resource does not
-   *          exist. The resource contents are partial if selected attributes
-   *          were requested.
+   * @return  The response to the request.
    */
-  public abstract SCIMObject getObject(final GetResourceRequest request);
+  public abstract SCIMResponse getResource(final GetResourceRequest request);
 
 
 
@@ -40,21 +35,21 @@ public abstract class SCIMBackend
    *
    * @param request  The Post Resource request.
    *
-   * @return  The resource that was created.
+   * @return  The response to the request.
    */
-  public abstract SCIMObject postObject(final PostResourceRequest request);
+  public abstract SCIMResponse postResource(final PostResourceRequest request);
 
 
 
   /**
    * Delete a specific resource.
    *
-   * @param request      The Delete Resource request.
+   * @param request  The Delete Resource request.
    *
-   * @return  {@code true} if the resource was deleted, or {@code false} if the
-   *          resource did not exist.
+   * @return  The response to the request.
    */
-  public abstract boolean deleteObject(final DeleteResourceRequest request);
+  public abstract SCIMResponse deleteResource(
+      final DeleteResourceRequest request);
 
 
 
@@ -63,8 +58,7 @@ public abstract class SCIMBackend
    *
    * @param request  The Put Resource request.
    *
-   * @return  The updated contents of the resource, or {@code null} if the
-   *          resource did not exist.
+   * @return  The response to the request.
    */
-  public abstract SCIMObject putObject(final PutResourceRequest request);
+  public abstract SCIMResponse putResource(final PutResourceRequest request);
 }

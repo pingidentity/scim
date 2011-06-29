@@ -6,6 +6,7 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.json.JSONContext;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.xml.XMLContext;
 import org.eclipse.jetty.client.Address;
@@ -388,7 +389,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was found.
-            return readUser(exchange);
+            return (User)readResponse(exchange).getResource();
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -480,7 +481,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was found.
-            return readUser(exchange);
+            return (User)readResponse(exchange).getResource();
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -610,7 +611,7 @@ public class SCIMClient
             final String resourceURI =
                 exchange.getResponseFields().getStringField(
                     HEADER_NAME_LOCATION);
-            final User returnUser = readUser(exchange);
+            final User returnUser = (User)readResponse(exchange).getResource();
 
             return new PostUserResponse(resourceURI, returnUser);
 
@@ -926,7 +927,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was replaced.
-            return readUser(exchange);
+            return (User)readResponse(exchange).getResource();
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -963,15 +964,15 @@ public class SCIMClient
 
 
   /**
-   * Read a User from the response of a HTTP exchange.
+   * Read a SCIM response from the response of a HTTP exchange.
    *
    * @param exchange  The HTTP exchange containing the response.
    *
-   * @return  The user provided in the response.
+   * @return  The SCIM response.
    *
-   * @throws IOException  If a user could not be read from the response.
+   * @throws IOException  If a response could not be read.
    */
-  private User readUser(final ContentExchange exchange)
+  private Response readResponse(final ContentExchange exchange)
       throws IOException
   {
     final String contentType =
@@ -981,11 +982,11 @@ public class SCIMClient
         HttpFields.valueParameters(contentType, parameters);
     if (mediaType != null && mediaType.equalsIgnoreCase(MEDIA_TYPE_XML))
     {
-      return xmlContext.readUser(exchange.getResponseContent());
+      return xmlContext.readResponse(exchange.getResponseContent());
     }
     else
     {
-      return jsonContext.readUser(exchange.getResponseContent());
+      return jsonContext.readResponse(exchange.getResponseContent());
     }
   }
 }

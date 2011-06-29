@@ -6,7 +6,10 @@
 package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.ldap.GenericResource;
 import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.schema.Resource;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -73,6 +76,28 @@ public class JsonMarshaller implements Marshaller
   }
 
   /**
+   * {@inheritDoc}
+   */
+  public void marshal(final Response response, final OutputStream outputStream)
+    throws Exception {
+    final OutputStreamWriter outputStreamWriter =
+        new OutputStreamWriter(outputStream);
+    try {
+      this.marshal(response, new JSONWriter(outputStreamWriter));
+    } finally {
+      outputStreamWriter.close();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final Response response, final Writer writer)
+    throws Exception {
+    this.marshal(response, new JSONWriter(writer));
+  }
+
+  /**
    * Write a SCIM object to a JSON writer.
    *
    * @param o          The SCIM Object to be written.
@@ -121,6 +146,40 @@ public class JsonMarshaller implements Marshaller
         jsonWriter.endObject();
       }
     }
+    jsonWriter.endObject();
+  }
+
+  /**
+   * Write a SCIM response to a JSON writer.
+   *
+   * @param response    The SCIM resource to be written.
+   * @param jsonWriter  Output to write the resource to.
+   * @throws org.json.JSONException Thrown if error writing to output.
+   */
+  private void marshal(final Response response,
+                       final JSONWriter jsonWriter)
+    throws JSONException
+  {
+    jsonWriter.object();
+
+    final Resource resource = response.getResource();
+    if (resource != null)
+    {
+      jsonWriter.key("Resource");
+      jsonWriter.object();
+
+      if (resource instanceof GenericResource)
+      {
+        final GenericResource genericResource = (GenericResource) resource;
+        final SCIMObject scimObject = genericResource.getScimObject();
+
+        jsonWriter.key(scimObject.getResourceName());
+        marshal(scimObject, jsonWriter);
+      }
+
+      jsonWriter.endObject();
+    }
+
     jsonWriter.endObject();
   }
 

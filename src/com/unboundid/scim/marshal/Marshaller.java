@@ -2,9 +2,11 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
+
 package com.unboundid.scim.marshal;
 
 
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.io.File;
@@ -52,5 +54,32 @@ public interface Marshaller {
    * @throws Exception  If the object could not be written.
    */
   void marshal(SCIMObject object, Writer writer) throws Exception;
+
+  /**
+   * Write a SCIM resource to an output stream. The resources contained
+   * in the response must be instances of
+   * {@link com.unboundid.scim.ldap.GenericResource}.
+   *
+   * @param response      The SCIM response to be written.
+   * @param outputStream  The output stream to which the SCIM response should
+   *                      be written.
+   *
+   * @throws Exception  If the response could not be written.
+   */
+  void marshal(Response response, OutputStream outputStream)
+    throws Exception;
+
+  /**
+   * Write a SCIM response to a character stream writer. The resources contained
+   * in the response must be instances of
+   * {@link com.unboundid.scim.ldap.GenericResource}.
+   *
+   * @param response  The SCIM response to be written.
+   * @param writer    The character stream writer to which the SCIM response
+   *                  should be written.
+   *
+   * @throws Exception  If the response could not be written.
+   */
+  void marshal(Response response, Writer writer) throws Exception;
 
 }

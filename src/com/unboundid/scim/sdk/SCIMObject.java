@@ -161,8 +161,7 @@ public class SCIMObject
   /**
    * Retrieves the attribute with the specified name.
    *
-   * @param schema  The URI of the schema containing the attribute to retrieve,
-   *                or {@code null} to indicate core schema attributes.
+   * @param schema  The URI of the schema containing the attribute to retrieve.
    *
    * @param name    The name of the attribute to retrieve. It must not be
    *                {@code null}.
@@ -189,8 +188,7 @@ public class SCIMObject
   /**
    * Retrieves the set of attributes in this object from the specified schema.
    *
-   * @param schema  The URI of the schema whose attributes are to be retrieved,
-   *                or {@code null} to indicate core schema attributes.
+   * @param schema  The URI of the schema whose attributes are to be retrieved.
    *
    * @return  An immutable collection of the attributes in this object from the
    *          specified schema, or the empty collection if there are no such
@@ -215,8 +213,7 @@ public class SCIMObject
   /**
    * Determines whether this object contains the specified attribute.
    *
-   * @param schema  The URI of the schema containing the attribute,
-   *                or {@code null} to indicate a core schema attribute.
+   * @param schema  The URI of the schema containing the attribute.
    * @param name    The name of the attribute for which to make the
    *                determination. It must not be {@code null}.
    *

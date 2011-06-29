@@ -23,18 +23,20 @@ import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
 import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.schema.Error;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
+import com.unboundid.util.StaticUtils;
+import org.eclipse.jetty.http.HttpStatus;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 
 
 // TODO Throw checked exceptions instead of runtime exceptions
@@ -51,17 +53,6 @@ public abstract class LDAPBackend
    */
   private String baseDN;
 
-
-  /**
-   * A date format to parse LDAP values in Generalized Time syntax.
-   */
-  private static final SimpleDateFormat generalizedTimeDateFormat;
-
-  static
-  {
-    generalizedTimeDateFormat = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'");
-    generalizedTimeDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-  }
 
 
   /**
@@ -90,9 +81,33 @@ public abstract class LDAPBackend
 
 
 
+  /**
+   * Create a SCIM response indicating that a specified resource was not found.
+   *
+   * @param resourceID  The ID of the resource that was not found.
+   *
+   * @return  A SCIM response indicating that a specified resource was not
+   *          found.
+   */
+  private SCIMResponse notFoundResponse(final String resourceID)
+  {
+    final Response.Errors errors = new Response.Errors();
+    final Error error = new Error();
+    error.setDescription("Resource " + resourceID + " not found");
+    errors.getError().add(error);
+
+    final Response response = new Response();
+    response.setErrors(errors);
+
+    return new SCIMResponse(HttpStatus.NOT_FOUND_404, response);
+  }
+
+
+
   @Override
-  public SCIMObject getObject(final GetResourceRequest request) {
-  try
+  public SCIMResponse getResource(final GetResourceRequest request)
+  {
+    try
     {
       final Filter filter = Filter.createPresenceFilter("objectclass");
       final SearchRequest searchRequest =
@@ -102,7 +117,7 @@ public abstract class LDAPBackend
           getLDAPInterface().searchForEntry(searchRequest);
       if (searchResultEntry == null)
       {
-        return null;
+        return notFoundResponse(request.getResourceID());
       }
       else
       {
@@ -127,7 +142,10 @@ public abstract class LDAPBackend
           }
         }
 
-        return scimObject;
+        final Response response = new Response();
+        response.setResource(new GenericResource(scimObject));
+
+        return new SCIMResponse(HttpStatus.OK_200, response);
       }
     }
     catch (LDAPException e)
@@ -142,7 +160,7 @@ public abstract class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public SCIMObject postObject(final PostResourceRequest request)
+  public SCIMResponse postResource(final PostResourceRequest request)
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final Set<ResourceMapper> mappers =
@@ -210,7 +228,9 @@ public abstract class LDAPBackend
       }
     }
 
-    return returnObject;
+    final Response response = new Response();
+    response.setResource(new GenericResource(returnObject));
+    return new SCIMResponse(HttpStatus.OK_200, response);
   }
 
 
@@ -219,7 +239,7 @@ public abstract class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public boolean deleteObject(final DeleteResourceRequest request)
+  public SCIMResponse deleteResource(final DeleteResourceRequest request)
   {
     try
     {
@@ -227,7 +247,11 @@ public abstract class LDAPBackend
           getLDAPInterface().delete(request.getResourceID());
       if (result.getResultCode().equals(ResultCode.SUCCESS))
       {
-        return true;
+        return new SCIMResponse(HttpStatus.OK_200, new Response());
+      }
+      else if (result.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
+      {
+        return notFoundResponse(request.getResourceID());
       }
       else
       {
@@ -238,7 +262,7 @@ public abstract class LDAPBackend
     {
       if (e.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
       {
-        return false;
+        return notFoundResponse(request.getResourceID());
       }
       throw new RuntimeException(e);
     }
@@ -250,7 +274,7 @@ public abstract class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public SCIMObject putObject(final PutResourceRequest request)
+  public SCIMResponse putResource(final PutResourceRequest request)
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final Set<ResourceMapper> mappers =
@@ -264,7 +288,7 @@ public abstract class LDAPBackend
       final Entry currentEntry = getLDAPInterface().getEntry(entryDN);
       if (currentEntry == null)
       {
-        return null;
+        return notFoundResponse(request.getResourceID());
       }
 
       for (final ResourceMapper m : mappers)
@@ -307,7 +331,9 @@ public abstract class LDAPBackend
       }
     }
 
-    return returnObject;
+    final Response response = new Response();
+    response.setResource(new GenericResource(returnObject));
+    return new SCIMResponse(HttpStatus.OK_200, response);
   }
 
 
@@ -350,13 +376,17 @@ public abstract class LDAPBackend
           entry.getAttributeValue("createTimestamp");
       if (createTimestamp != null)
       {
-        final Date date = parseGeneralizedTime(createTimestamp);
-        if (date != null)
+        try
         {
+          final Date date = StaticUtils.decodeGeneralizedTime(createTimestamp);
           metaAttrs.add(
               SCIMAttribute.createSingularAttribute(
                   metaDescriptor.getAttribute("created"),
                   SCIMAttributeValue.createDateValue(date)));
+        }
+        catch (ParseException e)
+        {
+          // Unlikely to come here.
         }
       }
 
@@ -364,13 +394,17 @@ public abstract class LDAPBackend
           entry.getAttributeValue("modifyTimestamp");
       if (modifyTimestamp != null)
       {
-        final Date date = parseGeneralizedTime(modifyTimestamp);
-        if (date != null)
+        try
         {
+          final Date date = StaticUtils.decodeGeneralizedTime(modifyTimestamp);
           metaAttrs.add(
               SCIMAttribute.createSingularAttribute(
                   metaDescriptor.getAttribute("lastModified"),
                   SCIMAttributeValue.createDateValue(date)));
+        }
+        catch (ParseException e)
+        {
+          // Unlikely to come here.
         }
       }
 
@@ -378,32 +412,6 @@ public abstract class LDAPBackend
           SCIMAttribute.createSingularAttribute(
               resourceDescriptor.getAttribute("meta"),
               SCIMAttributeValue.createComplexValue(metaAttrs)));
-    }
-  }
-
-
-
-  /**
-   * Parse a timestamp value in Generalized Time syntax.
-   *
-   * @param timestamp  The value in Generalized Time syntax.
-   *
-   * @return A date representing the parsed timestamp, or {@code null} if the
-   *         value could not be parsed.
-   */
-  private static Date parseGeneralizedTime(final String timestamp)
-  {
-    // SimpleDateFormat is not thread-safe.
-    synchronized (generalizedTimeDateFormat)
-    {
-      try
-      {
-        return generalizedTimeDateFormat.parse(timestamp);
-      }
-      catch (ParseException e)
-      {
-        return null;
-      }
     }
   }
 }
