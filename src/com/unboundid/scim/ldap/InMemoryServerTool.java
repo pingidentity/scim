@@ -48,6 +48,12 @@ import static com.unboundid.scim.ldap.LDAPMessages.*;
  *       server should listen for client HTTP connections.  If this is not
  *       provided, then a free port will be automatically chosen for use by the
  *       server.</LI>
+ *   <LI>"-S {path}" or "--useSchemaFile {path}" -- specifies the path to a file
+ *       or directory containing resource schema definitions to use for the
+ *       SCIM server.  If the specified path represents a file, then it must be
+ *       an XML file containing a valid XML schema.  If the path is a
+ *       directory, then its files will be processed in lexicographic order by
+ *       name.</LI>
  *   <LI>"-u {baseURI}" or "--baseURI {baseURI}" -- specifies a base URI to use
  *       for the SCIM server.  If no base URI is specified, then the default
  *       value '/' is used.</LI>
@@ -64,12 +70,12 @@ import static com.unboundid.scim.ldap.LDAPMessages.*;
  *   <LI>"--ldapAccessLogFile {path}" -- specifies the path to a
  *       file that should be used as an LDAP server access log.  If this is not
  *       provided, then no LDAP access logging will be performed.</LI>
- *   <LI>"-S {path}" or "--useSchemaFile {path}" -- specifies the path to a file
- *       or directory containing schema definitions to use for the server.  If
- *       the specified path represents a file, then it must be an LDIF file
- *       containing a valid LDAP subschema subentry.  If the path is a
- *       directory, then its files will be processed in lexicographic order by
- *       name.</LI>
+ *   <LI>"--useLdapSchemaFile {path}" -- specifies the path to a file
+ *       or directory containing schema definitions to use for the LDAP
+ *       repository.  If the specified path represents a file, then it must be
+ *       an LDIF file containing a valid LDAP subschema subentry.  If the path
+ *       is a directory, then its files will be processed in lexicographic
+ *       order by name.</LI>
  * </UL>
  */
 public class InMemoryServerTool
@@ -94,8 +100,12 @@ public class InMemoryServerTool
   // initially populate the server.
   private FileArgument ldifFileArgument;
 
-  // The argument used to specify the path to a directory containing schema
-  // definitions.
+  // The argument used to specify the path to a directory containing LDAP
+  // schema definitions.
+  private FileArgument useLdapSchemaFileArgument;
+
+  // The argument used to specify the path to a directory containing XML
+  // schema definitions.
   private FileArgument useSchemaFileArgument;
 
   // The argument used to specify the port on which the server should listen.
@@ -179,6 +189,7 @@ public class InMemoryServerTool
     ldapAccessLogFileArgument      = null;
     ldifFileArgument               = null;
     useSchemaFileArgument          = null;
+    useLdapSchemaFileArgument      = null;
     portArgument                   = null;
   }
 
@@ -260,11 +271,18 @@ public class InMemoryServerTool
          true, false);
     parser.addArgument(ldapAccessLogFileArgument);
 
-    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", false, 1,
+    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", true, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
          INFO_MEM_SERVER_TOOL_ARG_DESC_USE_SCHEMA_FILE.get(), true, true, false,
          false);
     parser.addArgument(useSchemaFileArgument);
+
+    useLdapSchemaFileArgument = new FileArgument(null, "useLdapSchemaFile",
+         false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_LDAP_SCHEMA_FILE.get(), true, true,
+         false, false);
+    parser.addArgument(useLdapSchemaFileArgument);
 
   }
 
@@ -335,7 +353,16 @@ public class InMemoryServerTool
         new InMemoryLDAPBackend(baseDN.toString(), directoryServer);
 
     scimServer = SCIMServer.getInstance();
-    scimServer.initializeServer(serverConfig);
+    try
+    {
+      scimServer.initializeServer(serverConfig);
+    }
+    catch (Exception e)
+    {
+      err(ERR_MEM_SERVER_TOOL_ERROR_INITIALIZING_SERVER.get(
+          StaticUtils.getExceptionMessage(e)));
+      return ResultCode.LOCAL_ERROR;
+    }
     scimServer.registerBackend(baseURI, backend);
 
     // Start the server.
@@ -376,6 +403,35 @@ public class InMemoryServerTool
 
     serverConfig.setListenPort(listenPort);
 
+    if (useSchemaFileArgument.isPresent())
+    {
+      final File f = useSchemaFileArgument.getValue();
+      if (f.exists())
+      {
+        final ArrayList<File> schemaFiles = new ArrayList<File>(1);
+        if (f.isFile())
+        {
+          schemaFiles.add(f);
+        }
+        else
+        {
+          for (final File subFile : f.listFiles())
+          {
+            if (subFile.isFile())
+            {
+              schemaFiles.add(subFile);
+            }
+          }
+        }
+
+        if (! schemaFiles.isEmpty())
+        {
+          final File[] files = new File[schemaFiles.size()];
+          serverConfig.setSchemaFiles(schemaFiles.toArray(files));
+        }
+      }
+    }
+
     return serverConfig;
   }
 
@@ -402,13 +458,13 @@ public class InMemoryServerTool
 
 
     // If schema should be used, then get it.
-    if (!useSchemaFileArgument.isPresent())
+    if (!useLdapSchemaFileArgument.isPresent())
     {
       serverConfig.setSchema(Schema.getDefaultStandardSchema());
     }
-    else if (useSchemaFileArgument.isPresent())
+    else if (useLdapSchemaFileArgument.isPresent())
     {
-      final File f = useSchemaFileArgument.getValue();
+      final File f = useLdapSchemaFileArgument.getValue();
       if (f.exists())
       {
         final ArrayList<File> schemaFiles = new ArrayList<File>(1);
@@ -491,11 +547,13 @@ public class InMemoryServerTool
 
     final String[] example1Args =
     {
+        "--useSchemaFile", "schema/scim-core.xsd"
     };
     exampleUsages.put(example1Args, INFO_MEM_SERVER_TOOL_EXAMPLE_1.get());
 
     final String[] example2Args =
     {
+      "--useSchemaFile", "schema/scim-core.xsd",
       "--baseURI", "scim",
       "--port", "8080",
       "--ldifFile", "test.ldif"

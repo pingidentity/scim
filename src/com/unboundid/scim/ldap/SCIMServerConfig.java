@@ -6,6 +6,10 @@ package com.unboundid.scim.ldap;
 
 
 
+import java.io.File;
+
+
+
 /**
  * This class provides a simple data structure with information that is
  * used to control the behavior of a {@link SCIMServer} instance.
@@ -23,6 +27,10 @@ public class SCIMServerConfig
    */
   private int maxThreads = 16;
 
+  /**
+   * The XML schema to be used by the server.
+   */
+  private File[] schemaFiles;
 
 
 
@@ -88,4 +96,25 @@ public class SCIMServerConfig
 
 
 
+  /**
+   * Retrieve the XML schema files to be used by the server.
+   *
+   * @return  The XML schema files to be used by the server.
+   */
+  public File[] getSchemaFiles()
+  {
+    return schemaFiles;
+  }
+
+
+
+  /**
+   * Specifies the XML schema files to be used by the server.
+   *
+   * @param schemaFiles  The XML schema files to be used by the server.
+   */
+  public void setSchemaFiles(final File[] schemaFiles)
+  {
+    this.schemaFiles = schemaFiles;
+  }
 }

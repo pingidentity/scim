@@ -55,6 +55,12 @@ public class JsonUnmarshaller implements Unmarshaller
     // we've got
     ResourceDescriptor resourceDescriptor = ResourceDescriptorManager
       .instance().getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
+    if (resourceDescriptor == null)
+    {
+      throw new RuntimeException("No resource descriptor found for " +
+                                 SCIMConstants.RESOURCE_NAME_USER);
+    }
+
     scimObject.setResourceName(resourceDescriptor.getName());
 
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor

@@ -34,10 +34,13 @@ public final class ResourceDescriptorManager {
    * @throws Exception Throw if error encountered processing specified files.
    */
   public static void init(final File[] schemas) throws Exception {
-    XmlSchemaParser parser = new XmlSchemaParser(schemas);
-    Collection<ResourceDescriptor> descriptors = parser.getDescriptors();
-    for (ResourceDescriptor r : descriptors) {
-      instance.descriptors.put(r.getName(), r);
+    if (schemas != null)
+    {
+      XmlSchemaParser parser = new XmlSchemaParser(schemas);
+      Collection<ResourceDescriptor> descriptors = parser.getDescriptors();
+      for (ResourceDescriptor r : descriptors) {
+        instance.descriptors.put(r.getName(), r);
+      }
     }
   }
 

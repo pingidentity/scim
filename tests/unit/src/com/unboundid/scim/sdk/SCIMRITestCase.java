@@ -38,7 +38,6 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
-import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.ldap.ExternalLDAPBackend;
 import com.unboundid.scim.ldap.LDAPExternalServerConfig;
 import com.unboundid.scim.ldap.SCIMBackend;
@@ -324,9 +323,6 @@ public abstract class SCIMRITestCase
 
     final File resourceDir = new File(System.getProperty("unit.resource.dir"));
 
-    final File schemaFile = getPackageResource("scim-core.xsd");
-    ResourceDescriptorManager.init(new File[]{schemaFile});
-
     final File serverKeyStore   = new File(resourceDir, "server.keystore");
 
     final SSLUtil serverSSLUtil = new SSLUtil(
@@ -346,10 +342,13 @@ public abstract class SCIMRITestCase
     testDS.startListening();
 
 
+    final File schemaFile = getPackageResource("scim-core.xsd");
+
     ssPort = getFreePort();
     final SCIMServerConfig ssConfig = new SCIMServerConfig();
     ssConfig.setListenPort(ssPort);
     ssConfig.setMaxThreads(16);
+    ssConfig.setSchemaFiles(new File[]{schemaFile});
 
     final LDAPExternalServerConfig ldapConfig =
         new LDAPExternalServerConfig();

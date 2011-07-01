@@ -423,6 +423,10 @@ public abstract class LDAPBackend
     final ResourceDescriptor resourceDescriptor =
         ResourceDescriptorManager.instance().getResourceDescriptor(
             scimObject.getResourceName());
+    if (resourceDescriptor == null)
+    {
+      return;
+    }
 
     if (queryAttributes.isAttributeRequested("id"))
     {

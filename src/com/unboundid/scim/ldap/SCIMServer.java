@@ -4,6 +4,7 @@
  */
 package com.unboundid.scim.ldap;
 
+import com.unboundid.scim.config.ResourceDescriptorManager;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -67,9 +68,14 @@ public class SCIMServer
    * {@link #startListening()}.
    *
    * @param serverConfig  The desired server configuration.
+   *
+   * @throws Exception  If an error occurred while initializing the server.
    */
   public void initializeServer(final SCIMServerConfig serverConfig)
+      throws Exception
   {
+    ResourceDescriptorManager.init(serverConfig.getSchemaFiles());
+
     final Server s = new Server(serverConfig.getListenPort());
     s.setThreadPool(new QueuedThreadPool(serverConfig.getMaxThreads()));
 

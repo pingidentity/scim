@@ -10,6 +10,7 @@ import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -55,6 +56,12 @@ public class XmlUnmarshaller implements Unmarshaller {
     Element documentElement = doc.getDocumentElement();
     ResourceDescriptor resourceDescriptor = ResourceDescriptorManager
       .instance().getResourceDescriptor(documentElement.getLocalName());
+    if (resourceDescriptor == null)
+    {
+      throw new RuntimeException("No resource descriptor found for " +
+                                 SCIMConstants.RESOURCE_NAME_USER);
+    }
+
     scimObject.setResourceName(resourceDescriptor.getName());
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor
       .getAttributeDescriptors()) {
