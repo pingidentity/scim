@@ -1,0 +1,17 @@
+Portions of the UnboundID Server SDK are covered by various licenses,
+including:
+
+- The API included in the UnboundID Server SDK itself is provided under the
+  terms of the Common Development and Distribution License (CDDL) version 1.0.
+  This license is available in the file docs/licenses/cddl.txt.
+
+- The UnboundID Server SDK depends on the UnboundID LDAP SDK for Java
+  (Commercial Edition), which is available under the license described in the
+  file docs/licenses/unboundid-ldapsdk-ce-license.txt.
+
+- The UnboundID Server SDK includes Apache Ant, which is available under the
+  Apache License version 2.0 (docs/licenses/ant-license.txt).  However, it also
+  depends on components covered by other licenses, including DOM
+  (docs/licenses/dom-license.txt), SAX (docs/licenses/sax-license.txt), and
+  Xerces (docs/licenses/xerxes-license.txt).
+

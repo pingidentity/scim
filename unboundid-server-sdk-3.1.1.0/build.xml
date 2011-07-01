@@ -1,0 +1,241 @@
+<!--
+ ! Copyright 2010-2011 UnboundID Corp.
+ ! All Rights Reserved.
+ -->
+<project name="UnboundID Server Extension" basedir="." default="package">
+
+  <!-- Define a number of project-wide properties. -->
+  <property name="src.dir"      location="src" />
+  <property name="sdk-lib.dir"  location="sdk-libs" />
+  <property name="user-lib.dir" location="lib" />
+  <property name="ant-lib.dir"  location="ant/lib" />
+  <property name="build.dir"    location="build" />
+  <property name="classes.dir"  location="${build.dir}/classes" />
+
+  <property name="MEM" value="128M" />
+
+
+
+  <!-- Make sure that all of the necessary properties have been defined. -->
+  <target name="init"
+          description="Provide default values for all build properties.">
+
+    <tstamp>
+      <format property="timestamp" pattern="yyyyMMddHHmmss'Z'" timezone="UTC" />
+    </tstamp>
+
+    <loadproperties srcFile="${sdk-lib.dir}/version.properties" />
+    <loadproperties srcFile="extension.properties" />
+
+    <taskdef name="requireProperty"
+             className="com.unboundid.buildutils.RequireProperty">
+      <classpath>
+        <pathelement location="${classes.dir}" />
+        <fileset dir="${sdk-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${ant-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </taskdef>
+
+    <requireProperty propertyName="extension.name" allowEmpty="false"
+                     valueRegex="[a-zA-Z]([a-zA-Z0-9\.\-])*"
+                     propertiesFile="extension.properties" />
+    <requireProperty propertyName="extension.version" allowEmpty="false"
+                     valueRegex="[a-zA-Z0-9]([a-zA-Z0-9\.\-])*"
+                     propertiesFile="extension.properties" />
+    <requireProperty propertyName="extension.vendor.name" allowEmpty="false"
+                     propertiesFile="extension.properties" />
+    <requireProperty propertyName="extension.vendor.url" allowEmpty="false"
+                     propertiesFile="extension.properties" />
+    <requireProperty propertyName="extension.vendor.contact"
+                     allowEmpty="false"
+                     propertiesFile="extension.properties" />
+    <requireProperty propertyName="include.source" allowEmpty="false"
+                     valueRegex="(true|false)"
+                     propertiesFile="extension.properties" />
+
+    <property name="package.dir" location="${build.dir}/${extension.name}-${extension.version}" />
+    <property name="doc.dir"     location="${package.dir}/docs" />
+  <property   name="javadoc.dir" location="${doc.dir}/javadoc" />
+  </target>
+
+
+
+  <!-- Clean up after a previous build. -->
+  <target name="clean" depends="init"
+          description="Clean up after a previous build.">
+    <delete dir="${build.dir}" />
+  </target>
+
+
+
+  <!-- Compile the extension source files. -->
+  <target name="compile" depends="clean"
+          description="Compile the extension source files.">
+    <delete dir="${classes.dir}" />
+    <mkdir  dir="${classes.dir}" />
+
+    <javac srcDir="${src.dir}" destDir="${classes.dir}" target="1.6"
+           deprecation="true" fork="true" memoryInitialSize="${MEM}"
+           memoryMaximumSize="${MEM}" optimize="true" debug="on"
+           debugLevel="lines,source,vars">
+      <compilerarg value="-Xlint:all" />
+      <classpath>
+        <fileset dir="${sdk-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${user-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </javac>
+  </target>
+
+
+
+  <!-- Create a jar file with the compiled classes and source code. -->
+  <target name="jar-with-source">
+    <jar jarFile="${package.dir}/${extension.name}.jar" compress="true"
+         index="true">
+      <fileset dir="${src.dir}" />
+      <fileset dir="${classes.dir}" />
+      <manifest>
+        <attribute name="Build-Time" value="${timestamp}" />
+        <attribute name="Implementation-Title" value="${extension.name}" />
+        <attribute name="Implementation-Version" value="${extension.version}" />
+        <attribute name="Implementation-Vendor"
+                   value="${extension.vendor.name}" />
+        <attribute name="Implementation-URL"
+                   value="${extension.vendor.url}" />
+        <attribute name="Extension-Support-Contact"
+                   value="${extension.vendor.contact}" />
+        <attribute name="UnboundID-Server-SDK-Version"
+                   value="${MAJOR_VERSION}.${MINOR_VERSION}.${POINT_VERSION}.${PATCH_VERSION}" />
+      </manifest>
+    </jar>
+  </target>
+
+
+
+  <!-- Create a jar file with just the compiled. -->
+  <target name="jar-without-source">
+    <jar jarFile="${package.dir}/${extension.name}.jar" compress="true"
+         index="true">
+      <fileset dir="${classes.dir}" />
+      <manifest>
+        <attribute name="Build-Time" value="${timestamp}" />
+        <attribute name="Extension-Support-Contact"
+                   value="${extension.vendor.contact}" />
+        <attribute name="Implementation-Title" value="${extension.name}" />
+        <attribute name="Implementation-Version" value="${extension.version}" />
+        <attribute name="Implementation-Vendor"
+                   value="${extension.vendor.name}" />
+        <attribute name="Implementation-URL"
+                   value="${extension.vendor.url}" />
+        <attribute name="UnboundID-Server-SDK-Version"
+                   value="${MAJOR_VERSION}.${MINOR_VERSION}.${POINT_VERSION}.${PATCH_VERSION}" />
+      </manifest>
+    </jar>
+  </target>
+
+
+
+  <!-- Create a jar file with the third-party content. -->
+  <target name="jar" depends="compile"
+          description="Create a jar file with the third-party content.">
+    <delete dir="${package.dir}" />
+    <mkdir  dir="${package.dir}" />
+
+    <!-- If the include.source property is not set or has a value of true, then
+         include the source code in the jar file.  Otherwise, just include the
+         compiled classes. -->
+    <condition property="jar-target-name" value="jar-without-source">
+      <and>
+        <isset property="include.source" />
+        <isfalse value="${include.source}" />
+      </and>
+    </condition>
+
+    <condition property="jar-target-name" value="jar-with-source">
+      <not>
+        <isset property="jar-target-name" />
+      </not>
+    </condition>
+
+    <antcall target="${jar-target-name}" />
+  </target>
+
+
+
+  <!-- Generate documentation for the extensions. -->
+  <target name="generate-extension-docs" depends="compile"
+          description="Generate extension usage documentation.">
+    <delete dir="${doc.dir}" />
+    <mkdir  dir="${doc.dir}" />
+    <mkdir  dir="${doc.dir}/images" />
+
+    <copy file="docs/unboundid.css" toDir="${doc.dir}" />
+
+    <copy toDir="${doc.dir}/images">
+      <fileset dir="docs/images">
+        <include  name="**/*" />
+      </fileset>
+    </copy>
+
+    <taskdef name="genExtDocs"
+             className="com.unboundid.buildutils.GenerateExtensionDocumentation">
+      <classpath>
+        <pathelement location="${classes.dir}" />
+        <fileset dir="${sdk-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${ant-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${user-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </taskdef>
+
+    <genExtDocs sourceRoot="${src.dir}" docRoot="${doc.dir}" />
+  </target>
+
+
+
+  <!-- Generate javadoc documentation. -->
+  <target name="javadoc" depends="compile"
+          description="Generate Javadoc documentation from source files.">
+    <delete dir="${javadoc.dir}" />
+    <mkdir  dir="${javadoc.dir}" />
+
+    <javadoc destDir="${javadoc.dir}" source="1.6" additionalParam="-quiet"
+             linkSource="yes" maxMemory="${MEM}" access="protected"
+             styleSheetFile="docs/unboundid-javadoc.css">
+      <fileset dir="${src.dir}" defaultExcludes="yes" />
+      <classpath>
+        <pathelement location="${classes.dir}" />
+        <fileset dir="${sdk-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+        <fileset dir="${user-lib.dir}">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+    </javadoc>
+
+    <delete file="${javadoc.dir}/resources/inherit.gif" />
+    <copy   file="docs/images/inherit.gif" toFile="${javadoc.dir}/resources/inherit.gif" />
+  </target>
+
+
+
+  <!-- Package the extension. -->
+  <target name="package" depends="jar,generate-extension-docs,javadoc"
+          description="Package the extension." />
+
+</project>
+

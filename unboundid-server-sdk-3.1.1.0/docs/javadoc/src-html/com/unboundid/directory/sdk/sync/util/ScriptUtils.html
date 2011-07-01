@@ -1,0 +1,468 @@
+<HTML>
+<BODY BGCOLOR="white">
+<PRE>
+<FONT color="green">001</FONT>    /*<a name="line.1"></a>
+<FONT color="green">002</FONT>     * CDDL HEADER START<a name="line.2"></a>
+<FONT color="green">003</FONT>     *<a name="line.3"></a>
+<FONT color="green">004</FONT>     * The contents of this file are subject to the terms of the<a name="line.4"></a>
+<FONT color="green">005</FONT>     * Common Development and Distribution License, Version 1.0 only<a name="line.5"></a>
+<FONT color="green">006</FONT>     * (the "License").  You may not use this file except in compliance<a name="line.6"></a>
+<FONT color="green">007</FONT>     * with the License.<a name="line.7"></a>
+<FONT color="green">008</FONT>     *<a name="line.8"></a>
+<FONT color="green">009</FONT>     * You can obtain a copy of the license at<a name="line.9"></a>
+<FONT color="green">010</FONT>     * docs/licenses/cddl.txt<a name="line.10"></a>
+<FONT color="green">011</FONT>     * or http://www.opensource.org/licenses/cddl1.php.<a name="line.11"></a>
+<FONT color="green">012</FONT>     * See the License for the specific language governing permissions<a name="line.12"></a>
+<FONT color="green">013</FONT>     * and limitations under the License.<a name="line.13"></a>
+<FONT color="green">014</FONT>     *<a name="line.14"></a>
+<FONT color="green">015</FONT>     * When distributing Covered Code, include this CDDL HEADER in each<a name="line.15"></a>
+<FONT color="green">016</FONT>     * file and include the License file at<a name="line.16"></a>
+<FONT color="green">017</FONT>     * docs/licenses/cddl.txt.  If applicable,<a name="line.17"></a>
+<FONT color="green">018</FONT>     * add the following below this CDDL HEADER, with the fields enclosed<a name="line.18"></a>
+<FONT color="green">019</FONT>     * by brackets "[]" replaced with your own identifying information:<a name="line.19"></a>
+<FONT color="green">020</FONT>     *      Portions Copyright [yyyy] [name of copyright owner]<a name="line.20"></a>
+<FONT color="green">021</FONT>     *<a name="line.21"></a>
+<FONT color="green">022</FONT>     * CDDL HEADER END<a name="line.22"></a>
+<FONT color="green">023</FONT>     *<a name="line.23"></a>
+<FONT color="green">024</FONT>     *<a name="line.24"></a>
+<FONT color="green">025</FONT>     *      Copyright 2010-2011 UnboundID Corp.<a name="line.25"></a>
+<FONT color="green">026</FONT>     */<a name="line.26"></a>
+<FONT color="green">027</FONT>    package com.unboundid.directory.sdk.sync.util;<a name="line.27"></a>
+<FONT color="green">028</FONT>    <a name="line.28"></a>
+<FONT color="green">029</FONT>    import com.unboundid.ldap.sdk.Attribute;<a name="line.29"></a>
+<FONT color="green">030</FONT>    import com.unboundid.ldap.sdk.DN;<a name="line.30"></a>
+<FONT color="green">031</FONT>    import com.unboundid.ldap.sdk.Entry;<a name="line.31"></a>
+<FONT color="green">032</FONT>    import com.unboundid.ldap.sdk.RDN;<a name="line.32"></a>
+<FONT color="green">033</FONT>    import com.unboundid.util.ThreadSafety;<a name="line.33"></a>
+<FONT color="green">034</FONT>    import com.unboundid.util.ThreadSafetyLevel;<a name="line.34"></a>
+<FONT color="green">035</FONT>    <a name="line.35"></a>
+<FONT color="green">036</FONT>    import java.util.ArrayList;<a name="line.36"></a>
+<FONT color="green">037</FONT>    import java.util.Date;<a name="line.37"></a>
+<FONT color="green">038</FONT>    import java.util.HashMap;<a name="line.38"></a>
+<FONT color="green">039</FONT>    import java.util.List;<a name="line.39"></a>
+<FONT color="green">040</FONT>    import java.util.Map;<a name="line.40"></a>
+<FONT color="green">041</FONT>    import java.sql.Blob;<a name="line.41"></a>
+<FONT color="green">042</FONT>    import java.sql.SQLException;<a name="line.42"></a>
+<FONT color="green">043</FONT>    import java.sql.Timestamp;<a name="line.43"></a>
+<FONT color="green">044</FONT>    import java.text.ParseException;<a name="line.44"></a>
+<FONT color="green">045</FONT>    import java.text.SimpleDateFormat;<a name="line.45"></a>
+<FONT color="green">046</FONT>    <a name="line.46"></a>
+<FONT color="green">047</FONT>    /**<a name="line.47"></a>
+<FONT color="green">048</FONT>     * This class contains various utility methods for working with the<a name="line.48"></a>
+<FONT color="green">049</FONT>     * UnboundID LDAP SDK and JDBC objects within script implementations. These<a name="line.49"></a>
+<FONT color="green">050</FONT>     * are useful for populating LDAP entries with content from JDBC result sets<a name="line.50"></a>
+<FONT color="green">051</FONT>     * and also for working with DNs, Timestamps, and other objects.<a name="line.51"></a>
+<FONT color="green">052</FONT>     */<a name="line.52"></a>
+<FONT color="green">053</FONT>    @ThreadSafety(level = ThreadSafetyLevel.COMPLETELY_THREADSAFE)<a name="line.53"></a>
+<FONT color="green">054</FONT>    public final class ScriptUtils<a name="line.54"></a>
+<FONT color="green">055</FONT>    {<a name="line.55"></a>
+<FONT color="green">056</FONT>    <a name="line.56"></a>
+<FONT color="green">057</FONT>      /**<a name="line.57"></a>
+<FONT color="green">058</FONT>       * The date format string that will be used to construct and parse dates<a name="line.58"></a>
+<FONT color="green">059</FONT>       * represented using generalized time with a four-digit year.<a name="line.59"></a>
+<FONT color="green">060</FONT>       */<a name="line.60"></a>
+<FONT color="green">061</FONT>      private static final String DATE_FORMAT_GMT_TIME =<a name="line.61"></a>
+<FONT color="green">062</FONT>              "yyyyMMddHHmmss'Z'";<a name="line.62"></a>
+<FONT color="green">063</FONT>    <a name="line.63"></a>
+<FONT color="green">064</FONT>      /**<a name="line.64"></a>
+<FONT color="green">065</FONT>       * The date format string that will be used to construct and parse dates<a name="line.65"></a>
+<FONT color="green">066</FONT>       * represented using generalized time.<a name="line.66"></a>
+<FONT color="green">067</FONT>       */<a name="line.67"></a>
+<FONT color="green">068</FONT>      private static final String DATE_FORMAT_GENERALIZED_TIME =<a name="line.68"></a>
+<FONT color="green">069</FONT>              "yyyyMMddHHmmss.SSS'Z'";<a name="line.69"></a>
+<FONT color="green">070</FONT>    <a name="line.70"></a>
+<FONT color="green">071</FONT>      // DateFormats are not thread-safe, so we provide a thread local<a name="line.71"></a>
+<FONT color="green">072</FONT>      private static final ThreadLocal&lt;SimpleDateFormat&gt; gmtTime =<a name="line.72"></a>
+<FONT color="green">073</FONT>        new ThreadLocal&lt;SimpleDateFormat&gt;()<a name="line.73"></a>
+<FONT color="green">074</FONT>            {<a name="line.74"></a>
+<FONT color="green">075</FONT>              @Override<a name="line.75"></a>
+<FONT color="green">076</FONT>              protected SimpleDateFormat initialValue()<a name="line.76"></a>
+<FONT color="green">077</FONT>              {<a name="line.77"></a>
+<FONT color="green">078</FONT>                return new SimpleDateFormat(DATE_FORMAT_GMT_TIME);<a name="line.78"></a>
+<FONT color="green">079</FONT>              }<a name="line.79"></a>
+<FONT color="green">080</FONT>            };<a name="line.80"></a>
+<FONT color="green">081</FONT>    <a name="line.81"></a>
+<FONT color="green">082</FONT>      private static final ThreadLocal&lt;SimpleDateFormat&gt; generalizedTime =<a name="line.82"></a>
+<FONT color="green">083</FONT>        new ThreadLocal&lt;SimpleDateFormat&gt;()<a name="line.83"></a>
+<FONT color="green">084</FONT>            {<a name="line.84"></a>
+<FONT color="green">085</FONT>              @Override<a name="line.85"></a>
+<FONT color="green">086</FONT>              protected SimpleDateFormat initialValue()<a name="line.86"></a>
+<FONT color="green">087</FONT>              {<a name="line.87"></a>
+<FONT color="green">088</FONT>                return new SimpleDateFormat(DATE_FORMAT_GENERALIZED_TIME);<a name="line.88"></a>
+<FONT color="green">089</FONT>              }<a name="line.89"></a>
+<FONT color="green">090</FONT>            };<a name="line.90"></a>
+<FONT color="green">091</FONT>    <a name="line.91"></a>
+<FONT color="green">092</FONT>      /**<a name="line.92"></a>
+<FONT color="green">093</FONT>       * Private constructor to enforce non-instantiability.<a name="line.93"></a>
+<FONT color="green">094</FONT>       */<a name="line.94"></a>
+<FONT color="green">095</FONT>      private ScriptUtils() {}<a name="line.95"></a>
+<FONT color="green">096</FONT>    <a name="line.96"></a>
+<FONT color="green">097</FONT>      /**<a name="line.97"></a>
+<FONT color="green">098</FONT>       * Adds an {@link Attribute} with the given attribute name and string value to<a name="line.98"></a>
+<FONT color="green">099</FONT>       * the given entry if the value is not null.<a name="line.99"></a>
+<FONT color="green">100</FONT>       * @param entry<a name="line.100"></a>
+<FONT color="green">101</FONT>       *          an LDAP entry instance. May be null.<a name="line.101"></a>
+<FONT color="green">102</FONT>       * @param attrName<a name="line.102"></a>
+<FONT color="green">103</FONT>       *          the name of the attribute to add to the entry. May &lt;b&gt;not&lt;/b&gt; be<a name="line.103"></a>
+<FONT color="green">104</FONT>       *          null.<a name="line.104"></a>
+<FONT color="green">105</FONT>       * @param value<a name="line.105"></a>
+<FONT color="green">106</FONT>       *          the value for the attribute to add to the entry. May be null.<a name="line.106"></a>
+<FONT color="green">107</FONT>       */<a name="line.107"></a>
+<FONT color="green">108</FONT>      public static void addStringAttribute(final Entry entry,<a name="line.108"></a>
+<FONT color="green">109</FONT>                                            final String attrName,<a name="line.109"></a>
+<FONT color="green">110</FONT>                                            final String value)<a name="line.110"></a>
+<FONT color="green">111</FONT>      {<a name="line.111"></a>
+<FONT color="green">112</FONT>        if(entry != null &amp;&amp; value != null)<a name="line.112"></a>
+<FONT color="green">113</FONT>        {<a name="line.113"></a>
+<FONT color="green">114</FONT>          entry.addAttribute(attrName, value);<a name="line.114"></a>
+<FONT color="green">115</FONT>        }<a name="line.115"></a>
+<FONT color="green">116</FONT>      }<a name="line.116"></a>
+<FONT color="green">117</FONT>    <a name="line.117"></a>
+<FONT color="green">118</FONT>      /**<a name="line.118"></a>
+<FONT color="green">119</FONT>       * Adds an {@link Attribute} with the given attribute name and numeric value<a name="line.119"></a>
+<FONT color="green">120</FONT>       * to the given entry if the value is not null.<a name="line.120"></a>
+<FONT color="green">121</FONT>       * @param entry<a name="line.121"></a>
+<FONT color="green">122</FONT>       *          an LDAP entry instance. May be null.<a name="line.122"></a>
+<FONT color="green">123</FONT>       * @param attrName<a name="line.123"></a>
+<FONT color="green">124</FONT>       *          the name of the attribute to add to the entry. May &lt;b&gt;not&lt;/b&gt; be<a name="line.124"></a>
+<FONT color="green">125</FONT>       *          null.<a name="line.125"></a>
+<FONT color="green">126</FONT>       * @param value<a name="line.126"></a>
+<FONT color="green">127</FONT>       *          the value for the attribute to add to the entry. May be null.<a name="line.127"></a>
+<FONT color="green">128</FONT>       */<a name="line.128"></a>
+<FONT color="green">129</FONT>      public static void addNumericAttribute(final Entry entry,<a name="line.129"></a>
+<FONT color="green">130</FONT>                                             final String attrName,<a name="line.130"></a>
+<FONT color="green">131</FONT>                                             final Number value)<a name="line.131"></a>
+<FONT color="green">132</FONT>      {<a name="line.132"></a>
+<FONT color="green">133</FONT>        if(entry != null &amp;&amp; value != null)<a name="line.133"></a>
+<FONT color="green">134</FONT>        {<a name="line.134"></a>
+<FONT color="green">135</FONT>          entry.addAttribute(attrName, value.toString());<a name="line.135"></a>
+<FONT color="green">136</FONT>        }<a name="line.136"></a>
+<FONT color="green">137</FONT>      }<a name="line.137"></a>
+<FONT color="green">138</FONT>    <a name="line.138"></a>
+<FONT color="green">139</FONT>      /**<a name="line.139"></a>
+<FONT color="green">140</FONT>       * Adds an {@link Attribute} with the given attribute name and boolean value<a name="line.140"></a>
+<FONT color="green">141</FONT>       * to the given entry if the value is not null. If the boolean is<a name="line.141"></a>
+<FONT color="green">142</FONT>       * &lt;code&gt;true&lt;/code&gt;, the attribute value will be the string "true", otherwise<a name="line.142"></a>
+<FONT color="green">143</FONT>       * it will be the string "false".<a name="line.143"></a>
+<FONT color="green">144</FONT>       * @param entry<a name="line.144"></a>
+<FONT color="green">145</FONT>       *          an LDAP entry instance. May be null.<a name="line.145"></a>
+<FONT color="green">146</FONT>       * @param attrName<a name="line.146"></a>
+<FONT color="green">147</FONT>       *          the name of the attribute to add to the entry. May &lt;b&gt;not&lt;/b&gt; be<a name="line.147"></a>
+<FONT color="green">148</FONT>       *          null.<a name="line.148"></a>
+<FONT color="green">149</FONT>       * @param value<a name="line.149"></a>
+<FONT color="green">150</FONT>       *          the value for the attribute to add to the entry. May be null.<a name="line.150"></a>
+<FONT color="green">151</FONT>       */<a name="line.151"></a>
+<FONT color="green">152</FONT>      public static void addBooleanAttribute(final Entry entry,<a name="line.152"></a>
+<FONT color="green">153</FONT>                                             final String attrName,<a name="line.153"></a>
+<FONT color="green">154</FONT>                                             final Boolean value)<a name="line.154"></a>
+<FONT color="green">155</FONT>      {<a name="line.155"></a>
+<FONT color="green">156</FONT>        if(entry != null &amp;&amp; value != null)<a name="line.156"></a>
+<FONT color="green">157</FONT>        {<a name="line.157"></a>
+<FONT color="green">158</FONT>          entry.addAttribute(attrName, value.toString());<a name="line.158"></a>
+<FONT color="green">159</FONT>        }<a name="line.159"></a>
+<FONT color="green">160</FONT>      }<a name="line.160"></a>
+<FONT color="green">161</FONT>    <a name="line.161"></a>
+<FONT color="green">162</FONT>      /**<a name="line.162"></a>
+<FONT color="green">163</FONT>       * Adds an {@link Attribute} with the given attribute name and {@link Date}<a name="line.163"></a>
+<FONT color="green">164</FONT>       * value to the given entry if the value is not null. The date is formatted<a name="line.164"></a>
+<FONT color="green">165</FONT>       * using the generalized time syntax with a four-digit year and an optional<a name="line.165"></a>
+<FONT color="green">166</FONT>       * milliseconds component (i.e. yyyyMMddHHmmss[.SSS]'Z').<a name="line.166"></a>
+<FONT color="green">167</FONT>       * @param entry<a name="line.167"></a>
+<FONT color="green">168</FONT>       *          entry an LDAP entry instance. May be null.<a name="line.168"></a>
+<FONT color="green">169</FONT>       * @param attrName<a name="line.169"></a>
+<FONT color="green">170</FONT>       *          the name of the attribute to add to the entry. May &lt;b&gt;not&lt;/b&gt; be<a name="line.170"></a>
+<FONT color="green">171</FONT>       *          null.<a name="line.171"></a>
+<FONT color="green">172</FONT>       * @param date<a name="line.172"></a>
+<FONT color="green">173</FONT>       *          the Date value for the attribute to add to the entry. May be null.<a name="line.173"></a>
+<FONT color="green">174</FONT>       * @param includeMilliseconds<a name="line.174"></a>
+<FONT color="green">175</FONT>       *          whether to include the milliseconds component in the attribute<a name="line.175"></a>
+<FONT color="green">176</FONT>       *          value<a name="line.176"></a>
+<FONT color="green">177</FONT>       */<a name="line.177"></a>
+<FONT color="green">178</FONT>      public static void addDateAttribute(final Entry entry,<a name="line.178"></a>
+<FONT color="green">179</FONT>                                          final String attrName,<a name="line.179"></a>
+<FONT color="green">180</FONT>                                          final Date date,<a name="line.180"></a>
+<FONT color="green">181</FONT>                                          final boolean includeMilliseconds)<a name="line.181"></a>
+<FONT color="green">182</FONT>      {<a name="line.182"></a>
+<FONT color="green">183</FONT>        if(entry != null &amp;&amp; date != null)<a name="line.183"></a>
+<FONT color="green">184</FONT>        {<a name="line.184"></a>
+<FONT color="green">185</FONT>          String result;<a name="line.185"></a>
+<FONT color="green">186</FONT>          if(includeMilliseconds)<a name="line.186"></a>
+<FONT color="green">187</FONT>          {<a name="line.187"></a>
+<FONT color="green">188</FONT>            result = generalizedTime.get().format(date);<a name="line.188"></a>
+<FONT color="green">189</FONT>          }<a name="line.189"></a>
+<FONT color="green">190</FONT>          else<a name="line.190"></a>
+<FONT color="green">191</FONT>          {<a name="line.191"></a>
+<FONT color="green">192</FONT>            result = gmtTime.get().format(date);<a name="line.192"></a>
+<FONT color="green">193</FONT>          }<a name="line.193"></a>
+<FONT color="green">194</FONT>          entry.addAttribute(attrName, result);<a name="line.194"></a>
+<FONT color="green">195</FONT>        }<a name="line.195"></a>
+<FONT color="green">196</FONT>      }<a name="line.196"></a>
+<FONT color="green">197</FONT>    <a name="line.197"></a>
+<FONT color="green">198</FONT>      /**<a name="line.198"></a>
+<FONT color="green">199</FONT>       * Adds an {@link Attribute} with the given attribute name and {@link Blob}<a name="line.199"></a>
+<FONT color="green">200</FONT>       * value to the given entry if the underlying byte array is not null or empty.<a name="line.200"></a>
+<FONT color="green">201</FONT>       * This method calls &lt;code&gt;free()&lt;/code&gt; on the Blob object after the<a name="line.201"></a>
+<FONT color="green">202</FONT>       * attribute has been added to the entry.<a name="line.202"></a>
+<FONT color="green">203</FONT>       * @param entry<a name="line.203"></a>
+<FONT color="green">204</FONT>       *          an LDAP entry instance. May be null.<a name="line.204"></a>
+<FONT color="green">205</FONT>       * @param attrName<a name="line.205"></a>
+<FONT color="green">206</FONT>       *          the name of the attribute to add to the entry. May &lt;b&gt;not&lt;/b&gt; be<a name="line.206"></a>
+<FONT color="green">207</FONT>       *          null.<a name="line.207"></a>
+<FONT color="green">208</FONT>       * @param value<a name="line.208"></a>
+<FONT color="green">209</FONT>       *          the value for the attribute to add to the entry. May be null.<a name="line.209"></a>
+<FONT color="green">210</FONT>       * @param maxBytes<a name="line.210"></a>
+<FONT color="green">211</FONT>       *          the maximum number of bytes to extract from the Blob<a name="line.211"></a>
+<FONT color="green">212</FONT>       *          and add to the entry.<a name="line.212"></a>
+<FONT color="green">213</FONT>       */<a name="line.213"></a>
+<FONT color="green">214</FONT>      public static void addBinaryAttribute(final Entry entry,<a name="line.214"></a>
+<FONT color="green">215</FONT>                                            final String attrName,<a name="line.215"></a>
+<FONT color="green">216</FONT>                                            final Blob value,<a name="line.216"></a>
+<FONT color="green">217</FONT>                                            final int maxBytes)<a name="line.217"></a>
+<FONT color="green">218</FONT>      {<a name="line.218"></a>
+<FONT color="green">219</FONT>        if(entry != null &amp;&amp; value != null)<a name="line.219"></a>
+<FONT color="green">220</FONT>        {<a name="line.220"></a>
+<FONT color="green">221</FONT>          try<a name="line.221"></a>
+<FONT color="green">222</FONT>          {<a name="line.222"></a>
+<FONT color="green">223</FONT>            byte[] bytes = value.getBytes(1, maxBytes);<a name="line.223"></a>
+<FONT color="green">224</FONT>            if(bytes.length &gt; 0)<a name="line.224"></a>
+<FONT color="green">225</FONT>            {<a name="line.225"></a>
+<FONT color="green">226</FONT>              entry.addAttribute(attrName, bytes);<a name="line.226"></a>
+<FONT color="green">227</FONT>            }<a name="line.227"></a>
+<FONT color="green">228</FONT>            value.free();<a name="line.228"></a>
+<FONT color="green">229</FONT>          }<a name="line.229"></a>
+<FONT color="green">230</FONT>          catch(SQLException e)<a name="line.230"></a>
+<FONT color="green">231</FONT>          {<a name="line.231"></a>
+<FONT color="green">232</FONT>            // suppress<a name="line.232"></a>
+<FONT color="green">233</FONT>          }<a name="line.233"></a>
+<FONT color="green">234</FONT>        }<a name="line.234"></a>
+<FONT color="green">235</FONT>      }<a name="line.235"></a>
+<FONT color="green">236</FONT>    <a name="line.236"></a>
+<FONT color="green">237</FONT>      /**<a name="line.237"></a>
+<FONT color="green">238</FONT>       * Returns true if the given attribute is not null and contains any one or<a name="line.238"></a>
+<FONT color="green">239</FONT>       * more of the given string values; returns false otherwise. This method<a name="line.239"></a>
+<FONT color="green">240</FONT>       * is case-insensitive.<a name="line.240"></a>
+<FONT color="green">241</FONT>       * @param attr<a name="line.241"></a>
+<FONT color="green">242</FONT>       *          the {@link Attribute} whose values to check<a name="line.242"></a>
+<FONT color="green">243</FONT>       * @param values<a name="line.243"></a>
+<FONT color="green">244</FONT>       *          the value(s) you are looking for<a name="line.244"></a>
+<FONT color="green">245</FONT>       * @return true if any of the values were found in the attribute, false if not<a name="line.245"></a>
+<FONT color="green">246</FONT>       */<a name="line.246"></a>
+<FONT color="green">247</FONT>      public static boolean containsAnyValue(final Attribute attr,<a name="line.247"></a>
+<FONT color="green">248</FONT>                                             final String... values)<a name="line.248"></a>
+<FONT color="green">249</FONT>      {<a name="line.249"></a>
+<FONT color="green">250</FONT>        if(attr == null)<a name="line.250"></a>
+<FONT color="green">251</FONT>        {<a name="line.251"></a>
+<FONT color="green">252</FONT>          return false;<a name="line.252"></a>
+<FONT color="green">253</FONT>        }<a name="line.253"></a>
+<FONT color="green">254</FONT>        for(String attrValue : attr.getValues())<a name="line.254"></a>
+<FONT color="green">255</FONT>        {<a name="line.255"></a>
+<FONT color="green">256</FONT>          for(String valueToCheck : values)<a name="line.256"></a>
+<FONT color="green">257</FONT>          {<a name="line.257"></a>
+<FONT color="green">258</FONT>            if(attrValue.equalsIgnoreCase(valueToCheck))<a name="line.258"></a>
+<FONT color="green">259</FONT>            {<a name="line.259"></a>
+<FONT color="green">260</FONT>              return true;<a name="line.260"></a>
+<FONT color="green">261</FONT>            }<a name="line.261"></a>
+<FONT color="green">262</FONT>          }<a name="line.262"></a>
+<FONT color="green">263</FONT>        }<a name="line.263"></a>
+<FONT color="green">264</FONT>        return false;<a name="line.264"></a>
+<FONT color="green">265</FONT>      }<a name="line.265"></a>
+<FONT color="green">266</FONT>    <a name="line.266"></a>
+<FONT color="green">267</FONT>      /**<a name="line.267"></a>
+<FONT color="green">268</FONT>       * String helper method to check if a value is a null object<a name="line.268"></a>
+<FONT color="green">269</FONT>       * or empty string.<a name="line.269"></a>
+<FONT color="green">270</FONT>       * @param value<a name="line.270"></a>
+<FONT color="green">271</FONT>       *          the String object to check<a name="line.271"></a>
+<FONT color="green">272</FONT>       * @return true if the value is null or empty string, false otherwise<a name="line.272"></a>
+<FONT color="green">273</FONT>       */<a name="line.273"></a>
+<FONT color="green">274</FONT>      public static boolean isNullOrEmpty(final String value)<a name="line.274"></a>
+<FONT color="green">275</FONT>      {<a name="line.275"></a>
+<FONT color="green">276</FONT>        if(value == null)<a name="line.276"></a>
+<FONT color="green">277</FONT>        {<a name="line.277"></a>
+<FONT color="green">278</FONT>          return true;<a name="line.278"></a>
+<FONT color="green">279</FONT>        }<a name="line.279"></a>
+<FONT color="green">280</FONT>        return value.isEmpty();<a name="line.280"></a>
+<FONT color="green">281</FONT>      }<a name="line.281"></a>
+<FONT color="green">282</FONT>    <a name="line.282"></a>
+<FONT color="green">283</FONT>      /**<a name="line.283"></a>
+<FONT color="green">284</FONT>       * Returns a SQL {@link Timestamp} based on the string value that is passed<a name="line.284"></a>
+<FONT color="green">285</FONT>       * in. The string is parsed using generalized time syntax first with and then<a name="line.285"></a>
+<FONT color="green">286</FONT>       * without milliseconds (i.e. yyyyMMddHHmmss[.SSS]'Z'). If the string cannot<a name="line.286"></a>
+<FONT color="green">287</FONT>       * be parsed, &lt;code&gt;null&lt;/code&gt; is returned.<a name="line.287"></a>
+<FONT color="green">288</FONT>       * @param value<a name="line.288"></a>
+<FONT color="green">289</FONT>       *          a string that represents a timestamp in generalized time format<a name="line.289"></a>
+<FONT color="green">290</FONT>       * @return a SQL Timestamp value set to the time that was passed in, or null<a name="line.290"></a>
+<FONT color="green">291</FONT>       *         if the value cannot be parsed<a name="line.291"></a>
+<FONT color="green">292</FONT>       */<a name="line.292"></a>
+<FONT color="green">293</FONT>      public static Timestamp getTimestampFromString(final String value)<a name="line.293"></a>
+<FONT color="green">294</FONT>      {<a name="line.294"></a>
+<FONT color="green">295</FONT>        Timestamp ts = null;<a name="line.295"></a>
+<FONT color="green">296</FONT>        if(value == null)<a name="line.296"></a>
+<FONT color="green">297</FONT>        {<a name="line.297"></a>
+<FONT color="green">298</FONT>          return ts;<a name="line.298"></a>
+<FONT color="green">299</FONT>        }<a name="line.299"></a>
+<FONT color="green">300</FONT>    <a name="line.300"></a>
+<FONT color="green">301</FONT>        // generalized time (with milliseconds) is a more specific format,<a name="line.301"></a>
+<FONT color="green">302</FONT>        // so try to parse as that first<a name="line.302"></a>
+<FONT color="green">303</FONT>        try<a name="line.303"></a>
+<FONT color="green">304</FONT>        {<a name="line.304"></a>
+<FONT color="green">305</FONT>          Date d = generalizedTime.get().parse(value);<a name="line.305"></a>
+<FONT color="green">306</FONT>          ts = new Timestamp(d.getTime());<a name="line.306"></a>
+<FONT color="green">307</FONT>          return ts;<a name="line.307"></a>
+<FONT color="green">308</FONT>        }<a name="line.308"></a>
+<FONT color="green">309</FONT>        catch(ParseException e)<a name="line.309"></a>
+<FONT color="green">310</FONT>        {<a name="line.310"></a>
+<FONT color="green">311</FONT>        }<a name="line.311"></a>
+<FONT color="green">312</FONT>    <a name="line.312"></a>
+<FONT color="green">313</FONT>        // try to parse as GMT time<a name="line.313"></a>
+<FONT color="green">314</FONT>        try<a name="line.314"></a>
+<FONT color="green">315</FONT>        {<a name="line.315"></a>
+<FONT color="green">316</FONT>          Date d = gmtTime.get().parse(value);<a name="line.316"></a>
+<FONT color="green">317</FONT>          ts = new Timestamp(d.getTime());<a name="line.317"></a>
+<FONT color="green">318</FONT>        }<a name="line.318"></a>
+<FONT color="green">319</FONT>        catch(ParseException e)<a name="line.319"></a>
+<FONT color="green">320</FONT>        {<a name="line.320"></a>
+<FONT color="green">321</FONT>        }<a name="line.321"></a>
+<FONT color="green">322</FONT>    <a name="line.322"></a>
+<FONT color="green">323</FONT>        return ts;<a name="line.323"></a>
+<FONT color="green">324</FONT>      }<a name="line.324"></a>
+<FONT color="green">325</FONT>    <a name="line.325"></a>
+<FONT color="green">326</FONT>      /**<a name="line.326"></a>
+<FONT color="green">327</FONT>       * Takes an identifier string (for example from the database changelog table)<a name="line.327"></a>
+<FONT color="green">328</FONT>       * and creates a DN from the components. If there are multiple primary keys<a name="line.328"></a>
+<FONT color="green">329</FONT>       * in the identifier, they must be delimited by a unique string with which<a name="line.329"></a>
+<FONT color="green">330</FONT>       * the identifier can be split. For example, you could specify a delimiter of<a name="line.330"></a>
+<FONT color="green">331</FONT>       * "%%" to handle the following identifier: account_id=123%%group_id=5.<a name="line.331"></a>
+<FONT color="green">332</FONT>       * &lt;p&gt;<a name="line.332"></a>
+<FONT color="green">333</FONT>       * The resulting DN will contain a RDN per component, and the relative order<a name="line.333"></a>
+<FONT color="green">334</FONT>       * of RDNs will be consistent with the order of the components in the original<a name="line.334"></a>
+<FONT color="green">335</FONT>       * identifier string. The components here are usually<a name="line.335"></a>
+<FONT color="green">336</FONT>       * primary keys for the entry in the database.<a name="line.336"></a>
+<FONT color="green">337</FONT>       * @param identifiableInfo<a name="line.337"></a>
+<FONT color="green">338</FONT>       *          the identifier string for a given database entry. This cannot be<a name="line.338"></a>
+<FONT color="green">339</FONT>       *          null.<a name="line.339"></a>
+<FONT color="green">340</FONT>       * @param delimiter<a name="line.340"></a>
+<FONT color="green">341</FONT>       *          The delimiter used to split separate components of the<a name="line.341"></a>
+<FONT color="green">342</FONT>       *          identifiable info. If this is null, the default of "%%" will be<a name="line.342"></a>
+<FONT color="green">343</FONT>       *          used.<a name="line.343"></a>
+<FONT color="green">344</FONT>       * @return a DN representing the given identifier.<a name="line.344"></a>
+<FONT color="green">345</FONT>       */<a name="line.345"></a>
+<FONT color="green">346</FONT>      public static DN idStringToDN(final String identifiableInfo,<a name="line.346"></a>
+<FONT color="green">347</FONT>                                    final String delimiter)<a name="line.347"></a>
+<FONT color="green">348</FONT>      {<a name="line.348"></a>
+<FONT color="green">349</FONT>        String defaultDelimiter = delimiter;<a name="line.349"></a>
+<FONT color="green">350</FONT>        if(delimiter == null || delimiter.isEmpty())<a name="line.350"></a>
+<FONT color="green">351</FONT>        {<a name="line.351"></a>
+<FONT color="green">352</FONT>          defaultDelimiter = "%%"; //default delimiter<a name="line.352"></a>
+<FONT color="green">353</FONT>        }<a name="line.353"></a>
+<FONT color="green">354</FONT>    <a name="line.354"></a>
+<FONT color="green">355</FONT>        List&lt;RDN&gt; rdnList = new ArrayList&lt;RDN&gt;();<a name="line.355"></a>
+<FONT color="green">356</FONT>        String[] pairs = identifiableInfo.split(defaultDelimiter);<a name="line.356"></a>
+<FONT color="green">357</FONT>        for(String pair : pairs)<a name="line.357"></a>
+<FONT color="green">358</FONT>        {<a name="line.358"></a>
+<FONT color="green">359</FONT>          String[] kv = pair.split("=", 2);<a name="line.359"></a>
+<FONT color="green">360</FONT>          if(kv.length != 2)<a name="line.360"></a>
+<FONT color="green">361</FONT>          {<a name="line.361"></a>
+<FONT color="green">362</FONT>            throw new IllegalArgumentException("Malformed identifier component: " +<a name="line.362"></a>
+<FONT color="green">363</FONT>                        pair);<a name="line.363"></a>
+<FONT color="green">364</FONT>          }<a name="line.364"></a>
+<FONT color="green">365</FONT>          rdnList.add(new RDN(kv[0].trim(), kv[1].trim()));<a name="line.365"></a>
+<FONT color="green">366</FONT>        }<a name="line.366"></a>
+<FONT color="green">367</FONT>    <a name="line.367"></a>
+<FONT color="green">368</FONT>        if(rdnList.isEmpty())<a name="line.368"></a>
+<FONT color="green">369</FONT>        {<a name="line.369"></a>
+<FONT color="green">370</FONT>          throw new IllegalArgumentException(<a name="line.370"></a>
+<FONT color="green">371</FONT>                  "The identifiableInfo parameter is empty.");<a name="line.371"></a>
+<FONT color="green">372</FONT>        }<a name="line.372"></a>
+<FONT color="green">373</FONT>    <a name="line.373"></a>
+<FONT color="green">374</FONT>        return new DN(rdnList);<a name="line.374"></a>
+<FONT color="green">375</FONT>      }<a name="line.375"></a>
+<FONT color="green">376</FONT>    <a name="line.376"></a>
+<FONT color="green">377</FONT>      /**<a name="line.377"></a>
+<FONT color="green">378</FONT>       * Takes an identifier DN (such as the output from<a name="line.378"></a>
+<FONT color="green">379</FONT>       * {@link #idStringToDN(String,String)} and<a name="line.379"></a>
+<FONT color="green">380</FONT>       * creates a hash map of the components (RDN attributes) to their respective<a name="line.380"></a>
+<FONT color="green">381</FONT>       * values. Each RDN will have a separate entry in the resulting map.<a name="line.381"></a>
+<FONT color="green">382</FONT>       * &lt;p&gt;<a name="line.382"></a>
+<FONT color="green">383</FONT>       * This method is meant to handle database entry identifier DNs, and as such<a name="line.383"></a>
+<FONT color="green">384</FONT>       * does not handle DNs with multi-valued RDNs (i.e.<a name="line.384"></a>
+<FONT color="green">385</FONT>       * pk1=John+pk2=Doe,groupID=123).<a name="line.385"></a>
+<FONT color="green">386</FONT>       * @param identifiableInfo<a name="line.386"></a>
+<FONT color="green">387</FONT>       *          the identifier DN for a particular database entry. This cannot be<a name="line.387"></a>
+<FONT color="green">388</FONT>       *          null.<a name="line.388"></a>
+<FONT color="green">389</FONT>       * @return a map of each RDN name to its value (from the given DN)<a name="line.389"></a>
+<FONT color="green">390</FONT>       */<a name="line.390"></a>
+<FONT color="green">391</FONT>      public static Map&lt;String, String&gt; dnToMap(final DN identifiableInfo)<a name="line.391"></a>
+<FONT color="green">392</FONT>      {<a name="line.392"></a>
+<FONT color="green">393</FONT>    <a name="line.393"></a>
+<FONT color="green">394</FONT>        Map&lt;String, String&gt; ids = new HashMap&lt;String, String&gt;();<a name="line.394"></a>
+<FONT color="green">395</FONT>        for(RDN rdn : identifiableInfo.getRDNs())<a name="line.395"></a>
+<FONT color="green">396</FONT>        {<a name="line.396"></a>
+<FONT color="green">397</FONT>          String[] kv = rdn.toString().split("=", 2);<a name="line.397"></a>
+<FONT color="green">398</FONT>          ids.put(kv[0], kv[1]);<a name="line.398"></a>
+<FONT color="green">399</FONT>        }<a name="line.399"></a>
+<FONT color="green">400</FONT>        return ids;<a name="line.400"></a>
+<FONT color="green">401</FONT>      }<a name="line.401"></a>
+<FONT color="green">402</FONT>    }<a name="line.402"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</PRE>
+</BODY>
+</HTML>

@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID Server SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID Server SDK" id="logo">
+          <img src="../images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID Server SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="../index.html" style="font-size: 85%;">UnboundID Server SDK Documentation</a>
+                    <br>
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID Server SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Building and Deploying Java-Based Extensions</h2>
+
+              <h3>Using the Provided Build Mechanism</h3>
+
+              <p>
+                The UnboundID Server SDK provides a mechanism that can be used to easily build and
+                package Java-based extensions.  It is recommended that this build mechanism be
+                used for extensions to be deployed into production environments because it
+                provides a significant number of features to help make the extension more
+                supportable, including:
+              </p>
+
+              <ul>
+                <li>
+                  It will automatically generate documentation for the extensions, including usage
+                  information for available arguments and potentially including example argument
+                  sets.
+                  <br><br>
+                </li>
+
+                <li>
+                  It will automatically build API documentation (i.e., javadoc) for the
+                  extensions.
+                  <br><br>
+                </li>
+
+                <li>
+                  It will include a number of attributes in the jar file manifest that can be used
+                  to help provide support for the extension.  Some of the information included is
+                  the build time, extension name and version, contact information for the
+                  individual or group that will support the extension, and the version of the
+                  UnboundID Server SDK used to build the extension.
+                  <br><br>
+                </li>
+
+                <li>
+                  It provides an option to include the source code for the extension along with
+                  the compiled classes in the resulting jar file.  This helps ensure that the
+                  source is not lost and that the specific version of the source used for the
+                  compiled extension is available.
+                  <br><br>
+                </li>
+              </ul>
+
+              <p>
+                In order to build and package one or more extensions using the provided build
+                mechanism, use the following process:
+              </p>
+
+              <ol>
+                <li>
+                  Create or copy the extension source files into the <tt>src</tt> directory,
+                  creating an appropriate directory hierarchy for the Java packages used for
+                  the extensions.
+                  <br><br>
+                </li>
+
+                <li>
+                  If the extensions have any dependencies on third-party libraries (other than the
+                  UnboundID Server SDK or UnboundID LDAP SDK for Java, which will automatically be
+                  included in the build classpath), then the jar files for those libraries should
+                  be copied into the <tt>lib</tt> directory.
+                  <br><br>
+                </li>
+
+                <li>
+                  Edit the <tt>extension.properties</tt> file to set values for the properties
+                  used to specify the name, version, and vendor information for the extension.
+                  If multiple extensions are to be built and packaged into the same jar file, then
+                  the property values should be for the collective set of extensions rather than
+                  any individual extension.
+                  <br><br>
+                </li>
+
+                <li>
+                  Invoke the "build.sh" shell script (or build.bat batch file on Windows systems)
+                  with no arguments to build and package the extensions.
+                  <br><br>
+                </li>
+              </ol>
+
+              <p>
+                After the build process has completed, the jar file containing the packaged
+                extension and the corresponding documentation will be below the <tt>build</tt>
+                directory, in a subdirectory whose name contains the name and version number for
+                the extension.
+              </p>
+
+              <p>
+                If you do want to use the provided build environment to compile and package your
+                extensions, then you may want to check the entire build environment into a
+                version control system along with your source code.  In that case, simply develop
+                your extensions in the <tt>src</tt> directory.  You will probably want to
+                configure the version control system to ignore the <tt>build</tt> directory, since
+                it will contain dynamically-generated files.
+              </p>
+
+
+              <h3>Using an Alternate Build Environment</h3>
+
+              <p>
+                If you would rather create your own build environment than use the one provided
+                with the server SDK, then all that is really required is to have the
+                <tt>unboundid-server-sdk.jar</tt> and <tt>unboundid-ldapsdk-ce.jar</tt> jar files
+                in your classpath.
+              </p>
+
+              <p>
+                If you do use a separate build environment, then it is still recommended that you
+                use the provided build environment as described above to create the jar file to
+                actually deploy in the server.  This will ensure that all of the appropriate
+                manifest attributes are in place, and will provide the additional benefit of
+                generating javadoc and other extension-specific documentation.
+              </p>
+
+              <p>
+                If you consider it absolutely necessary to package extensions for deployment in
+                your own build environment, then the resulting jar files must contain a manifest
+                with the following attributes:
+              </p>
+
+              <ul>
+                <li>
+                  <tt>Implementation-Title</tt> -- The of the extension or set of extensions
+                  contained in the archive.  This should contain only ASCII alphabetic letters,
+                  numeric digits, the period, and the dash characters, and it must begin with a
+                  letter.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>Implementation-Version</tt> -- The version string for the extension.  This
+                  should contain only ASCII alphabetic letters, numeric digits, the period, and
+                  the dash characters, and it must begin with a number or letter.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>Implementation-Vendor</tt> -- The name of the company or organization that
+                  created the extension.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>Implementation-URL</tt> -- The URL of the website for the company or
+                  organization that created the extension.
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>Extension-Support-Contact</tt> -- Information that may be used to contact
+                  the individual or group of people responsible for supporting the extension
+                  (e.g., an e-mail address or telephone number).
+                  <br><br>
+                </li>
+
+                <li>
+                  <tt>UnboundID-Server-SDK-Version</tt> -- The numeric version for the UnboundID
+                  Server SDK jar file used to build the extension.  It should be in the form
+                  "MAJOR.MINOR.POINT.PATCH" (e.g., if the major version is 1, the minor version is
+                  2, the point version is 3, and the patch version is 4, then the numeric version
+                  string should be "1.2.3.4").  See the
+                  <tt>com.unboundid.directory.sdk.common.types.Version</tt> class for the Server
+                  SDK version number, or invoke the command
+                  "<tt>java -jar unboundid-server-sdk.jar</tt>".
+                  <br><br>
+                </li>
+              </ul>
+
+              <p>
+                It is also strongly recommended that you package the source code for the extension
+                in the jar file along with the compiled classes to make it easier to support the
+                extension if problems arise in the future and the source code is needed to help in
+                troubleshooting the problem.
+              </p>
+
+              <h3>Deploying Java-Based Extensions</h3>
+
+              <p>
+                After your extension has been built and packaged into a jar file, then you may
+                deploy it for use in the server using the following process:
+              </p>
+
+              <ol>
+                <li>
+                  Stop the server.
+                  <br><br>
+                </li>
+
+                <li>
+                  Copy the jar file containing the packaged extension or set of extensions into
+                  the <tt>lib/extensions</tt> directory below the server root.
+                  <br><br>
+                </li>
+
+                <li>
+                  If your extension depends on any libraries other than the UnboundID Server SDK
+                  or UnboundID LDAP SDK for Java, then copy the jar files for those libraries into
+                  the <tt>lib/extensions</tt> directory as well.
+                  <br><br>
+                </li>
+
+                <li>
+                  Start the server.
+                  <br><br>
+                </li>
+
+                <li>
+                  Use the <tt>dsconfig</tt> tool or the web-based administration console in order
+                  to create configuration objects for your extension as needed.  Use the
+                  "third-party" type for the extension, and supply the fully-qualified name of the
+                  Java class providing the logic for your extension as the value of the
+                  <tt>extension-class</tt> property.  If your extension requires any arguments,
+                  then specify them as values to the <tt>extension-argument</tt> property.  Each
+                  argument should be provided as a separate property value in the form
+                  "name=value".
+                  <br><br>
+                </li>
+              </ol>
+
+              <p>
+                If you will be deploying an updated version of an existing extension rather than a
+                new extension, then the process is similar:
+              </p>
+
+              <ol>
+                <li>
+                  If the new version of the extension requires a set of arguments that is
+                  incompatible with the previously deployed version, then use the
+                  <tt>dsconfig</tt> tool or the administration console to disable any existing
+                  instances of the extension.  This is not necessary if the current set of
+                  arguments for the extension will be compatible with the new version.
+                  <br><br>
+                </li>
+
+                <li>
+                  Stop the server.
+                  <br><br>
+                </li>
+
+                <li>
+                  Remove the jar file for the old version of the extension, along with any other
+                  jar files for additional third-party libraries used by your extension, from the
+                  <tt>lib/extensions</tt> directory.  Then copy the new jar file for your updated
+                  extension, as well as the jar files for any dependent libraries, into the
+                  <tt>lib/extensions</tt> directory.  It is recommended that you delete all
+                  existing versions of those jar files (or back them up into a different
+                  directory that will not be in the server classpath) rather than merely
+                  overwriting them to avoid the potential for having multiple versions of the jar
+                  files in the classpath at the same time (e.g., if the names of the new jar files
+                  are slightly different than the names of the previous files), which can cause
+                  erratic and/or incorrect behavior, or may even prevent the server from starting.
+                  <br><br>
+                </li>
+
+                <li>
+                  Start the server.
+                  <br><br>
+                </li>
+
+                <li>
+                  If you had previously disabled the configuration objects for the existing
+                  versions of your extensions, then make any necessary configuration changes
+                  (e.g., by updating the set of extension arguments as necessary), and then
+                  re-enable the extensions.
+                  <br><br>
+                </li>
+              </ol>
+
+              <p>
+                A few extensions cannot be disabled.  The above procedure could be followed
+                by deleting and re-adding the extension in place of disabling it and re-enabling
+                it.  Alternatively, the offline mode of dsconfig can be used as follows:
+              </p>
+
+              <ol>
+                <li>
+                  Stop the server.
+                  <br><br>
+                </li>
+
+                <li>
+                  Replace the extension jar file(s) as detailed above.
+                  <br><br>
+                </li>
+
+                <li>
+                  Using dsconfig in offline mode, make any necessary configuration changes
+                  (e.g., by updating the set of extension arguments as necessary).  Do this with
+                  care as it will bypass validation of the arguments by the extension.
+                  <br><br>
+                </li>
+
+                <li>
+                  Start the server and look for warnings related to the extension's new arguments.
+                  <br><br>
+                </li>
+              </ol>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2010-2011 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

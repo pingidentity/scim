@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID Server SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID Server SDK" id="logo">
+          <img src="../images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID Server SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="../index.html" style="font-size: 85%;">UnboundID Server SDK Documentation</a>
+                    <br>
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID Server SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Intercepting Operations in the Server</h2>
+
+              <p>
+                One of the most common reasons for developing an extension is to perform some
+                processing whenever a given kind of request is received in the server.  There are
+                a number of ways that this can be achieved using the server SDK, but in most cases
+                the best way to achieve this would be to use a plugin or a change subscription
+                handler.  Alternately, if you want to intercept operations passing through a
+                Directory Proxy Server instance, then you can use a proxy transformation.
+              </p>
+
+
+              <h3>Intercepting Operations with a Plugin</h3>
+
+              <p>
+                Plugins provide the greatest degree of flexibility in intercepting operations
+                because they can intercept any kind of operation, and you can choose any or all of
+                several points in the operation processing at which to inject your custom
+                processing.  For most types of operations, there are plugin points at the
+                following times:
+              </p>
+
+              <ul>
+                <li>
+                  Pre-parse.  At this phase, the server has performed a bare minimum of processing
+                  for the operation (primarily just reading it from the client, figuring out what
+                  type of request it is, and passing it through the work queue).  Although you
+                  can't change the type of request (e.g., you can't convert a modify into an
+                  add), you can change just about anything else about the request.  You can also
+                  cause the server to stop any further processing on the request and return
+                  whatever result you want.
+                  <br><br>
+                </li>
+
+                <li>
+                  Pre-operation.  At this phase, the server has parsed the request and done a lot
+                  of preliminary work to ensure that it should actually be processed (e.g.,
+                  verified that the requester has sufficient access rights, verified that the
+                  target entry exists, etc.), and is about to do the main processing for that
+                  operation (e.g., handing it off to the backend to have the work done there).
+                  You can't change anything about the request, but you can prevent it from being
+                  processed and cause the server to return whatever result you want to the client.
+                  <br><br>
+                </li>
+
+                <li>
+                  Post-operation.  At this phase, the server has completed virtually all
+                  processing for the operation and is about to send the response to the client.
+                  You can't change anything about the request or undo any of its effects if it
+                  made changes in the server, but you can alter the content of the response that
+                  will be returned to the client.
+                  <br><br>
+                </li>
+
+                <li>
+                  Post-response.  At this phase, the server has completed all other processing for
+                  the operation, including sending and logging the response.  You can't change
+                  anything about the operation, but you can perform any additional processing that
+                  may be desired for the operation but isn't important enough to delay the
+                  response to the client.
+                  <br><br>
+                </li>
+              </ul>
+
+              <p>
+                For search operations, you can also intercept and alter search result entries and
+                references, and you can optionally prevent some or all of those entries and/or
+                references from being returned.  Conversely, during pre-parse, pre-operation, and
+                post-operation phases of a search operation, you can construct additional entries
+                and/or references to be returned to the client.  For all types of operations
+                except abandon and unbind, you can construct intermediate response messages to be
+                returned to the client.
+              </p>
+
+              <p>
+                It is possible for a plugin to intercept operations at multiple phases during
+                their processing if desired.  For example, you could have a plugin that performs
+                processing during both the pre-parse and post-response phases.  If you need to do
+                this and want to preserve state information to share between those phases, then
+                you can achieve that result by attaching data to the operation that can be
+                accessed during a later phase of processing.  To attach arbitrary objects to an
+                operation, use the <code>ActiveOperationContext.setAttachment</code> method,
+                providing a unique name along with the data to be attached.  You can then get
+                information that has been attached to the operation using the
+                <code>OperationContext.getAttachment</code> method using the name that you
+                provided during the earlier phase of processing.
+              </p>
+
+              <p>
+                Note that in the Directory Proxy Server, the pre-operation and post-operation
+                phases of a plugin will not be processed for operations that pass through the
+                Directory Proxy Server and are forwarded to one or more backend servers, although
+                this processing will occur for operations targeting data in the Directory Proxy
+                Server instance itself (e.g., the configuration, schema, and monitor data).  If
+                you want to alter requests and responses passing through the Directory Proxy
+                Server, then you should use a proxy transformation rather than a plugin.
+              </p>
+
+
+              <h3>Intercepting Operations in a Change Subscription Handler</h3>
+
+              <p>
+                Change subscription handlers provide the ability to perform processing for an
+                add, delete, modify, or modify DN after other processing has completed for that
+                operation.  In many ways, change subscription handlers are very similar to
+                post-response plugins invoked only for write operations.  There are, however, two
+                notable differences:
+              </p>
+
+              <ul>
+                <li>
+                  You can define multiple sets of criteria for operations of interest and you
+                  can have your change subscription handler be invoked if a change matches any or
+                  all of those criteria sets.  If you have defined multiple criteria sets, then
+                  you can easily determine which of them were satisfied by an operation, and the
+                  change subscription handler will only be invoked once for each change even if
+                  a change does match multiple sets of criteria.
+                  <br><br>
+                </li>
+
+                <li>
+                  When receiving notification of an operation that matches one or more change
+                  subscriptions, the change subscription handler will be given a sequence number
+                  that can be used to establish a relative order between changes being processed
+                  concurrently within the server.
+                </li>
+              </ul>
+
+              <p>
+                If you want to be notified of changes occurring within the server and don't need
+                to alter those changes in any way, then a change notification listener may be
+                simpler and/or more efficient than a plugin designed to achieve the same result
+                (particularly if you want to define multiple sets of criteria to use to trigger
+                the change subscription handler).  However, if you may need to alter the contents
+                of a request or response, or if you need to perform processing for other types of
+                operations, then a plugin is a more appropriate choice.
+              </p>
+
+
+              <h3>Intercepting Operations in a Proxy Transformation</h3>
+
+              <p>
+                Proxy transformations provide a mechanism for intercepting and/or altering
+                requests as they pass through the Directory Proxy Server to one or more backend
+                servers.  They will only be invoked for operations passing through the server and
+                and not for operations targeting data local to the Directory Proxy Server
+                instance (e.g., configuration, schema, and monitor data).
+              </p>
+
+              <p>
+                For operations processed through a Directory Proxy Server, proxy transformations
+                provide the only means of altering the response that will be returned to the
+                client, as post-operation plugins will not be invoked for such operations.
+                There is some overlap between pre-parse plugins and request transformations
+                because both can be used to alter the contents of a request that will ultimately
+                be forwarded to a backend server.  However, proxy transformations can be easily
+                configured so that they are only used for data targeting certain portions of the
+                DIT, or for operations requested by a particular set of clients, and it is even
+                relatively simple to have different sets of transformations applied for different
+                sets of clients.  If you only want to impact operations passing through the
+                Directory Proxy Server, then it is generally recommended that you use proxy
+                transformations rather than plugins to achieve the desired result.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2010-2011 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

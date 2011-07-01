@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID Server SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID Server SDK" id="logo">
+          <img src="../images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID Server SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="../index.html" style="font-size: 85%;">UnboundID Server SDK Documentation</a>
+                    <br>
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID Server SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Working with Arguments</h2>
+
+              <p>
+                Although it is possible to hard-code all of the information needed for an
+                extension to operate directly into the code for that extension, this is not a
+                recommended practice because it means that changes in the environment could
+                require the code to be updated and the extension re-deployed.  Similarly, it may
+                be necessary for an extension to operate with different settings in different
+                servers, or even with different settings across multiple instances in the same
+                server.  In order to address this, when creating extensions (whether Java-based or
+                scripted), you should use arguments to provide any information that may change
+                based on the contexts in which the extension may be invoked.
+              </p>
+
+              <p>
+                Both Java-based and scripted extensions use the argument parsing functionality
+                provided in the <code>com.unboundid.util.args</code> package of the UnboundID LDAP
+                SDK for Java.  Each type of extension includes the following abstract methods for
+                defining and interacting with the set of allowed arguments:
+              </p>
+
+              <ul>
+                <li>
+                  <code>defineConfigArguments</code> -- This method is used to update a provided
+                  <code>ArgumentParser</code> object to specify the arguments which are allowed
+                  for use with the extension.  At this point, you can mark which requirements are
+                  required and optional, provide constraints and default values if appropriate,
+                  and optionally define relationships between arguments.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>initialize</code><i>{ExtensionType}</i> -- This method is used to
+                  initialize the extension from the configuration.  An <code>ArgumentParser</code>
+                  parameter is provided to the method after having been initialized by the
+                  <code>defineConfigArguments</code> method and updated with content from the
+                  associated configuration object (the <code>extension-argument</code> property
+                  for Java-based extensions, and the <code>script-argument</code> property for
+                  scripted extensions).  This method will be invoked at startup if the extension
+                  was already defined and enabled in the configuration, or at the time that the
+                  extension is enabled if it is newly-created or was previously disabled.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>isConfigurationAcceptable</code> -- This method is used to determine
+                  whether the provided configuration is acceptable for use.  It will be provided
+                  with an <code>ArgumentParser</code> object that was initialized from the
+                  <code>defineConfigArguments</code> method and updated with the proposed
+                  configuration for the extension.  This method will be used both at the time the
+                  extension is enabled and at the time that an attempt is made to alter the
+                  configuration for the extension.  If the configuration is determined to be
+                  unacceptable, then the configuration add or modify operation will be rejected.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>applyConfiguration</code> -- This method may be used to dynamically apply
+                  a new configuration for the extension made while it was already defined and
+                  enabled.  This can be used to respond to configuration changes without the need
+                  to restart the server or disable and re-enable the extension.
+                  <br><br>
+                </li>
+              </ul>
+
+              <p>
+                Arguments for Java-based extensions will be provided in the
+                <code>extension-argument</code> property of the configuration object.  For
+                scripted extensions, arguments will be provided in the
+                <code>script-argument</code> property.  In either case, arguments should generally
+                be in the form "name=value", where "name" is the long identifier for the
+                corresponding argument (as created in the <code>defineConfigArguments</code>
+                method), and "value" is the value to provide for that argument.  If a given
+                argument should have multiple values, then they should be provided to the
+                <code>extension-argument</code> property as separate "name=value" pairs.
+              </p>
+
+              <p>
+                Some additional notes about using arguments in extensions:
+              </p>
+
+              <ul>
+                <li>
+                  The LDAP SDK argument parser will be used to perform as much validation as
+                  possible based on the configuration it has been provided.  This includes
+                  ensuring that all of the arguments provided are allowed, that all required
+                  arguments have been provided, that all argument values conform to the
+                  constraints of the associated argument types, and that all defined relationships
+                  between arguments (including required argument sets, dependent argument sets,
+                  and exclusive argument sets) have been satisfied.  If any additional validation
+                  is required, then it should be performed in the
+                  <code>isConfigurationAcceptable</code> method.
+                  <br><br>
+                </li>
+
+                <li>
+                  If you wish to have arguments which represent Boolean states of either true
+                  or false, then you should use the <code>BooleanValueArgument</code> type rather
+                  than the <code>BooleanArgument</code> type.  <code>BooleanValueArgument</code>
+                  objects take a value of either "true" or "false" and are therefore well-suited
+                  for use in this context, while <code>BooleanArgument</code> objects do not take
+                  a value and are therefore not as well-suited for use in the "name=value"
+                  format.
+                  <br><br>
+                </li>
+
+                <li>
+                  Values for <code>FileArgument</code> arguments may be provided as either
+                  absolute paths or relative paths (or a mixture of the two).  Unless otherwise
+                  specified by the <code>FileArgument.setRelativeBaseDirectory</code> method,
+                  relative paths will be considered relative to the server root.
+                  <br><br>
+                </li>
+              </ul>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2010-2011 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

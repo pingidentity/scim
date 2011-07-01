@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID Server SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID Server SDK" id="logo">
+          <img src="../images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID Server SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="../index.html" style="font-size: 85%;">UnboundID Server SDK Documentation</a>
+                    <br>
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID Server SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Logging, Debugging, and Alerting</h2>
+
+              <p>
+                In order to help make it easier to support third-party extensions, the UnboundID
+                Server SDK provides methods for generating debug messages, writing messages to the
+                server error logging subsystem, and generating administrative alerts.  All of
+                these capabilities are exposed through the <code>ServerContext</code> class,
+                through the following methods:
+              </p>
+
+              <ul>
+                <li>
+                  <code>logMessage</code> -- This method may be used to write log messages to the
+                  server's error logging subsystem.  Both the log severity and the message text
+                  should be provided as arguments to this method.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>sendAlert</code> -- This method may be used to cause the server to
+                  generate administrative alert notifications.  There are actually two variants of
+                  this method:  one that takes only a severity and a message, and another that can
+                  be used to specify additional details like the alert type name and OID.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugEnabled</code> -- This method may be used to indicate whether debug
+                  logging is enabled in the server.  For potentially-expensive debugging
+                  operations (e.g., messages constructed by concatenating several components), it
+                  is recommended that you check to see whether debugging is enabled before paying
+                  the cost of constructing the message.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugCaught</code> -- This method may be used to indicate that an
+                  exception was caught within the extension itself and was either handled or
+                  re-thrown.  It is recommended that you use this method to record information
+                  about any exceptions caught in your extension code.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugThrown</code> -- This method may be used to indicate that your
+                  extension is about to throw a given exception.  If you are going to create and
+                  throw a new exception in your extension, then it may be useful to use this
+                  method to record it in the debug logger to protect against the event that
+                  whatever catches it doesn't debug the caught exception.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugError</code> -- This method may be used to write an arbitrary error
+                  message to the debug logging subsystem.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugWarning</code> -- This method may be used to write an arbitrary
+                  warning message to the debug logging subsystem.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugInfo</code> -- This method may be used to write an arbitrary
+                  informational message to the debug logging subsystem.
+                  <br><br>
+                </li>
+
+                <li>
+                  <code>debugVerbose</code> -- This method may be used to write an arbitrary
+                  message to the debug logging subsystem with a "verbose" severity (meaning that
+                  it will only be visible to administrators that have turned on the highest level
+                  of debugging output).
+                  <br><br>
+                </li>
+              </ul>
+
+              <p>
+                As noted above, there are two variants of the <code>sendAlert</code> method that
+                may be used to generate alert notifications.  The first one takes only a severity
+                (INFO, WARNING, ERROR, or FATAL) and a message string, and it will use a generic
+                alert type depending on that severity (user-defined-info, user-defined-warning,
+                user-defined-error, or user-defined-fatal), each of which has its own predefined
+                OID.  However, if you want to use your own custom OID (e.g., for use in SNMP
+                traps if the SNMP alert handler is enabled), then you will need to use the second
+                variant which also requires that you provide an alert type name and OID.  When
+                using this variant, you must be careful to ensure that each time you use a given
+                alert type name, you must use the same numeric OID, and that OID must not be used
+                for any other alert types. 
+              </p>
+    
+              <p>
+                <h4>Logging from within Command Line Tools</h4>
+                The same mechanisms described above, using <code>ServerContext</code>, will also work when a
+                third-party extention or script is loaded in the context of a command line tool.
+                However, since this is outside of the Directory Server process, the logging subsystem
+                will write messages to a special file under
+                <i>{server-root}/logs/tools/{tool-name}.debug</i>. The logging verbosity
+                and scope is configurable via a couple of special options on the command line.
+                See the <code>--help-debug</code> argument on any of the command line tools for more
+                information.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2010-2011 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+
