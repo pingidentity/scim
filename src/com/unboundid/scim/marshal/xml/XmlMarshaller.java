@@ -25,13 +25,8 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 
 
 
@@ -42,64 +37,72 @@ import java.util.TimeZone;
 public class XmlMarshaller implements Marshaller
 {
   /**
-   * The UTC time zone.
-   */
-  private static TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
-
-
-
-  /**
    * {@inheritDoc}
    */
   public void marshal(final SCIMObject o, final OutputStream outputStream)
-    throws Exception {
-    XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-    XMLStreamWriter xmlStreamWriter =
+    throws Exception
+  {
+    final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    final XMLStreamWriter xmlStreamWriter =
       outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
-    this.marshal(o, xmlStreamWriter);
+    marshal(o, xmlStreamWriter);
   }
+
+
 
   /**
    * {@inheritDoc}
    */
   public void marshal(final SCIMObject o, final File file)
-    throws Exception {
+    throws Exception
+  {
     throw new UnsupportedOperationException(
         "XML marshal to file is not implemented");
   }
+
+
 
   /**
    * {@inheritDoc}
    */
   public void marshal(final SCIMObject o, final Writer writer)
-    throws Exception {
-    XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-    XMLStreamWriter xmlStreamWriter =
+    throws Exception
+  {
+    final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    final XMLStreamWriter xmlStreamWriter =
       outputFactory.createXMLStreamWriter(writer);
-    this.marshal(o, xmlStreamWriter);
+    marshal(o, xmlStreamWriter);
   }
+
+
 
   /**
    * {@inheritDoc}
    */
   public void marshal(final Response response, final OutputStream outputStream)
-    throws Exception {
-    XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-    XMLStreamWriter xmlStreamWriter =
+    throws Exception
+  {
+    final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    final XMLStreamWriter xmlStreamWriter =
       outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
-    this.marshal(response, xmlStreamWriter);
+    marshal(response, xmlStreamWriter);
   }
+
+
 
   /**
    * {@inheritDoc}
    */
   public void marshal(final Response response, final Writer writer)
-    throws Exception {
-    XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
-    XMLStreamWriter xmlStreamWriter =
+    throws Exception
+  {
+    final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    final XMLStreamWriter xmlStreamWriter =
       outputFactory.createXMLStreamWriter(writer);
-    this.marshal(response, xmlStreamWriter);
+    marshal(response, xmlStreamWriter);
   }
+
+
 
   /**
    * Write a SCIM object to an XML stream.
@@ -114,7 +117,9 @@ public class XmlMarshaller implements Marshaller
     throws XMLStreamException {
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
     int i = 0;
-    String nsPrefix;
+
+    final ResourceDescriptorManager descriptorManager =
+        ResourceDescriptorManager.instance();
 
     xmlStreamWriter.setDefaultNamespace(SCIMConstants.SCHEMA_URI_CORE);
 
@@ -123,28 +128,60 @@ public class XmlMarshaller implements Marshaller
     // need to be able to identify schema properly
     xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
       o.getResourceName(), SCIMConstants.SCHEMA_URI_CORE);
-    for (String schema : o.getSchemas()) {
-      if (schema.equals(SCIMConstants.SCHEMA_URI_CORE)) {
-        xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
-          SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
+      SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
+                                   SCIMConstants.SCHEMA_URI_CORE);
 
-        xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
-          SCIMConstants.SCHEMA_URI_CORE);
-        nsPrefix = Context.DEFAULT_SCHEMA_PREFIX;
-      } else {
-        nsPrefix = "n" + i++;
-        xmlStreamWriter.writeNamespace(nsPrefix, schema);
-      }
-      Collection<SCIMAttribute> attributes = o.getAttributes(schema);
-      for (SCIMAttribute attr : attributes) {
-        if (attr.isPlural()) {
-          this.writePluralAttribute(attr, xmlStreamWriter);
-        } else {
-          this.writeSingularAttribute(attr, xmlStreamWriter);
+    final ResourceDescriptor resourceDescriptor =
+        descriptorManager.getResourceDescriptor(o.getResourceName());
+
+    for (String schema : o.getSchemas())
+    {
+      if (resourceDescriptor != null)
+      {
+        for (final AttributeDescriptor attributeDescriptor :
+            resourceDescriptor.getAttributeDescriptors())
+        {
+          final SCIMAttribute a =
+              o.getAttribute(attributeDescriptor.getSchema(),
+                             attributeDescriptor.getName());
+          if (a != null)
+          {
+            if (a.isPlural())
+            {
+              writePluralAttribute(a, xmlStreamWriter);
+            }
+            else
+            {
+              writeSingularAttribute(a, xmlStreamWriter);
+            }
+          }
         }
       }
-      xmlStreamWriter.writeEndElement();
+
+      // TODO Revisit this to support schema extensions
+      if (!schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+      {
+        final String nsPrefix = "n" + i++;
+        xmlStreamWriter.writeNamespace(nsPrefix, schema);
+
+        final Collection<SCIMAttribute> attributes = o.getAttributes(schema);
+        for (SCIMAttribute attr : attributes)
+        {
+          if (attr.isPlural())
+          {
+            this.writePluralAttribute(attr, xmlStreamWriter);
+          }
+          else
+          {
+            this.writeSingularAttribute(attr, xmlStreamWriter);
+          }
+        }
+      }
     }
+
+    xmlStreamWriter.writeEndElement();
     xmlStreamWriter.writeEndDocument();
     xmlStreamWriter.flush();
   }
@@ -172,6 +209,10 @@ public class XmlMarshaller implements Marshaller
       return;
     }
 
+    // This marshaller is hand crafted rather than making use of JAXB because
+    // a resource on the server is carried in a SCIMObject, which is not
+    // JAXB-enabled.
+
     final String xsiURI = "http://www.w3.org/2001/XMLSchema-instance";
     final ResourceDescriptorManager descriptorManager =
         ResourceDescriptorManager.instance();
@@ -180,51 +221,69 @@ public class XmlMarshaller implements Marshaller
 
     xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
                               SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.setPrefix("xsi", xsiURI);
     xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
                                       "Response");
     xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
                                    SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.writeNamespace("xsi", xsiURI);
 
-    final Resource resource = response.getResource();
+    final Response.Resources resources = response.getResources();
     final Response.Errors errors = response.getErrors();
-    if (resource != null)
+    if (resources != null)
     {
-      xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
-                                        "Resource");
-
-      xmlStreamWriter.setPrefix("xsi", xsiURI);
-      xmlStreamWriter.writeNamespace("xsi", xsiURI);
-
-      if (resource instanceof GenericResource)
+      if (response.getTotalResults() != null)
       {
-        final GenericResource genericResource = (GenericResource) resource;
-        final SCIMObject scimObject = genericResource.getScimObject();
+        xmlStreamWriter.writeStartElement("totalResults");
+        xmlStreamWriter.writeCharacters(
+            Long.toString(response.getTotalResults()));
+        xmlStreamWriter.writeEndElement();
+      }
 
-        xmlStreamWriter.writeAttribute(xsiURI, "type",
-                                       Context.DEFAULT_SCHEMA_PREFIX + ':' +
-                                       scimObject.getResourceName());
+      xmlStreamWriter.writeStartElement("Resources");
 
-        final ResourceDescriptor resourceDescriptor =
-            descriptorManager.getResourceDescriptor(
-                scimObject.getResourceName());
-        if (resourceDescriptor != null)
+      for (final Resource resource : resources.getResource())
+      {
+        xmlStreamWriter.writeStartElement("Resource");
+
+        // Each resource is carried as a SCIMObject wrapped into a Resource
+        // instance.
+        if (resource instanceof GenericResource)
         {
-          for (final AttributeDescriptor attributeDescriptor :
-              resourceDescriptor.getAttributeDescriptors())
+          final GenericResource genericResource = (GenericResource) resource;
+          final SCIMObject scimObject = genericResource.getScimObject();
+
+          xmlStreamWriter.writeAttribute(xsiURI, "type",
+                                         Context.DEFAULT_SCHEMA_PREFIX + ':' +
+                                         scimObject.getResourceName());
+
+          final ResourceDescriptor resourceDescriptor =
+              descriptorManager.getResourceDescriptor(
+                  scimObject.getResourceName());
+          if (resourceDescriptor != null)
           {
-            final SCIMAttribute a =
-                scimObject.getAttribute(attributeDescriptor.getSchema(),
-                                        attributeDescriptor.getName());
-            if (a != null)
+            for (final AttributeDescriptor attributeDescriptor :
+                resourceDescriptor.getAttributeDescriptors())
             {
-              if (a.isPlural()) {
-                this.writePluralAttribute(a, xmlStreamWriter);
-              } else {
-                this.writeSingularAttribute(a, xmlStreamWriter);
+              final SCIMAttribute a =
+                  scimObject.getAttribute(attributeDescriptor.getSchema(),
+                                          attributeDescriptor.getName());
+              if (a != null)
+              {
+                if (a.isPlural())
+                {
+                  writePluralAttribute(a, xmlStreamWriter);
+                }
+                else
+                {
+                  writeSingularAttribute(a, xmlStreamWriter);
+                }
               }
             }
           }
         }
+
+        xmlStreamWriter.writeEndElement();
       }
 
       xmlStreamWriter.writeEndElement();
@@ -289,22 +348,32 @@ public class XmlMarshaller implements Marshaller
    */
   private void writePluralAttribute(final SCIMAttribute scimAttribute,
                                     final XMLStreamWriter xmlStreamWriter)
-    throws XMLStreamException {
-    SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
+    throws XMLStreamException
+  {
+    final SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
+
     writeStartElement(scimAttribute, xmlStreamWriter);
-    List<AttributeDescriptor> mappedAttributeDescriptors =
+
+    final List<AttributeDescriptor> mappedAttributeDescriptors =
       scimAttribute.getAttributeDescriptor().getComplexAttributeDescriptors();
-    for (SCIMAttributeValue pluralValue : pluralValues) {
-      for (AttributeDescriptor attributeDescriptor :
-        mappedAttributeDescriptors) {
-        SCIMAttribute attribute =
-          pluralValue.getAttribute(
-            attributeDescriptor.getName());
-        this.writeComplexAttribute(attribute, xmlStreamWriter);
+    for (final SCIMAttributeValue pluralValue : pluralValues)
+    {
+      for (AttributeDescriptor attributeDescriptor : mappedAttributeDescriptors)
+      {
+        final SCIMAttribute attribute =
+            pluralValue.getAttribute(attributeDescriptor.getName());
+
+        if (attribute != null)
+        {
+          writeComplexAttribute(attribute, xmlStreamWriter);
+        }
       }
     }
+
     xmlStreamWriter.writeEndElement();
   }
+
+
 
   /**
    * Write a singular attribute to an XML stream.
@@ -316,25 +385,37 @@ public class XmlMarshaller implements Marshaller
    */
   private void writeSingularAttribute(final SCIMAttribute scimAttribute,
                                       final XMLStreamWriter xmlStreamWriter)
-    throws XMLStreamException {
-    writeStartElement(scimAttribute, xmlStreamWriter);
-    SCIMAttributeValue val = scimAttribute.getSingularValue();
-    if (val.isComplex()) {
-      for (SCIMAttribute a : val.getAttributes().values()) {
-        this.writeSingularAttribute(a, xmlStreamWriter);
-      }
-    } else {
+    throws XMLStreamException
+  {
+    final AttributeDescriptor attributeDescriptor =
+        scimAttribute.getAttributeDescriptor();
 
-      if (scimAttribute.getAttributeDescriptor().getDataType() != null)
+    writeStartElement(scimAttribute, xmlStreamWriter);
+
+    final SCIMAttributeValue val = scimAttribute.getSingularValue();
+
+    if (val.isComplex())
+    {
+      // Write the subordinate attributes in the order defined by the schema.
+      for (final AttributeDescriptor ad :
+          attributeDescriptor.getComplexAttributeDescriptors())
       {
-        switch (scimAttribute.getAttributeDescriptor().getDataType()) {
+        final SCIMAttribute a = val.getAttribute(ad.getName());
+        if (a != null)
+        {
+          writeSingularAttribute(a, xmlStreamWriter);
+        }
+      }
+    }
+    else
+    {
+      if (attributeDescriptor.getDataType() != null)
+      {
+        switch (scimAttribute.getAttributeDescriptor().getDataType())
+        {
           case DATETIME:
-            final Date dateValue =
-                scimAttribute.getSingularValue().getDateValue();
-            final Calendar calendar = new GregorianCalendar(utcTimeZone);
-            calendar.setTime(dateValue);
             xmlStreamWriter.writeCharacters(
-                DatatypeConverter.printDateTime(calendar));
+                scimAttribute.getSingularValue().getDateStringValue());
             break;
 
           case BOOLEAN:
@@ -344,7 +425,7 @@ public class XmlMarshaller implements Marshaller
                 DatatypeConverter.printBoolean(booleanValue));
             break;
 
-          case INTEGER: // TODO
+          case INTEGER:
           case STRING:
           default:
             final String stringValue =
@@ -359,10 +440,12 @@ public class XmlMarshaller implements Marshaller
             scimAttribute.getSingularValue().getStringValue();
         xmlStreamWriter.writeCharacters(stringValue);
       }
-
     }
+
     xmlStreamWriter.writeEndElement();
   }
+
+
 
   /**
    * Write a complex attribute to an XML stream.
@@ -374,15 +457,29 @@ public class XmlMarshaller implements Marshaller
    */
   private void writeComplexAttribute(final SCIMAttribute scimAttribute,
                                      final XMLStreamWriter xmlStreamWriter)
-    throws XMLStreamException {
-    SCIMAttributeValue value = scimAttribute.getSingularValue();
-    Map<String, SCIMAttribute> attributes = value.getAttributes();
+    throws XMLStreamException
+  {
+    final AttributeDescriptor attributeDescriptor =
+        scimAttribute.getAttributeDescriptor();
+    final SCIMAttributeValue value = scimAttribute.getSingularValue();
+
     writeStartElement(scimAttribute, xmlStreamWriter);
-    for (SCIMAttribute attribute : attributes.values()) {
-      writeSingularAttribute(attribute, xmlStreamWriter);
+
+    // Write the subordinate attributes in the order defined by the schema.
+    for (final AttributeDescriptor descriptor :
+        attributeDescriptor.getComplexAttributeDescriptors())
+    {
+      final SCIMAttribute a = value.getAttribute(descriptor.getName());
+      if (a != null)
+      {
+        writeSingularAttribute(a, xmlStreamWriter);
+      }
     }
+
     xmlStreamWriter.writeEndElement();
   }
+
+
 
   /**
    * Helper that writes namespace when needed.
@@ -392,10 +489,14 @@ public class XmlMarshaller implements Marshaller
    */
   private void writeStartElement(final SCIMAttribute scimAttribute,
                                  final XMLStreamWriter xmlStreamWriter)
-    throws XMLStreamException {
-    if (scimAttribute.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE)) {
+    throws XMLStreamException
+  {
+    if (scimAttribute.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE))
+    {
       xmlStreamWriter.writeStartElement(scimAttribute.getName());
-    } else {
+    }
+    else
+    {
       xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),
         scimAttribute.getName());
     }

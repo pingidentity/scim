@@ -5,21 +5,21 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
+import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.scim.schema.Address;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
+import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.PostUserResponse;
 import com.unboundid.scim.sdk.SCIMClient;
 import com.unboundid.scim.sdk.SCIMRITestCase;
 import org.testng.annotations.Test;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.List;
 
 
 
@@ -50,9 +50,42 @@ public class SCIMServerTestCase
       testGetUser(client);
 
       // Test receiving JSON content.
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
+      testGetUser(client);
+    }
+    finally
+    {
+      client.stopClient();
+    }
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation to fetch selected users.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testGetUsers()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.startClient();
+
+    try
+    {
+      // Test receiving XML content.
       client.setAcceptXML(true);
       client.setAcceptJSON(false);
-      testGetUser(client);
+      testGetUsers(client);
+
+      // Test receiving JSON content.
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
+      testGetUsers(client);
     }
     finally
     {
@@ -85,8 +118,8 @@ public class SCIMServerTestCase
 
       // Test sending and receiving JSON content.
       client.setSendJSON(true);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
       testPostUser(client);
 
       // Test sending XML and receiving JSON content.
@@ -132,8 +165,8 @@ public class SCIMServerTestCase
 
       // Test sending and receiving JSON content.
       client.setSendJSON(true);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
       testPutUser(client);
 
       // Test sending XML and receiving JSON content.
@@ -174,16 +207,10 @@ public class SCIMServerTestCase
     assertNull(client.getUser("cn=does-not-exist"));
 
     // Create a user directly on the test DS.
-    final GregorianCalendar timeBeforeCreation = new GregorianCalendar();
-    timeBeforeCreation.setTime(new Date());
-    timeBeforeCreation.set(Calendar.MILLISECOND, 0);
     testDS.add(generateUserEntry("b jensen", "dc=example,dc=com",
                                  "Barbara", "Jensen", "password"));
-    final GregorianCalendar timeAfterCreation = new GregorianCalendar();
-    timeAfterCreation.setTime(new Date());
-    timeAfterCreation.set(Calendar.MILLISECOND, 0);
 
-    // Fetch the user through the SCIm client.
+    // Fetch the user through the SCIM client.
     final User user1 = client.getUser("uid=b jensen,dc=example,dc=com");
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=b jensen,dc=example,dc=com");
@@ -194,19 +221,6 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
 
-    // Check the timestamp values in the meta information.
-    final GregorianCalendar created =
-        user1.getMeta().getCreated().toGregorianCalendar();
-    created.set(Calendar.MILLISECOND, 0);
-    assertTrue(created.compareTo(timeBeforeCreation) >= 0);
-    assertTrue(created.compareTo(timeAfterCreation) <= 0);
-
-    final GregorianCalendar lastModified =
-        user1.getMeta().getLastModified().toGregorianCalendar();
-    lastModified.set(Calendar.MILLISECOND, 0);
-    assertTrue(lastModified.compareTo(timeBeforeCreation) >= 0);
-    assertTrue(lastModified.compareTo(timeAfterCreation) <= 0);
-
     // Fetch selected attributes only.
     final User partialUser1 =
         client.getUser("uid=b jensen,dc=example,dc=com", "username",
@@ -215,6 +229,87 @@ public class SCIMServerTestCase
     assertNull(partialUser1.getId());
     assertNull(partialUser1.getName());
     assertEquals(partialUser1.getUserName(), "b jensen");
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation to fetch selected users.
+   *
+   * @param client  The SCIM client to use during the test.
+   *
+   * @throws Exception  If the test failed.
+   */
+  private void testGetUsers(final SCIMClient client)
+      throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+
+    // Create some users directly on the test DS.
+    testDS.add(generateUserEntry("user.1", "dc=example,dc=com",
+                                 "User", "One", "password",
+                                 new Attribute("mail", "user.1@example.com"),
+                                 new Attribute("l", "Austin")));
+    testDS.add(generateUserEntry("user.2", "dc=example,dc=com",
+                                 "User", "Two", "password"));
+
+    // Fetch all the users through the SCIM client.
+    List<Resource> resources = client.getResources("Users", null);
+
+    assertEquals(resources.size(), 2);
+    for (final Resource r : resources)
+    {
+      assertTrue(r instanceof User);
+      final User u = (User)r;
+      assertNotNull(u.getId());
+      assertNotNull(u.getMeta());
+      assertNotNull(u.getMeta().getCreated());
+      assertNotNull(u.getMeta().getLastModified());
+      assertNotNull(u.getName());
+      assertNotNull(u.getName().getFamilyName());
+      assertNotNull(u.getName().getGivenName());
+    }
+
+    resources = client.getResources(
+        "Users", SCIMFilter.createEqualityFilter("userName", "user.1"));
+    assertEquals(resources.size(), 1);
+
+    resources = client.getResources(
+        "Users", SCIMFilter.createEqualityFilter("userName", "User.1"));
+    assertEquals(resources.size(), 0);
+
+    resources = client.getResources(
+        "Users",
+        SCIMFilter.createIgnoresCaseEqualityFilter("userName", "User.1"));
+    assertEquals(resources.size(), 1);
+
+    resources = client.getResources(
+        "Users", SCIMFilter.createStartsWithFilter("userName", "user"));
+    assertEquals(resources.size(), 2);
+
+    resources = client.getResources(
+        "Users", SCIMFilter.createContainsFilter("userName", "1"));
+    assertEquals(resources.size(), 1);
+
+    resources = client.getResources(
+        "Users", SCIMFilter.createPresenceFilter("userName"));
+    assertEquals(resources.size(), 2);
+
+    resources = client.getResources(
+        "Users", SCIMFilter.createEqualityFilter("name.formatted", "User One"));
+    assertEquals(resources.size(), 1);
+
+    resources = client.getResources(
+        "Users",
+        SCIMFilter.createEqualityFilter("emails.value", "user.1@example.com"));
+    assertEquals(resources.size(), 1);
+
+    resources = client.getResources(
+        "Users",
+        SCIMFilter.createEqualityFilter("addresses.locality", "Austin"));
+    assertEquals(resources.size(), 1);
   }
 
 
@@ -243,13 +338,7 @@ public class SCIMServerTestCase
     user.setName(name);
 
     // Post the user via SCIM, returning selected attributes.
-    final GregorianCalendar timeBeforeCreation = new GregorianCalendar();
-    timeBeforeCreation.setTime(new Date());
-    timeBeforeCreation.set(Calendar.MILLISECOND, 0);
     final PostUserResponse response = client.postUser(user, "id", "meta");
-    final GregorianCalendar timeAfterCreation = new GregorianCalendar();
-    timeAfterCreation.setTime(new Date());
-    timeAfterCreation.set(Calendar.MILLISECOND, 0);
 
     // Check the returned user.
     final User user1 = response.getUser();
@@ -260,19 +349,6 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
-
-    // Check the timestamp values in the meta information.
-    final GregorianCalendar created =
-        user1.getMeta().getCreated().toGregorianCalendar();
-    created.set(Calendar.MILLISECOND, 0);
-    assertTrue(created.compareTo(timeBeforeCreation) >= 0);
-    assertTrue(created.compareTo(timeAfterCreation) <= 0);
-
-    final GregorianCalendar lastModified =
-        user1.getMeta().getLastModified().toGregorianCalendar();
-    lastModified.set(Calendar.MILLISECOND, 0);
-    assertTrue(lastModified.compareTo(timeBeforeCreation) >= 0);
-    assertTrue(lastModified.compareTo(timeAfterCreation) <= 0);
 
     // Verify that the entry was actually created.
     final Entry entry = testDS.getEntry("uid=bjensen,dc=example,dc=com");
@@ -421,13 +497,7 @@ public class SCIMServerTestCase
     user1.setAddresses(addresses);
 
     // Put the updated user.
-    final GregorianCalendar timeBeforeUpdate = new GregorianCalendar();
-    timeBeforeUpdate.setTime(new Date());
-    timeBeforeUpdate.set(Calendar.MILLISECOND, 0);
     final User user2 = client.putUser(user1.getId(), user1);
-    final GregorianCalendar timeAfterUpdate = new GregorianCalendar();
-    timeAfterUpdate.setTime(new Date());
-    timeAfterUpdate.set(Calendar.MILLISECOND, 0);
 
     // Verify that the LDAP entry was updated correctly.
     final Entry entry2 = testDS.getEntry(userDN);
@@ -444,19 +514,7 @@ public class SCIMServerTestCase
     assertTrue(entry2.hasAttributeValue(
         "homePostalAddress", "456 Hollywood Blvd$Hollywood, CA 91608 USA"));
     assertTrue(entry2.hasAttribute("description"));
-
-    // Check the timestamp values in the meta information.
-    final GregorianCalendar lastModified =
-        user1.getMeta().getLastModified().toGregorianCalendar();
-    lastModified.set(Calendar.MILLISECOND, 0);
-    assertTrue(lastModified.compareTo(timeBeforeUpdate) >= 0,
-               "The lastModified time (" + lastModified + ") was earlier " +
-               "than the timestamp (" + timeBeforeUpdate + ") taken before " +
-               "the update");
-    assertTrue(lastModified.compareTo(timeAfterUpdate) <= 0,
-               "The lastModified time (" + lastModified + ") was later " +
-               "than the timestamp (" + timeAfterUpdate + ") taken after " +
-               "the update");
+    assertNotNull(user1.getMeta().getLastModified());
 
     // Remove some values from the user.
 

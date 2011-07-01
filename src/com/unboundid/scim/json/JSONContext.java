@@ -6,6 +6,7 @@
 package com.unboundid.scim.json;
 
 import com.unboundid.scim.schema.Address;
+import com.unboundid.scim.schema.Error;
 import com.unboundid.scim.schema.Meta;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
@@ -650,14 +651,64 @@ public class JSONContext
       throws Exception
   {
     final JSONObject jsonObject = new JSONObject(tokener);
-    final Response response = new Response();
 
-    final JSONObject resourceObject = jsonObject.optJSONObject("Resource");
-    if (resourceObject != null)
+    final JSONObject responseObject = jsonObject.getJSONObject("Response");
+
+    final Response response = new Response();
+    if (responseObject.has("Resource"))
     {
-      final JSONObject userObject =
-          resourceObject.getJSONObject(SCIMConstants.RESOURCE_NAME_USER);
-      response.setResource(readUser(userObject));
+      final JSONObject resourceObject =
+          responseObject.optJSONObject("Resource");
+      if (resourceObject != null)
+      {
+        response.setResource(readUser(resourceObject));
+      }
+    }
+    else if (responseObject.has("Errors"))
+    {
+      final Response.Errors errors = new Response.Errors();
+      final JSONArray errorsArray = responseObject.getJSONArray("Errors");
+      for (int i = 0; i < errorsArray.length(); i++)
+      {
+        final JSONObject errorObject = errorsArray.getJSONObject(i);
+
+        final Error error = new Error();
+        error.setDescription(errorObject.optString("description", null));
+        error.setCode(errorObject.optString("code", null));
+        error.setUri(errorObject.optString("uri", null));
+
+        errors.getError().add(error);
+      }
+
+      response.setErrors(errors);
+    }
+    else
+    {
+      if (responseObject.has("totalResults"))
+      {
+        response.setTotalResults(responseObject.optLong("totalResults"));
+      }
+      if (responseObject.has("itemsPerPage"))
+      {
+        response.setItemsPerPage(responseObject.optInt("itemsPerPage"));
+      }
+      if (responseObject.has("startIndex"))
+      {
+        response.setStartIndex(responseObject.optLong("startIndex"));
+      }
+
+      final JSONArray resourcesArray = responseObject.optJSONArray("Resources");
+      if (resourcesArray != null)
+      {
+        final Response.Resources resources = new Response.Resources();
+        for (int i = 0; i < resourcesArray.length(); i++)
+        {
+          final JSONObject resourceObject = resourcesArray.getJSONObject(i);
+          resources.getResource().add(readUser(resourceObject));
+        }
+
+        response.setResources(resources);
+      }
     }
 
     return response;

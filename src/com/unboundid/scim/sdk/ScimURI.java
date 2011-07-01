@@ -5,10 +5,11 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.ldap.SCIMFilter;
 import org.eclipse.jetty.util.URIUtil;
 import org.eclipse.jetty.util.UrlEncoded;
 
-import static com.unboundid.scim.sdk.SCIMConstants.ATTRIBUTES_QUERY_STRING;
+import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 
@@ -26,9 +27,9 @@ public final class ScimURI
   private final String baseURI;
 
   /**
-   * The name of the resource that is the object of this URI.
+   * The resource end-point that is the object of this URI.
    */
-  private final String resourceName;
+  private final String resourceEndPoint;
 
   /**
    * The ID of the resource that is the object of this URI, or {@code null} if
@@ -54,13 +55,18 @@ public final class ScimURI
    */
   private final SCIMQueryAttributes queryAttributes;
 
+  /**
+   * The filter parameters, or {@code null} if there are no filter parameters.
+   */
+  private final SCIMFilter filter;
+
 
 
   /**
    * Create a new instance of a SCIM URI.
    *
    * @param baseURI            The base URI.
-   * @param resourceName       The name of the resource that is the object of
+   * @param resourceEndPoint   The resource end-point that is the object of
    *                           this URI.
    * @param resourceID         The ID of the resource that is the object of
    *                           this URI, or {@code null} if the ID is not
@@ -75,18 +81,53 @@ public final class ScimURI
    *                           on this URI.
    */
   public ScimURI(final String baseURI,
-                 final String resourceName,
+                 final String resourceEndPoint,
                  final String resourceID,
                  final String mediaTypeSuffix,
                  final SCIMAttributeType resourceAttribute,
                  final SCIMQueryAttributes queryAttributes)
   {
+    this(baseURI, resourceEndPoint, resourceID, mediaTypeSuffix,
+         resourceAttribute, queryAttributes, null);
+  }
+
+
+
+  /**
+   * Create a new instance of a SCIM URI that supports search parameters.
+   *
+   * @param baseURI            The base URI.
+   * @param resourceEndPoint   The resource end-point that is the object of
+   *                           this URI.
+   * @param resourceID         The ID of the resource that is the object of
+   *                           this URI, or {@code null} if the ID is not
+   *                           specified.
+   * @param mediaTypeSuffix    The media type suffix included in this URI, or
+   *                           {@code null} if there is none.
+   * @param resourceAttribute  The resource attribute that is the object of
+   *                           this URI, or {@code null} if the object of the
+   *                           URI is the entire resource.
+   * @param queryAttributes    The query attributes specifying the attributes
+   *                           to be returned in the response to an operation
+   *                           on this URI.
+   * @param filter             The filter parameters, or {@code null} if there
+   *                           are no filter parameters.
+   */
+  public ScimURI(final String baseURI,
+                 final String resourceEndPoint,
+                 final String resourceID,
+                 final String mediaTypeSuffix,
+                 final SCIMAttributeType resourceAttribute,
+                 final SCIMQueryAttributes queryAttributes,
+                 final SCIMFilter filter)
+  {
     this.baseURI           = baseURI;
-    this.resourceName      = resourceName;
+    this.resourceEndPoint  = resourceEndPoint;
     this.resourceID        = resourceID;
     this.mediaTypeSuffix   = mediaTypeSuffix;
     this.resourceAttribute = resourceAttribute;
     this.queryAttributes   = queryAttributes;
+    this.filter            = filter;
   }
 
 
@@ -104,13 +145,13 @@ public final class ScimURI
 
 
   /**
-   * Retrieve the name of the resource that is the object of this URI.
+   * Retrieve the resource end-point that is the object of this URI.
    *
-   * @return  The the name of the resource that is the object of this URI.
+   * @return  The resource end-point that is the object of this URI.
    */
-  public String getResourceName()
+  public String getResourceEndPoint()
   {
-    return resourceName;
+    return resourceEndPoint;
   }
 
 
@@ -172,6 +213,53 @@ public final class ScimURI
 
 
   /**
+   * Retrieve the filter parameters, if any.
+   *
+   * @return  The filter parameters, or {@code null} if there are none.
+   */
+  public SCIMFilter getFilter()
+  {
+    return filter;
+  }
+
+
+
+  /**
+   * Create a SCIM URI from the provided information.
+   *
+   * @param baseURI       The component of the URI preceding the resource name.
+   * @param pathInfo      The remaining part of the URI preceding any query
+   *                      string. e.g. /User/{id}
+   * @param queryString   The query string, or {@code null} if there is none.
+   *
+   * @return  A SCIM URI.
+   */
+  public static ScimURI parseURI(final String baseURI,
+                                 final String pathInfo,
+                                 final String queryString)
+  {
+    String s = pathInfo;
+    int pos = s.indexOf('/');
+    if (pos == 0)
+    {
+      s = pathInfo.substring(1);
+      pos = s.indexOf('/');
+    }
+
+    if (pos == -1)
+    {
+      return parseURI(baseURI, s.substring(0), null, queryString);
+    }
+    else
+    {
+      return parseURI(baseURI, s.substring(0, pos), s.substring(pos),
+                      queryString);
+    }
+  }
+
+
+
+  /**
    * Create a SCIM URI from the provided information.
    *
    * @param baseURI       The component of the URI preceding the resource name.
@@ -191,7 +279,7 @@ public final class ScimURI
     String mediaTypeSuffix = null;
     SCIMAttributeType resourceAttribute = null;
 
-    if (pathInfo != null)
+    if (pathInfo != null && !pathInfo.isEmpty())
     {
       // Split up the components of the resource identifier.
       final String[] split = pathInfo.split("/");
@@ -247,13 +335,14 @@ public final class ScimURI
     }
 
     // Parse the query string.
+    SCIMFilter filter = null;
     final String[] attributes;
     if (queryString != null && !queryString.isEmpty())
     {
       final UrlEncoded queryMap = new UrlEncoded(queryString);
-      if (queryMap.containsKey(ATTRIBUTES_QUERY_STRING))
+      if (queryMap.containsKey(QUERY_PARAMETER_ATTRIBUTES))
       {
-        final String commaList = queryMap.getString(ATTRIBUTES_QUERY_STRING);
+        final String commaList = queryMap.getString(QUERY_PARAMETER_ATTRIBUTES);
         if (commaList != null && !commaList.isEmpty())
         {
           attributes = commaList.split(",");
@@ -267,6 +356,35 @@ public final class ScimURI
       {
         attributes = new String[0];
       }
+
+      final String filterBy = queryMap.getString(QUERY_PARAMETER_FILTER_BY);
+      if (filterBy != null && !filterBy.isEmpty())
+      {
+        final String filterBySchemaURI;
+        final String attributePath;
+        final int lastColonPos =
+            filterBy.lastIndexOf(SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
+        if (lastColonPos == -1)
+        {
+          filterBySchemaURI = SCHEMA_URI_CORE;
+          attributePath = filterBy;
+        }
+        else
+        {
+          filterBySchemaURI = filterBy.substring(0, lastColonPos);
+          attributePath = filterBy.substring(lastColonPos+1);
+        }
+
+        final String[] filterByPath = attributePath.split("\\.");
+
+        final String filterOp =
+            queryMap.getString(QUERY_PARAMETER_FILTER_OP);
+        final String filterValue =
+            queryMap.getString(QUERY_PARAMETER_FILTER_VALUE);
+
+        filter = new SCIMFilter(
+            filterOp, filterValue, filterBySchemaURI, filterByPath);
+      }
     }
     else
     {
@@ -277,7 +395,7 @@ public final class ScimURI
         new SCIMQueryAttributes(attributes);
 
     return new ScimURI(baseURI, resourceName, resourceID, mediaTypeSuffix,
-                       resourceAttribute, queryAttributes);
+                       resourceAttribute, queryAttributes, filter);
   }
 
 
@@ -289,6 +407,7 @@ public final class ScimURI
    * @param builder  The string builder to which the string representation of
    *                 this URI should be appended.
    */
+  @SuppressWarnings("unchecked")
   public void toStringURI(final StringBuilder builder)
   {
     builder.append(baseURI);
@@ -296,7 +415,7 @@ public final class ScimURI
     {
       builder.append('/');
     }
-    builder.append(resourceName);
+    builder.append(resourceEndPoint);
 
     if (resourceID != null)
     {
@@ -316,27 +435,66 @@ public final class ScimURI
       URIUtil.encodePath(builder, resourceAttribute.toQualifiedName());
     }
 
-    if (!queryAttributes.allAttributesRequested())
+    if (!queryAttributes.allAttributesRequested() ||
+        filter != null)
     {
-      builder.append('?');
-      builder.append(ATTRIBUTES_QUERY_STRING);
-      builder.append('=');
+      final UrlEncoded parameters = new UrlEncoded();
 
-      boolean first = true;
-      for (final SCIMAttributeType t : queryAttributes.getAttributeTypes())
+      if (!queryAttributes.allAttributesRequested())
       {
-        if (first)
+        final StringBuilder attrsBuilder = new StringBuilder();
+        boolean first = true;
+        for (final SCIMAttributeType t : queryAttributes.getAttributeTypes())
         {
-          first = false;
+          if (first)
+          {
+            first = false;
+          }
+          else
+          {
+            attrsBuilder.append(',');
+          }
+          attrsBuilder.append(t.toQualifiedName());
         }
-        else
-        {
-          builder.append(',');
-        }
-        builder.append(UrlEncoded.encodeString(t.toQualifiedName()));
-      }
-    }
 
+        parameters.put(QUERY_PARAMETER_ATTRIBUTES, attrsBuilder.toString());
+      }
+
+      if (filter != null)
+      {
+        parameters.put(QUERY_PARAMETER_FILTER_OP, filter.getFilterOp());
+
+        final StringBuilder filterBy = new StringBuilder();
+        final String schema = filter.getAttributeSchema();
+        if (!schema.equals(SCHEMA_URI_CORE))
+        {
+          filterBy.append(schema);
+          filterBy.append(SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
+        }
+        boolean first = true;
+        for (final String attributeName : filter.getAttributePath())
+        {
+          if (first)
+          {
+            first = false;
+          }
+          else
+          {
+            filterBy.append('.');
+          }
+          filterBy.append(attributeName);
+        }
+        parameters.put(QUERY_PARAMETER_FILTER_BY, filterBy.toString());
+
+        if (filter.getFilterValue() != null)
+        {
+          parameters.put(QUERY_PARAMETER_FILTER_VALUE, filter.getFilterValue());
+        }
+      }
+
+      builder.append('?');
+      builder.append(parameters.encode());
+    }
   }
 
 

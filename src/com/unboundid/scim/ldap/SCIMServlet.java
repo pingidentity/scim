@@ -72,18 +72,9 @@ public class SCIMServlet
   {
     try
     {
-      final String resourceName = request.getServletPath().substring(1);
-
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           resourceName,
                                            request.getPathInfo(),
                                            request.getQueryString());
-      if (uri.getResourceID() == null)
-      {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                           "The operation does not specify a resource ID");
-        return;
-      }
 
       final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
       if (resourceAttribute != null)
@@ -103,10 +94,23 @@ public class SCIMServlet
       }
 
       // Process the request.
-      final GetResourceRequest getResourceRequest =
-          new GetResourceRequest(uri.getResourceName(), uri.getResourceID(),
-                                 uri.getQueryAttributes());
-      final SCIMResponse scimResponse = backend.getResource(getResourceRequest);
+      final SCIMResponse scimResponse;
+      if (uri.getResourceID() == null)
+      {
+        final GetResourcesRequest getResourcesRequest =
+            new GetResourcesRequest(uri.getResourceEndPoint(),
+                                    uri.getFilter(),
+                                    uri.getQueryAttributes());
+        scimResponse = backend.getResources(getResourcesRequest);
+      }
+      else
+      {
+        final GetResourceRequest getResourceRequest =
+            new GetResourceRequest(uri.getResourceEndPoint(),
+                                   uri.getResourceID(),
+                                   uri.getQueryAttributes());
+        scimResponse = backend.getResource(getResourceRequest);
+      }
 
       // Return the response.
       response.setStatus(scimResponse.getStatusCode());
@@ -164,10 +168,7 @@ public class SCIMServlet
         }
       }
 
-      final String resourceName = request.getServletPath().substring(1);
-
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           resourceName,
                                            request.getPathInfo(),
                                            request.getQueryString());
 
@@ -205,7 +206,7 @@ public class SCIMServlet
 
       // Process the request.
       final PostResourceRequest postResourceRequest =
-          new PostResourceRequest(uri.getResourceName(), requestObject,
+          new PostResourceRequest(uri.getResourceEndPoint(), requestObject,
                                   uri.getQueryAttributes());
       final SCIMResponse scimResponse =
           backend.postResource(postResourceRequest);
@@ -217,7 +218,8 @@ public class SCIMServlet
       if (resource != null)
       {
         final String location =
-            getLocationURL(request, resourceName, resource.getId());
+            getLocationURL(request, uri.getResourceEndPoint(),
+                           resource.getId());
         response.addHeader(HEADER_NAME_LOCATION, location);
       }
 
@@ -257,10 +259,7 @@ public class SCIMServlet
   {
     try
     {
-      final String resourceName = request.getServletPath().substring(1);
-
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           resourceName,
                                            request.getPathInfo(),
                                            null);
       if (uri.getResourceID() == null)
@@ -289,7 +288,8 @@ public class SCIMServlet
 
       // Process the request.
       final DeleteResourceRequest deleteResourceRequest =
-          new DeleteResourceRequest(uri.getResourceName(), uri.getResourceID());
+          new DeleteResourceRequest(uri.getResourceEndPoint(),
+                                    uri.getResourceID());
       final SCIMResponse scimResponse =
           backend.deleteResource(deleteResourceRequest);
 
@@ -334,10 +334,7 @@ public class SCIMServlet
   {
     try
     {
-      final String resourceName = request.getServletPath().substring(1);
-
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           resourceName,
                                            request.getPathInfo(),
                                            request.getQueryString());
 
@@ -375,7 +372,7 @@ public class SCIMServlet
 
       // Process the request.
       final PutResourceRequest putResourceRequest =
-          new PutResourceRequest(uri.getResourceName(), uri.getResourceID(),
+          new PutResourceRequest(uri.getResourceEndPoint(), uri.getResourceID(),
                                  requestObject, uri.getQueryAttributes());
       final SCIMResponse scimResponse = backend.putResource(putResourceRequest);
 

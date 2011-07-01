@@ -16,6 +16,7 @@ import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModifyRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
@@ -147,6 +148,72 @@ public abstract class LDAPBackend
 
         return new SCIMResponse(HttpStatus.OK_200, response);
       }
+    }
+    catch (LDAPException e)
+    {
+      throw new RuntimeException(e);
+    }
+  }
+
+
+
+  @Override
+  public SCIMResponse getResources(final GetResourcesRequest request)
+  {
+    final SCIMServer scimServer = SCIMServer.getInstance();
+    final ResourceMapper resourceMapper =
+        scimServer.getResourceMapper(request.getEndPoint());
+    if (resourceMapper == null)
+    {
+      throw new RuntimeException("The resource end-point " +
+                                 request.getEndPoint() + " is not supported");
+    }
+
+    try
+    {
+      final SCIMFilter scimFilter = request.getFilter();
+
+      final String[] attributes =
+          new String[] { "*", "createTimestamp", "modifyTimestamp"};
+      final ResourceSearchResultListener resultListener =
+          new ResourceSearchResultListener(request);
+      SearchRequest searchRequest = null;
+      if (scimFilter != null)
+      {
+        final String[] attrPath = scimFilter.getAttributePath();
+        if (attrPath.length == 1 && attrPath[0].equalsIgnoreCase("id"))
+        {
+          searchRequest =
+              new SearchRequest(resultListener, scimFilter.getFilterValue(),
+                                SearchScope.BASE,
+                                Filter.createPresenceFilter("objectclass"),
+                                attributes);
+        }
+      }
+
+      if (searchRequest == null)
+      {
+        final Filter filter = resourceMapper.toLDAPFilter(request.getFilter());
+        searchRequest =
+            new SearchRequest(resultListener, baseDN, SearchScope.SUB,
+                              filter, attributes);
+      }
+
+      final SearchResult searchResult =
+          getLDAPInterface().search(searchRequest);
+
+      final List<SCIMObject> scimObjects = resultListener.getResources();
+      final Response.Resources resources = new Response.Resources();
+      for (final SCIMObject o : scimObjects)
+      {
+        resources.getResource().add(new GenericResource(o));
+      }
+
+      final Response response = new Response();
+      response.setTotalResults((long) scimObjects.size());
+      response.setResources(resources);
+
+      return new SCIMResponse(HttpStatus.OK_200, response);
     }
     catch (LDAPException e)
     {
@@ -348,7 +415,7 @@ public abstract class LDAPBackend
    *                         to be derived.
    * @param queryAttributes  The attributes requested by the client.
    */
-  private static void setIdAndMetaAttributes(
+  public static void setIdAndMetaAttributes(
       final SCIMObject scimObject,
       final Entry entry,
       final SCIMQueryAttributes queryAttributes)

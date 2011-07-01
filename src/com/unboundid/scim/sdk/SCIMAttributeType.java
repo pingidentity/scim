@@ -75,7 +75,9 @@ public final class SCIMAttributeType
    */
   public static SCIMAttributeType fromQualifiedName(final String qualifiedName)
   {
-    int lastColonPos = qualifiedName.lastIndexOf(':');
+    final int lastColonPos =
+        qualifiedName.lastIndexOf(
+            SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
     if (lastColonPos == -1)
     {
       return new SCIMAttributeType(qualifiedName);
@@ -279,7 +281,7 @@ public final class SCIMAttributeType
     if (!schema.equals(SCIMConstants.SCHEMA_URI_CORE))
     {
       builder.append(schema);
-      builder.append(':');
+      builder.append(SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
     }
 
     builder.append(name);

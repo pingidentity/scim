@@ -5,11 +5,15 @@
 
 package com.unboundid.scim.sdk;
 
+import javax.xml.bind.DatatypeConverter;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 
 
@@ -24,6 +28,11 @@ import java.util.Map;
  */
 public final class SCIMAttributeValue
 {
+  /**
+   * The UTC time zone.
+   */
+  private static TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
+
   /**
    * The simple attribute value, or {@code null} if the attribute value is
    * complex.
@@ -224,6 +233,14 @@ public final class SCIMAttributeValue
    */
   public String getStringValue()
   {
+    if (value instanceof Date)
+    {
+
+    }
+    else
+    {
+      return value.toString();
+    }
     return (String)value;
   }
 
@@ -253,6 +270,30 @@ public final class SCIMAttributeValue
   public Date getDateValue()
   {
     return (Date)value;
+  }
+
+
+
+  /**
+   * Retrieves the simple Date value as an XML DateTime string, or {@code null}
+   * if the attribute value is complex.
+   *
+   * @return  The simple Date value as an XML DateTime string, or {@code null}
+   *          if the attribute value is complex.
+   */
+  public String getDateStringValue()
+  {
+    final Date dateValue = (Date)value;
+    if (dateValue != null)
+    {
+      final Calendar calendar = new GregorianCalendar(utcTimeZone);
+      calendar.setTime(dateValue);
+      return DatatypeConverter.printDateTime(calendar);
+    }
+    else
+    {
+      return null;
+    }
   }
 
 

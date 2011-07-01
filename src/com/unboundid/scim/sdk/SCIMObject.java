@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.ldap.SCIMFilter;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,10 +17,8 @@ import java.util.LinkedHashMap;
 /**
  * This class represents a Simple Cloud Identity Management (SCIM) object.
  * A SCIM object may be composed of common schema attributes and a collection
- * of attributes from one or more additional schema definitions. The common
- * schema attributes for resource objects (which includes the 'id' and 'meta'
- * attributes) do not have a schema name because they are implicit.
- * This class is intentionally not thread-safe.
+ * of attributes from one or more additional schema definitions.
+ * This class is not designed to be thread-safe.
  */
 public class SCIMObject
 {
@@ -326,6 +326,32 @@ public class SCIMObject
       return removed;
     }
   }
+
+
+
+  /**
+   * Determine whether this object matches the provided filter parameters.
+   *
+   * @param filter  The filter parameters to compare against the object.
+   *
+   * @return  {@code true} if this object matches the provided filter, and
+   *          {@code false} otherwise.
+   */
+  public boolean matchesFilter(final SCIMFilter filter)
+  {
+    final String schema = filter.getAttributeSchema();
+    final String[] attributePath = filter.getAttributePath();
+
+    final SCIMAttribute attribute = getAttribute(schema, attributePath[0]);
+    if (attribute == null)
+    {
+      return false;
+    }
+
+    return attribute.matchesFilter(filter);
+  }
+
+
 
   @Override
   public String toString() {

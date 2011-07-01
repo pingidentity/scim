@@ -7,6 +7,12 @@ package com.unboundid.scim.sdk;
 
 
 import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.ldap.SCIMFilter;
+
+import java.util.Arrays;
+import java.util.List;
+
+
 
 /**
  * This class represents a Simple Cloud Identity Management (SCIM) attribute.
@@ -267,5 +273,138 @@ public final class SCIMAttribute
    */
   public AttributeDescriptor getAttributeDescriptor() {
     return attributeDescriptor;
+  }
+
+
+
+  /**
+   * Determine whether this attribute matches the provided filter parameters.
+   *
+   * @param filter  The filter parameters to be compared against this attribute.
+   *
+   * @return  {@code true} if this attribute matches the provided filter, and
+   *          {@code false} otherwise.
+   */
+  public boolean matchesFilter(final SCIMFilter filter)
+  {
+    if (!filter.getAttributeSchema().equals(getSchema()))
+    {
+      return false;
+    }
+
+    final String[] attributePath = filter.getAttributePath();
+    if (attributePath.length == 0 ||
+        !attributePath[0].equalsIgnoreCase(getName()))
+    {
+      return false;
+    }
+
+    final String[] childPath =
+        Arrays.copyOfRange(attributePath, 1, attributePath.length);
+
+    if (isPlural())
+    {
+      for (final SCIMAttributeValue v : getPluralValues())
+      {
+        if (v.isComplex())
+        {
+          final List<AttributeDescriptor> descriptors =
+              attributeDescriptor.getComplexAttributeDescriptors();
+          for (AttributeDescriptor descriptor : descriptors)
+          {
+            final SCIMAttribute a = v.getAttribute(descriptor.getName());
+
+            if (a != null)
+            {
+              // This is done so the client specifies 'emails.value' rather
+              // than 'emails.email.value'.
+              final String[] insertedPath =
+                  Arrays.copyOf(attributePath, attributePath.length);
+              insertedPath[0] = a.getName();
+              final SCIMFilter insertedFilter =
+                  new SCIMFilter(filter.getFilterOp(),
+                                 filter.getFilterValue(),
+                                 filter.getAttributeSchema(),
+                                 insertedPath);
+
+              if (a.matchesFilter(insertedFilter))
+              {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      final SCIMAttributeValue v = getSingularValue();
+      if (v.isComplex())
+      {
+        if (childPath.length > 0)
+        {
+          final SCIMAttribute a = v.getAttribute(childPath[0]);
+          if (a != null)
+          {
+            return a.matchesFilter(
+                new SCIMFilter(filter.getFilterOp(),
+                               filter.getFilterValue(),
+                               filter.getAttributeSchema(),
+                               childPath));
+          }
+        }
+      }
+      else
+      {
+        final String filterOp = filter.getFilterOp();
+        if (filterOp.equalsIgnoreCase("present"))
+        {
+          return true;
+        }
+
+        final String filterValue = filter.getFilterValue();
+        String attributeValue = null;
+        if (attributeDescriptor != null)
+        {
+          switch (attributeDescriptor.getDataType())
+          {
+            case DATETIME:
+              attributeValue = v.getDateStringValue();
+              break;
+
+            case BOOLEAN:
+              attributeValue = v.getBooleanValue().toString();
+              break;
+
+            case INTEGER: // TODO
+            case STRING:
+              attributeValue = v.getStringValue();
+              break;
+          }
+        }
+
+        if (attributeValue != null)
+        {
+          if (filterOp.equalsIgnoreCase("equals"))
+          {
+            return attributeValue.equals(filterValue);
+          }
+          else if (filterOp.equalsIgnoreCase("equalsIgnoreCase"))
+          {
+            return attributeValue.equalsIgnoreCase(filterValue);
+          }
+          else if (filterOp.equalsIgnoreCase("contains"))
+          {
+            return attributeValue.contains(filterValue);
+          }
+          else if (filterOp.equalsIgnoreCase("startswith"))
+          {
+            return attributeValue.startsWith(filterValue);
+          }
+        }
+      }
+    }
+
+    return false;
   }
 }

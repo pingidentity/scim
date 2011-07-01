@@ -41,9 +41,52 @@ public final class SCIMConstants
   public static final String RESOURCE_NAME_USER = "User";
 
   /**
-   * The HTTP query string value used in a URI to select specific attributes.
+   * The end point for Users in the REST protocol.
    */
-  public static final String ATTRIBUTES_QUERY_STRING = "attributes";
+  public static final String RESOURCE_ENDPOINT_USERS = "Users";
+
+  /**
+   * The HTTP query parameter used in a URI to select specific SCIM attributes.
+   */
+  public static final String QUERY_PARAMETER_ATTRIBUTES = "attributes";
+
+  /**
+   * The HTTP query parameter used in a URI to filter by a SCIM attribute.
+   */
+  public static final String QUERY_PARAMETER_FILTER_BY = "filterBy";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the filter comparison
+   * method.
+   */
+  public static final String QUERY_PARAMETER_FILTER_OP = "filterOp";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the filter value.
+   */
+  public static final String QUERY_PARAMETER_FILTER_VALUE = "filterValue";
+
+  /**
+   * The HTTP query parameter used in a URI to sort by a SCIM attribute.
+   */
+  public static final String QUERY_PARAMETER_SORT_BY = "sortBy";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the sort order.
+   */
+  public static final String QUERY_PARAMETER_SORT_ORDER = "sortOrder";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the starting index
+   * for page results.
+   */
+  public static final String QUERY_PARAMETER_PAGE_START_INDEX = "startIndex";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the maximum size of
+   * a page of results.
+   */
+  public static final String QUERY_PARAMETER_PAGE_SIZE = "count";
 
   /**
    * The name of the JSON media type for HTTP.
@@ -70,4 +113,11 @@ public final class SCIMConstants
    */
   public static final String HEADER_NAME_METHOD_OVERRIDE =
       "X-HTTP-Method-Override";
+
+  /**
+   * The character that separates the schema URI from the basic attribute name
+   * in a fully qualified attribute name. e.g. urn:scim:schemas:core:1.0:name
+   * TODO: Should it be ':' or '.'?
+   */
+  public static final char SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE = ':';
 }

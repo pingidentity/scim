@@ -6,6 +6,8 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.json.JSONContext;
+import com.unboundid.scim.ldap.SCIMFilter;
+import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.xml.XMLContext;
@@ -29,6 +31,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -486,6 +489,99 @@ public class SCIMClient
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
             return null;
+
+          default:
+            final String statusMessage =
+                HttpStatus.getMessage(exchange.getResponseStatus());
+            if (exchange.getResponseContent() != null)
+            {
+              throw new IOException(statusMessage + ": " +
+                                    exchange.getResponseContent());
+            }
+            else
+            {
+              throw new IOException(statusMessage);
+            }
+        }
+
+      case HttpExchange.STATUS_EXCEPTED:
+        throw new IOException("Exception during HTTP exchange",
+                              exchange.getException());
+
+      case HttpExchange.STATUS_EXPIRED:
+        throw new IOException("HTTP request expired");
+
+      default:
+        // This should not happen.
+        throw new IOException(
+            "Unexpected HTTP exchange state: " + exchangeState);
+    }
+  }
+
+
+
+  /**
+   * Retrieve selected resources. A GET operation is invoked on the specified
+   * resource endpoint.
+   *
+   * @param resourceEndPoint  The resource end-point. e.g. Users
+   * @param filter            The filter parameters, or {@code null} if the
+   *                          results should not be filtered.
+   * @param attributes        The set of attributes to be retrieved. If empty,
+   *                          then the server returns all attributes.
+   *
+   * @return  The selected resources.
+   *
+   * @throws IOException  If an error occurred while retrieving the resources.
+   */
+  public List<Resource> getResources(final String resourceEndPoint,
+                                     final SCIMFilter filter,
+                                     final String ... attributes)
+      throws IOException
+  {
+    final ScimURI uri =
+        new ScimURI(baseURI, resourceEndPoint, null, null, null,
+                    new SCIMQueryAttributes(attributes), filter);
+    final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    exchange.setAddress(address);
+    exchange.setMethod("GET");
+    exchange.setURI(uri.toString());
+
+    if (acceptJSON && acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT,
+                                MEDIA_TYPE_JSON + ',' + MEDIA_TYPE_XML);
+    }
+    else if (acceptJSON)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_JSON);
+    }
+    else if (acceptXML)
+    {
+      exchange.setRequestHeader(HEADER_NAME_ACCEPT, MEDIA_TYPE_XML);
+    }
+
+    httpClient.send(exchange);
+    final int exchangeState;
+    try
+    {
+      exchangeState = exchange.waitForDone();
+    }
+    catch (InterruptedException e)
+    {
+      throw new IOException("HTTP exchange interrupted", e);
+    }
+
+    switch (exchangeState)
+    {
+      case HttpExchange.STATUS_COMPLETED:
+        switch (exchange.getResponseStatus())
+        {
+          case HttpStatus.OK_200:
+            // The request was successful.
+            final Response.Resources resources =
+                readResponse(exchange).getResources();
+            return resources.getResource();
 
           default:
             final String statusMessage =

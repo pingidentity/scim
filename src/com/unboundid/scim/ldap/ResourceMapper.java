@@ -7,6 +7,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -107,6 +108,18 @@ public abstract class ResourceMapper
 
 
   /**
+   * Map the provided SCIM filter to an LDAP filter.
+   *
+   * @param filter  The SCIM filter to be mapped, or {@code null} if no filter
+   *                parameters were provided.
+   *
+   * @return  An LDAP filter.
+   */
+  public abstract Filter toLDAPFilter(final SCIMFilter filter);
+
+
+
+  /**
    * Map the attributes in an LDAP entry to SCIM attributes.
    *
    * @param resourceName     The name of the resource that is being mapped.
@@ -120,5 +133,21 @@ public abstract class ResourceMapper
    */
   public abstract List<SCIMAttribute> toSCIMAttributes(
       final String resourceName,
+      final Entry entry, final SCIMQueryAttributes queryAttributes);
+
+
+
+  /**
+   * Map an LDAP entry to a SCIM resource.
+   *
+   * @param entry            The LDAP entry containing attributes to be
+   *                         mapped.
+   * @param queryAttributes  The set of SCIM attributes that are requested
+   *                         to be returned.
+   *
+   * @return  A SCIM object mapped from the LDAP entry, or {@code null} if this
+   *          entry cannot be mapped to a SCIM object.
+   */
+  public abstract SCIMObject toSCIMObject(
       final Entry entry, final SCIMQueryAttributes queryAttributes);
 }

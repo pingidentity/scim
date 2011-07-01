@@ -31,6 +31,17 @@ public abstract class SCIMBackend
 
 
   /**
+   * Retrieve selected resources.
+   *
+   * @param request  The Get Resources request.
+   *
+   * @return  The response to the request.
+   */
+  public abstract SCIMResponse getResources(final GetResourcesRequest request);
+
+
+
+  /**
    * Create a new resource.
    *
    * @param request  The Post Resource request.

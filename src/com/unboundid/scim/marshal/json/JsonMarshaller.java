@@ -17,18 +17,13 @@ import com.unboundid.scim.sdk.SCIMObject;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 
 
@@ -38,13 +33,6 @@ import java.util.TimeZone;
  */
 public class JsonMarshaller implements Marshaller
 {
-  /**
-   * The UTC time zone.
-   */
-  private static TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
-
-
-
   /**
    * {@inheritDoc}
    */
@@ -161,25 +149,101 @@ public class JsonMarshaller implements Marshaller
     throws JSONException
   {
     jsonWriter.object();
+    jsonWriter.key("Response");
+    jsonWriter.object();
 
     final Resource resource = response.getResource();
+    final Response.Resources resources = response.getResources();
+    final Response.Errors errors = response.getErrors();
     if (resource != null)
     {
-      jsonWriter.key("Resource");
-      jsonWriter.object();
-
       if (resource instanceof GenericResource)
       {
         final GenericResource genericResource = (GenericResource) resource;
         final SCIMObject scimObject = genericResource.getScimObject();
 
-        jsonWriter.key(scimObject.getResourceName());
+        jsonWriter.key("Resource");
         marshal(scimObject, jsonWriter);
       }
+    }
+    else if (errors != null)
+    {
+      jsonWriter.key("Errors");
+      jsonWriter.array();
 
-      jsonWriter.endObject();
+      for (final com.unboundid.scim.schema.Error error : errors.getError())
+      {
+        jsonWriter.object();
+
+        final String description = error.getDescription();
+        if (description != null)
+        {
+          jsonWriter.key("description");
+          jsonWriter.value(description);
+        }
+
+        final String code = error.getCode();
+        if (code != null)
+        {
+          jsonWriter.key("code");
+          jsonWriter.value(code);
+        }
+
+        final String uri = error.getUri();
+        if (uri != null)
+        {
+          jsonWriter.key("uri");
+          jsonWriter.value(uri);
+        }
+
+        jsonWriter.endObject();
+      }
+
+      jsonWriter.endArray();
+    }
+    else
+    {
+      if (response.getTotalResults() != null)
+      {
+        jsonWriter.key("totalResults");
+        jsonWriter.value(response.getTotalResults());
+      }
+
+      if (response.getItemsPerPage() != null)
+      {
+        jsonWriter.key("itemsPerPage");
+        jsonWriter.value(response.getItemsPerPage());
+      }
+
+      if (response.getStartIndex() != null)
+      {
+        jsonWriter.key("startIndex");
+        jsonWriter.value(response.getStartIndex());
+      }
+
+      if (resources != null)
+      {
+        jsonWriter.key("Resources");
+        jsonWriter.array();
+
+        for (final Resource r : resources.getResource())
+        {
+          // Each resource is carried as a SCIMObject wrapped into a Resource
+          // instance.
+          if (r instanceof GenericResource)
+          {
+            final GenericResource genericResource = (GenericResource) r;
+            final SCIMObject scimObject = genericResource.getScimObject();
+
+            marshal(scimObject, jsonWriter);
+          }
+        }
+
+        jsonWriter.endArray();
+      }
     }
 
+    jsonWriter.endObject();
     jsonWriter.endObject();
   }
 
@@ -234,24 +298,18 @@ public class JsonMarshaller implements Marshaller
       {
         switch (scimAttribute.getAttributeDescriptor().getDataType()) {
           case DATETIME:
-            final Date dateValue =
-                scimAttribute.getSingularValue().getDateValue();
-            final Calendar calendar = new GregorianCalendar(utcTimeZone);
-            calendar.setTime(dateValue);
-            jsonWriter.value(DatatypeConverter.printDateTime(calendar));
+            jsonWriter.value(val.getDateStringValue());
             break;
 
           case BOOLEAN:
-            final Boolean booleanValue =
-                scimAttribute.getSingularValue().getBooleanValue();
+            final Boolean booleanValue = val.getBooleanValue();
             jsonWriter.value(booleanValue);
             break;
 
           case INTEGER: // TODO
           case STRING:
           default:
-            final String stringValue =
-                scimAttribute.getSingularValue().getStringValue();
+            final String stringValue = val.getStringValue();
             jsonWriter.value(stringValue);
             break;
         }

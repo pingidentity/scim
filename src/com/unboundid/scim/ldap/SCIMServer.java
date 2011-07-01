@@ -11,6 +11,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_USERS;
 
 import javax.servlet.http.HttpServlet;
 import java.util.Collections;
@@ -81,7 +82,7 @@ public class SCIMServer
     this.resourceMappers = new HashMap<String,Set<ResourceMapper>>();
 
     this.registerResourceMapper(new UserResourceMapper(),
-                                RESOURCE_NAME_USER);
+                                RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
   }
 
 
@@ -126,7 +127,7 @@ public class SCIMServer
               ServletContextHandler.NO_SESSIONS);
 
       final HttpServlet servlet = new SCIMServlet(backend);
-      contextHandler.addServlet(new ServletHolder(servlet), "/User/*");
+      contextHandler.addServlet(new ServletHolder(servlet), "/*");
 
       backends = newBackends;
     }
@@ -136,43 +137,48 @@ public class SCIMServer
 
   /**
    * Register a resource mapper with this server for the specified SCIM
-   * resource end point. e.g. User or Group. Multiple resource mappers may be
+   * resource end points. e.g. User and Users. Multiple resource mappers may be
    * registered for a single resource end point.
    *
-   * @param resourceMapper    The resource mapper to be registered. It must not
-   *                          be {@code null}.
-   * @param resourceEndPoint  The SCIM resource end point with which the mapper
-   *                          is associated. It must not be {@code null}.
+   * @param resourceMapper     The resource mapper to be registered. It must not
+   *                           be {@code null}.
+   * @param resourceEndPoints  The SCIM resource end points with which the
+   *                           mapper is associated. It must not be empty.
    */
   public void registerResourceMapper(final ResourceMapper resourceMapper,
-                                     final String resourceEndPoint)
+                                     final String ... resourceEndPoints)
   {
     synchronized (this)
     {
-      Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
-      if (mappers != null && mappers.contains(resourceMapper))
-      {
-        throw new RuntimeException("The resource mapper was already " +
-                                   "registered for resource end point " +
-                                   resourceEndPoint);
-      }
-
       final Map<String,Set<ResourceMapper>> newResourceMappers =
           new HashMap<String, Set<ResourceMapper>>();
-      for (Map.Entry<String,Set<ResourceMapper>> e : resourceMappers.entrySet())
-      {
-        newResourceMappers.put(e.getKey(),
-                               new HashSet<ResourceMapper>(e.getValue()));
-      }
 
-      mappers = newResourceMappers.get(resourceEndPoint);
-      if (mappers == null)
+      for (final String resourceEndPoint : resourceEndPoints)
       {
-        mappers = new HashSet<ResourceMapper>();
-        newResourceMappers.put(resourceEndPoint, mappers);
-      }
+        Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
+        if (mappers != null && mappers.contains(resourceMapper))
+        {
+          throw new RuntimeException("The resource mapper was already " +
+                                     "registered for resource end point " +
+                                     resourceEndPoint);
+        }
 
-      mappers.add(resourceMapper);
+        for (Map.Entry<String,Set<ResourceMapper>> e :
+            resourceMappers.entrySet())
+        {
+          newResourceMappers.put(e.getKey(),
+                                 new HashSet<ResourceMapper>(e.getValue()));
+        }
+
+        mappers = newResourceMappers.get(resourceEndPoint);
+        if (mappers == null)
+        {
+          mappers = new HashSet<ResourceMapper>();
+          newResourceMappers.put(resourceEndPoint, mappers);
+        }
+
+        mappers.add(resourceMapper);
+      }
 
       resourceMappers = newResourceMappers;
     }
@@ -200,6 +206,31 @@ public class SCIMServer
     else
     {
       return Collections.unmodifiableSet(mappers);
+    }
+  }
+
+
+
+  /**
+   * Retrieve the resource mapper registered for the provided resource end
+   * point.
+   *
+   * @param resourceEndPoint  The resource end point for which the registered
+   *                          resource mappers are requested.
+   *
+   * @return  The resource mapper registered for the provided resource end
+   *          point, or {@code null} if there is no such resource mapper.
+   */
+  public ResourceMapper getResourceMapper(final String resourceEndPoint)
+  {
+    final Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
+    if (mappers == null)
+    {
+      return null;
+    }
+    else
+    {
+      return mappers.iterator().next();
     }
   }
 

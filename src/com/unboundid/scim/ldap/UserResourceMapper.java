@@ -8,6 +8,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.RDN;
@@ -384,6 +385,194 @@ public class UserResourceMapper extends ResourceMapper
 
 
 
+  @Override
+  public Filter toLDAPFilter(final SCIMFilter filter)
+  {
+    final Filter objectClassFilter =
+        Filter.createEqualityFilter("objectclass", "inetorgperson");
+    if (filter == null)
+    {
+      return objectClassFilter;
+    }
+
+    final String filterOp = filter.getFilterOp();
+    final String schema = filter.getAttributeSchema();
+    if (!schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+    {
+      // Only core schema supported.
+      return Filter.createORFilter();
+    }
+
+    final List<String> attributeNames = new ArrayList<String>();
+    String attributeValue = filter.getFilterValue();
+
+    final String[] attrPath = filter.getAttributePath();
+    final String name1 = attrPath[0];
+    if (name1.equalsIgnoreCase("userName"))
+    {
+      attributeNames.add("uid");
+    }
+    else if (name1.equalsIgnoreCase("name"))
+    {
+      if (attrPath.length == 2)
+      {
+        final String name2 = attrPath[1];
+        if (name2.equalsIgnoreCase("formatted"))
+        {
+          attributeNames.add("cn");
+          attributeValue = attributeValue.replaceAll("\n", "\\$");
+        }
+        else if (name2.equalsIgnoreCase("familyName"))
+        {
+          attributeNames.add("cn");
+        }
+        else if (name2.equalsIgnoreCase("givenName"))
+        {
+          attributeNames.add("givenName");
+        }
+      }
+    }
+    else if (name1.equalsIgnoreCase("displayName"))
+    {
+      attributeNames.add("displayName");
+    }
+    else if (name1.equalsIgnoreCase("title"))
+    {
+      attributeNames.add("title");
+    }
+    else if (name1.equalsIgnoreCase("preferredLanguage"))
+    {
+      attributeNames.add("preferredLanguage");
+    }
+    else if (name1.equalsIgnoreCase("emails"))
+    {
+      attributeNames.add("mail");
+    }
+    else if (name1.equalsIgnoreCase("phoneNumbers"))
+    {
+      attributeNames.add("telephoneNumber");
+      attributeNames.add("facsimileTelephoneNumber");
+      attributeNames.add("homePhone");
+    }
+    else if (name1.equalsIgnoreCase("addresses"))
+    {
+      if (attrPath.length == 2)
+      {
+        final String name2 = attrPath[1];
+        if (name2.equalsIgnoreCase("formatted"))
+        {
+          attributeNames.add("postalAddress");
+          attributeNames.add("homePostalAddress");
+          attributeValue = attributeValue.replaceAll("\n", "\\$");
+        }
+        else if (name2.equalsIgnoreCase("streetAddress"))
+        {
+          attributeNames.add("street");
+        }
+        else if (name2.equalsIgnoreCase("locality"))
+        {
+          attributeNames.add("l");
+        }
+        else if (name2.equalsIgnoreCase("region"))
+        {
+          attributeNames.add("st");
+        }
+        else if (name2.equalsIgnoreCase("postalCode"))
+        {
+          attributeNames.add("postalCode");
+        }
+        else if (name2.equalsIgnoreCase("country"))
+        {
+          attributeNames.add("c");
+        }
+      }
+    }
+
+    if (attributeNames.isEmpty())
+    {
+      return objectClassFilter;
+    }
+
+    final List<Filter> filters = new ArrayList<Filter>();
+    for (final String attributeName : attributeNames)
+    {
+      if (filterOp.equalsIgnoreCase("equals"))
+      {
+        // This will also return entries that do not match the exact case.
+        filters.add(
+            Filter.createEqualityFilter(attributeName, attributeValue));
+      }
+      else if (filterOp.equalsIgnoreCase("equalsIgnoreCase"))
+      {
+        // This works because all the mapped LDAP attributes are case-ignore.
+        filters.add(
+            Filter.createEqualityFilter(attributeName, attributeValue));
+      }
+      else if (filterOp.equalsIgnoreCase("contains"))
+      {
+        filters.add(
+            Filter.createSubstringFilter(attributeName,
+                                         null,
+                                         new String[] { attributeValue },
+                                         null));
+      }
+      else if (filterOp.equalsIgnoreCase("startswith"))
+      {
+        filters.add(
+            Filter.createSubstringFilter(attributeName,
+                                         attributeValue,
+                                         null,
+                                         null));
+      }
+      else if (filterOp.equalsIgnoreCase("present"))
+      {
+        filters.add(Filter.createPresenceFilter(attributeName));
+      }
+      else
+      {
+        throw new RuntimeException(
+            "Filter op " + filterOp + " is not supported");
+      }
+    }
+
+    if (filters.size() == 1)
+    {
+      return Filter.createANDFilter(filters.get(0), objectClassFilter);
+    }
+    else
+    {
+      return Filter.createANDFilter(
+          Filter.createORFilter(filters), objectClassFilter);
+    }
+  }
+
+
+
+  @Override
+  public SCIMObject toSCIMObject(
+      final Entry entry, final SCIMQueryAttributes queryAttributes)
+  {
+    if (!entry.hasObjectClass("inetOrgPerson"))
+    {
+      return null;
+    }
+
+    final List<SCIMAttribute> attributes =
+        toSCIMAttributes(SCIMConstants.RESOURCE_NAME_USER, entry,
+                         queryAttributes);
+
+    final SCIMObject scimObject =
+        new SCIMObject(SCIMConstants.RESOURCE_NAME_USER);
+    for (final SCIMAttribute a : attributes)
+    {
+      scimObject.addAttribute(a);
+    }
+
+    return scimObject;
+  }
+
+
+
   /**
    * {@inheritDoc}
    */
@@ -453,7 +642,11 @@ public class UserResourceMapper extends ResourceMapper
 
       // Map just the first value of each inetOrgPerson address-related
       // attribute as a work, non-primary address.
-      if (entry.hasAttribute("postalAddress") || entry.hasAttribute("street"))
+      if (entry.hasAttribute("postalAddress") ||
+          entry.hasAttribute("street") ||
+          entry.hasAttribute("l") ||
+          entry.hasAttribute("postalCode") ||
+          entry.hasAttribute("st"))
       {
         List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
 
