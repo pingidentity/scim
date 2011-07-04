@@ -5,14 +5,17 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.scim.config.ResourceDescriptorManager;
+import org.eclipse.jetty.http.security.Constraint;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_USERS;
 
 import javax.servlet.http.HttpServlet;
 import java.util.Collections;
@@ -21,20 +24,21 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_USERS;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 
 /**
  * This class implements a stand-alone Simple Cloud Identity Management (SCIM)
  * server that uses an LDAP server as its resource storage repository.
  */
-public class SCIMServer
-{
+public class SCIMServer {
   /**
    * The singleton instance of the SCIM server.
    */
   private static SCIMServer scimServer;
-  static
-  {
+
+  static {
     scimServer = new SCIMServer();
   }
 
@@ -51,14 +55,13 @@ public class SCIMServer
   /**
    * The set of backends registered with the server, keyed by the base URI.
    */
-  private volatile Map<String,SCIMBackend> backends;
+  private volatile Map<String, SCIMBackend> backends;
 
 
   /**
    * The set of resource mappers registered for SCIM endpoints.
    */
-  private volatile Map<String,Set<ResourceMapper>> resourceMappers;
-
+  private volatile Map<String, Set<ResourceMapper>> resourceMappers;
 
 
   /**
@@ -67,13 +70,11 @@ public class SCIMServer
    * {@link #registerBackend(String, SCIMBackend)} before calling
    * {@link #startListening()}.
    *
-   * @param serverConfig  The desired server configuration.
-   *
-   * @throws Exception  If an error occurred while initializing the server.
+   * @param serverConfig The desired server configuration.
+   * @throws Exception If an error occurred while initializing the server.
    */
   public void initializeServer(final SCIMServerConfig serverConfig)
-      throws Exception
-  {
+    throws Exception {
     ResourceDescriptorManager.init(serverConfig.getSchemaFiles());
 
     final Server s = new Server(serverConfig.getListenPort());
@@ -84,54 +85,82 @@ public class SCIMServer
 
     this.config = serverConfig;
     this.server = s;
-    this.backends        = new HashMap<String, SCIMBackend>();
-    this.resourceMappers = new HashMap<String,Set<ResourceMapper>>();
+    this.backends = new HashMap<String, SCIMBackend>();
+    this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
 
     this.registerResourceMapper(new UserResourceMapper(),
-                                RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
+      RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
   }
-
 
 
   /**
    * Retrieves the singleton instance of the SCIM server.
    *
-   * @return  The singleton instance of the SCIM server.
+   * @return The singleton instance of the SCIM server.
    */
-  public static SCIMServer getInstance()
-  {
+  public static SCIMServer getInstance() {
     return scimServer;
   }
-
 
 
   /**
    * Register a backend with this server under the specified base URI.
    *
-   * @param baseURI  The base URI with which the backend is associated.
-   * @param backend  The backend to be registered. It must not be {@code null}.
+   * @param baseURI The base URI with which the backend is associated.
+   * @param backend The backend to be registered. It must not be {@code null}.
    */
   public void registerBackend(final String baseURI,
-                              final SCIMBackend backend)
-  {
-    synchronized (this)
-    {
+    final SCIMBackend backend) {
+    synchronized (this) {
       final String normalizedBaseURI = normalizeURI(baseURI);
-      if (backends.containsKey(baseURI))
-      {
+      if (backends.containsKey(baseURI)) {
         throw new RuntimeException("There is already a backend registered " +
-                                   "for base URI " + normalizedBaseURI);
+          "for base URI " + normalizedBaseURI);
       }
-      final Map<String,SCIMBackend> newBackends =
-          new HashMap<String, SCIMBackend>(backends);
+      final Map<String, SCIMBackend> newBackends =
+        new HashMap<String, SCIMBackend>(backends);
       newBackends.put(normalizedBaseURI, backend);
 
       final ServletContextHandler contextHandler =
-          new ServletContextHandler(
-              (ContextHandlerCollection)server.getHandler(),
-              normalizedBaseURI,
-              ServletContextHandler.NO_SESSIONS);
+        new ServletContextHandler(
+          (ContextHandlerCollection) server.getHandler(),
+          normalizedBaseURI);
+      // todo: undo after tests have been re-worked to handle client auth
+      if (false) {
+        LoginService loginService = new LDAPLoginService();
+        server.addBean(loginService);
 
+        ConstraintSecurityHandler security = new ConstraintSecurityHandler();
+        contextHandler.setSecurityHandler(security);
+        Constraint constraint = new Constraint();
+        constraint.setAuthenticate(true);
+
+        // A user possessing (literally) any role will do
+        constraint.setRoles(new String[]{Constraint.ANY_ROLE});
+
+        // * maps to all external endpoints
+        ConstraintMapping mapping = new ConstraintMapping();
+        mapping.setPathSpec("/*");
+        mapping.setConstraint(constraint);
+
+        // for now force map all roles - that is the assertions is only "is the
+        // user authenticated" - not are they authenticated && possess a
+        // roles(s)
+        Set<String> knownRoles = new HashSet<String>();
+        knownRoles.add(Constraint.ANY_ROLE);
+        security
+          .setConstraintMappings(Collections.singletonList(mapping),
+            knownRoles);
+
+        // use the HTTP Basic authentication mechanism
+        security.setAuthenticator(new BasicAuthenticator());
+        security.setLoginService(loginService);
+
+        // strictness refers to Jetty's role handling
+        security.setStrict(false);
+        security.setHandler(contextHandler);
+        security.setServer(server);
+      }
       final HttpServlet servlet = new SCIMServlet(backend);
       contextHandler.addServlet(new ServletHolder(servlet), "/*");
 
@@ -140,45 +169,38 @@ public class SCIMServer
   }
 
 
-
   /**
    * Register a resource mapper with this server for the specified SCIM
    * resource end points. e.g. User and Users. Multiple resource mappers may be
    * registered for a single resource end point.
    *
-   * @param resourceMapper     The resource mapper to be registered. It must not
-   *                           be {@code null}.
-   * @param resourceEndPoints  The SCIM resource end points with which the
-   *                           mapper is associated. It must not be empty.
+   * @param resourceMapper    The resource mapper to be registered. It must not
+   *                          be {@code null}.
+   * @param resourceEndPoints The SCIM resource end points with which the
+   *                          mapper is associated. It must not be empty.
    */
   public void registerResourceMapper(final ResourceMapper resourceMapper,
-                                     final String ... resourceEndPoints)
-  {
-    synchronized (this)
-    {
-      final Map<String,Set<ResourceMapper>> newResourceMappers =
-          new HashMap<String, Set<ResourceMapper>>();
+    final String... resourceEndPoints) {
+    synchronized (this) {
+      final Map<String, Set<ResourceMapper>> newResourceMappers =
+        new HashMap<String, Set<ResourceMapper>>();
 
-      for (final String resourceEndPoint : resourceEndPoints)
-      {
+      for (final String resourceEndPoint : resourceEndPoints) {
         Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
-        if (mappers != null && mappers.contains(resourceMapper))
-        {
+        if (mappers != null && mappers.contains(resourceMapper)) {
           throw new RuntimeException("The resource mapper was already " +
-                                     "registered for resource end point " +
-                                     resourceEndPoint);
+            "registered for resource end point " +
+            resourceEndPoint);
         }
 
-        for (Map.Entry<String,Set<ResourceMapper>> e :
-            resourceMappers.entrySet())
-        {
+        for (Map.Entry<String, Set<ResourceMapper>> e :
+          resourceMappers.entrySet()) {
           newResourceMappers.put(e.getKey(),
-                                 new HashSet<ResourceMapper>(e.getValue()));
+            new HashSet<ResourceMapper>(e.getValue()));
         }
 
         mappers = newResourceMappers.get(resourceEndPoint);
-        if (mappers == null)
-        {
+        if (mappers == null) {
           mappers = new HashSet<ResourceMapper>();
           newResourceMappers.put(resourceEndPoint, mappers);
         }
@@ -191,55 +213,42 @@ public class SCIMServer
   }
 
 
-
   /**
    * Retrieve the set of resource mappers registered for the provided resource
    * end point.
    *
-   * @param resourceEndPoint  The resource end point for which the registered
-   *                          resource mappers are requested.
-   *
-   * @return  The set of resource mappers registered for the provided resource
-   *          end point. This is never {@code null} but it may be empty.
+   * @param resourceEndPoint The resource end point for which the registered
+   *                         resource mappers are requested.
+   * @return The set of resource mappers registered for the provided resource
+   *         end point. This is never {@code null} but it may be empty.
    */
-  public Set<ResourceMapper> getResourceMappers(final String resourceEndPoint)
-  {
+  public Set<ResourceMapper> getResourceMappers(final String resourceEndPoint) {
     final Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
-    if (mappers == null)
-    {
+    if (mappers == null) {
       return Collections.emptySet();
-    }
-    else
-    {
+    } else {
       return Collections.unmodifiableSet(mappers);
     }
   }
-
 
 
   /**
    * Retrieve the resource mapper registered for the provided resource end
    * point.
    *
-   * @param resourceEndPoint  The resource end point for which the registered
-   *                          resource mappers are requested.
-   *
-   * @return  The resource mapper registered for the provided resource end
-   *          point, or {@code null} if there is no such resource mapper.
+   * @param resourceEndPoint The resource end point for which the registered
+   *                         resource mappers are requested.
+   * @return The resource mapper registered for the provided resource end
+   *         point, or {@code null} if there is no such resource mapper.
    */
-  public ResourceMapper getResourceMapper(final String resourceEndPoint)
-  {
+  public ResourceMapper getResourceMapper(final String resourceEndPoint) {
     final Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
-    if (mappers == null)
-    {
+    if (mappers == null) {
       return null;
-    }
-    else
-    {
+    } else {
       return mappers.iterator().next();
     }
   }
-
 
 
   /**
@@ -248,45 +257,35 @@ public class SCIMServer
    * @throws Exception If an error occurs during startup.
    */
   public void startListening()
-      throws Exception
-  {
-    if (backends.isEmpty())
-    {
+    throws Exception {
+    if (backends.isEmpty()) {
       throw new RuntimeException("No backends have been registered with the " +
-                                 "SCIM server");
+        "SCIM server");
     }
     server.start();
   }
 
 
-
   /**
    * Retrieves the configured listen port for the server.
    *
-   * @return  The configured listen port for the server, or -1 if
-   *          the server is not started.
+   * @return The configured listen port for the server, or -1 if
+   *         the server is not started.
    */
-  public int getListenPort()
-  {
-    if (server.isStarted())
-    {
-      for (Connector con : server.getConnectors())
-      {
+  public int getListenPort() {
+    if (server.isStarted()) {
+      for (Connector con : server.getConnectors()) {
         int port = con.getLocalPort();
-        if (port > 0)
-        {
+        if (port > 0) {
           return port;
         }
       }
 
       return -1;
-    }
-    else
-    {
+    } else {
       return -1;
     }
   }
-
 
 
   /**
@@ -295,18 +294,13 @@ public class SCIMServer
    * @throws Exception If an error occurs during shutdown.
    */
   public void shutdown()
-      throws Exception
-  {
-    if (server != null)
-    {
+    throws Exception {
+    if (server != null) {
       server.stop();
 
-      try
-      {
+      try {
         server.join();
-      }
-      catch (InterruptedException e)
-      {
+      } catch (InterruptedException e) {
         // No action required.
       }
 
@@ -314,41 +308,33 @@ public class SCIMServer
       server = null;
     }
 
-    if (backends != null)
-    {
+    if (backends != null) {
       // Make sure that each backend is finalized just once.
       // The same backend may be referenced more than once.
       Set<SCIMBackend> allBackends = new HashSet<SCIMBackend>();
-      for (final SCIMBackend b : backends.values())
-      {
-        if (b != null)
-        {
+      for (final SCIMBackend b : backends.values()) {
+        if (b != null) {
           allBackends.add(b);
         }
       }
 
-      for (final SCIMBackend b : allBackends)
-      {
+      for (final SCIMBackend b : allBackends) {
         b.finalizeBackend();
       }
 
       backends = null;
     }
 
-    if (resourceMappers != null)
-    {
+    if (resourceMappers != null) {
       // Make sure that each resource mapper is finalized exactly once.
       Set<ResourceMapper> allMappers = new HashSet<ResourceMapper>();
-      for (final Set<ResourceMapper> mappers : resourceMappers.values())
-      {
-        if (mappers != null)
-        {
+      for (final Set<ResourceMapper> mappers : resourceMappers.values()) {
+        if (mappers != null) {
           allMappers.addAll(mappers);
         }
       }
 
-      for (final ResourceMapper b : allMappers)
-      {
+      for (final ResourceMapper b : allMappers) {
         b.finalizeMapper();
       }
 
@@ -357,23 +343,17 @@ public class SCIMServer
   }
 
 
-
   /**
    * Normalize a URI that has been provided to us. This just ensures that the
    * string starts with a '/'.
    *
-   * @param uri  The URI to be normalized.
-   *
-   * @return  The normalized URI, always starting with a '/'.
+   * @param uri The URI to be normalized.
+   * @return The normalized URI, always starting with a '/'.
    */
-  private String normalizeURI(final String uri)
-  {
-    if (!uri.startsWith("/"))
-    {
+  private String normalizeURI(final String uri) {
+    if (!uri.startsWith("/")) {
       return "/" + uri;
-    }
-    else
-    {
+    } else {
       return uri;
     }
   }
