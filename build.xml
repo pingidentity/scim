@@ -13,20 +13,22 @@
 
 
   <!-- Define a number of project-wide properties. -->
-  <property name="src.dir"         location="src" />
-  <property name="buildsrc.dir"    location="build-src" />
-  <property name="gensrc.dir"      location="gen-src" />
-  <property name="build.dir"       location="build" />
-  <property name="docs.dir"        location="docs" />
-  <property name="distroot.dir"    location="dist-root" />
-  <property name="resource.dir"    location="resource" />
-  <property name="classes.dir"     location="${build.dir}/classes" />
-  <property name="lib.dir"         location="${build.dir}/lib" />
-  <property name="package.dir"     location="${build.dir}/package" />
-  <property name="ldapsdk.dir"     location="ext/ldapsdk" />
-  <property name="jetty.dir"       location="ext/jetty" />
-  <property name="jaxb.dir"        location="ext/jaxb" />
-  <property name="json.dir"        location="ext/json" />
+  <property name="src.dir"           location="src" />
+  <property name="buildsrc.dir"      location="build-src" />
+  <property name="gensrc.dir"        location="gen-src" />
+  <property name="build.dir"         location="build" />
+  <property name="docs.dir"          location="docs" />
+  <property name="distroot.dir"      location="dist-root" />
+  <property name="resource.dir"      location="resource" />
+  <property name="classes.dir"       location="${build.dir}/classes" />
+  <property name="lib.dir"           location="${build.dir}/lib" />
+  <property name="package.dir"       location="${build.dir}/package" />
+  <property name="serversdk.dir"     location="unboundid-server-sdk-3.1.0.0" />
+  <property name="serversdk.lib.dir" location="${serversdk.dir}/lib" />
+  <property name="ldapsdk.dir"       location="ext/ldapsdk" />
+  <property name="jetty.dir"         location="ext/jetty" />
+  <property name="jaxb.dir"          location="ext/jaxb" />
+  <property name="json.dir"          location="ext/json" />
 
 
 
@@ -370,7 +372,7 @@
                    value="com.unboundid.scim.sdk${VER}" />
         <!--<attribute name="Import-Package"-->
                    <!--value="javax.net,javax.net.ssl,javax.security.auth,javax.security.auth.callback,javax.security.auth.login,javax.security.sasl" />-->
-        <attribute name="Sealed" value="true" />
+        <attribute name="Sealed" value="false" />
       </manifest>
     </jar>
 
@@ -594,9 +596,22 @@
 
 
 
+  <!-- Push the SCIM libs to the Server SDK workspace. -->
+  <target name="push" description="Push libs to the Server SDK workspace"
+          depends="package" >
+    <copy todir="${serversdk.lib.dir}">
+      <fileset dir="${ri.package.dir}/lib" >
+        <exclude name="unboundid-ldapsdk-se.jar" />
+      </fileset>
+    </copy>
+  </target>
+
+
+
+
   <!-- Run all defined targets -->
   <target name="all" description="Run all build targets"
-          depends="package,coverage" />
+          depends="package,coverage,push" />
 
 </project>
 

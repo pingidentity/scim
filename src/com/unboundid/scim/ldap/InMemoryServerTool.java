@@ -234,6 +234,17 @@ public class InMemoryServerTool
       throw new ArgumentException(e.getExceptionMessage());
     }
 
+    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", true, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_SCHEMA_FILE.get(), true, true, false,
+         false);
+    parser.addArgument(useSchemaFileArgument);
+
+    portArgument = new IntegerArgument('p', "port", false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PORT.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_PORT.get(), 0, 65535);
+    parser.addArgument(portArgument);
+
     baseURIArgument = new StringArgument('u', "baseURI", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_BASE_URI.get(),
          INFO_MEM_SERVER_TOOL_ARG_DESC_BASE_URI.get(),
@@ -245,11 +256,6 @@ public class InMemoryServerTool
          INFO_MEM_SERVER_TOOL_ARG_DESC_BASE_DN.get(),
          Arrays.asList(baseDN));
     parser.addArgument(baseDNArgument);
-
-    portArgument = new IntegerArgument('p', "port", false, 1,
-         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PORT.get(),
-         INFO_MEM_SERVER_TOOL_ARG_DESC_PORT.get(), 0, 65535);
-    parser.addArgument(portArgument);
 
     ldifFileArgument = new FileArgument('l', "ldifFile", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
@@ -270,12 +276,6 @@ public class InMemoryServerTool
          INFO_MEM_SERVER_TOOL_ARG_DESC_LDAP_ACCESS_LOG_FILE.get(), false, true,
          true, false);
     parser.addArgument(ldapAccessLogFileArgument);
-
-    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", true, 1,
-         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
-         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_SCHEMA_FILE.get(), true, true, false,
-         false);
-    parser.addArgument(useSchemaFileArgument);
 
     useLdapSchemaFileArgument = new FileArgument(null, "useLdapSchemaFile",
          false, 1,
@@ -384,7 +384,7 @@ public class InMemoryServerTool
 
 
   /**
-   * Creates an LDAP server configuration based on information provided with
+   * Creates a SCIM server configuration based on information provided with
    * command line arguments.
    *
    * @return  The configuration that was created.
