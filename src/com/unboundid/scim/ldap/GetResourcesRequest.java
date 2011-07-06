@@ -13,7 +13,7 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
  * This class represents a SCIM Get Resources request to retrieve selected
  * resources.
  */
-public final class GetResourcesRequest
+public final class GetResourcesRequest extends SCIMRequest
 {
   /**
    * The endpoint identified in the request. e.g. Users or Groups.
@@ -35,18 +35,22 @@ public final class GetResourcesRequest
   /**
    * Create a new SCIM Get Resource request from the provided information.
    *
-   * @param endPoint    The endpoint identified in the request. e.g. Users or
-   *                    Groups.
-   * @param filter      The filter parameters of the request.
-   * @param attributes  The set of requested attributes.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param endPoint             The endpoint identified in the request. e.g.
+   *                             Users or Groups.
+   * @param filter               The filter parameters of the request.
+   * @param attributes           The set of requested attributes.
    */
-  public GetResourcesRequest(final String endPoint,
+  public GetResourcesRequest(final String authenticatedUserID,
+                             final String endPoint,
                              final SCIMFilter filter,
                              final SCIMQueryAttributes attributes)
   {
-    this.endPoint    = endPoint;
-    this.filter      = filter;
-    this.attributes  = attributes;
+    super(authenticatedUserID);
+    this.endPoint            = endPoint;
+    this.filter              = filter;
+    this.attributes          = attributes;
   }
 
 

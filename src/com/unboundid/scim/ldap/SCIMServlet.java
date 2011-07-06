@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Principal;
 
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
@@ -93,12 +94,25 @@ public class SCIMServlet
         return;
       }
 
+      // Get the authenticated user ID.
+      final String userID;
+      final Principal userPrincipal = request.getUserPrincipal();
+      if (userPrincipal != null)
+      {
+        userID = userPrincipal.getName();
+      }
+      else
+      {
+        userID = null;
+      }
+
       // Process the request.
       final SCIMResponse scimResponse;
       if (uri.getResourceID() == null)
       {
         final GetResourcesRequest getResourcesRequest =
-            new GetResourcesRequest(uri.getResourceEndPoint(),
+            new GetResourcesRequest(userID,
+                                    uri.getResourceEndPoint(),
                                     uri.getFilter(),
                                     uri.getQueryAttributes());
         scimResponse = backend.getResources(getResourcesRequest);
@@ -106,7 +120,8 @@ public class SCIMServlet
       else
       {
         final GetResourceRequest getResourceRequest =
-            new GetResourceRequest(uri.getResourceEndPoint(),
+            new GetResourceRequest(userID,
+                                   uri.getResourceEndPoint(),
                                    uri.getResourceID(),
                                    uri.getQueryAttributes());
         scimResponse = backend.getResource(getResourceRequest);
@@ -189,6 +204,18 @@ public class SCIMServlet
         return;
       }
 
+      // Get the authenticated user ID.
+      final String userID;
+      final Principal userPrincipal = request.getUserPrincipal();
+      if (userPrincipal != null)
+      {
+        userID = userPrincipal.getName();
+      }
+      else
+      {
+        userID = null;
+      }
+
       // Parse the resource.
       final Unmarshaller unmarshaller;
       final String contentType = request.getContentType();
@@ -206,8 +233,8 @@ public class SCIMServlet
 
       // Process the request.
       final PostResourceRequest postResourceRequest =
-          new PostResourceRequest(uri.getResourceEndPoint(), requestObject,
-                                  uri.getQueryAttributes());
+          new PostResourceRequest(userID, uri.getResourceEndPoint(),
+                                  requestObject, uri.getQueryAttributes());
       final SCIMResponse scimResponse =
           backend.postResource(postResourceRequest);
 
@@ -286,9 +313,21 @@ public class SCIMServlet
         return;
       }
 
+      // Get the authenticated user ID.
+      final String userID;
+      final Principal userPrincipal = request.getUserPrincipal();
+      if (userPrincipal != null)
+      {
+        userID = userPrincipal.getName();
+      }
+      else
+      {
+        userID = null;
+      }
+
       // Process the request.
       final DeleteResourceRequest deleteResourceRequest =
-          new DeleteResourceRequest(uri.getResourceEndPoint(),
+          new DeleteResourceRequest(userID, uri.getResourceEndPoint(),
                                     uri.getResourceID());
       final SCIMResponse scimResponse =
           backend.deleteResource(deleteResourceRequest);
@@ -355,6 +394,18 @@ public class SCIMServlet
         return;
       }
 
+      // Get the authenticated user ID.
+      final String userID;
+      final Principal userPrincipal = request.getUserPrincipal();
+      if (userPrincipal != null)
+      {
+        userID = userPrincipal.getName();
+      }
+      else
+      {
+        userID = null;
+      }
+
       // Parse the resource.
       final Unmarshaller unmarshaller;
       final String contentType = request.getContentType();
@@ -372,8 +423,9 @@ public class SCIMServlet
 
       // Process the request.
       final PutResourceRequest putResourceRequest =
-          new PutResourceRequest(uri.getResourceEndPoint(), uri.getResourceID(),
-                                 requestObject, uri.getQueryAttributes());
+          new PutResourceRequest(userID, uri.getResourceEndPoint(),
+                                 uri.getResourceID(), requestObject,
+                                 uri.getQueryAttributes());
       final SCIMResponse scimResponse = backend.putResource(putResourceRequest);
 
       response.setStatus(scimResponse.getStatusCode());

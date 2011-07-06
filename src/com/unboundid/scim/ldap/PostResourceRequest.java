@@ -13,7 +13,7 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 /**
  * This class represents a SCIM Post Resource request to create a new resource.
  */
-public final class PostResourceRequest
+public final class PostResourceRequest extends SCIMRequest
 {
   /**
    * The name of the resource identified by the request endpoint.
@@ -36,18 +36,22 @@ public final class PostResourceRequest
   /**
    * Create a new SCIM Post Resource request from the provided information.
    *
-   * @param resourceName    The name of the resource identified by the request
-   *                        endpoint. e.g. User or Group.
-   * @param resourceObject  The contents of the resource to be created.
-   * @param attributes      The set of requested attributes.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceName         The name of the resource identified by the
+   *                             request endpoint. e.g. User or Group.
+   * @param resourceObject       The contents of the resource to be created.
+   * @param attributes           The set of requested attributes.
    */
-  public PostResourceRequest(final String resourceName,
+  public PostResourceRequest(final String authenticatedUserID,
+                             final String resourceName,
                              final SCIMObject resourceObject,
                              final SCIMQueryAttributes attributes)
   {
-    this.resourceName   = resourceName;
-    this.resourceObject = resourceObject;
-    this.attributes     = attributes;
+    super(authenticatedUserID);
+    this.resourceName        = resourceName;
+    this.resourceObject      = resourceObject;
+    this.attributes          = attributes;
   }
 
 

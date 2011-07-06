@@ -6,8 +6,14 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
+import com.unboundid.ldap.sdk.BindRequest;
+import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
+import com.unboundid.ldap.sdk.PLAINBindRequest;
+import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
+import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
 
 
 
@@ -56,12 +62,56 @@ public class InMemoryLDAPBackend
 
 
   /**
+   * Perform basic authentication using the provided information.
+   *
+   * @param userID   The user ID to be authenticated.
+   * @param password The user password to be verified.
+   *
+   * @return {@code true} if the provided user ID and password are valid.
+   */
+  @Override
+  public boolean authenticate(final String userID, final String password)
+  {
+    try
+    {
+      final BindRequest bindRequest =
+          new PLAINBindRequest(getSASLAuthenticationID(userID), password);
+      final BindResult bindResult = ldapServer.bind(bindRequest);
+      return bindResult.getResultCode().equals(ResultCode.SUCCESS);
+    }
+    catch (final Exception e)
+    {
+      // TODO log the failure.
+      return false;
+    }
+  }
+
+
+
+  /**
    * {@inheritDoc}
    */
   @Override
-  protected LDAPInterface getLDAPInterface()
+  protected LDAPInterface getLDAPInterface(final String userID)
       throws LDAPException
   {
     return ldapServer;
   }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected void addCommonControls(final SCIMRequest scimRequest,
+                                   final UpdatableLDAPRequest ldapRequest)
+  {
+    ldapRequest.addControl(
+        new ProxiedAuthorizationV2RequestControl(
+            getSASLAuthenticationID(scimRequest.getAuthenticatedUserID())));
+  }
+
+
+
 }

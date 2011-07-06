@@ -7,6 +7,8 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.AddRequest;
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.DN;
+import com.unboundid.ldap.sdk.DeleteRequest;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -19,6 +21,7 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
 import com.unboundid.scim.config.AttributeDescriptor;
@@ -72,13 +75,28 @@ public abstract class LDAPBackend
    * Retrieve an LDAP interface that may be used to interact with the LDAP
    * server.
    *
+   * @param userID  The authenticated user ID for the request being processed.
+   *
    * @return  An LDAP interface that may be used to interact with the LDAP
    *          server.
    *
    * @throws LDAPException  If there was a problem retrieving an LDAP interface.
    */
-  protected abstract LDAPInterface getLDAPInterface()
+  protected abstract LDAPInterface getLDAPInterface(final String userID)
       throws LDAPException;
+
+
+
+  /**
+   * Add any common controls that may be required for LDAP requests.
+   *
+   * @param scimRequest  The SCIM request being processed.
+   * @param ldapRequest  The LDAP request to which the common controls are to be
+   *                     added.
+   */
+  protected abstract void addCommonControls(
+      final SCIMRequest scimRequest,
+      final UpdatableLDAPRequest ldapRequest);
 
 
 
@@ -114,8 +132,11 @@ public abstract class LDAPBackend
       final SearchRequest searchRequest =
           new SearchRequest(request.getResourceID(), SearchScope.BASE,
                             filter, "*", "createTimestamp", "modifyTimestamp");
+      addCommonControls(request, searchRequest);
+
       final SearchResultEntry searchResultEntry =
-          getLDAPInterface().searchForEntry(searchRequest);
+          getLDAPInterface(request.getAuthenticatedUserID()).searchForEntry(
+              searchRequest);
       if (searchResultEntry == null)
       {
         return notFoundResponse(request.getResourceID());
@@ -199,8 +220,10 @@ public abstract class LDAPBackend
                               filter, attributes);
       }
 
+      addCommonControls(request, searchRequest);
       final SearchResult searchResult =
-          getLDAPInterface().search(searchRequest);
+          getLDAPInterface(request.getAuthenticatedUserID()).search(
+              searchRequest);
 
       final List<SCIMObject> scimObjects = resultListener.getResources();
       final Response.Resources resources = new Response.Resources();
@@ -266,7 +289,9 @@ public abstract class LDAPBackend
       addRequest.addControl(
           new PostReadRequestControl("*", "createTimestamp",
                                      "modifyTimestamp"));
-      LDAPResult addResult = getLDAPInterface().add(addRequest);
+      addCommonControls(request, addRequest);
+      LDAPResult addResult =
+          getLDAPInterface(request.getAuthenticatedUserID()).add(addRequest);
 
       final PostReadResponseControl c = PostReadResponseControl.get(addResult);
       if (c != null)
@@ -310,8 +335,12 @@ public abstract class LDAPBackend
   {
     try
     {
+      final DeleteRequest deleteRequest =
+          new DeleteRequest(request.getResourceID());
+      addCommonControls(request, deleteRequest);
       final LDAPResult result =
-          getLDAPInterface().delete(request.getResourceID());
+          getLDAPInterface(request.getAuthenticatedUserID()).delete(
+              deleteRequest);
       if (result.getResultCode().equals(ResultCode.SUCCESS))
       {
         return new SCIMResponse(HttpStatus.OK_200, new Response());
@@ -352,7 +381,9 @@ public abstract class LDAPBackend
     Entry modifiedEntry = null;
     try
     {
-      final Entry currentEntry = getLDAPInterface().getEntry(entryDN);
+      final LDAPInterface ldapInterface =
+          getLDAPInterface(request.getAuthenticatedUserID());
+      final Entry currentEntry = ldapInterface.getEntry(entryDN);
       if (currentEntry == null)
       {
         return notFoundResponse(request.getResourceID());
@@ -368,7 +399,8 @@ public abstract class LDAPBackend
       modifyRequest.addControl(
           new PostReadRequestControl("*", "createTimestamp",
                                      "modifyTimestamp"));
-      LDAPResult addResult = getLDAPInterface().modify(modifyRequest);
+      addCommonControls(request, modifyRequest);
+      LDAPResult addResult = ldapInterface.modify(modifyRequest);
 
       final PostReadResponseControl c = PostReadResponseControl.get(addResult);
       if (c != null)
@@ -483,6 +515,40 @@ public abstract class LDAPBackend
           SCIMAttribute.createSingularAttribute(
               resourceDescriptor.getAttribute("meta"),
               SCIMAttributeValue.createComplexValue(metaAttrs)));
+    }
+  }
+
+
+
+  /**
+   * Retrieve a SASL Authentication ID from a HTTP Basic Authentication user ID.
+   * We need this because the HTTP Authentication user ID can not include the
+   * ':' character.
+   *
+   * @param userID  The HTTP user ID for which a SASL Authentication ID is
+   *                required. It may be {@code null} if the request was not
+   *                authenticated.
+   *
+   * @return  A SASL Authentication ID.
+   */
+  protected String getSASLAuthenticationID(final String userID)
+  {
+    if (userID == null)
+    {
+      return "";
+    }
+
+    // If the user ID can be parsed as a DN then prefix it with "dn:", otherwise
+    // prefix it with "u:".
+    try
+    {
+      final DN dn = new DN(userID);
+
+      return "dn:" + dn.toString();
+    }
+    catch (LDAPException e)
+    {
+      return "u:" + userID;
     }
   }
 }

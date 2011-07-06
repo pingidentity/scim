@@ -457,6 +457,12 @@ public class InMemoryServerTool
          new InMemoryDirectoryServerConfig(baseDNs);
 
 
+    // TODO: config argument for manager password
+    serverConfig.addAdditionalBindCredentials("cn=Directory Manager",
+                                              "password");
+    serverConfig.addAdditionalBindCredentials("cn=Manager",
+                                              "password");
+
     // If schema should be used, then get it.
     if (!useLdapSchemaFileArgument.isPresent())
     {

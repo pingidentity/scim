@@ -39,6 +39,13 @@ public final class SCIMPlugin
        extends Plugin
 {
   /**
+   * The DN of a SCIM root user that has proxied auth privilege.
+   * TODO: it was too hard to get proxied auth to work
+   */
+//  public static final String SCIM_USER_DN =
+//      "cn=SCIM User,cn=Root DNs,cn=config";
+
+  /**
    * The name of the argument that will be used to specify the XML schema
    * supported by the SCIM protocol interface.
    */
@@ -183,6 +190,34 @@ public final class SCIMPlugin
     serverContext.debugInfo("Beginning SCIM plugin initialization");
 
     this.serverContext = serverContext;
+
+    // It was too hard to get Proxied Auth to work.
+//    final InternalConnection internalConnection =
+//        serverContext.getInternalRootConnection();
+//    if (internalConnection.getEntry(SCIM_USER_DN) == null)
+//    {
+//      try
+//      {
+//        internalConnection.add(
+//            "dn: " + SCIM_USER_DN,
+//            "objectClass: top",
+//            "objectClass: person",
+//            "objectClass: organizationalPerson",
+//            "objectClass: inetOrgPerson",
+//            "objectClass: ds-cfg-root-dn-user",
+//            "cn: SCIM User",
+//            "givenName: SCIM",
+//            "sn: User",
+//            "userPassword: password",
+//            "ds-cfg-inherit-default-root-privileges: false",
+//            "ds-privilege-name: proxied-auth");
+//      }
+//      catch (LDIFException e)
+//      {
+//        serverContext.debugCaught(e);
+//        throw new LDAPException(ResultCode.OTHER, e);
+//      }
+//    }
 
     final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
 

@@ -14,7 +14,7 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
  * This class represents a SCIM Put Resource request to replace the contents
  * of an existing resource.
  */
-public final class PutResourceRequest
+public final class PutResourceRequest extends SCIMRequest
 {
   /**
    * The name of the resource identified by the request endpoint.
@@ -42,21 +42,25 @@ public final class PutResourceRequest
   /**
    * Create a new SCIM Put Resource request from the provided information.
    *
-   * @param resourceName    The name of the resource identified by the request
-   *                        endpoint. e.g. User or Group.
-   * @param resourceID      The target resource ID.
-   * @param resourceObject  The new contents of the resource.
-   * @param attributes      The set of requested attributes.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceName         The name of the resource identified by the
+   *                             request endpoint. e.g. User or Group.
+   * @param resourceID           The target resource ID.
+   * @param resourceObject       The new contents of the resource.
+   * @param attributes           The set of requested attributes.
    */
-  public PutResourceRequest(final String resourceName,
+  public PutResourceRequest(final String authenticatedUserID,
+                            final String resourceName,
                             final String resourceID,
                             final SCIMObject resourceObject,
                             final SCIMQueryAttributes attributes)
   {
-    this.resourceName   = resourceName;
-    this.resourceID     = resourceID;
-    this.resourceObject = resourceObject;
-    this.attributes     = attributes;
+    super(authenticatedUserID);
+    this.resourceName        = resourceName;
+    this.resourceID          = resourceID;
+    this.resourceObject      = resourceObject;
+    this.attributes          = attributes;
   }
 
 

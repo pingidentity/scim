@@ -40,6 +40,7 @@ public class SCIMServerTestCase
   {
     // Start a client for the SCIM operations.
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
     client.startClient();
 
     try
@@ -73,6 +74,7 @@ public class SCIMServerTestCase
   {
     // Start a client for the SCIM operations.
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
     client.startClient();
 
     try
@@ -106,6 +108,7 @@ public class SCIMServerTestCase
   {
     // Start a client for the SCIM operations.
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
     client.startClient();
 
     try
@@ -153,6 +156,7 @@ public class SCIMServerTestCase
   {
     // Start a client for the SCIM operations.
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
     client.startClient();
 
     try
@@ -374,6 +378,7 @@ public class SCIMServerTestCase
   {
     // Start a client for the SCIM operations.
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
     client.startClient();
 
     // Get a reference to the in-memory test DS.
@@ -593,6 +598,7 @@ public class SCIMServerTestCase
   {
     // Start a client for the SCIM operations.
     final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
     client.startClient();
 
     // Tell the client to use method override.

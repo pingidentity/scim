@@ -15,6 +15,9 @@ import org.eclipse.jetty.client.Address;
 import org.eclipse.jetty.client.ContentExchange;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
+import org.eclipse.jetty.client.security.Authentication;
+import org.eclipse.jetty.client.security.BasicAuthentication;
+import org.eclipse.jetty.client.security.Realm;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -56,6 +59,11 @@ public class SCIMClient
    * The base URI of the SCIM interface.
    */
   private String baseURI;
+
+  /**
+   * Authentication to be used for requests, or {@code null} if none.
+   */
+  private Authentication authentication;
 
   /**
    * Indicates whether JSON or XML representation should be used to send
@@ -154,6 +162,44 @@ public class SCIMClient
 
       httpClient = null;
     }
+  }
+
+
+
+  /**
+   * Specifies that basic authentication is to be used for all subsequent
+   * requests by this client.
+   *
+   * @param username  The user name.
+   * @param password  The user password.
+   *
+   * @throws IOException  If an error occurred.
+   */
+  public void setBasicAuth(final String username, final String password)
+      throws IOException
+  {
+    authentication = new BasicAuthentication(
+        new Realm()
+        {
+          public String getId()
+          {
+            return "";
+          }
+
+
+
+          public String getPrincipal()
+          {
+            return username;
+          }
+
+
+
+          public String getCredentials()
+          {
+            return password;
+          }
+        });
   }
 
 
@@ -356,6 +402,10 @@ public class SCIMClient
         new ScimURI(baseURI, RESOURCE_NAME_USER, userID, null, null,
                     new SCIMQueryAttributes(attributes));
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setAddress(address);
     exchange.setMethod("GET");
     exchange.setURI(uri.toString());
@@ -449,6 +499,10 @@ public class SCIMClient
       throws IOException
   {
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setURL(resourceURI);
     exchange.setMethod("GET");
 
@@ -543,6 +597,10 @@ public class SCIMClient
         new ScimURI(baseURI, resourceEndPoint, null, null, null,
                     new SCIMQueryAttributes(attributes), filter);
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setAddress(address);
     exchange.setMethod("GET");
     exchange.setURI(uri.toString());
@@ -634,6 +692,10 @@ public class SCIMClient
                     new SCIMQueryAttributes(attributes));
 
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setAddress(address);
     exchange.setMethod("POST");
     exchange.setURI(uri.toString());
@@ -778,6 +840,10 @@ public class SCIMClient
         new ScimURI(baseURI, resourceName, resourceID, null, null,
                     new SCIMQueryAttributes());
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setAddress(address);
     if (deleteUsesMethodOverride)
     {
@@ -858,6 +924,10 @@ public class SCIMClient
       throws IOException
   {
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setURL(resourceURI);
     if (deleteUsesMethodOverride)
     {
@@ -947,6 +1017,10 @@ public class SCIMClient
                     new SCIMQueryAttributes(attributes));
 
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
+    if (authentication != null)
+    {
+      authentication.setCredentials(exchange);
+    }
     exchange.setAddress(address);
     if (putUsesMethodOverride)
     {

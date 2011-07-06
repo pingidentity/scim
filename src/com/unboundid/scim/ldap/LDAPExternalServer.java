@@ -7,6 +7,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.AbstractConnectionPool;
 import com.unboundid.ldap.sdk.BindRequest;
+import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
@@ -120,6 +121,30 @@ public class LDAPExternalServer
     }
 
     return p;
+  }
+
+
+
+  /**
+   * Create a connection to the LDAP server.
+   *
+   * @return  A connection to the LDAP server.
+   *
+   * @throws  LDAPException  If a problem occurs while creating the connection.
+   */
+  public LDAPConnection getLDAPConnection()
+      throws LDAPException
+  {
+    final LDAPConnection connection =
+        new LDAPConnection(config.getDsHost(),
+                           config.getDsPort());
+
+    final BindRequest bindRequest =
+        new SimpleBindRequest(config.getDsBindDN(),
+                              config.getDsBindPassword());
+    connection.bind(bindRequest);
+
+    return connection;
   }
 
 
