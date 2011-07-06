@@ -290,7 +290,7 @@ public abstract class LDAPBackend
           new PostReadRequestControl("*", "createTimestamp",
                                      "modifyTimestamp"));
       addCommonControls(request, addRequest);
-      LDAPResult addResult =
+      final LDAPResult addResult =
           getLDAPInterface(request.getAuthenticatedUserID()).add(addRequest);
 
       final PostReadResponseControl c = PostReadResponseControl.get(addResult);
@@ -400,7 +400,7 @@ public abstract class LDAPBackend
           new PostReadRequestControl("*", "createTimestamp",
                                      "modifyTimestamp"));
       addCommonControls(request, modifyRequest);
-      LDAPResult addResult = ldapInterface.modify(modifyRequest);
+      final LDAPResult addResult = ldapInterface.modify(modifyRequest);
 
       final PostReadResponseControl c = PostReadResponseControl.get(addResult);
       if (c != null)
@@ -460,62 +460,56 @@ public abstract class LDAPBackend
       return;
     }
 
-    if (queryAttributes.isAttributeRequested("id"))
+    scimObject.addAttribute(
+        SCIMAttribute.createSingularAttribute(
+            resourceDescriptor.getAttribute("id"),
+            SCIMAttributeValue.createStringValue(
+                entry.getDN())));
+
+    final AttributeDescriptor metaDescriptor =
+        resourceDescriptor.getAttribute("meta");
+    final List<SCIMAttribute> metaAttrs = new ArrayList<SCIMAttribute>();
+
+    final String createTimestamp =
+        entry.getAttributeValue("createTimestamp");
+    if (createTimestamp != null)
     {
-      scimObject.addAttribute(
-          SCIMAttribute.createSingularAttribute(
-              resourceDescriptor.getAttribute("id"),
-              SCIMAttributeValue.createStringValue(
-                  entry.getDN())));
+      try
+      {
+        final Date date = StaticUtils.decodeGeneralizedTime(createTimestamp);
+        metaAttrs.add(
+            SCIMAttribute.createSingularAttribute(
+                metaDescriptor.getAttribute("created"),
+                SCIMAttributeValue.createDateValue(date)));
+      }
+      catch (ParseException e)
+      {
+        // Unlikely to come here.
+      }
     }
 
-    if (queryAttributes.isAttributeRequested("meta"))
+    final String modifyTimestamp =
+        entry.getAttributeValue("modifyTimestamp");
+    if (modifyTimestamp != null)
     {
-      final AttributeDescriptor metaDescriptor =
-          resourceDescriptor.getAttribute("meta");
-      final List<SCIMAttribute> metaAttrs = new ArrayList<SCIMAttribute>();
-
-      final String createTimestamp =
-          entry.getAttributeValue("createTimestamp");
-      if (createTimestamp != null)
+      try
       {
-        try
-        {
-          final Date date = StaticUtils.decodeGeneralizedTime(createTimestamp);
-          metaAttrs.add(
-              SCIMAttribute.createSingularAttribute(
-                  metaDescriptor.getAttribute("created"),
-                  SCIMAttributeValue.createDateValue(date)));
-        }
-        catch (ParseException e)
-        {
-          // Unlikely to come here.
-        }
+        final Date date = StaticUtils.decodeGeneralizedTime(modifyTimestamp);
+        metaAttrs.add(
+            SCIMAttribute.createSingularAttribute(
+                metaDescriptor.getAttribute("lastModified"),
+                SCIMAttributeValue.createDateValue(date)));
       }
-
-      final String modifyTimestamp =
-          entry.getAttributeValue("modifyTimestamp");
-      if (modifyTimestamp != null)
+      catch (ParseException e)
       {
-        try
-        {
-          final Date date = StaticUtils.decodeGeneralizedTime(modifyTimestamp);
-          metaAttrs.add(
-              SCIMAttribute.createSingularAttribute(
-                  metaDescriptor.getAttribute("lastModified"),
-                  SCIMAttributeValue.createDateValue(date)));
-        }
-        catch (ParseException e)
-        {
-          // Unlikely to come here.
-        }
+        // Unlikely to come here.
       }
-
-      scimObject.addAttribute(
-          SCIMAttribute.createSingularAttribute(
-              resourceDescriptor.getAttribute("meta"),
-              SCIMAttributeValue.createComplexValue(metaAttrs)));
     }
+
+    scimObject.addAttribute(
+        SCIMAttribute.createSingularAttribute(
+            resourceDescriptor.getAttribute("meta"),
+            SCIMAttributeValue.createComplexValue(metaAttrs)));
   }
 
 

@@ -225,12 +225,13 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
 
-    // Fetch selected attributes only.
+    // Fetch selected attributes only. (id and meta should always be returned)
     final User partialUser1 =
         client.getUser("uid=b jensen,dc=example,dc=com", "username",
                        "good night + good luck?");
     assertNotNull(partialUser1);
-    assertNull(partialUser1.getId());
+    assertNotNull(partialUser1.getId());
+    assertNotNull(partialUser1.getMeta());
     assertNull(partialUser1.getName());
     assertEquals(partialUser1.getUserName(), "b jensen");
   }
