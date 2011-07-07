@@ -6,7 +6,9 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.json.JSONContext;
+import com.unboundid.scim.ldap.PageParameters;
 import com.unboundid.scim.ldap.SCIMFilter;
+import com.unboundid.scim.ldap.SortParameters;
 import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
@@ -593,9 +595,45 @@ public class SCIMClient
                                      final String ... attributes)
       throws IOException
   {
+    final Response response =
+        getResources(resourceEndPoint, filter, null, null, attributes);
+    final Response.Resources resources = response.getResources();
+
+    return resources.getResource();
+  }
+
+
+
+  /**
+   * Retrieve selected resources, with optional sorting and pagination.
+   * A GET operation is invoked on the specified resource endpoint.
+   *
+   * @param resourceEndPoint      The resource end-point. e.g. Users
+   * @param filter                The filter parameters, or {@code null} if the
+   *                              results should not be filtered.
+   * @param sortParameters        The sorting parameters, or {@code null}
+   *                              if the results should not be sorted.
+   * @param pageParameters        The pagination parameters, or {@code null}
+   *                              if the results should not be paginated.
+   * @param attributes            The set of attributes to be retrieved. If
+   *                              empty, then the server returns all attributes.
+   *
+   * @return  The response.
+   *
+   * @throws IOException  If an error occurred while retrieving the resources.
+   */
+  public Response getResources(
+      final String resourceEndPoint,
+      final SCIMFilter filter,
+      final SortParameters sortParameters,
+      final PageParameters pageParameters,
+      final String ... attributes)
+      throws IOException
+  {
     final ScimURI uri =
         new ScimURI(baseURI, resourceEndPoint, null, null, null,
-                    new SCIMQueryAttributes(attributes), filter);
+                    new SCIMQueryAttributes(attributes), filter,
+                    sortParameters, pageParameters);
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     if (authentication != null)
     {
@@ -637,9 +675,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The request was successful.
-            final Response.Resources resources =
-                readResponse(exchange).getResources();
-            return resources.getResource();
+            return readResponse(exchange);
 
           default:
             final String statusMessage =

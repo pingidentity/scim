@@ -24,6 +24,10 @@ import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.controls.SortKey;
+import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
+import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
 import com.unboundid.scim.config.ResourceDescriptorManager;
@@ -214,27 +218,72 @@ public abstract class LDAPBackend
 
       if (searchRequest == null)
       {
-        final Filter filter = resourceMapper.toLDAPFilter(request.getFilter());
+        final Filter filter = resourceMapper.toLDAPFilter(scimFilter);
         searchRequest =
             new SearchRequest(resultListener, baseDN, SearchScope.SUB,
                               filter, attributes);
       }
 
+      final SortParameters sortParameters = request.getSortParameters();
+      if (sortParameters != null)
+      {
+        searchRequest.addControl(
+            resourceMapper.toLDAPSortControl(sortParameters));
+      }
+
+      // Use the VLV control to perform pagination.
+      final PageParameters pageParameters = request.getPageParameters();
+      if (pageParameters != null)
+      {
+        int count = pageParameters.getCount();
+        if (count <= 0)
+        {
+          count = 100; // TODO
+        }
+        searchRequest.addControl(
+            new VirtualListViewRequestControl(
+                (int) pageParameters.getStartIndex()+1,
+                0, count-1, 0, null));
+
+        // VLV requires a sort control.
+        if (sortParameters == null)
+        {
+          searchRequest.addControl(
+              new ServerSideSortRequestControl(new SortKey("uid"))); // TODO
+        }
+      }
+
+      // Invoke a search operation.
       addCommonControls(request, searchRequest);
       final SearchResult searchResult =
           getLDAPInterface(request.getAuthenticatedUserID()).search(
               searchRequest);
 
+      // Prepare the response.
+      final Response response = new Response();
       final List<SCIMObject> scimObjects = resultListener.getResources();
       final Response.Resources resources = new Response.Resources();
       for (final SCIMObject o : scimObjects)
       {
         resources.getResource().add(new GenericResource(o));
       }
-
-      final Response response = new Response();
-      response.setTotalResults((long) scimObjects.size());
       response.setResources(resources);
+
+      final VirtualListViewResponseControl vlvResponseControl =
+          VirtualListViewResponseControl.get(searchResult);
+      if (vlvResponseControl != null)
+      {
+        response.setTotalResults((long)vlvResponseControl.getContentCount());
+        if (pageParameters != null)
+        {
+          response.setStartIndex(pageParameters.getStartIndex());
+        }
+        response.setItemsPerPage(scimObjects.size());
+      }
+      else
+      {
+        response.setTotalResults((long) scimObjects.size());
+      }
 
       return new SCIMResponse(HttpStatus.OK_200, response);
     }

@@ -13,13 +13,19 @@ import com.unboundid.scim.schema.Address;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
 import com.unboundid.scim.schema.Resource;
+import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.PostUserResponse;
+import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMClient;
 import com.unboundid.scim.sdk.SCIMRITestCase;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 
@@ -88,6 +94,74 @@ public class SCIMServerTestCase
       client.setAcceptXML(false);
       client.setAcceptJSON(true);
       testGetUsers(client);
+    }
+    finally
+    {
+      client.stopClient();
+    }
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation to fetch sorted users.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testGetSortedUsers()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
+    client.startClient();
+
+    try
+    {
+      // Test receiving XML content.
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testGetSortedUsers(client);
+
+      // Test receiving JSON content.
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
+      testGetSortedUsers(client);
+    }
+    finally
+    {
+      client.stopClient();
+    }
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation to fetch pages of users.
+   *
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testGetPaginatedUsers()
+      throws Exception
+  {
+    // Start a client for the SCIM operations.
+    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
+    client.setBasicAuth("cn=Manager", "password");
+    client.startClient();
+
+    try
+    {
+      // Test receiving XML content.
+      client.setAcceptXML(true);
+      client.setAcceptJSON(false);
+      testGetPaginatedUsers(client);
+
+      // Test receiving JSON content.
+      client.setAcceptXML(false);
+      client.setAcceptJSON(true);
+      testGetPaginatedUsers(client);
     }
     finally
     {
@@ -278,6 +352,12 @@ public class SCIMServerTestCase
     }
 
     resources = client.getResources(
+        "Users",
+        SCIMFilter.createEqualityFilter(
+            "id", "uid=user.1,dc=example,dc=com"));
+    assertEquals(resources.size(), 1);
+
+    resources = client.getResources(
         "Users", SCIMFilter.createEqualityFilter("userName", "user.1"));
     assertEquals(resources.size(), 1);
 
@@ -315,6 +395,107 @@ public class SCIMServerTestCase
         "Users",
         SCIMFilter.createEqualityFilter("addresses.locality", "Austin"));
     assertEquals(resources.size(), 1);
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation to fetch sorted users.
+   *
+   * @param client  The SCIM client to use during the test.
+   *
+   * @throws Exception  If the test failed.
+   */
+  private void testGetSortedUsers(final SCIMClient client)
+      throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+
+    // Create some users directly on the test DS.
+    for (final String sortValue : Arrays.asList("B", "C", "A"))
+    {
+      testDS.add(generateUserEntry(sortValue, "dc=example,dc=com",
+                                   "User", sortValue, "password"));
+    }
+
+    final SCIMAttributeType sortBy =
+        SCIMAttributeType.fromQualifiedName("userName");
+    final String sortAscending = "ascending";
+    final String sortDescending = "descending";
+
+    Response response =
+        client.getResources("Users", null,
+                            new SortParameters(sortBy, sortAscending),
+                            null);
+    List<String> sortValues = new ArrayList<String>();
+    for (final Resource resource : response.getResources().getResource())
+    {
+      final User user = (User)resource;
+      sortValues.add(user.getUserName());
+    }
+    assertEquals(sortValues, Arrays.asList("A", "B", "C"));
+
+    response =
+        client.getResources("Users", null,
+                            new SortParameters(sortBy, sortDescending),
+                            null);
+    sortValues = new ArrayList<String>();
+    for (final Resource resource : response.getResources().getResource())
+    {
+      final User user = (User)resource;
+      sortValues.add(user.getUserName());
+    }
+    assertEquals(sortValues, Arrays.asList("C", "B", "A"));
+  }
+
+
+
+  /**
+   * Provides test coverage for the GET operation to fetch pages of users.
+   *
+   * @param client  The SCIM client to use during the test.
+   *
+   * @throws Exception  If the test failed.
+   */
+  private void testGetPaginatedUsers(final SCIMClient client)
+      throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+
+    // Create some users directly on the test DS.
+    final long NUM_USERS = 4;
+    for (int i = 0; i < NUM_USERS; i++)
+    {
+      final String uid = "user." + i;
+      testDS.add(generateUserEntry(uid, "dc=example,dc=com",
+                                   "Test", "User", "password"));
+    }
+
+    // Fetch the users one page at a time with page size equal to 1.
+    int pageSize = 1;
+    final Set<String> userIDs = new HashSet<String>();
+    for (long startIndex = 0; startIndex < NUM_USERS; startIndex += pageSize)
+    {
+      final Response response =
+          client.getResources("Users", null, null,
+                              new PageParameters(startIndex, pageSize));
+      assertEquals(response.getTotalResults().longValue(), NUM_USERS);
+      assertEquals(response.getStartIndex().longValue(), startIndex);
+      assertEquals(response.getItemsPerPage().intValue(), pageSize);
+      assertEquals(response.getResources().getResource().size(), pageSize);
+      for (final Resource resource : response.getResources().getResource())
+      {
+        final User user = (User)resource;
+        final String userID = user.getId();
+        userIDs.add(userID);
+      }
+    }
+
+    assertEquals(userIDs.size(), NUM_USERS);
   }
 
 

@@ -5,7 +5,9 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.ldap.PageParameters;
 import com.unboundid.scim.ldap.SCIMFilter;
+import com.unboundid.scim.ldap.SortParameters;
 import org.eclipse.jetty.util.URIUtil;
 import org.eclipse.jetty.util.UrlEncoded;
 
@@ -60,6 +62,18 @@ public final class ScimURI
    */
   private final SCIMFilter filter;
 
+  /**
+   * The sorting parameters, or {@code null} if there are no sorting
+   * parameters.
+   */
+  private final SortParameters sortParameters;
+
+  /**
+   * The pagination parameters, or {@code null} if there are no pagination
+   * parameters.
+   */
+  private final PageParameters pageParameters;
+
 
 
   /**
@@ -88,7 +102,7 @@ public final class ScimURI
                  final SCIMQueryAttributes queryAttributes)
   {
     this(baseURI, resourceEndPoint, resourceID, mediaTypeSuffix,
-         resourceAttribute, queryAttributes, null);
+         resourceAttribute, queryAttributes, null, null, null);
   }
 
 
@@ -96,22 +110,26 @@ public final class ScimURI
   /**
    * Create a new instance of a SCIM URI that supports search parameters.
    *
-   * @param baseURI            The base URI.
-   * @param resourceEndPoint   The resource end-point that is the object of
-   *                           this URI.
-   * @param resourceID         The ID of the resource that is the object of
-   *                           this URI, or {@code null} if the ID is not
-   *                           specified.
-   * @param mediaTypeSuffix    The media type suffix included in this URI, or
-   *                           {@code null} if there is none.
-   * @param resourceAttribute  The resource attribute that is the object of
-   *                           this URI, or {@code null} if the object of the
-   *                           URI is the entire resource.
-   * @param queryAttributes    The query attributes specifying the attributes
-   *                           to be returned in the response to an operation
-   *                           on this URI.
-   * @param filter             The filter parameters, or {@code null} if there
-   *                           are no filter parameters.
+   * @param baseURI               The base URI.
+   * @param resourceEndPoint      The resource end-point that is the object of
+   *                              this URI.
+   * @param resourceID            The ID of the resource that is the object of
+   *                              this URI, or {@code null} if the ID is not
+   *                              specified.
+   * @param mediaTypeSuffix       The media type suffix included in this URI, or
+   *                              {@code null} if there is none.
+   * @param resourceAttribute     The resource attribute that is the object of
+   *                              this URI, or {@code null} if the object of the
+   *                              URI is the entire resource.
+   * @param queryAttributes       The query attributes specifying the attributes
+   *                              to be returned in the response to an operation
+   *                              on this URI.
+   * @param filter                The filter parameters, or {@code null} if
+   *                              there are no filter parameters.
+   * @param sortParameters        The sorting parameters, or {@code null} if
+   *                              there are no sorting parameters.
+   * @param pageParameters        The pagination parameters, or {@code null} if
+   *                              there are no pagination parameters.
    */
   public ScimURI(final String baseURI,
                  final String resourceEndPoint,
@@ -119,15 +137,19 @@ public final class ScimURI
                  final String mediaTypeSuffix,
                  final SCIMAttributeType resourceAttribute,
                  final SCIMQueryAttributes queryAttributes,
-                 final SCIMFilter filter)
+                 final SCIMFilter filter,
+                 final SortParameters sortParameters,
+                 final PageParameters pageParameters)
   {
-    this.baseURI           = baseURI;
-    this.resourceEndPoint  = resourceEndPoint;
-    this.resourceID        = resourceID;
-    this.mediaTypeSuffix   = mediaTypeSuffix;
-    this.resourceAttribute = resourceAttribute;
-    this.queryAttributes   = queryAttributes;
-    this.filter            = filter;
+    this.baseURI              = baseURI;
+    this.resourceEndPoint     = resourceEndPoint;
+    this.resourceID           = resourceID;
+    this.mediaTypeSuffix      = mediaTypeSuffix;
+    this.resourceAttribute    = resourceAttribute;
+    this.queryAttributes      = queryAttributes;
+    this.filter               = filter;
+    this.sortParameters       = sortParameters;
+    this.pageParameters       = pageParameters;
   }
 
 
@@ -220,6 +242,30 @@ public final class ScimURI
   public SCIMFilter getFilter()
   {
     return filter;
+  }
+
+
+
+  /**
+   * Retrieve the sorting parameters, if any.
+   *
+   * @return  The sorting parameters, or {@code null} if there are none.
+   */
+  public SortParameters getSortParameters()
+  {
+    return sortParameters;
+  }
+
+
+
+  /**
+   * Retrieve the pagination parameters, if any.
+   *
+   * @return  The pagination parameters, or {@code null} if there are none.
+   */
+  public PageParameters getPageParameters()
+  {
+    return pageParameters;
   }
 
 
@@ -336,6 +382,8 @@ public final class ScimURI
 
     // Parse the query string.
     SCIMFilter filter = null;
+    SortParameters sortParameters = null;
+    PageParameters pageParameters = null;
     final String[] attributes;
     if (queryString != null && !queryString.isEmpty())
     {
@@ -385,6 +433,43 @@ public final class ScimURI
         filter = new SCIMFilter(
             filterOp, filterValue, filterBySchemaURI, filterByPath);
       }
+
+      final String sortBy = queryMap.getString(QUERY_PARAMETER_SORT_BY);
+      if (sortBy != null && !sortBy.isEmpty())
+      {
+        sortParameters =
+            new SortParameters(
+                SCIMAttributeType.fromQualifiedName(sortBy),
+                queryMap.getString(QUERY_PARAMETER_SORT_ORDER));
+      }
+
+      long startIndex = -1;
+      int count = -1;
+      final String pageStartIndex =
+          queryMap.getString(QUERY_PARAMETER_PAGE_START_INDEX);
+      final String pageSize =
+          queryMap.getString(QUERY_PARAMETER_PAGE_SIZE);
+      if (pageStartIndex != null && !pageStartIndex.isEmpty())
+      {
+        startIndex = Long.parseLong(pageStartIndex);
+      }
+      if (pageSize != null && !pageSize.isEmpty())
+      {
+        count = Integer.parseInt(pageSize);
+      }
+
+      if (startIndex >= 0 && count >= 0)
+      {
+        pageParameters = new PageParameters(startIndex, count);
+      }
+      else if (startIndex >= 0)
+      {
+        pageParameters = new PageParameters(startIndex, 0);
+      }
+      else if (count >= 0)
+      {
+        pageParameters = new PageParameters(0, count);
+      }
     }
     else
     {
@@ -395,7 +480,8 @@ public final class ScimURI
         new SCIMQueryAttributes(attributes);
 
     return new ScimURI(baseURI, resourceName, resourceID, mediaTypeSuffix,
-                       resourceAttribute, queryAttributes, filter);
+                       resourceAttribute, queryAttributes, filter,
+                       sortParameters, pageParameters);
   }
 
 
@@ -436,7 +522,7 @@ public final class ScimURI
     }
 
     if (!queryAttributes.allAttributesRequested() ||
-        filter != null)
+        filter != null || sortParameters != null || pageParameters != null)
     {
       final UrlEncoded parameters = new UrlEncoded();
 
@@ -489,6 +575,33 @@ public final class ScimURI
         if (filter.getFilterValue() != null)
         {
           parameters.put(QUERY_PARAMETER_FILTER_VALUE, filter.getFilterValue());
+        }
+      }
+
+      if (sortParameters != null)
+      {
+        parameters.put(QUERY_PARAMETER_SORT_BY,
+                       sortParameters.getSortBy().toString());
+
+        final String sortOrder = sortParameters.getSortOrder();
+        if (sortOrder != null)
+        {
+          parameters.put(QUERY_PARAMETER_SORT_ORDER, sortOrder);
+        }
+      }
+
+      if (pageParameters != null)
+      {
+        if (pageParameters.getStartIndex() > 0)
+        {
+          parameters.put(QUERY_PARAMETER_PAGE_START_INDEX,
+                         pageParameters.getStartIndex());
+        }
+
+        if (pageParameters.getCount() > 0)
+        {
+          parameters.put(QUERY_PARAMETER_PAGE_SIZE,
+                         pageParameters.getCount());
         }
       }
 

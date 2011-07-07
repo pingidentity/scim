@@ -114,6 +114,8 @@ public class SCIMServlet
             new GetResourcesRequest(userID,
                                     uri.getResourceEndPoint(),
                                     uri.getFilter(),
+                                    uri.getSortParameters(),
+                                    uri.getPageParameters(),
                                     uri.getQueryAttributes());
         scimResponse = backend.getResources(getResourcesRequest);
       }

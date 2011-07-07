@@ -6,6 +6,7 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -116,6 +117,18 @@ public abstract class ResourceMapper
    * @return  An LDAP filter.
    */
   public abstract Filter toLDAPFilter(final SCIMFilter filter);
+
+
+
+  /**
+   * Map the provided SCIM sort parameters to an LDAP sort control.
+   *
+   * @param sortParameters  The SCIm sort parameters to be mapped.
+   *
+   * @return  An LDAP sort control.
+   */
+  public abstract Control toLDAPSortControl(
+      final SortParameters sortParameters);
 
 
 

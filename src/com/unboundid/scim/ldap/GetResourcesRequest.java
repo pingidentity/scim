@@ -26,6 +26,16 @@ public final class GetResourcesRequest extends SCIMRequest
   private final SCIMFilter filter;
 
   /**
+   * The sorting parameters of the request.
+   */
+  private final SortParameters sortParameters;
+
+  /**
+   * The pagination parameters of the request.
+   */
+  private final PageParameters pageParameters;
+
+  /**
    * The set of requested attributes.
    */
   private final SCIMQueryAttributes attributes;
@@ -35,22 +45,28 @@ public final class GetResourcesRequest extends SCIMRequest
   /**
    * Create a new SCIM Get Resource request from the provided information.
    *
-   * @param authenticatedUserID  The authenticated user name or {@code null} if
-   *                             the request is not authenticated.
-   * @param endPoint             The endpoint identified in the request. e.g.
-   *                             Users or Groups.
-   * @param filter               The filter parameters of the request.
-   * @param attributes           The set of requested attributes.
+   * @param authenticatedUserID   The authenticated user name or {@code null} if
+   *                              the request is not authenticated.
+   * @param endPoint              The endpoint identified in the request. e.g.
+   *                              Users or Groups.
+   * @param filter                The filter parameters of the request.
+   * @param sortParameters        The sorting parameters of the request.
+   * @param pageParameters        The pagination parameters of the request.
+   * @param attributes            The set of requested attributes.
    */
   public GetResourcesRequest(final String authenticatedUserID,
                              final String endPoint,
                              final SCIMFilter filter,
+                             final SortParameters sortParameters,
+                             final PageParameters pageParameters,
                              final SCIMQueryAttributes attributes)
   {
     super(authenticatedUserID);
-    this.endPoint            = endPoint;
-    this.filter              = filter;
-    this.attributes          = attributes;
+    this.endPoint       = endPoint;
+    this.filter         = filter;
+    this.sortParameters = sortParameters;
+    this.pageParameters = pageParameters;
+    this.attributes     = attributes;
   }
 
 
@@ -75,6 +91,30 @@ public final class GetResourcesRequest extends SCIMRequest
   public SCIMFilter getFilter()
   {
     return filter;
+  }
+
+
+
+  /**
+   * Retrieve the sorting parameters of the request.
+   *
+   * @return  The sorting parameters of the request.
+   */
+  public SortParameters getSortParameters()
+  {
+    return sortParameters;
+  }
+
+
+
+  /**
+   * Retrieve the pagination parameters of the request.
+   *
+   * @return  The pagination parameters of the request.
+   */
+  public PageParameters getPageParameters()
+  {
+    return pageParameters;
   }
 
 

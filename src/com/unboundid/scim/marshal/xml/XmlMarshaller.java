@@ -240,6 +240,22 @@ public class XmlMarshaller implements Marshaller
         xmlStreamWriter.writeEndElement();
       }
 
+      if (response.getItemsPerPage() != null)
+      {
+        xmlStreamWriter.writeStartElement("itemsPerPage");
+        xmlStreamWriter.writeCharacters(
+            Integer.toString(response.getItemsPerPage()));
+        xmlStreamWriter.writeEndElement();
+      }
+
+      if (response.getStartIndex() != null)
+      {
+        xmlStreamWriter.writeStartElement("startIndex");
+        xmlStreamWriter.writeCharacters(
+            Long.toString(response.getStartIndex()));
+        xmlStreamWriter.writeEndElement();
+      }
+
       xmlStreamWriter.writeStartElement("Resources");
 
       for (final Resource resource : resources.getResource())

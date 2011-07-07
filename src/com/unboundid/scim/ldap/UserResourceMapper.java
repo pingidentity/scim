@@ -6,16 +6,20 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.RDN;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
 import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -381,6 +385,69 @@ public class UserResourceMapper extends ResourceMapper
     final Entry entry = new Entry(currentEntry.getDN(), attributes);
 
     return Entry.diff(currentEntry, entry, true, false, allLDAPAttributes);
+  }
+
+
+
+  @Override
+  public Control toLDAPSortControl(final SortParameters sortParameters)
+  {
+    /**
+     * The following SCIM attributes are mapped:
+     * userName, name, addresses, emails, phoneNumbers, displayName,
+     * preferredLanguage, title.
+     */
+    final SCIMAttributeType scimAttributeType = sortParameters.getSortBy();
+    if (!scimAttributeType.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE))
+    {
+      // Only core schema supported.
+      throw new RuntimeException("Cannot sort by attribute " +
+                                 scimAttributeType);
+    }
+
+    final String ldapAttribute;
+    final String name = scimAttributeType.getName();
+    if (name.equalsIgnoreCase("userName"))
+    {
+      ldapAttribute = "uid";
+    }
+    else if (name.equalsIgnoreCase("name"))
+    {
+      ldapAttribute = "sn";
+    }
+    else if (name.equalsIgnoreCase("addresses"))
+    {
+      ldapAttribute = "postalAddress";
+    }
+    else if (name.equalsIgnoreCase("emails"))
+    {
+      ldapAttribute = "email";
+    }
+    else if (name.equalsIgnoreCase("phoneNumbers"))
+    {
+      ldapAttribute = "telephoneNumber";
+    }
+    else if (name.equalsIgnoreCase("displayName"))
+    {
+      ldapAttribute = "displayName";
+    }
+    else if (name.equalsIgnoreCase("preferredLanguage"))
+    {
+      ldapAttribute = "preferredLanguage";
+    }
+    else if (name.equalsIgnoreCase("title"))
+    {
+      ldapAttribute = "title";
+    }
+    else
+    {
+      throw new RuntimeException("Cannot sort by attribute " +
+                                 scimAttributeType);
+    }
+
+    final boolean reverseOrder = !sortParameters.isAscendingOrder();
+    return new ServerSideSortRequestControl(
+        new SortKey(ldapAttribute, reverseOrder));
   }
 
 
