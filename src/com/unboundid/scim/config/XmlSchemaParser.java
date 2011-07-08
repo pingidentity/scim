@@ -5,15 +5,15 @@
 
 package com.unboundid.scim.config;
 
-import com.sun.xml.internal.xsom.XSComplexType;
-import com.sun.xml.internal.xsom.XSElementDecl;
-import com.sun.xml.internal.xsom.XSModelGroup;
-import com.sun.xml.internal.xsom.XSParticle;
-import com.sun.xml.internal.xsom.XSSchema;
-import com.sun.xml.internal.xsom.XSSchemaSet;
-import com.sun.xml.internal.xsom.XSTerm;
-import com.sun.xml.internal.xsom.XSType;
-import com.sun.xml.internal.xsom.parser.XSOMParser;
+import com.sun.xml.xsom.XSComplexType;
+import com.sun.xml.xsom.XSElementDecl;
+import com.sun.xml.xsom.XSModelGroup;
+import com.sun.xml.xsom.XSParticle;
+import com.sun.xml.xsom.XSSchema;
+import com.sun.xml.xsom.XSSchemaSet;
+import com.sun.xml.xsom.XSTerm;
+import com.sun.xml.xsom.XSType;
+import com.sun.xml.xsom.parser.XSOMParser;
 import org.xml.sax.SAXException;
 
 import java.io.File;

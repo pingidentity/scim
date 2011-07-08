@@ -29,6 +29,7 @@
   <property name="jetty.dir"         location="ext/jetty" />
   <property name="jaxb.dir"          location="ext/jaxb" />
   <property name="json.dir"          location="ext/json" />
+  <property name="xsom.dir"          location="ext/xsom" />
 
 
 
@@ -100,10 +101,16 @@
       <include name="*.jar" />
     </fileset>
   </path>
+  <path id="xsom-jars">
+    <fileset dir="${xsom.dir}">
+      <include name="*.jar" />
+    </fileset>
+  </path>
   <path id="external-jars">
     <path refid="jetty-jars"/>
     <path refid="ldapsdk-jars"/>
     <path refid="json-jars"/>
+    <path refid="xsom-jars"/>
   </path>
 
 
