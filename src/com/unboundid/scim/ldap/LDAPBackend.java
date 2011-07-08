@@ -112,17 +112,35 @@ public abstract class LDAPBackend
    * @return  A SCIM response indicating that a specified resource was not
    *          found.
    */
-  private SCIMResponse notFoundResponse(final String resourceID)
+  private SCIMResponse createNotFoundResponse(final String resourceID)
+  {
+    return createErrorResponse(HttpStatus.NOT_FOUND_404,
+                               "Resource " + resourceID + " not found");
+  }
+
+
+
+  /**
+   * Create a SCIM error response.
+   *
+   * @param statusCode    The status code to be returned.
+   * @param errorMessage  The error message.
+   *
+   * @return  A SCIM error response.
+   */
+  private SCIMResponse createErrorResponse(final int statusCode,
+                                           final String errorMessage)
   {
     final Response.Errors errors = new Response.Errors();
     final Error error = new Error();
-    error.setDescription("Resource " + resourceID + " not found");
+    error.setCode(String.valueOf(statusCode));
+    error.setDescription(errorMessage);
     errors.getError().add(error);
 
     final Response response = new Response();
     response.setErrors(errors);
 
-    return new SCIMResponse(HttpStatus.NOT_FOUND_404, response);
+    return new SCIMResponse(statusCode, response);
   }
 
 
@@ -143,7 +161,7 @@ public abstract class LDAPBackend
               searchRequest);
       if (searchResultEntry == null)
       {
-        return notFoundResponse(request.getResourceID());
+        return createNotFoundResponse(request.getResourceID());
       }
       else
       {
@@ -187,11 +205,13 @@ public abstract class LDAPBackend
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper resourceMapper =
-        scimServer.getResourceMapper(request.getEndPoint());
+        scimServer.getQueryResourceMapper(request.getEndPoint());
     if (resourceMapper == null)
     {
-      throw new RuntimeException("The resource end-point " +
-                                 request.getEndPoint() + " is not supported");
+      return createErrorResponse(
+          HttpStatus.FORBIDDEN_403,
+          "The requested operation is not supported on resource end-point '" +
+          request.getEndPoint() + "'");
     }
 
     try
@@ -396,7 +416,7 @@ public abstract class LDAPBackend
       }
       else if (result.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
       {
-        return notFoundResponse(request.getResourceID());
+        return createNotFoundResponse(request.getResourceID());
       }
       else
       {
@@ -407,7 +427,7 @@ public abstract class LDAPBackend
     {
       if (e.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
       {
-        return notFoundResponse(request.getResourceID());
+        return createNotFoundResponse(request.getResourceID());
       }
       throw new RuntimeException(e);
     }
@@ -435,7 +455,7 @@ public abstract class LDAPBackend
       final Entry currentEntry = ldapInterface.getEntry(entryDN);
       if (currentEntry == null)
       {
-        return notFoundResponse(request.getResourceID());
+        return createNotFoundResponse(request.getResourceID());
       }
 
       for (final ResourceMapper m : mappers)

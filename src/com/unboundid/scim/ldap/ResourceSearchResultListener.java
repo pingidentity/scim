@@ -55,7 +55,8 @@ public class ResourceSearchResultListener implements SearchResultListener
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
 
-    this.resourceMapper = scimServer.getResourceMapper(request.getEndPoint());
+    this.resourceMapper =
+        scimServer.getQueryResourceMapper(request.getEndPoint());
     this.request        = request;
     this.resources      = new ArrayList<SCIMObject>();
   }

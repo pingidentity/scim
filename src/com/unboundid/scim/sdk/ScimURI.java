@@ -6,6 +6,7 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.ldap.PageParameters;
+import com.unboundid.scim.ldap.SCIMException;
 import com.unboundid.scim.ldap.SCIMFilter;
 import com.unboundid.scim.ldap.SortParameters;
 import org.eclipse.jetty.util.URIUtil;
@@ -279,28 +280,49 @@ public final class ScimURI
    * @param queryString   The query string, or {@code null} if there is none.
    *
    * @return  A SCIM URI.
+   *
+   * @throws SCIMException  If an error occurs while parsing the URI.
    */
   public static ScimURI parseURI(final String baseURI,
                                  final String pathInfo,
                                  final String queryString)
+      throws SCIMException
   {
     String s = pathInfo;
+    String mediaTypeSuffix = null;
+    if (s.endsWith(".xml"))
+    {
+      mediaTypeSuffix = "xml";
+      s = s.substring(0, s.length() - 4);
+    }
+    else if (s.endsWith(".json"))
+    {
+      mediaTypeSuffix = "json";
+      s = s.substring(0, s.length() - 5);
+    }
+
     int pos = s.indexOf('/');
     if (pos == 0)
     {
-      s = pathInfo.substring(1);
+      s = s.substring(1);
       pos = s.indexOf('/');
     }
 
+    final String endPoint;
+    final String remainingPathInfo;
     if (pos == -1)
     {
-      return parseURI(baseURI, s.substring(0), null, queryString);
+      endPoint = s;
+      remainingPathInfo = null;
     }
     else
     {
-      return parseURI(baseURI, s.substring(0, pos), s.substring(pos),
-                      queryString);
+      endPoint = s.substring(0, pos);
+      remainingPathInfo = s.substring(pos);
     }
+
+    return parseURI(baseURI, endPoint, mediaTypeSuffix,
+                    remainingPathInfo, queryString);
   }
 
 
@@ -308,21 +330,25 @@ public final class ScimURI
   /**
    * Create a SCIM URI from the provided information.
    *
-   * @param baseURI       The component of the URI preceding the resource name.
-   * @param resourceName  The name of the resource.
-   * @param pathInfo      The subsequent part of the URI preceding any query
-   *                      string, or {@code null} if there is none.
-   * @param queryString   The query string, or {@code null} if there is none.
+   * @param baseURI           The component of the URI preceding the resource
+   *                          name.
+   * @param resourceEndPoint  The name of the resource.
+   * @param mediaTypeSuffix   Any ".xml" or ".json" suffix that was specified
+   *                          in the URI.
+   * @param pathInfo          The remaining part of the URI preceding any query
+   *                          string, or {@code null} if there is none.
+   * @param queryString       The query string, or {@code null} if there is
+   *                          none.
    *
    * @return  A SCIM URI.
    */
   public static ScimURI parseURI(final String baseURI,
-                                 final String resourceName,
+                                 final String resourceEndPoint,
+                                 final String mediaTypeSuffix,
                                  final String pathInfo,
                                  final String queryString)
   {
     String resourceID = null;
-    String mediaTypeSuffix = null;
     SCIMAttributeType resourceAttribute = null;
 
     if (pathInfo != null && !pathInfo.isEmpty())
@@ -331,7 +357,8 @@ public final class ScimURI
       final String[] split = pathInfo.split("/");
       if (split.length < 2 || split[1].isEmpty())
       {
-        throw new RuntimeException("The operation does not specify a user ID");
+        throw new RuntimeException(
+            "The operation does not specify a resource ID");
       }
 
       if (split.length > 3 || !split[0].isEmpty())
@@ -340,38 +367,7 @@ public final class ScimURI
             "The URI does not specify a valid user operation");
       }
 
-      // Determine the resource ID and media type suffix.
-      final String resource = split[1];
-      if (resource.endsWith(".xml"))
-      {
-        mediaTypeSuffix = "xml";
-        if (resource.length() > 4)
-        {
-          resourceID =
-              URIUtil.decodePath(resource.substring(0, resource.length() - 4));
-        }
-        else
-        {
-          resourceID = "";
-        }
-      }
-      else if (resource.endsWith(".json"))
-      {
-        mediaTypeSuffix = "json";
-        if (resource.length() > 5)
-        {
-          resourceID =
-              URIUtil.decodePath(resource.substring(0, resource.length() - 5));
-        }
-        else
-        {
-          resourceID = "";
-        }
-      }
-      else
-      {
-        resourceID = resource;
-      }
+      resourceID = URIUtil.decodePath(split[1]);
 
       if (split.length > 2)
       {
@@ -479,7 +475,7 @@ public final class ScimURI
     final SCIMQueryAttributes queryAttributes =
         new SCIMQueryAttributes(attributes);
 
-    return new ScimURI(baseURI, resourceName, resourceID, mediaTypeSuffix,
+    return new ScimURI(baseURI, resourceEndPoint, resourceID, mediaTypeSuffix,
                        resourceAttribute, queryAttributes, filter,
                        sortParameters, pageParameters);
   }

@@ -66,9 +66,14 @@ public class SCIMServer
 
 
   /**
-   * The set of resource mappers registered for SCIM endpoints.
+   * The set of resource mappers registered for SCIM resource end-points.
    */
   private volatile Map<String, Set<ResourceMapper>> resourceMappers;
+
+  /**
+   * The set of resource mappers registered for SCIM resource query end-points.
+   */
+  private volatile Map<String, ResourceMapper> queryResourceMappers;
 
 
 
@@ -97,6 +102,7 @@ public class SCIMServer
     this.server = s;
     this.backends = new HashMap<String, SCIMBackend>();
     this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
+    this.queryResourceMappers = new HashMap<String, ResourceMapper>();
 
     this.registerResourceMapper(new UserResourceMapper(),
                                 RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
@@ -189,29 +195,31 @@ public class SCIMServer
 
   /**
    * Register a resource mapper with this server for the specified SCIM
-   * resource end points. e.g. User and Users. Multiple resource mappers may be
-   * registered for a single resource end point.
+   * resource end-points. e.g. User and Users. Multiple resource mappers may be
+   * registered for a single resource end-point.
    *
    * @param resourceMapper    The resource mapper to be registered. It must not
    *                          be {@code null}.
-   * @param resourceEndPoints The SCIM resource end points with which the
-   *                          mapper is associated. It must not be empty.
+   * @param resourceEndPoint  The SCIM resource end-point. e.g. User
+   * @param queryEndPoint     The SCIM resource query end-point with which the
+   *                          mapper is associated. e.g. Users
    */
   public void registerResourceMapper(final ResourceMapper resourceMapper,
-                                     final String... resourceEndPoints)
+                                     final String resourceEndPoint,
+                                     final String queryEndPoint)
   {
     synchronized (this)
     {
-      final Map<String, Set<ResourceMapper>> newResourceMappers =
-          new HashMap<String, Set<ResourceMapper>>();
-
-      for (final String resourceEndPoint : resourceEndPoints)
+      if (resourceEndPoint != null)
       {
+        final Map<String, Set<ResourceMapper>> newResourceMappers =
+            new HashMap<String, Set<ResourceMapper>>();
+
         Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
         if (mappers != null && mappers.contains(resourceMapper))
         {
           throw new RuntimeException("The resource mapper was already " +
-                                     "registered for resource end point " +
+                                     "registered for resource end-point " +
                                      resourceEndPoint);
         }
 
@@ -230,9 +238,25 @@ public class SCIMServer
         }
 
         mappers.add(resourceMapper);
+
+        resourceMappers = newResourceMappers;
+      }
+    }
+
+    if (queryEndPoint != null)
+    {
+      if (queryResourceMappers.get(queryEndPoint) == resourceMapper)
+      {
+        throw new RuntimeException("The resource mapper was already " +
+                                   "registered for resource query end-point " +
+                                   resourceEndPoint);
       }
 
-      resourceMappers = newResourceMappers;
+      final Map<String, ResourceMapper> newQueryResourceMappers =
+          new HashMap<String, ResourceMapper>(queryResourceMappers);
+
+      newQueryResourceMappers.put(queryEndPoint, resourceMapper);
+      queryResourceMappers = newQueryResourceMappers;
     }
   }
 
@@ -240,13 +264,13 @@ public class SCIMServer
 
   /**
    * Retrieve the set of resource mappers registered for the provided resource
-   * end point.
+   * end-point.
    *
-   * @param resourceEndPoint The resource end point for which the registered
+   * @param resourceEndPoint The resource end-point for which the registered
    *                         resource mappers are requested.
    *
    * @return The set of resource mappers registered for the provided resource
-   *         end point. This is never {@code null} but it may be empty.
+   *         end-point. This is never {@code null} but it may be empty.
    */
   public Set<ResourceMapper> getResourceMappers(final String resourceEndPoint)
   {
@@ -264,26 +288,18 @@ public class SCIMServer
 
 
   /**
-   * Retrieve the resource mapper registered for the provided resource end
-   * point.
+   * Retrieve the resource mapper registered for the provided resource query
+   * end-point.
    *
-   * @param resourceEndPoint The resource end point for which the registered
-   *                         resource mappers are requested.
+   * @param resourceEndPoint The query resource end-point for which the
+   *                         registered resource mapper is requested.
    *
    * @return The resource mapper registered for the provided resource end
    *         point, or {@code null} if there is no such resource mapper.
    */
-  public ResourceMapper getResourceMapper(final String resourceEndPoint)
+  public ResourceMapper getQueryResourceMapper(final String resourceEndPoint)
   {
-    final Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
-    if (mappers == null)
-    {
-      return null;
-    }
-    else
-    {
-      return mappers.iterator().next();
-    }
+    return queryResourceMappers.get(resourceEndPoint);
   }
 
 
