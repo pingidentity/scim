@@ -491,7 +491,7 @@ public class UserResourceMapper extends ResourceMapper
         }
         else if (name2.equalsIgnoreCase("familyName"))
         {
-          attributeNames.add("cn");
+          attributeNames.add("sn");
         }
         else if (name2.equalsIgnoreCase("givenName"))
         {
