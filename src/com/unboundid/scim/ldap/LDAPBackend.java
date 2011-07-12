@@ -7,6 +7,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.AddRequest;
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.DeleteRequest;
 import com.unboundid.ldap.sdk.Entry;
@@ -290,7 +291,7 @@ public abstract class LDAPBackend
       response.setResources(resources);
 
       final VirtualListViewResponseControl vlvResponseControl =
-          VirtualListViewResponseControl.get(searchResult);
+          getVLVResponseControl(searchResult);
       if (vlvResponseControl != null)
       {
         response.setTotalResults((long)vlvResponseControl.getContentCount());
@@ -612,6 +613,43 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       return "u:" + userID;
+    }
+  }
+
+
+
+  /**
+   * Extracts a virtual list view response control from the provided result.
+   *
+   * @param  result  The result from which to retrieve the virtual list view
+   *                 response control.
+   *
+   * @return  The virtual list view response  control contained in the provided
+   *          result, or {@code null} if the result did not contain a virtual
+   *          list view response control.
+   *
+   * @throws  LDAPException  If a problem is encountered while attempting to
+   *                         decode the virtual list view response  control
+   *                         contained in the provided result.
+   */
+  private static VirtualListViewResponseControl getVLVResponseControl(
+      final SearchResult result) throws LDAPException
+  {
+    final Control c = result.getResponseControl(
+        VirtualListViewResponseControl.VIRTUAL_LIST_VIEW_RESPONSE_OID);
+    if (c == null)
+    {
+      return null;
+    }
+
+    if (c instanceof VirtualListViewResponseControl)
+    {
+      return (VirtualListViewResponseControl) c;
+    }
+    else
+    {
+      return new VirtualListViewResponseControl(c.getOID(), c.isCritical(),
+           c.getValue());
     }
   }
 }
