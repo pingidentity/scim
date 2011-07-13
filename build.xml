@@ -30,6 +30,10 @@
   <property name="jaxb.dir"          location="ext/jaxb" />
   <property name="json.dir"          location="ext/json" />
   <property name="xsom.dir"          location="ext/xsom" />
+  <property name="wink.dir"          location="ext/wink" />
+  <property name="commons-codec.dir" location="ext/commons-codec" />
+  <property name="jackson.dir"       location="ext/jackson" />
+
 
 
 
@@ -112,9 +116,31 @@
     <path refid="json-jars"/>
     <path refid="xsom-jars"/>
   </path>
-
-
-
+  <path id="wink-jars">
+    <fileset dir="${wink.dir}/dist">
+      <include name="wink-*jar"/>
+    </fileset>
+    <fileset dir="${wink.dir}/lib">
+      <include name="activation-1.1-*.jar"/>
+      <include name="commons-lang-*.jar"/>
+      <include name="jsr311-api-*.jar"/>
+      <include name="slf4j-api-*.jar"/>
+      <include name="slf4j-simple-*.jar"/>
+      <include name="stax-api-*.jar"/>
+    </fileset>
+    <fileset dir="${wink.dir}/ext/wink-jackson-provider">
+      <include name="wink-jackson-provider-*.jar"/>
+    </fileset>
+    <fileset dir="${wink.dir}/ext/wink-json-provider">
+      <include name="wink-json-provider-*.jar"/>
+    </fileset>
+    <fileset dir="${commons-codec.dir}/">
+      <include name="commons-codec-1.5.jar"/>
+    </fileset>
+    <fileset dir="${jackson.dir}/">
+      <include name="jackson-all-*.jar"/>
+    </fileset>
+  </path>
 
   <!-- Clean up after an earlier build. -->
   <target name="clean" description="Clean up after an earlier build">
@@ -519,6 +545,7 @@
         <fileset dir="${testng.dir}">
           <include name="*.jar" />
         </fileset>
+        <path refid="wink-jars"/>
         <path refid="external-jars"/>
         <path refid="instrument.classes" />
       </classpath>
@@ -541,6 +568,7 @@
         <pathelement location="${coverage.instrumented.dir}" />
         <pathelement location="${classes.dir}" />
         <pathelement location="${unit.classes.dir}" />
+        <path refid="wink-jars"/>
         <path refid="external-jars"/>
         <path refid="instrument.classes" />
         <path refid="emma.lib" />
