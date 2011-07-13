@@ -17,13 +17,14 @@ import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.config.Schema;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
-import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
+import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,7 +120,9 @@ public class UserResourceMapper extends ResourceMapper
   @Override
   public List<Attribute> toLDAPAttributes(final SCIMObject scimObject)
   {
-    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
+    final String coreSchema = SCHEMA_URI_CORE;
+    final String enterpriseSchema =
+        SCHEMA_URI_ENTERPRISE_EXTENSION;
     final List<Attribute> attributes = new ArrayList<Attribute>();
 
     final SCIMAttribute userName =
@@ -362,6 +365,57 @@ public class UserResourceMapper extends ResourceMapper
                         title.getSingularValue().getStringValue()));
     }
 
+    final SCIMAttribute employeeNumber =
+        scimObject.getAttribute(enterpriseSchema, "employeeNumber");
+    if (employeeNumber != null)
+    {
+      attributes.add(
+          new Attribute("employeeNumber",
+                        employeeNumber.getSingularValue().getStringValue()));
+    }
+
+    final SCIMAttribute organization =
+        scimObject.getAttribute(enterpriseSchema, "organization");
+    if (organization != null)
+    {
+      attributes.add(
+          new Attribute("o",
+                        organization.getSingularValue().getStringValue()));
+    }
+
+    final SCIMAttribute division =
+        scimObject.getAttribute(enterpriseSchema, "division");
+    if (division != null)
+    {
+      attributes.add(
+          new Attribute("ou",
+                        division.getSingularValue().getStringValue()));
+    }
+
+    final SCIMAttribute department =
+        scimObject.getAttribute(enterpriseSchema, "department");
+    if (department != null)
+    {
+      attributes.add(
+          new Attribute("departmentNumber",
+                        department.getSingularValue().getStringValue()));
+    }
+
+    final SCIMAttribute manager =
+        scimObject.getAttribute(enterpriseSchema, "manager");
+    if (manager != null)
+    {
+      final SCIMAttributeValue value = name.getSingularValue();
+
+      final SCIMAttribute managerId = value.getAttribute("managerId");
+      if (managerId != null)
+      {
+        attributes.add(
+            new Attribute("manager",
+                          managerId.getSingularValue().getStringValue()));
+      }
+    }
+
     return attributes;
   }
 
@@ -398,7 +452,7 @@ public class UserResourceMapper extends ResourceMapper
      * preferredLanguage, title.
      */
     final SCIMAttributeType scimAttributeType = sortParameters.getSortBy();
-    if (!scimAttributeType.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE))
+    if (!scimAttributeType.getSchema().equals(SCHEMA_URI_CORE))
     {
       // Only core schema supported.
       throw new RuntimeException("Cannot sort by attribute " +
@@ -464,7 +518,7 @@ public class UserResourceMapper extends ResourceMapper
 
     final String filterOp = filter.getFilterOp();
     final String schema = filter.getAttributeSchema();
-    if (!schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+    if (!schema.equals(SCHEMA_URI_CORE))
     {
       // Only core schema supported.
       return Filter.createORFilter();
@@ -625,11 +679,11 @@ public class UserResourceMapper extends ResourceMapper
     }
 
     final List<SCIMAttribute> attributes =
-        toSCIMAttributes(SCIMConstants.RESOURCE_NAME_USER, entry,
+        toSCIMAttributes(RESOURCE_NAME_USER, entry,
                          queryAttributes);
 
     final SCIMObject scimObject =
-        new SCIMObject(SCIMConstants.RESOURCE_NAME_USER);
+        new SCIMObject(RESOURCE_NAME_USER);
     for (final SCIMAttribute a : attributes)
     {
       scimObject.addAttribute(a);
@@ -650,8 +704,9 @@ public class UserResourceMapper extends ResourceMapper
   {
     final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>();
 
+    final SchemaManager schemaManager = SchemaManager.instance();
     final ResourceDescriptor resourceDescriptor =
-        ResourceDescriptorManager.instance().getResourceDescriptor(
+        schemaManager.getResourceDescriptor(
             resourceName);
     if (resourceDescriptor == null)
     {
@@ -969,6 +1024,91 @@ public class UserResourceMapper extends ResourceMapper
             SCIMAttribute.createSingularAttribute(
                 resourceDescriptor.getAttribute("userName"),
                 SCIMAttributeValue.createStringValue(uid)));
+      }
+    }
+
+    final Schema enterpriseSchema =
+        schemaManager.getSchema(SCHEMA_URI_ENTERPRISE_EXTENSION);
+    if (enterpriseSchema == null)
+    {
+      return attributes;
+    }
+
+    if (queryAttributes.isAttributeRequested(SCHEMA_URI_ENTERPRISE_EXTENSION,
+                                             "employeeNumber"))
+    {
+      final String employeeNumber = entry.getAttributeValue("employeeNumber");
+      if (employeeNumber != null)
+      {
+        attributes.add(
+            SCIMAttribute.createSingularAttribute(
+                enterpriseSchema.getAttribute("employeeNumber"),
+                SCIMAttributeValue.createStringValue(employeeNumber)));
+      }
+    }
+
+    if (queryAttributes.isAttributeRequested(SCHEMA_URI_ENTERPRISE_EXTENSION,
+                                             "organization"))
+    {
+      final String organization = entry.getAttributeValue("o");
+      if (organization != null)
+      {
+        attributes.add(
+            SCIMAttribute.createSingularAttribute(
+                enterpriseSchema.getAttribute("organization"),
+                SCIMAttributeValue.createStringValue(organization)));
+      }
+    }
+
+    if (queryAttributes.isAttributeRequested(SCHEMA_URI_ENTERPRISE_EXTENSION,
+                                             "division"))
+    {
+      final String division = entry.getAttributeValue("ou");
+      if (division != null)
+      {
+        attributes.add(
+            SCIMAttribute.createSingularAttribute(
+                enterpriseSchema.getAttribute("division"),
+                SCIMAttributeValue.createStringValue(division)));
+      }
+    }
+
+    if (queryAttributes.isAttributeRequested(SCHEMA_URI_ENTERPRISE_EXTENSION,
+                                             "department"))
+    {
+      final String department = entry.getAttributeValue("departmentNumber");
+      if (department != null)
+      {
+        attributes.add(
+            SCIMAttribute.createSingularAttribute(
+                enterpriseSchema.getAttribute("department"),
+                SCIMAttributeValue.createStringValue(department)));
+      }
+    }
+
+    if (queryAttributes.isAttributeRequested(SCHEMA_URI_ENTERPRISE_EXTENSION,
+                                             "manager"))
+    {
+      final AttributeDescriptor descriptor =
+          resourceDescriptor.getAttribute("manager");
+      final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
+
+      final String managerId = entry.getAttributeValue("manager");
+      if (managerId != null)
+      {
+        subAttributes.add(
+            SCIMAttribute.createSingularAttribute(
+                descriptor.getAttribute("managerId"),
+                SCIMAttributeValue.createStringValue(managerId)));
+      }
+
+      if (!subAttributes.isEmpty())
+      {
+        final SCIMAttributeValue value =
+            SCIMAttributeValue.createComplexValue(subAttributes);
+        final SCIMAttribute name =
+            SCIMAttribute.createSingularAttribute(descriptor, value);
+        attributes.add(name);
       }
     }
 

@@ -32,7 +32,7 @@ public class SCIMObjectTestCase
     final String coreSchema =
         SCIMConstants.SCHEMA_URI_CORE;
     final String enterpriseUserSchema =
-        SCIMConstants.SCHEMA_URI_ENTERPRISE_USER;
+        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION;
     final String customSchema =
         "http://myextension";
 

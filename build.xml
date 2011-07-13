@@ -43,7 +43,7 @@
   <!-- Define properties used for processing SCIM schema using JAXB. -->
   <property name="schema.classes.dir" location="${build.dir}/schema" />
   <property name="schema.gensrc.dir"  location="${gensrc.dir}/schema" />
-  <property name="schema.core"        location="${resource.dir}/scim-core.xsd" />
+  <property name="schema.core"        location="${resource.dir}/schema/scim-core.xsd" />
   <property name="schema.package"     value="com.unboundid.scim.schema" />
 
 
@@ -319,6 +319,7 @@
     <mkdir dir="${ri.package.dir}/lib" />
     <mkdir dir="${ri.package.dir}/docs" />
     <mkdir dir="${ri.package.dir}/docs/javadoc" />
+    <mkdir dir="${ri.package.dir}/resource" />
 
     <copy todir="${ri.package.dir}">
       <fileset dir="${distroot.dir}">
@@ -342,6 +343,12 @@
 
     <copy todir="${ri.package.dir}/lib">
       <path refid="external-jars"/>
+    </copy>
+
+    <copy todir="${ri.package.dir}/resource/schema">
+      <fileset dir="${resource.dir}/schema">
+        <include name="*.xsd" />
+      </fileset>
     </copy>
 
     <jar jarfile="${ri.package.dir}/lib/unboundid-scimri.jar"

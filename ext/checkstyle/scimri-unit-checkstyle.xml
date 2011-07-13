@@ -51,8 +51,10 @@
     </module>
 
 
-    <!-- Ensure that there are no star imports. -->
-    <module name="AvoidStarImport" />
+    <!-- Ensure that there are no star imports except for static imports. -->
+    <module name="AvoidStarImport">
+      <property name="allowStaticMemberImports" value="true"/>
+    </module>
 
 
     <!-- Ensure that there are no imports from a "sun.*" package. -->

@@ -6,7 +6,7 @@ package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -53,7 +53,7 @@ public class JsonUnmarshaller implements Unmarshaller
     //Object schemas = jsonObject.get(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
     // for now assume user - we need to inject in context info viz. what
     // we've got
-    ResourceDescriptor resourceDescriptor = ResourceDescriptorManager
+    ResourceDescriptor resourceDescriptor = SchemaManager
       .instance().getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
     if (resourceDescriptor == null)
     {

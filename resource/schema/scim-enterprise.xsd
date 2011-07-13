@@ -8,10 +8,13 @@
   <xs:element name="organization" type="xs:string"/>
   <xs:element name="division" type="xs:string"/>
   <xs:element name="department" type="xs:string"/>
+  <xs:element name="manager" type="tns:manager"/>
+
   <xs:complexType name="manager">
     <xs:sequence>
       <xs:element name="managerId" type="xs:string" minOccurs="0"/>
       <xs:element name="displayName" type="xs:string" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
+
 </xs:schema>

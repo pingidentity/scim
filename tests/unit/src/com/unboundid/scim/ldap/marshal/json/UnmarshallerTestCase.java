@@ -5,29 +5,16 @@
 
 package com.unboundid.scim.ldap.marshal.json;
 
-import com.unboundid.scim.config.ResourceDescriptorManager;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMRITestCase;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
 
 @Test
 public class UnmarshallerTestCase extends SCIMRITestCase {
-  /**
-   * Bootstrap the unmarshaller with a configured resource descriptor.
-   *
-   * @throws Exception if error initializing descriptor manager.
-   */
-  @BeforeMethod
-  public void setUp() throws Exception {
-    final File schemaFile = getPackageResource("scim-core.xsd");
-    ResourceDescriptorManager.init(new File[]{schemaFile});
-  }
-
   /**
    * Verify that a known valid user can be read from JSON.
    *

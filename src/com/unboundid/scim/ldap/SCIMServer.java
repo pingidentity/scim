@@ -4,7 +4,7 @@
  */
 package com.unboundid.scim.ldap;
 
-import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.config.SchemaManager;
 import org.eclipse.jetty.http.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -90,7 +90,7 @@ public class SCIMServer
   public void initializeServer(final SCIMServerConfig serverConfig)
       throws Exception
   {
-    ResourceDescriptorManager.init(serverConfig.getSchemaFiles());
+    SchemaManager.init(serverConfig.getSchemaFiles());
 
     final Server s = new Server(serverConfig.getListenPort());
     s.setThreadPool(new QueuedThreadPool(serverConfig.getMaxThreads()));

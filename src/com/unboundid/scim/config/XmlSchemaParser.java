@@ -24,99 +24,180 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+
+
 /**
- * Xml schema parser that produces SCIM Resource Descriptors.
+ * Xml schema parser that produces SCIM schemas.
+ * TODO: There are assumptions made during the parsing that need to be explained
+ * in the SCIM specification.
  */
-public class XmlSchemaParser {
-  private List<ResourceDescriptor> descriptors = Collections.emptyList();
+public class XmlSchemaParser
+{
+  private List<Schema> schemas = Collections.emptyList();
+
+
 
   /**
-   * Returns the collection of all supported and known Resource Descriptors.
+   * Returns the collection of all supported and known schemas.
    *
-   * @return The known Resource Descriptors.
+   * @return The known schemas.
    */
-  public Collection<ResourceDescriptor> getDescriptors() {
-    return descriptors;
+  public Collection<Schema> getSchemas()
+  {
+    return schemas;
   }
+
+
 
   /**
    * Initializes the supplied XML .xsd files.
    *
-   * @param schemas The XML schema files to parse.
+   * @param schemaFiles The XML schema files to parse.
+   *
    * @throws IOException  Thrown if error loading schema files.
    * @throws SAXException Thrown if error parsing schema files.
    */
-  public XmlSchemaParser(final File[] schemas) throws IOException,
-    SAXException {
-    List<ResourceDescriptor> resourceDescriptors = new
-      ArrayList<ResourceDescriptor>();
-    for (File file : schemas) {
+  public XmlSchemaParser(final File[] schemaFiles)
+      throws IOException, SAXException
+  {
+    List<Schema> schemaList = new ArrayList<Schema>();
+
+    for (File file : schemaFiles)
+    {
       XSOMParser parser = new XSOMParser();
       parser.parse(file);
       XSSchemaSet result = parser.getResult();
 
-      Iterator itr = result.iterateSchema();
-      while (itr.hasNext()) {
-        XSSchema s = (XSSchema) itr.next();
-        Iterator jtr = s.iterateElementDecls();
-        while (jtr.hasNext()) {
+      Iterator<XSSchema> itr = result.iterateSchema();
+      while (itr.hasNext())
+      {
+        XSSchema s = itr.next();
+
+        // Skip non-SCIM schemas.
+        String targetNamespace = s.getTargetNamespace();
+        if (targetNamespace.equals("http://www.w3.org/2001/XMLSchema"))
+        {
+          continue;
+        }
+
+        Iterator<XSElementDecl> jtr = s.iterateElementDecls();
+
+        Schema schema = new Schema(targetNamespace);
+        List<ResourceDescriptor> resourceDescriptors =
+            schema.getResourceDescriptors();
+        List<AttributeDescriptor> attributeDescriptors =
+            schema.getAttributeDescriptors();
+
+        // We assume that top level complex types are SCIM attributes rather
+        // than SCIM resources.
+        Iterator<XSComplexType> complexTypesIterator =
+            s.iterateComplexTypes();
+        while (complexTypesIterator.hasNext())
+        {
+          XSComplexType xsComplexType = complexTypesIterator.next();
+          AttributeDescriptor complexAttribute =
+              createComplexAttribute(xsComplexType.getName(), xsComplexType);
+          if (complexAttribute != null)
+          {
+            attributeDescriptors.add(complexAttribute);
+          }
+        }
+
+        while (jtr.hasNext())
+        {
           // user || group || extension
-          XSComplexType scimResourceType =
-            s.getType(((XSElementDecl) jtr.next())
-              .getName()).asComplexType();
-          // create scim descriptor
+          XSElementDecl xsElementDecl = jtr.next();
+          String name = xsElementDecl.getName();
+
+          // We assume that elements with complex type are SCIM resources
+          // but there is currently no way to indicate that "Response" (for
+          // example) in the core schema is not a resource.
+
+          if (!xsElementDecl.getType().isComplexType())
+          {
+            AttributeDescriptor simpleAttributeDescriptor =
+                new AttributeDescriptor(
+                    new AttributeDescriptor.Builder(
+                        targetNamespace,
+                        xsElementDecl.getName()).dataType(
+                        AttributeDescriptor.DataType.parse(
+                            xsElementDecl.getType().getName()))
+                    );
+            attributeDescriptors.add(simpleAttributeDescriptor);
+            continue;
+          }
+
+          XSType xsType = s.getType(name);
+          XSComplexType scimResourceType = xsType.asComplexType();
+
+          // create SCIM resource descriptor
           ResourceDescriptor resourceDescriptor = new ResourceDescriptor();
           resourceDescriptor.setName(scimResourceType.getName());
-          resourceDescriptor.setSchema(s.getTargetNamespace());
+          resourceDescriptor.setSchema(targetNamespace);
           resourceDescriptors.add(resourceDescriptor);
 
           XSParticle[] children = scimResourceType.getContentType().asParticle
-            ().getTerm().asModelGroup()
-            .getChildren();
+              ().getTerm().asModelGroup()
+              .getChildren();
 
-          for (XSParticle p : children) {
+          for (XSParticle p : children)
+          {
             XSParticle xsParticle = p.asParticle();
             XSTerm term = xsParticle.getTerm();
-            if (term.isModelGroup()) {
+            if (term.isModelGroup())
+            {
               XSModelGroup xsModelGroup = term.asModelGroup();
               XSParticle[] children1 = xsModelGroup.getChildren();
-              for (XSParticle c : children1) {
+              for (XSParticle c : children1)
+              {
                 //
                 XSTerm cTerm = c.getTerm();
-                if (cTerm != null && cTerm.asElementDecl() != null) {
+                if (cTerm != null && cTerm.asElementDecl() != null)
+                {
                   XSElementDecl cxsElementDecl = cTerm.asElementDecl();
                   String cname = cxsElementDecl.getName();
                   XSType ctype = cxsElementDecl.getType();
 
                   if (ctype.isComplexType() &&
-                    ctype.asComplexType().getContentType()
-                      .asParticle().getTerm().asModelGroup().getChild(0)
-                      .isRepeated()) {
+                      ctype.asComplexType().getContentType()
+                          .asParticle().getTerm().asModelGroup().getChild(0)
+                          .isRepeated())
+                  {
                     AttributeDescriptor pluralAttribute =
-                      this.createPluralAttribute(c);
+                        this.createPluralAttribute(c);
                     resourceDescriptor.getAttributeDescriptors().add
-                      (pluralAttribute);
-                  } else {
-                    if (ctype.isComplexType()) {
+                        (pluralAttribute);
+                    attributeDescriptors.add(pluralAttribute);
+                  }
+                  else
+                  {
+                    if (ctype.isComplexType())
+                    {
                       // complex; e.g., name
                       XSComplexType complexType = s.getComplexType(cname);
                       AttributeDescriptor complexAttribute =
-                        this.createComplexAttribute(cname, complexType);
-                      resourceDescriptor.getAttributeDescriptors().add
-                        (complexAttribute);
-                    } else {
+                          createComplexAttribute(cname, complexType);
+                      if (complexAttribute != null)
+                      {
+                        resourceDescriptor.getAttributeDescriptors().add
+                            (complexAttribute);
+                        attributeDescriptors.add(complexAttribute);
+                      }
+                    }
+                    else
+                    {
                       // simple; e.g., userName
                       AttributeDescriptor simpleAttributeDescriptor =
-                        new AttributeDescriptor
-                          (new AttributeDescriptor
-                            .Builder(c.getOwnerSchema().getTargetNamespace(),
-                            cxsElementDecl.getName()).dataType(
-                            AttributeDescriptor.DataType
-                              .parse(cxsElementDecl.getType().getName()))
-                          );
+                          new AttributeDescriptor(
+                              new AttributeDescriptor.Builder(
+                                  c.getOwnerSchema().getTargetNamespace(),
+                                  cxsElementDecl.getName()).dataType(
+                                  AttributeDescriptor.DataType.parse(
+                                      cxsElementDecl.getType().getName()))
+                              );
                       resourceDescriptor.getAttributeDescriptors().add
-                        (simpleAttributeDescriptor);
-
+                          (simpleAttributeDescriptor);
+                      attributeDescriptors.add(simpleAttributeDescriptor);
                     }
                   }
                 }
@@ -124,19 +205,25 @@ public class XmlSchemaParser {
             }
           }
         }
+
+        schemaList.add(schema);
       }
     }
-    this.descriptors = resourceDescriptors;
+
+    this.schemas = schemaList;
   }
+
+
 
   /**
    * Helper to create AttributeDescriptor.
    *
    * @param particle The XML particle representing a plural attribute.
+   *
    * @return The SCIM descriptor equivalent of an XML schema plural attribute.
    */
-  private AttributeDescriptor createPluralAttribute(final XSParticle
-                                                      particle) {
+  private AttributeDescriptor createPluralAttribute(final XSParticle particle)
+  {
     XSTerm term = particle.getTerm();
     XSElementDecl elementDeclaration = term.asElementDecl();
     String name = elementDeclaration.getName();
@@ -156,58 +243,73 @@ public class XmlSchemaParser {
     // get the name as it appears in the schema - we want the element name
     // not the type name; e.g., email not pluralAttribute
     String complexAttributeName =
-      child.asParticle().getTerm().asElementDecl().getName();
+        child.asParticle().getTerm().asElementDecl().getName();
 
     AttributeDescriptor complexAttribute = this.createComplexAttribute
-      (complexAttributeName, complexType);
+        (complexAttributeName, complexType);
 
     List<AttributeDescriptor> complexAttributeDescriptors = new
-      ArrayList<AttributeDescriptor>();
+        ArrayList<AttributeDescriptor>();
     complexAttributeDescriptors.add(complexAttribute);
 
-    AttributeDescriptor pluralAttribute = new AttributeDescriptor(new
-      AttributeDescriptor
-        .Builder(complexType.getOwnerSchema().getTargetNamespace(),
-      name).complex(true).plural(true)
-      .complexAttributeDescriptors(complexAttributeDescriptors)
+    AttributeDescriptor pluralAttribute =
+        new AttributeDescriptor(
+            new AttributeDescriptor.Builder(
+                complexType.getOwnerSchema().getTargetNamespace(),
+                name).complex(true).plural(true)
+                .complexAttributeDescriptors(complexAttributeDescriptors)
     );
 
     return pluralAttribute;
   }
+
+
 
   /**
    * Helper that creates a Complex SCIM Attribute Descriptor.
    *
    * @param name        The SCIM attribute name.
    * @param complexType The XML schema representation of a SCIM attribute.
+   *
    * @return The complex SCIM Attribute Descriptor.
    */
   private AttributeDescriptor createComplexAttribute(final String name, final
-  XSComplexType complexType) {
+  XSComplexType complexType)
+  {
     AttributeDescriptor attributeDescriptor;
     List<AttributeDescriptor> complexAttributeDescriptors = new
-      ArrayList<AttributeDescriptor>();
+        ArrayList<AttributeDescriptor>();
 
     XSParticle[] children =
-      complexType.getContentType().asParticle().getTerm().asModelGroup()
-        .getChildren();
-    for (XSParticle particle : children) {
+        complexType.getContentType().asParticle().getTerm().asModelGroup()
+            .getChildren();
+    for (XSParticle particle : children)
+    {
       XSElementDecl xsElementDecl = particle.getTerm().asElementDecl();
-      AttributeDescriptor peerAttributeDescriptor = new AttributeDescriptor
-        (new AttributeDescriptor.Builder(
-          complexType.getOwnerSchema().getTargetNamespace(),
-          xsElementDecl.getName()).complex(false).dataType(
-          AttributeDescriptor.DataType.parse(xsElementDecl.getType().getName()))
-        );
-      complexAttributeDescriptors.add(peerAttributeDescriptor);
+      if (xsElementDecl != null)
+      {
+        AttributeDescriptor peerAttributeDescriptor = new AttributeDescriptor
+            (new AttributeDescriptor.Builder(
+                complexType.getOwnerSchema().getTargetNamespace(),
+                xsElementDecl.getName()).complex(false).dataType(
+                AttributeDescriptor.DataType.parse(
+                    xsElementDecl.getType().getName()))
+            );
+        complexAttributeDescriptors.add(peerAttributeDescriptor);
+      }
     }
 
-    attributeDescriptor = new AttributeDescriptor(new AttributeDescriptor
-      .Builder(complexType.getOwnerSchema().getTargetNamespace(),
-      name).complex(true).complexAttributeDescriptors
-      (complexAttributeDescriptors)
-    );
-
-    return attributeDescriptor;
+    if (!complexAttributeDescriptors.isEmpty())
+    {
+      return new AttributeDescriptor(new AttributeDescriptor
+          .Builder(complexType.getOwnerSchema().getTargetNamespace(),
+                   name).complex(true).complexAttributeDescriptors
+          (complexAttributeDescriptors)
+      );
+    }
+    else
+    {
+      return null;
+    }
   }
 }

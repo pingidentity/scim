@@ -177,7 +177,7 @@ public final class SCIMAttributeValue
 
 
   /**
-   * Create a new complex attribute value from a collection of attributes.
+   * Create a new plural attribute value from a string.
    *
    * @param schema   The URI for the schema that defines the attribute.
    * @param value    The string value of the attribute.

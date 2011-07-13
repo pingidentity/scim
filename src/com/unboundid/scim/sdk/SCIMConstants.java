@@ -30,10 +30,10 @@ public final class SCIMConstants
       "urn:scim:schemas:core:1.0";
 
   /**
-   * The URI of the SCIM Enterprise User schema extension.
+   * The URI of the SCIM Enterprise schema extension.
    */
-  public static final String SCHEMA_URI_ENTERPRISE_USER =
-      "urn:scim:schemas:extension:user:enterprise:1.0";
+  public static final String SCHEMA_URI_ENTERPRISE_EXTENSION =
+      "urn:scim:schemas:extension:enterprise:1.0";
 
   /**
    * The resource name for the User resource in the core schema.

@@ -38,6 +38,9 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
+import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.config.ResourceDescriptor;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.ldap.ExternalLDAPBackend;
 import com.unboundid.scim.ldap.LDAPExternalServerConfig;
 import com.unboundid.scim.ldap.SCIMBackend;
@@ -342,13 +345,15 @@ public abstract class SCIMRITestCase
     testDS.startListening();
 
 
-    final File schemaFile = getPackageResource("scim-core.xsd");
+    final File coreSchemaFile = getPackageResource("schema/scim-core.xsd");
+    final File enterpriseSchemaFile =
+        getPackageResource("schema/scim-enterprise.xsd");
 
     ssPort = getFreePort();
     final SCIMServerConfig ssConfig = new SCIMServerConfig();
     ssConfig.setListenPort(ssPort);
     ssConfig.setMaxThreads(16);
-    ssConfig.setSchemaFiles(new File[]{schemaFile});
+    ssConfig.setSchemaFiles(new File[]{coreSchemaFile, enterpriseSchemaFile});
 
     final LDAPExternalServerConfig ldapConfig =
         new LDAPExternalServerConfig();
@@ -3664,48 +3669,61 @@ public abstract class SCIMRITestCase
   {
     final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
 
+    final SchemaManager manager = SchemaManager.instance();
+    final ResourceDescriptor resourceDescriptor =
+        manager.getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
+
+    final AttributeDescriptor attributeDescriptor =
+        resourceDescriptor.getAttribute("name");
+
     final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
 
     if (formatted != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "formatted", formatted));
+          SCIMAttribute.createSingularAttribute(
+              attributeDescriptor.getAttribute("formatted"),
+              SCIMAttributeValue.createStringValue(formatted)));
     }
 
     if (givenName != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "givenName", givenName));
+          SCIMAttribute.createSingularAttribute(
+              attributeDescriptor.getAttribute("givenName"),
+              SCIMAttributeValue.createStringValue(givenName)));
     }
 
     if (familyName != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "familyName", familyName));
+          SCIMAttribute.createSingularAttribute(
+              attributeDescriptor.getAttribute("familyName"),
+              SCIMAttributeValue.createStringValue(familyName)));
     }
 
     if (middleName != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "middleName", middleName));
+          SCIMAttribute.createSingularAttribute(
+              attributeDescriptor.getAttribute("middleName"),
+              SCIMAttributeValue.createStringValue(middleName)));
     }
 
     if (honorificPrefix != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "honorificPrefix", honorificPrefix));
+          SCIMAttribute.createSingularAttribute(
+              attributeDescriptor.getAttribute("honorificPrefix"),
+              SCIMAttributeValue.createStringValue(honorificPrefix)));
     }
 
     if (honorificSuffix != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "honorificSuffix", honorificSuffix));
+          SCIMAttribute.createSingularAttribute(
+              attributeDescriptor.getAttribute("honorificSuffix"),
+              SCIMAttributeValue.createStringValue(honorificSuffix)));
     }
 
     return SCIMAttribute.createSingularAttribute(
@@ -3740,68 +3758,84 @@ public abstract class SCIMRITestCase
       final String country,
       final boolean primary)
   {
-    final String coreSchema = SCIMConstants.SCHEMA_URI_CORE;
-
     final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
+
+    final SchemaManager manager = SchemaManager.instance();
+    final ResourceDescriptor resourceDescriptor =
+        manager.getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
+
+    final AttributeDescriptor addressesDescriptor =
+        resourceDescriptor.getAttribute("addresses");
+    final AttributeDescriptor addressDescriptor =
+        addressesDescriptor.getAttribute("address");
 
     if (type != null)
     {
       subAttributes.add(
           SCIMAttribute.createSingularAttribute(
-              coreSchema, "type",
+              addressDescriptor.getAttribute("type"),
               SCIMAttributeValue.createStringValue(type)));
     }
 
     if (formatted != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "formatted", formatted));
+          SCIMAttribute.createSingularAttribute(
+              addressDescriptor.getAttribute("formatted"),
+              SCIMAttributeValue.createStringValue(formatted)));
     }
 
     if (streetAddress != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "streetAddress", streetAddress));
+          SCIMAttribute.createSingularAttribute(
+              addressDescriptor.getAttribute("streetAddress"),
+              SCIMAttributeValue.createStringValue(streetAddress)));
     }
 
     if (locality != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "locality", locality));
+          SCIMAttribute.createSingularAttribute(
+              addressDescriptor.getAttribute("locality"),
+              SCIMAttributeValue.createStringValue(locality)));
     }
 
     if (region != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "region", region));
+          SCIMAttribute.createSingularAttribute(
+              addressDescriptor.getAttribute("region"),
+              SCIMAttributeValue.createStringValue(region)));
     }
 
     if (postalCode != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "postalCode", postalCode));
+          SCIMAttribute.createSingularAttribute(
+              addressDescriptor.getAttribute("postalCode"),
+              SCIMAttributeValue.createStringValue(postalCode)));
     }
 
     if (country != null)
     {
       subAttributes.add(
-          SCIMAttribute.createSingularStringAttribute(
-              coreSchema, "country", country));
+          SCIMAttribute.createSingularAttribute(
+              addressDescriptor.getAttribute("country"),
+              SCIMAttributeValue.createStringValue(country)));
     }
 
     if (primary)
     {
       subAttributes.add(
           SCIMAttribute.createSingularAttribute(
-              coreSchema, "primary",
+              addressDescriptor.getAttribute("primary"),
               SCIMAttributeValue.createBooleanValue(primary)));
     }
 
-    return SCIMAttributeValue.createComplexValue(subAttributes);
+    return SCIMAttributeValue.createComplexValue(
+        SCIMAttribute.createSingularAttribute(
+            addressDescriptor,
+            SCIMAttributeValue.createComplexValue(subAttributes)));
   }
 }

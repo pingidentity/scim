@@ -31,7 +31,7 @@ import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
 import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.schema.Error;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -523,7 +523,7 @@ public abstract class LDAPBackend
       final SCIMQueryAttributes queryAttributes)
   {
     final ResourceDescriptor resourceDescriptor =
-        ResourceDescriptorManager.instance().getResourceDescriptor(
+        SchemaManager.instance().getResourceDescriptor(
             scimObject.getResourceName());
     if (resourceDescriptor == null)
     {

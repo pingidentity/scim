@@ -475,7 +475,7 @@ public final class SCIMPlugin
 
     exampleMap.put(
          Arrays.asList(
-              ARG_NAME_USE_SCHEMA_FILE + "=scim-core.xsd",
+              ARG_NAME_USE_SCHEMA_FILE + "=resource/schema",
               ARG_NAME_PORT + "=8080",
               ARG_NAME_BASE_DN + "=dc=example,dc=com"),
          "Creates a SCIM protocol interface listening on port 8080. The " +

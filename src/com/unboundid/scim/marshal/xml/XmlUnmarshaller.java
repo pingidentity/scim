@@ -6,7 +6,8 @@ package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.config.Schema;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -27,23 +28,30 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
+
+
 /**
  * This class provides a SCIM object un-marshaller implementation to read SCIM
  * objects from their XML representation.
  */
-public class XmlUnmarshaller implements Unmarshaller {
+public class XmlUnmarshaller implements Unmarshaller
+{
 
   /**
    * {@inheritDoc}
    */
-  public SCIMObject unmarshal(final File file) throws Exception {
+  public SCIMObject unmarshal(final File file) throws Exception
+  {
     return this.unmarshal(new FileInputStream(file));
   }
 
+
+
   /**
    * {@inheritDoc}
    */
-  public SCIMObject unmarshal(final InputStream inputStream) throws Exception {
+  public SCIMObject unmarshal(final InputStream inputStream) throws Exception
+  {
     SCIMObject scimObject = new SCIMObject();
     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
     dbFactory.setNamespaceAware(true);
@@ -53,9 +61,10 @@ public class XmlUnmarshaller implements Unmarshaller {
     Document doc = dBuilder.parse(inputStream);
     doc.getDocumentElement().normalize();
 
+    final SchemaManager schemaManager = SchemaManager.instance();
     Element documentElement = doc.getDocumentElement();
-    ResourceDescriptor resourceDescriptor = ResourceDescriptorManager
-      .instance().getResourceDescriptor(documentElement.getLocalName());
+    ResourceDescriptor resourceDescriptor =
+        schemaManager.getResourceDescriptor(documentElement.getLocalName());
     if (resourceDescriptor == null)
     {
       throw new RuntimeException("No resource descriptor found for " +
@@ -63,30 +72,51 @@ public class XmlUnmarshaller implements Unmarshaller {
     }
 
     scimObject.setResourceName(resourceDescriptor.getName());
-    for (AttributeDescriptor attributeDescriptor : resourceDescriptor
-      .getAttributeDescriptors()) {
-      String externalAttributeName =
-        attributeDescriptor.getName();
 
-      NodeList elem = doc.getElementsByTagName(externalAttributeName);
-      Node element = elem.item(0);
-      if (element != null) {
-        SCIMAttribute attr;
+    final String documentNamespaceURI = documentElement.getNamespaceURI();
 
-        if (attributeDescriptor.isPlural()) {
-          attr = createPluralAttribute(element, attributeDescriptor);
-        } else if (attributeDescriptor.isComplex()) {
-          attr = createComplexAttribute(element, attributeDescriptor);
-        } else {
-          attr = this.createSimpleAttribute(element, attributeDescriptor);
-        }
+    NodeList nodeList = doc.getElementsByTagName("*");
+    for (int i = 0; i < nodeList.getLength(); i++)
+    {
+      final Node element = nodeList.item(i);
 
-        scimObject.addAttribute(attr);
+      String namespaceURI = element.getNamespaceURI();
+      if (namespaceURI == null)
+      {
+        namespaceURI = documentNamespaceURI; // TODO: not sure about this
       }
 
+      final Schema schema = schemaManager.getSchema(namespaceURI);
+
+      if (schema != null)
+      {
+        final AttributeDescriptor attributeDescriptor =
+            schema.getAttribute(element.getLocalName());
+
+        if (attributeDescriptor != null)
+        {
+          final SCIMAttribute attr;
+          if (attributeDescriptor.isPlural())
+          {
+            attr = createPluralAttribute(element, attributeDescriptor);
+          }
+          else if (attributeDescriptor.isComplex())
+          {
+            attr = createComplexAttribute(element, attributeDescriptor);
+          }
+          else
+          {
+            attr = this.createSimpleAttribute(element, attributeDescriptor);
+          }
+
+          scimObject.addAttribute(attr);
+        }
+      }
     }
+
     return scimObject;
   }
+
 
 
   /**
@@ -94,15 +124,19 @@ public class XmlUnmarshaller implements Unmarshaller {
    *
    * @param node                The DOM node representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
+   *
    * @return The parsed attribute.
    */
-  private SCIMAttribute createSimpleAttribute(final Node node,
-                 final AttributeDescriptor attributeDescriptor) {
+  private SCIMAttribute createSimpleAttribute(
+      final Node node,
+      final AttributeDescriptor attributeDescriptor)
+  {
     final SCIMAttributeValue v;
 
     if (attributeDescriptor.getDataType() != null)
     {
-      switch (attributeDescriptor.getDataType()) {
+      switch (attributeDescriptor.getDataType())
+      {
         case DATETIME:
           final Calendar calendar =
               DatatypeConverter.parseDateTime(node.getTextContent());
@@ -127,58 +161,74 @@ public class XmlUnmarshaller implements Unmarshaller {
     return SCIMAttribute.createSingularAttribute(attributeDescriptor, v);
   }
 
+
+
   /**
    * Parse a plural attribute from its representation as a DOM node.
    *
    * @param node                The DOM node representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
+   *
    * @return The parsed attribute.
    */
-  private SCIMAttribute createPluralAttribute(final Node node,
-                 final AttributeDescriptor attributeDescriptor) {
+  private SCIMAttribute createPluralAttribute(
+      final Node node,
+      final AttributeDescriptor attributeDescriptor)
+  {
     NodeList pluralAttributes = node.getChildNodes();
     List<SCIMAttributeValue> pluralScimAttributes =
-      new LinkedList<SCIMAttributeValue>();
-    for (int i = 0; i < pluralAttributes.getLength(); i++) {
+        new LinkedList<SCIMAttributeValue>();
+    for (int i = 0; i < pluralAttributes.getLength(); i++)
+    {
       Node pluralAttribute = pluralAttributes.item(i);
-      if (pluralAttribute.getNodeType() != Node.ELEMENT_NODE) {
+      if (pluralAttribute.getNodeType() != Node.ELEMENT_NODE)
+      {
         continue;
       }
       AttributeDescriptor pluralAttributeDescriptorInstance =
-        attributeDescriptor.getAttribute(pluralAttribute.getNodeName());
+          attributeDescriptor.getAttribute(pluralAttribute.getNodeName());
       pluralScimAttributes.add(SCIMAttributeValue.createComplexValue(
-        createComplexAttribute(pluralAttributes.item(i),
-          pluralAttributeDescriptorInstance)));
+          createComplexAttribute(pluralAttributes.item(i),
+                                 pluralAttributeDescriptorInstance)));
     }
     SCIMAttributeValue[] vals =
-      new SCIMAttributeValue[pluralScimAttributes.size()];
+        new SCIMAttributeValue[pluralScimAttributes.size()];
     vals = pluralScimAttributes.toArray(vals);
     return SCIMAttribute.createPluralAttribute(attributeDescriptor, vals);
   }
+
+
 
   /**
    * Parse a complex attribute from its representation as a DOM node.
    *
    * @param node                The DOM node representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
+   *
    * @return The parsed attribute.
    */
-  private SCIMAttribute createComplexAttribute(final Node node,
-     final AttributeDescriptor attributeDescriptor) {
+  private SCIMAttribute createComplexAttribute(
+      final Node node,
+      final AttributeDescriptor attributeDescriptor)
+  {
     SCIMAttribute complexScimAttr;
     NodeList childNodes = node.getChildNodes();
     List<SCIMAttribute> complexAttrs = new LinkedList<SCIMAttribute>();
-    for (int i = 0; i < childNodes.getLength(); i++) {
+    for (int i = 0; i < childNodes.getLength(); i++)
+    {
       Node item1 = childNodes.item(i);
-      if (item1.getNodeType() == Node.ELEMENT_NODE) {
+      if (item1.getNodeType() == Node.ELEMENT_NODE)
+      {
         AttributeDescriptor complexAttr =
-          attributeDescriptor.getAttribute(item1.getNodeName());
+            attributeDescriptor.getAttribute(item1.getNodeName());
         SCIMAttribute childAttr = createSimpleAttribute(item1, complexAttr);
         complexAttrs.add(childAttr);
       }
     }
-    complexScimAttr = SCIMAttribute.createSingularAttribute(attributeDescriptor,
-      SCIMAttributeValue.createComplexValue(complexAttrs));
+    complexScimAttr =
+        SCIMAttribute.createSingularAttribute(
+            attributeDescriptor,
+            SCIMAttributeValue.createComplexValue(complexAttrs));
     return complexScimAttr;
   }
 }

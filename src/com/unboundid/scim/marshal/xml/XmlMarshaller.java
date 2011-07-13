@@ -6,7 +6,7 @@ package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.ResourceDescriptorManager;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.ldap.GenericResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
@@ -22,10 +22,12 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -56,8 +58,16 @@ public class XmlMarshaller implements Marshaller
   public void marshal(final SCIMObject o, final File file)
     throws Exception
   {
-    throw new UnsupportedOperationException(
-        "XML marshal to file is not implemented");
+    final BufferedOutputStream bufferedOutputStream =
+        new BufferedOutputStream(new FileOutputStream(file));
+    try
+    {
+      marshal(o, bufferedOutputStream);
+    }
+    finally
+    {
+      bufferedOutputStream.close();
+    }
   }
 
 
@@ -107,75 +117,100 @@ public class XmlMarshaller implements Marshaller
   /**
    * Write a SCIM object to an XML stream.
    *
-   * @param o               The SCIM object to be written.
+   * @param scimObject      The SCIM object to be written.
    * @param xmlStreamWriter The stream to which the SCIM object should be
    *                        written.
    * @throws XMLStreamException If the object could not be written.
    */
-  private void marshal(final SCIMObject o,
+  private void marshal(final SCIMObject scimObject,
                        final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException {
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
-    int i = 0;
 
-    final ResourceDescriptorManager descriptorManager =
-        ResourceDescriptorManager.instance();
+    final SchemaManager descriptorManager =
+        SchemaManager.instance();
 
     xmlStreamWriter.setDefaultNamespace(SCIMConstants.SCHEMA_URI_CORE);
 
-    // todo: at the moment the scim object is assumed to be a core schema
-    // object
-    // need to be able to identify schema properly
-    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
-      o.getResourceName(), SCIMConstants.SCHEMA_URI_CORE);
-    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
-      SCIMConstants.SCHEMA_URI_CORE);
-    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
-                                   SCIMConstants.SCHEMA_URI_CORE);
-
     final ResourceDescriptor resourceDescriptor =
-        descriptorManager.getResourceDescriptor(o.getResourceName());
+        descriptorManager.getResourceDescriptor(
+            scimObject.getResourceName());
 
-    for (String schema : o.getSchemas())
+    final String resourceSchemaURI;
+    if (resourceDescriptor != null)
     {
-      if (resourceDescriptor != null)
+      resourceSchemaURI = resourceDescriptor.getSchema();
+    }
+    else
+    {
+      resourceSchemaURI = null;
+    }
+
+    // Make a list of schemas referenced by extension attributes.
+    final List<String> extensionSchemas = new ArrayList<String>();
+    for (final String schemaURI : scimObject.getSchemas())
+    {
+      if (!schemaURI.equals(resourceSchemaURI))
       {
-        for (final AttributeDescriptor attributeDescriptor :
-            resourceDescriptor.getAttributeDescriptors())
-        {
-          final SCIMAttribute a =
-              o.getAttribute(attributeDescriptor.getSchema(),
-                             attributeDescriptor.getName());
-          if (a != null)
-          {
-            if (a.isPlural())
-            {
-              writePluralAttribute(a, xmlStreamWriter);
-            }
-            else
-            {
-              writeSingularAttribute(a, xmlStreamWriter);
-            }
-          }
-        }
+        extensionSchemas.add(schemaURI);
       }
+    }
 
-      // TODO Revisit this to support schema extensions
-      if (!schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
+      scimObject.getResourceName(), resourceSchemaURI);
+    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
+      resourceSchemaURI);
+    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
+                                   resourceSchemaURI);
+
+    for (int i = 0; i < extensionSchemas.size(); i++)
+    {
+      final String schemaURI = extensionSchemas.get(i);
+      final String prefix = "ns" + String.valueOf(i + 1);
+      xmlStreamWriter.setPrefix(prefix, schemaURI);
+      xmlStreamWriter.writeNamespace(prefix, schemaURI);
+    }
+
+    // Write the resource attributes first in the order defined by the
+    // resource descriptor.
+    if (resourceDescriptor != null)
+    {
+      for (final AttributeDescriptor attributeDescriptor :
+          resourceDescriptor.getAttributeDescriptors())
       {
-        final String nsPrefix = "n" + i++;
-        xmlStreamWriter.writeNamespace(nsPrefix, schema);
-
-        final Collection<SCIMAttribute> attributes = o.getAttributes(schema);
-        for (SCIMAttribute attr : attributes)
+        final SCIMAttribute a =
+            scimObject.getAttribute(attributeDescriptor.getSchema(),
+                                    attributeDescriptor.getName());
+        if (a != null)
         {
-          if (attr.isPlural())
+          if (a.isPlural())
           {
-            this.writePluralAttribute(attr, xmlStreamWriter);
+            writePluralAttribute(a, xmlStreamWriter);
           }
           else
           {
-            this.writeSingularAttribute(attr, xmlStreamWriter);
+            writeSingularAttribute(a, xmlStreamWriter);
+          }
+        }
+      }
+    }
+
+    // Now write any extension attributes, grouped by the schema
+    // extension they belong to.
+    for (final String schemaURI : extensionSchemas)
+    {
+      // Skip the resource schema.
+      if (!schemaURI.equals(resourceSchemaURI))
+      {
+        for (final SCIMAttribute a : scimObject.getAttributes(schemaURI))
+        {
+          if (a.isPlural())
+          {
+            writePluralAttribute(a, xmlStreamWriter);
+          }
+          else
+          {
+            writeSingularAttribute(a, xmlStreamWriter);
           }
         }
       }
@@ -214,8 +249,8 @@ public class XmlMarshaller implements Marshaller
     // JAXB-enabled.
 
     final String xsiURI = "http://www.w3.org/2001/XMLSchema-instance";
-    final ResourceDescriptorManager descriptorManager =
-        ResourceDescriptorManager.instance();
+    final SchemaManager descriptorManager =
+        SchemaManager.instance();
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
 
@@ -269,13 +304,43 @@ public class XmlMarshaller implements Marshaller
           final GenericResource genericResource = (GenericResource) resource;
           final SCIMObject scimObject = genericResource.getScimObject();
 
+          final ResourceDescriptor resourceDescriptor =
+              descriptorManager.getResourceDescriptor(
+                  scimObject.getResourceName());
+          final String resourceSchemaURI;
+          if (resourceDescriptor != null)
+          {
+            resourceSchemaURI = resourceDescriptor.getSchema();
+          }
+          else
+          {
+            resourceSchemaURI = null;
+          }
+
+          // Make a list of schemas referenced by extension attributes.
+          final List<String> extensionSchemas = new ArrayList<String>();
+          for (final String schemaURI : scimObject.getSchemas())
+          {
+            if (!schemaURI.equals(resourceSchemaURI))
+            {
+              extensionSchemas.add(schemaURI);
+            }
+          }
+
+          for (int i = 0; i < extensionSchemas.size(); i++)
+          {
+            final String schemaURI = extensionSchemas.get(i);
+            final String prefix = "ns" + String.valueOf(i + 1);
+            xmlStreamWriter.setPrefix(prefix, schemaURI);
+            xmlStreamWriter.writeNamespace(prefix, schemaURI);
+          }
+
           xmlStreamWriter.writeAttribute(xsiURI, "type",
                                          Context.DEFAULT_SCHEMA_PREFIX + ':' +
                                          scimObject.getResourceName());
 
-          final ResourceDescriptor resourceDescriptor =
-              descriptorManager.getResourceDescriptor(
-                  scimObject.getResourceName());
+          // Write the resource attributes first in the order defined by the
+          // resource descriptor.
           if (resourceDescriptor != null)
           {
             for (final AttributeDescriptor attributeDescriptor :
@@ -285,6 +350,27 @@ public class XmlMarshaller implements Marshaller
                   scimObject.getAttribute(attributeDescriptor.getSchema(),
                                           attributeDescriptor.getName());
               if (a != null)
+              {
+                if (a.isPlural())
+                {
+                  writePluralAttribute(a, xmlStreamWriter);
+                }
+                else
+                {
+                  writeSingularAttribute(a, xmlStreamWriter);
+                }
+              }
+            }
+          }
+
+          // Now write any extension attributes, grouped by the schema
+          // extension they belong to.
+          for (final String schemaURI : scimObject.getSchemas())
+          {
+            // Skip the resource schema.
+            if (!schemaURI.equals(resourceSchemaURI))
+            {
+              for (final SCIMAttribute a : scimObject.getAttributes(schemaURI))
               {
                 if (a.isPlural())
                 {

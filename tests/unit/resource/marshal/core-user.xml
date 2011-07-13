@@ -3,45 +3,56 @@
   ~ Copyright 2011 UnboundID Corp.
   ~ All Rights Reserved.
   -->
-<scim:User xmlns:scim="urn:scim:schemas:core:1.0">
-    <id>uid=user.0,ou=People,dc=example,dc=com</id>
-    <userName>user.0</userName>
-    <name>
-        <formatted>Aaren Atp</formatted>
-        <familyName>Atp</familyName>
-        <givenName>Aaren</givenName>
-    </name>
-    <emails>
-        <email>
-            <value>user.0@example.com</value>
-            <primary>false</primary>
-            <type>work</type>
-        </email>
-    </emails>
-    <phoneNumbers>
-        <phoneNumber>
-            <value>+1 319 805 3070</value>
-            <primary>false</primary>
-            <type>work</type>
-        </phoneNumber>
-        <phoneNumber>
-            <value>+1 003 490 8631</value>
-            <primary>false</primary>
-            <type>home</type>
-        </phoneNumber>
-    </phoneNumbers>
-    <addresses>
-        <address>
-            <formatted>
-                Aaren Atp 46045 Locust Street Sioux City, IL 24769
-            </formatted>
-            <streetAddress>46045 Locust Street</streetAddress>
-            <locality>Sioux City</locality>
-            <region>IL</region>
-            <postalCode>24769</postalCode>
-            <type>work</type>
-        </address>
-    </addresses>
+<scim:User xmlns:scim="urn:scim:schemas:core:1.0"
+           xmlns:enterprise="urn:scim:schemas:extension:enterprise:1.0">
 
+  <id>uid=user.0,ou=People,dc=example,dc=com</id>
+  <userName>user.0</userName>
+  <name>
+    <formatted>Aaren Atp</formatted>
+    <familyName>Atp</familyName>
+    <givenName>Aaren</givenName>
+  </name>
+  <emails>
+    <email>
+      <value>user.0@example.com</value>
+      <primary>false</primary>
+      <type>work</type>
+    </email>
+  </emails>
+  <phoneNumbers>
+    <phoneNumber>
+      <value>+1 319 805 3070</value>
+      <primary>false</primary>
+      <type>work</type>
+    </phoneNumber>
+    <phoneNumber>
+      <value>+1 003 490 8631</value>
+      <primary>false</primary>
+      <type>home</type>
+    </phoneNumber>
+  </phoneNumbers>
+  <addresses>
+    <address>
+      <formatted>
+        Aaren Atp 46045 Locust Street Sioux City, IL 24769
+      </formatted>
+      <streetAddress>46045 Locust Street</streetAddress>
+      <locality>Sioux City</locality>
+      <region>IL</region>
+      <postalCode>24769</postalCode>
+      <type>work</type>
+    </address>
+  </addresses>
+
+  <enterprise:employeeNumber>0</enterprise:employeeNumber>
+  <enterprise:costCenter>100</enterprise:costCenter>
+  <enterprise:organization>Example</enterprise:organization>
+  <enterprise:division>People</enterprise:division>
+  <enterprise:department>Sales</enterprise:department>
+  <enterprise:manager>
+    <managerId>uid=user.1,ou=People,dc=example,dc=com</managerId>
+    <displayName>User One</displayName>
+  </enterprise:manager>
 
 </scim:User>

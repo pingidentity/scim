@@ -553,13 +553,13 @@ public class InMemoryServerTool
 
     final String[] example1Args =
     {
-        "--useSchemaFile", "schema/scim-core.xsd"
+        "--useSchemaFile", "resource/schema"
     };
     exampleUsages.put(example1Args, INFO_MEM_SERVER_TOOL_EXAMPLE_1.get());
 
     final String[] example2Args =
     {
-      "--useSchemaFile", "schema/scim-core.xsd",
+      "--useSchemaFile", "resource/schema",
       "--baseURI", "scim",
       "--port", "8080",
       "--ldifFile", "test.ldif"

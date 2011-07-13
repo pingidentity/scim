@@ -7,6 +7,8 @@ package com.unboundid.scim.sdk;
 
 
 import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.config.Schema;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.ldap.SCIMFilter;
 
 import java.util.Arrays;
@@ -87,19 +89,18 @@ public final class SCIMAttribute
   /**
    * Create a simple singular attribute from a string value.
    *
-   * @param schema  The URI for the schema that defines the attribute.
-   * @param name    The name of the attribute.
-   * @param value   The value of the attribute.
+   * @param schemaURI  The URI for the schema that defines the attribute.
+   * @param name       The name of the attribute.
+   * @param value      The value of the attribute.
    *
    * @return  A new simple singular attribute containing a string value.
    */
   public static SCIMAttribute createSingularStringAttribute(
-      final String schema, final String name, final String value)
+      final String schemaURI, final String name, final String value)
   {
-    final AttributeDescriptor descriptor =
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(schema, name));
-    return new SCIMAttribute(descriptor,
+    final SchemaManager schemaManager = SchemaManager.instance();
+    final Schema schema = schemaManager.getSchema(schemaURI);
+    return new SCIMAttribute(schema.getAttribute(name),
                              SCIMAttributeValue.createStringValue(value));
   }
 
@@ -108,19 +109,18 @@ public final class SCIMAttribute
   /**
    * Create a simple singular attribute from a boolean value.
    *
-   * @param schema  The URI for the schema that defines the attribute.
-   * @param name    The name of the attribute.
-   * @param value   The value of the attribute.
+   * @param schemaURI  The URI for the schema that defines the attribute.
+   * @param name       The name of the attribute.
+   * @param value      The value of the attribute.
    *
    * @return  A new simple singular attribute containing a string value.
    */
   public static SCIMAttribute createSingularBooleanAttribute(
-      final String schema, final String name, final boolean value)
+      final String schemaURI, final String name, final boolean value)
   {
-    final AttributeDescriptor descriptor =
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(schema, name));
-    return new SCIMAttribute(descriptor,
+    final SchemaManager schemaManager = SchemaManager.instance();
+    final Schema schema = schemaManager.getSchema(schemaURI);
+    return new SCIMAttribute(schema.getAttribute(name),
                              SCIMAttributeValue.createBooleanValue(value));
   }
 
@@ -145,19 +145,18 @@ public final class SCIMAttribute
   /**
    * Create a singular attribute.
    *
-   * @param schema  The URI for the schema that defines the attribute.
+   * @param schemaURI  The URI for the schema that defines the attribute.
    * @param name    The name of the attribute.
    * @param value   The value of the attribute.
    *
    * @return  A new singular attribute.
    */
   public static SCIMAttribute createSingularAttribute(
-     final String schema, final String name, final SCIMAttributeValue value)
+     final String schemaURI, final String name, final SCIMAttributeValue value)
   {
-    final AttributeDescriptor descriptor =
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(schema, name));
-    return new SCIMAttribute(descriptor, value);
+    final SchemaManager schemaManager = SchemaManager.instance();
+    final Schema schema = schemaManager.getSchema(schemaURI);
+    return new SCIMAttribute(schema.getAttribute(name), value);
   }
 
 
@@ -182,20 +181,19 @@ public final class SCIMAttribute
   /**
    * Create a plural attribute.
    *
-   * @param schema  The URI for the schema that defines the attribute.
-   * @param name    The name of the attribute.
-   * @param values  The values of this attribute.
+   * @param schemaURI  The URI for the schema that defines the attribute.
+   * @param name       The name of the attribute.
+   * @param values     The values of this attribute.
    *
    * @return  A new plural attribute.
    */
   public static SCIMAttribute createPluralAttribute(
-      final String schema, final String name,
+      final String schemaURI, final String name,
       final SCIMAttributeValue ... values)
   {
-    final AttributeDescriptor descriptor =
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(schema, name));
-    return new SCIMAttribute(descriptor, null, values);
+    final SchemaManager schemaManager = SchemaManager.instance();
+    final Schema schema = schemaManager.getSchema(schemaURI);
+    return new SCIMAttribute(schema.getAttribute(name), null, values);
   }
 
 
