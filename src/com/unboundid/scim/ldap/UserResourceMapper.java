@@ -37,9 +37,12 @@ import java.util.List;
  * fixed and can not be changed through configuration. This mapping is not able
  * to preserve all information from SCIM to LDAP, nor from LDAP to SCIM.
  *
- * The following SCIM attributes are mapped:
+ * The following SCIM core attributes are mapped:
  * userName, name, addresses, emails, phoneNumbers, displayName,
  * preferredLanguage, title.
+ *
+ * The following enterprise extension attributes are mapped:
+ * employeeNumber, organization, division, department, manager.
  *
  * These SCIM attributes are not currently mapped: externalId, nickName,
  * profileUrl, userType, locale, utcOffset, ims, photos, memberOf.
@@ -405,7 +408,7 @@ public class UserResourceMapper extends ResourceMapper
         scimObject.getAttribute(enterpriseSchema, "manager");
     if (manager != null)
     {
-      final SCIMAttributeValue value = name.getSingularValue();
+      final SCIMAttributeValue value = manager.getSingularValue();
 
       final SCIMAttribute managerId = value.getAttribute("managerId");
       if (managerId != null)
@@ -433,7 +436,9 @@ public class UserResourceMapper extends ResourceMapper
         "postalAddress", "street", "l", "postalCode", "st",
         "homePostalAddress", "mail", "telephoneNumber",
         "homePhone", "facsimileTelephoneNumber",
-        "displayName", "preferredLanguage", "title"};
+        "displayName", "preferredLanguage", "title",
+        "employeeNumber", "o", "ou", "departmentNumber", "manager"
+    };
 
     final List<Attribute> attributes = toLDAPAttributes(scimObject);
     final Entry entry = new Entry(currentEntry.getDN(), attributes);
@@ -1090,7 +1095,7 @@ public class UserResourceMapper extends ResourceMapper
                                              "manager"))
     {
       final AttributeDescriptor descriptor =
-          resourceDescriptor.getAttribute("manager");
+          enterpriseSchema.getAttribute("manager");
       final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
 
       final String managerId = entry.getAttributeValue("manager");
