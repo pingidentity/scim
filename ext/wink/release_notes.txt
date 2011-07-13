@@ -1,0 +1,87 @@
+Apache Wink 1.1.3 Release Notes
+
+
+1. Overview
+ 
+This is the third major release of Apache Wink project.
+
+Apache Wink is a framework that helps you to produce and consume RESTful Web
+Services.  Apache Wink aims to be a TCK compliant implementation of the JAX-RS
+v1.1 specification.  The project also introduces Java API for writing clients
+that consume HTTP-based RESTful Web Services. 
+
+The project website is currently at:
+
+http://incubator.apache.org/wink/
+
+
+2. Runtime and dependencies
+
+   \dist folder contains the main Apache Wink runtime JARs.
+   
+       *  wink-common-<VERSION>.jar
+       Contains common runtime code required by the client and the server.
+   
+       *  wink-client-<VERSION>.jar
+       Contains client specific runtime code.  To work with the client runtime,
+       use wink-client-<VERSION>.jar and wink-common-<VERSION>.jar
+   
+       *  wink-server-<VERSION>.jar
+       Contains server specific runtime code.  To work with the server runtime,
+       use wink-server-<VERSION>.jar and wink-common-<VERSION>.jar
+   
+   \ext folder contains optional Apache Wink features
+
+   For convenience, a combination of the core runtime and the most used optional
+   features is provided in the \dist folder: 
+
+       *  wink-<VERSION>.jar
+       Includes:
+          * wink-common-<VERSION>.jar
+          * wink-server-<VERSION>.jar
+          * wink-client-<VERSION>.jar
+          * wink-webdav-<VERSION>.jar
+          * wink-spring-support-<VERSION>.jar
+          * wink-client-apache-httpclient-<VERSION>.jar
+
+   \lib folder of this archive contains all Apache Wink runtime dependencies.
+   
+   NOTICE #1: The following dependencies are required for Java 5 only:
+	   	
+		   	* activation-<VERSION>.jar
+		   	* jaxb-api-<VERSION>.jar
+		   	* jaxb-impl-<VERSION>.jar
+		   	* stax-api-<VERSION>.jar
+		   	
+   NOTICE #2: Apache Wink uses SLF4J logging framework, and by default is
+              shipped with a simple SLF4J binding (slf4j-simple-1.5.11.jar).
+   	          Application that uses another logging framework (e.g. LOG4J),
+   	          must replace default binding with relevant one. For example,
+   	          application that uses LOG4J will replace slf4j-simple-1.5.11.jar
+   	          with slf4j-log4j12-1.5.11.jar
+   	          
+   	          For more details about SLF4J configuration, refer to
+   	          http://www.slf4j.org/
+   
+
+3. Building the Examples
+
+Building the examples included in the binary distribution is easy. Change to
+the examples directory and follow the build instructions in the readme.txt file. 
+
+
+4. Reporting Problems
+
+If you have any problems or want to send feedback of any kind, please e-mail the
+wink users list, wink-user@incubator.apache.org.  You can also file issues in
+JIRA at:
+
+http://issues.apache.org/jira/browse/WINK
+
+
+5.  Documentation
+
+Documentation is included in the docs/ folder.  The latest version of
+the documentation and other Apache Wink information is at:
+
+http://cwiki.apache.org/confluence/display/WINK

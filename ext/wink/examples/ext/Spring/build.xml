@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+<project name="Spring" default="dist" basedir=".">
+    <description>
+        Ant build file for Wink example Spring
+    </description>
+
+    <property name="final.war.name" value="Spring.war" />
+    <property file="build.properties" />
+
+
+    <!-- set global properties for this build -->
+    <property name="build" location="build" />
+    <property name="build.classes" location="${build}/classes" />
+    <property name="build.lib" location="${build}/lib" />
+    <property name="sdk.base" location="${basedir}/../../.." />
+    <property name="sdk.lib" location="${sdk.base}/lib" />
+    <property name="sdk.dist" location="${sdk.base}/dist" />
+    <property name="sdk.json" location="${sdk.base}/ext/wink-json-provider" />
+    <property name="sdk.spring" location="${sdk.base}/ext/wink-spring-support" />
+    <property name="sdk.jar" location="${sdk.dist}/${sdk.jar.name}" />
+    <property name="final.war" location="${basedir}/${final.war.name}" />
+    <property name="main" location="${basedir}/src/main" />
+    <property name="webapp" location="${main}/webapp" />
+    <property name="resources" location="${main}/resources" />
+
+
+    <target name="init">
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${build.classes}" />
+        <mkdir dir="${build.lib}" />
+    </target>
+
+    <target name="compile" depends="init" description="compile the source ">
+        <!-- Set classpath for SDK lib -->
+        <path id="sdk.classpath">
+            <fileset dir="${sdk.lib}" includes="**/*.jar" />
+            <pathelement path="${sdk.jar}" />
+            <fileset dir="${sdk.json}" includes="**/*.jar" />
+            <fileset dir="${sdk.spring}" includes="**/*.jar" />
+        </path>
+
+        <copy todir="${build.lib}" flatten="true">
+            <fileset dir="${sdk.lib}" includes="**/*.jar" />
+            <fileset file="${sdk.jar}">
+            </fileset>
+            <fileset dir="${sdk.json}" includes="**/*.jar" />
+            <fileset dir="${sdk.spring}" includes="**/*.jar" />
+        </copy>
+
+        <!-- Compile the java code -->
+        <javac srcdir="${main}/java" destdir="${build.classes}">
+            <classpath refid="sdk.classpath" />
+        </javac>
+    </target>
+
+
+    <target name="dist" depends="compile" description="generate the distribution">
+
+        <!-- Create the war file -->
+        <war destfile="${final.war}" webxml="${webapp}/WEB-INF/web.xml">
+            <fileset dir="${webapp}/WEB-INF">
+                <exclude name="WEB-INF" />
+            </fileset>
+            <webinf dir="${webapp}/WEB-INF" includes="**/*" />
+            <classes dir="${build.classes}" includes="**/*" />
+            <lib dir="${build.lib}" includes="*.jar" />
+        </war>
+    </target>
+
+    <target name="clean" description="clean up">
+        <!-- Delete the ${build} and ${dist} directory trees -->
+        <delete dir="${build}" />
+        <delete file="${final.war}" />
+    </target>
+
+</project>

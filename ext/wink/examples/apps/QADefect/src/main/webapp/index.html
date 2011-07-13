@@ -1,0 +1,197 @@
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+     http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+<head>
+<script language="Javascript" type="text/javascript">
+<!--
+
+function createRequestObject() {
+    var tmpXmlHttpObject;
+    
+    //depending on what the browser supports, use the right way to create the XMLHttpRequest object
+    if (window.XMLHttpRequest) { 
+        // Mozilla, Safari would use this method ...
+        tmpXmlHttpObject = new XMLHttpRequest();
+	
+    } else if (window.ActiveXObject) { 
+        // IE would use this method ...
+        tmpXmlHttpObject = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    
+    return tmpXmlHttpObject;
+}
+
+//call the above function to create the XMLHttpRequest object
+var http = createRequestObject();
+
+function makeGetRequest(wordId) {
+	document.getElementById('description').innerHTML = "<b>Loading...</b>";
+    //make a connection to the server ... specifying that you intend to make a GET request 
+    //to the server. Specifiy the page name and the URL parameters to send
+    http.open('get', 'rest/defects?alt=application%2Fjson');
+	
+    //assign a handler for the response
+    http.onreadystatechange = processResponse;
+	
+    //actually send the request to the server
+    http.send(null);
+}
+
+
+function processResponse() {
+    //check if the response has been received from the server
+    if(http.readyState == 4){
+	
+        //read and assign the response from the server
+        var response = http.responseText;
+        var defects = eval('(' + response + ')');
+		
+        //do additional parsing of the response, if needed
+		
+        //in this case simply assign the response to the contents of the <div> on the page.
+//		document.getElementById('description').innerHTML = response;
+    	drawTable(defects);
+
+//    	var t = JSON.stringify(defects);
+//    	alert(t);
+		
+        //If the server returned an error message like a 404 error, that message would be shown within the div tag!!. 
+        //So it may be worth doing some basic error before setting the contents of the <div>
+    }
+}
+function drawTable(defects){
+	var table ='<table border="1">';
+	table+= '<tr><td> <B>ID</B> </td><td> <B>Title</B> </td><td> <B>Description</B> </td><td> <B>Author</B> </td></tr>';
+	
+	for(i=0; i<defects.feed.entry.length; i++){
+		table+= '<tr>';
+		table+= '<td>';
+		table+= defects.feed.entry[i].content.defect.id;
+		table+= '</td>';
+		table+= '<td>';
+		table+= defects.feed.entry[i].title.content;
+		table+= '</td>';
+		table+= '<td>';
+		table+= defects.feed.entry[i].content.defect.description;
+		table+= '</td>';
+		table+= '<td>';
+		table+= defects.feed.entry[i].author.name;
+		table+= '</td>';
+		table+= '</tr>';
+	}
+	table+= '</table>';
+	document.getElementById('description').innerHTML = table;
+}
+
+var JSON = JSON || {};
+
+JSON.stringify = JSON.stringify || function (obj) { 
+
+    var t = typeof (obj); 
+    if (t != "object" || obj === null) { 
+
+	// simple data type 
+	if (t == "string") obj = '"'+obj+'"'; 
+	return String(obj); 
+
+    } 
+    else { 
+
+	// recurse array or object 
+	var n, v, json = [], arr = (obj && obj.constructor == Array); 
+
+	for (n in obj) { 
+	    v = obj[n]; t = typeof(v); 
+
+	    if (t == "string") v = '"'+v+'"'; 
+	    else if (t == "object" && v !== null) v = JSON.stringify(v); 
+
+	    json.push((arr ? "" : '"' + n + '":') + String(v)); 
+	} 
+
+	return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}"); 
+    } 
+}; 
+
+function createDefect() {
+	document.getElementById('description').innerHTML = "<b>Loading...</b>";
+	var defect = {defect : {
+			  name: document.newDefect.name.value,
+			  description: document.newDefect.description.value,
+			  author: document.newDefect.author.value,
+			  severity: document.newDefect.severity.value,
+			  status: document.newDefect.status.value,
+			  assignedTo: document.newDefect.assignedTo.value
+			  }
+	}
+	var t = JSON.stringify(defect);
+	makePOSTRequest(t);
+}
+
+function makePOSTRequest(object) {
+    //make a connection to the server ... specifying that you intend to make a GET request 
+    //to the server. Specifiy the page name and the URL parameters to send
+    http.open('post', 'rest/defects');
+	http.setRequestHeader('content-type', 'application/json');
+    //assign a handler for the response
+    http.onreadystatechange = makeGetRequest;
+	
+    //actually send the request to the server
+    http.send(object);
+}
+
+-->
+</script>
+</head>
+<body onload="javascript:makeGetRequest(1)">
+<h1>Defects</h1>
+<div id="description"></div>
+<h3>Create New Defect</h3>
+<form  name="newDefect" action="">
+<table>
+	<tr>
+		<td>Title:</td>
+		<td><input type="text" name="name" /></td>
+	</tr>
+	<tr>
+		<td>Description:</td>
+		<td><input type="text" name="description" /></td>
+	</tr>
+	<tr>
+		<td>Author:</td>
+		<td><input type="text" name="author" /></td>
+	</tr>
+	<tr>
+		<td>Severity:</td>
+		<td><input type="text" name="severity" /></td>
+	</tr>
+	<tr>
+		<td>Status:</td>
+		<td><input type="text" name="status" /></td>
+	</tr>
+	<tr>
+		<td>Assigned to:</td>
+		<td><input type="text" name="assignedTo" /></td>
+	</tr>
+</table>
+</form>
+<button type="button" onclick="createDefect()">Submit</button>
+<p><a href="rest">Go to REST Servlet</a></p>
+</body>
+</html>

@@ -1,0 +1,41 @@
+Apache Wink
+Copyright 2009-2010 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+-------------------------------------------------------------------------------
+This product includes software developed for the JAXB Reference Implementation project (https://jaxb.dev.java.net/).  Apache Wink elects to distribute this software under the CDDL Version 1.0 license.
+You can obtain a copy of the License at:
+    https://glassfish.dev.java.net/public/CDDL+GPL.html
+The source code is available at:
+    https://jaxb.dev.java.net/
+
+-------------------------------------------------------------------------------
+This product includes software, JSR-311 (https://jsr311.dev.java.net/) distributed under the CDDL Version 1.0 license.
+You can obtain a copy of the License at:
+    http://www.opensource.org/licenses/cddl1.php
+The source code is available at:
+    https://jsr311.dev.java.net/
+ 
+-------------------------------------------------------------------------------
+This product includes software, JavaBeans Activation Framework (http://java.sun.com/javase/technologies/desktop/javabeans/jaf/) distributed under the CDDL Version 1.0 license.
+You can obtain a copy of the License at:
+    http://www.opensource.org/licenses/cddl1.php
+The source code is available at:
+    http://java.sun.com/javase/technologies/desktop/javabeans/jaf/
+
+-------------------------------------------------------------------------------
+This product includes software, Streaming API for XML.  Apache Wink elects to distribute this software under CDDL Version 1.0 license.
+You can obtain a copy of the License at:
+    https://glassfish.dev.java.net/public/CDDL+GPL.html
+The source code is available at:
+    https://sjsxp.dev.java.net/
+
+-------------------------------------------------------------------------------
+This product includes software, Protocol Buffers - Google's data interchange format 
+Copyright 2008 Google Inc.
+You can obtain a copy of the License at:
+    http://www.opensource.org/licenses/bsd-license.php
+The source code is available at:
+    http://code.google.com/p/protobuf/source
