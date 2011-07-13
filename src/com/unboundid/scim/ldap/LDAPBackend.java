@@ -363,7 +363,7 @@ public abstract class LDAPBackend
       final LDAPResult addResult =
           getLDAPInterface(request.getAuthenticatedUserID()).add(addRequest);
 
-      final PostReadResponseControl c = PostReadResponseControl.get(addResult);
+      final PostReadResponseControl c = getPostReadResponseControl(addResult);
       if (c != null)
       {
         addedEntry = c.getEntry();
@@ -472,7 +472,7 @@ public abstract class LDAPBackend
       addCommonControls(request, modifyRequest);
       final LDAPResult addResult = ldapInterface.modify(modifyRequest);
 
-      final PostReadResponseControl c = PostReadResponseControl.get(addResult);
+      final PostReadResponseControl c = getPostReadResponseControl(addResult);
       if (c != null)
       {
         modifiedEntry = c.getEntry();
@@ -652,4 +652,45 @@ public abstract class LDAPBackend
            c.getValue());
     }
   }
+
+
+
+  /**
+   * Extracts a post-read response control from the provided result.
+   *
+   * @param  result  The result from which to retrieve the post-read response
+   *                 control.
+   *
+   * @return  The post-read response control contained in the provided result,
+   *          or {@code null} if the result did not contain a post-read response
+   *          control.
+   *
+   * @throws  LDAPException  If a problem is encountered while attempting to
+   *                         decode the post-read response control contained in
+   *                         the provided result.
+   */
+  public static PostReadResponseControl getPostReadResponseControl(
+      final LDAPResult result)
+         throws LDAPException
+  {
+    final Control c = result.getResponseControl(
+        PostReadResponseControl.POST_READ_RESPONSE_OID);
+    if (c == null)
+    {
+      return null;
+    }
+
+    if (c instanceof PostReadResponseControl)
+    {
+      return (PostReadResponseControl) c;
+    }
+    else
+    {
+      return new PostReadResponseControl(c.getOID(), c.isCritical(),
+           c.getValue());
+    }
+  }
+
+
+
 }
