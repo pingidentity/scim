@@ -29,7 +29,7 @@ public class SCIMWinkClientTest extends SCIMRITestCase {
    *
    * @throws Exception if error creating a new user.
    */
-  @Test
+  @Test(enabled=false)
   public void testCreateUser() throws Exception {
     ClientConfig config = new ClientConfig();
     BasicAuthSecurityHandler basicAuth = new BasicAuthSecurityHandler();
