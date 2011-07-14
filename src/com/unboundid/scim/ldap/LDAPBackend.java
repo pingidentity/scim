@@ -392,7 +392,7 @@ public abstract class LDAPBackend
 
     final Response response = new Response();
     response.setResource(new GenericResource(returnObject));
-    return new SCIMResponse(HttpStatus.OK_200, response);
+    return new SCIMResponse(HttpStatus.CREATED_201, response);
   }
 
 

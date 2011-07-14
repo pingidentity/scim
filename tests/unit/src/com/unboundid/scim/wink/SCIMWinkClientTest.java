@@ -19,6 +19,8 @@ import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBElement;
 import java.net.URI;
 
+
+
 /**
  * Tests SCIM operations via the Apache Wink Client.
  */
@@ -29,17 +31,18 @@ public class SCIMWinkClientTest extends SCIMRITestCase {
    *
    * @throws Exception if error creating a new user.
    */
-  @Test(enabled=false)
+  @Test
   public void testCreateUser() throws Exception {
     ClientConfig config = new ClientConfig();
     BasicAuthSecurityHandler basicAuth = new BasicAuthSecurityHandler();
-    basicAuth.setUserName(
-      getTestBindDN() != null ? getTestBindDN() : "cn=Directory Manager");
-    basicAuth.setPassword(
-      getTestBindPassword() != null ? getTestBindPassword() : "password");
+    basicAuth.setUserName("cn=Directory Manager");
+    basicAuth.setPassword("password");
     config.handlers(basicAuth);
 
     RestClient client = new RestClient(config);
+
+    // Initialize the in-memory test DS with the base entry.
+    getTestDS(true, false);
 
     // create new user
     User newUser = new User();

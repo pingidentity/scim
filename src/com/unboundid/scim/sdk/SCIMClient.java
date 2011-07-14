@@ -801,6 +801,7 @@ public class SCIMClient
         switch (exchange.getResponseStatus())
         {
           case HttpStatus.OK_200:
+          case HttpStatus.CREATED_201:
             // The user was created.
             final String resourceURI =
                 exchange.getResponseFields().getStringField(
