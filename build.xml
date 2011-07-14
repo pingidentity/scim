@@ -13,26 +13,27 @@
 
 
   <!-- Define a number of project-wide properties. -->
-  <property name="src.dir"           location="src" />
-  <property name="buildsrc.dir"      location="build-src" />
-  <property name="gensrc.dir"        location="gen-src" />
-  <property name="build.dir"         location="build" />
-  <property name="docs.dir"          location="docs" />
-  <property name="distroot.dir"      location="dist-root" />
-  <property name="resource.dir"      location="resource" />
-  <property name="classes.dir"       location="${build.dir}/classes" />
-  <property name="lib.dir"           location="${build.dir}/lib" />
-  <property name="package.dir"       location="${build.dir}/package" />
-  <property name="serversdk.dir"     location="unboundid-server-sdk-3.1.0.0" />
-  <property name="serversdk.lib.dir" location="${serversdk.dir}/lib" />
-  <property name="ldapsdk.dir"       location="ext/ldapsdk" />
-  <property name="jetty.dir"         location="ext/jetty" />
-  <property name="jaxb.dir"          location="ext/jaxb" />
-  <property name="json.dir"          location="ext/json" />
-  <property name="xsom.dir"          location="ext/xsom" />
-  <property name="wink.dir"          location="ext/wink" />
-  <property name="commons-codec.dir" location="ext/commons-codec" />
-  <property name="jackson.dir"       location="ext/jackson" />
+  <property name="src.dir"              location="src" />
+  <property name="buildsrc.dir"         location="build-src" />
+  <property name="gensrc.dir"           location="gen-src" />
+  <property name="build.dir"            location="build" />
+  <property name="docs.dir"             location="docs" />
+  <property name="distroot.dir"         location="dist-root" />
+  <property name="resource.dir"         location="resource" />
+  <property name="classes.dir"          location="${build.dir}/classes" />
+  <property name="lib.dir"              location="${build.dir}/lib" />
+  <property name="package.dir"          location="${build.dir}/package" />
+  <property name="serversdk.dir"        location="unboundid-server-sdk-3.1.0.0" />
+  <property name="serversdk.lib.dir"    location="${serversdk.dir}/lib" />
+  <property name="ldapsdk.dir"          location="ext/ldapsdk" />
+  <property name="jetty.dir"            location="ext/jetty" />
+  <property name="jaxb.dir"             location="ext/jaxb" />
+  <property name="json.dir"             location="ext/json" />
+  <property name="xsom.dir"             location="ext/xsom" />
+  <property name="relaxngDatatype.dir"  location="ext/relaxngDatatype" />
+  <property name="wink.dir"             location="ext/wink" />
+  <property name="commons-codec.dir"    location="ext/commons-codec" />
+  <property name="jackson.dir"          location="ext/jackson" />
 
 
 
@@ -110,11 +111,17 @@
       <include name="*.jar" />
     </fileset>
   </path>
+  <path id="relaxngDatatype-jars">
+    <fileset dir="${relaxngDatatype.dir}">
+      <include name="*.jar" />
+    </fileset>
+  </path>
   <path id="external-jars">
     <path refid="jetty-jars"/>
     <path refid="ldapsdk-jars"/>
     <path refid="json-jars"/>
     <path refid="xsom-jars"/>
+    <path refid="relaxngDatatype-jars"/>
   </path>
   <path id="wink-jars">
     <fileset dir="${wink.dir}/dist">
