@@ -23,12 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Principal;
 
-import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_ACCEPT;
-import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
-import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_METHOD_OVERRIDE;
-import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
-import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
-
+import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 /**
@@ -74,8 +69,7 @@ public class SCIMServlet
     try
     {
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           request.getPathInfo(),
-                                           request.getQueryString());
+        request.getPathInfo(), request.getQueryString());
 
       final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
       if (resourceAttribute != null)
@@ -132,6 +126,14 @@ public class SCIMServlet
       // Return the response.
       response.setStatus(scimResponse.getStatusCode());
 
+      String origin = request.getHeader(HEADER_NAME_ORIGIN);
+      if (origin != null) {
+        response.addHeader(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+      }
+      response.addHeader(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
+        Boolean.TRUE.toString());
+
+
       final Marshaller marshaller;
       if (mediaType.equalsIgnoreCase(MEDIA_TYPE_JSON))
       {
@@ -147,7 +149,7 @@ public class SCIMServlet
       }
 
       marshaller.marshal(scimResponse.getResponse(),
-                         response.getOutputStream());
+        response.getOutputStream());
     }
     catch (Exception e)
     {
@@ -186,8 +188,7 @@ public class SCIMServlet
       }
 
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           request.getPathInfo(),
-                                           request.getQueryString());
+        request.getPathInfo(), request.getQueryString());
 
       final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
       if (resourceAttribute != null)
@@ -267,7 +268,7 @@ public class SCIMServlet
       }
 
       marshaller.marshal(scimResponse.getResponse(),
-                         response.getOutputStream());
+        response.getOutputStream());
     }
     catch (Exception e)
     {
@@ -353,7 +354,7 @@ public class SCIMServlet
         }
 
         marshaller.marshal(scimResponse.getResponse(),
-                           response.getOutputStream());
+          response.getOutputStream());
       }
     }
     catch (Exception e)
@@ -376,8 +377,7 @@ public class SCIMServlet
     try
     {
       final ScimURI uri = ScimURI.parseURI(request.getContextPath(),
-                                           request.getPathInfo(),
-                                           request.getQueryString());
+        request.getPathInfo(), request.getQueryString());
 
       final SCIMAttributeType resourceAttribute = uri.getResourceAttribute();
       if (resourceAttribute != null)
@@ -447,7 +447,7 @@ public class SCIMServlet
       }
 
       marshaller.marshal(scimResponse.getResponse(),
-                         response.getOutputStream());
+        response.getOutputStream());
     }
     catch (Exception e)
     {
