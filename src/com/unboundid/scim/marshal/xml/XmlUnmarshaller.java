@@ -56,7 +56,7 @@ public class XmlUnmarshaller implements Unmarshaller
     DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
     dbFactory.setNamespaceAware(true);
     dbFactory.setIgnoringElementContentWhitespace(true);
-    dbFactory.setValidating(true);
+    dbFactory.setValidating(false);
     DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
     Document doc = dBuilder.parse(inputStream);
     doc.getDocumentElement().normalize();
