@@ -100,15 +100,24 @@
 
   <!-- Runs an in-memory test server in the foreground. -->
   <target name="run-server" description="Run the in-memory test server">
-    <exec executable="${server.dir}/tools/in-memory-scim-server"
-          failonerror="true">
+    <java fork="true"
+          classname="com.unboundid.scim.ldap.InMemoryServerTool">
+
+      <classpath>
+        <fileset dir="${server.dir}/lib">
+          <include name="*.jar" />
+        </fileset>
+      </classpath>
+
+      <jvmarg value="-Xms${MEM}" />
+      <jvmarg value="-Xmx${MEM}" />
       <arg value="--useSchemaFile"/>
       <arg value="${server.dir}/resource/schema"/>
       <arg value="--port"/>
       <arg value="${test.port}"/>
       <arg value="--ldifFile"/>
       <arg value="${server.dir}/resource/ldif/spec-compat.ldif"/>
-    </exec>
+    </java>
   </target>
 
   <!-- Performs a basic set of tests against a running test server. -->
