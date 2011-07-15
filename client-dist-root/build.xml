@@ -4,10 +4,10 @@
   -->
 
 <project name="UnboundID SCIM SDK for Java : Client Examples" basedir="."
-         default="compile">
+         default="all">
 
   <description>
-    This project provides client examples to communicate with a
+    This project provides client examples that to communicate with a
     server offering a Simple Cloud Identity Management (SCIM) interface.
   </description>
 
@@ -22,6 +22,13 @@
   <property name="build.dir"            location="build" />
   <property name="lib.dir"              location="lib" />
   <property name="classes.dir"          location="${build.dir}/classes" />
+  <property name="server.dir"           location="../server" />
+
+  <!-- Define some test properties -->
+  <property name="test.host"            value="localhost" />
+  <property name="test.port"            value="8181" />
+  <property name="test.username"        value="cn=Directory Manager" />
+  <property name="test.password"        value="password" />
 
   <!-- Define a number of project-wide classpath values. -->
   <path id="client-jars">
@@ -53,5 +60,44 @@
       </classpath>
     </javac>
   </target>
+
+  <!-- Runs an in-memory test server in the foreground. -->
+  <target name="run-server" description="Run the in-memory test server">
+    <exec executable="${server.dir}/tools/in-memory-scim-server"
+          failonerror="true">
+      <arg value="--useSchemaFile"/>
+      <arg value="${server.dir}/resource/schema"/>
+      <arg value="--port"/>
+      <arg value="${test.port}"/>
+      <arg value="--ldifFile"/>
+      <arg value="${server.dir}/resource/ldif/spec-compat.ldif"/>
+    </exec>
+  </target>
+
+  <!-- Performs a basic set of tests against a running test server. -->
+  <target name="test" description="Perform a basic set of tests"
+          depends="compile">
+
+    <echo message="Running tests against the SCIM server at ${test.host}:${test.port}"/>
+
+    <java fork="true" failonerror="true"
+          classname="com.unboundid.scim.wink.ClientTest">
+
+      <classpath>
+        <dirset dir="${classes.dir}"/>
+        <path refid="client-jars"/>
+      </classpath>
+
+      <jvmarg value="-Dtest.username=${test.username}"/>
+      <jvmarg value="-Dtest.password=${test.password}"/>
+      <jvmarg value="-Dtest.host=${test.host}"/>
+      <jvmarg value="-Dtest.port=${test.port}"/>
+
+    </java>
+  </target>
+
+  <!-- Run all build targets -->
+  <target name="all" description="Run all build targets"
+          depends="compile,test" />
 
 </project>

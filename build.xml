@@ -88,6 +88,11 @@
       <include name="*.jar" />
     </fileset>
   </path>
+  <path id="jackson-jars">
+    <fileset dir="${jackson.dir}/">
+      <include name="jackson-all-*.jar"/>
+    </fileset>
+  </path>
   <path id="jetty-jars">
     <fileset dir="${jetty.dir}/lib">
       <include name="jetty-client-*.jar"/>
@@ -116,40 +121,47 @@
       <include name="*.jar" />
     </fileset>
   </path>
-  <path id="server-jars">
-    <path refid="jetty-jars"/>
-    <path refid="ldapsdk-jars"/>
-    <path refid="json-jars"/>
-    <path refid="xsom-jars"/>
-    <path refid="relaxngDatatype-jars"/>
-  </path>
-  <path id="wink-jars">
+  <path id="wink-jars-no-json">
     <fileset dir="${wink.dir}/dist">
       <include name="wink-*jar"/>
     </fileset>
     <fileset dir="${wink.dir}/lib">
-      <include name="activation-1.1-*.jar"/>
-      <include name="commons-lang-*.jar"/>
+      <!--<include name="activation-1.1-*.jar"/>-->
+      <!--<include name="commons-lang-*.jar"/>-->
       <include name="jsr311-api-*.jar"/>
       <include name="slf4j-api-*.jar"/>
       <include name="slf4j-simple-*.jar"/>
-      <include name="stax-api-*.jar"/>
+      <!--<include name="stax-api-*.jar"/>-->
     </fileset>
+    <fileset dir="${commons-codec.dir}/">
+      <include name="commons-codec-1.5.jar"/>
+    </fileset>
+  </path>
+  <path id="wink-jars-with-json">
+    <path refid="wink-jars-no-json"/>
     <fileset dir="${wink.dir}/ext/wink-jackson-provider">
       <include name="wink-jackson-provider-*.jar"/>
     </fileset>
     <fileset dir="${wink.dir}/ext/wink-json-provider">
       <include name="wink-json-provider-*.jar"/>
     </fileset>
-    <fileset dir="${commons-codec.dir}/">
-      <include name="commons-codec-1.5.jar"/>
-    </fileset>
-    <fileset dir="${jackson.dir}/">
-      <include name="jackson-all-*.jar"/>
-    </fileset>
   </path>
-  <path id="client-jars">
-    <path refid="wink-jars"/>
+
+  <path id="server-jars">
+    <path refid="jetty-jars"/>
+    <path refid="ldapsdk-jars"/>
+    <path refid="json-jars"/>
+    <path refid="jackson-jars"/>
+    <path refid="xsom-jars"/>
+    <path refid="relaxngDatatype-jars"/>
+  </path>
+
+  <path id="client-jars-with-json">
+    <path refid="wink-jars-with-json"/>
+  </path>
+
+  <path id="client-jars-no-json">
+    <path refid="wink-jars-no-json"/>
   </path>
 
   <!-- Clean up after an earlier build. -->
@@ -297,7 +309,7 @@
       <compilerarg value="-Xlint:all" />
       <classpath>
         <pathelement location="${classes.dir}" />
-        <path refid="client-jars"/>
+        <path refid="client-jars-with-json"/>
         <path refid="server-jars"/>
       </classpath>
     </javac>
@@ -405,7 +417,7 @@
       </fileset>
     </copy>
 
-    <jar jarfile="${server.package.dir}/lib/unboundid-scimri.jar"
+    <jar jarfile="${server.package.dir}/lib/unboundid-scimri-server.jar"
          compress="true"
          index="true">
       <fileset dir="${classes.dir}">
@@ -460,7 +472,7 @@
     </copy>
 
     <copy todir="${client.package.dir}/lib">
-      <path refid="client-jars"/>
+      <path refid="client-jars-no-json"/>
     </copy>
 
     <copy todir="${client.package.dir}/src">
@@ -488,7 +500,7 @@
       </fileset>
       <classpath>
         <pathelement location="${classes.dir}" />
-        <path refid="client-jars"/>
+        <path refid="client-jars-no-json"/>
         <path refid="server-jars"/>
       </classpath>
     </javadoc>
@@ -587,7 +599,7 @@
         <fileset dir="${testng.dir}">
           <include name="*.jar" />
         </fileset>
-        <path refid="client-jars"/>
+        <path refid="client-jars-with-json"/>
         <path refid="server-jars"/>
         <path refid="instrument.classes" />
       </classpath>
@@ -610,7 +622,7 @@
         <pathelement location="${coverage.instrumented.dir}" />
         <pathelement location="${classes.dir}" />
         <pathelement location="${unit.classes.dir}" />
-        <path refid="client-jars"/>
+        <path refid="client-jars-with-json"/>
         <path refid="server-jars"/>
         <path refid="instrument.classes" />
         <path refid="emma.lib" />
