@@ -122,14 +122,12 @@
   <path id="wink-jars-no-json">
     <fileset dir="${wink.dir}/dist">
       <include name="wink-*jar"/>
+      <exclude name="wink-server*jar"/>
     </fileset>
     <fileset dir="${wink.dir}/lib">
-      <!--<include name="activation-1.1-*.jar"/>-->
-      <!--<include name="commons-lang-*.jar"/>-->
       <include name="jsr311-api-*.jar"/>
       <include name="slf4j-api-*.jar"/>
       <include name="slf4j-simple-*.jar"/>
-      <!--<include name="stax-api-*.jar"/>-->
     </fileset>
   </path>
   <path id="wink-jars-with-json">
