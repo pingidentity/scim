@@ -8,12 +8,14 @@ import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.SCIMRITestCase;
+import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientResponse;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.net.URISyntaxException;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * Tests SCIM operations via the Apache Wink Client.
@@ -25,13 +27,30 @@ public class SCIMWinkClientTest extends SCIMRITestCase {
 
   /**
    * Performs pre-test processing.
+   *
    * @throws Exception if error initializing tests.
    */
   @BeforeClass
   public void beforeClass() throws Exception {
     // Initialize the in-memory test DS with the base entry.
     getTestDS(true, false);
+  }
 
+
+  /**
+   * Tests an attempt to create a new user with invalid credentials.
+   *
+   * @throws Exception if error.
+   */
+  @Test
+  public void testUnauthenticatedCreateUserRequest() throws Exception {
+    try {
+      this.createUser(new Client(USERNAME, UUID.randomUUID().toString(), HOST,
+        getSSTestPort()));
+      assertFalse(true,
+        "Client request should have failed as the password " + "is invalid");
+    } catch (ClientAuthenticationException e) {
+    }
   }
 
   /**
@@ -98,6 +117,18 @@ public class SCIMWinkClientTest extends SCIMRITestCase {
     return new Client(USERNAME, PASSWORD, HOST, getSSTestPort());
   }
 
+
+  /**
+   * Creates a new SCIM User.
+   * @param client The resource client.
+   * @return The newly created SCIM User.
+   * @throws URISyntaxException If error parsing the Service Provider endpoint.
+   */
+  private ClientResponse createUser(final Client client)
+    throws URISyntaxException {
+    return client.createUser(getTemplateUser());
+  }
+
   /**
    * Creates a new SCIM User.
    *
@@ -105,7 +136,7 @@ public class SCIMWinkClientTest extends SCIMRITestCase {
    * @throws URISyntaxException If error parsing the Service Provider endpoint.
    */
   private ClientResponse createUser() throws URISyntaxException {
-    return getClient().createUser(getTemplateUser());
+    return createUser(this.getClient());
   }
 
   /**
