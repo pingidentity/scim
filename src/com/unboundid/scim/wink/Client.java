@@ -10,7 +10,6 @@ import com.unboundid.scim.schema.User;
 import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.RestClient;
-import org.apache.wink.client.handlers.BasicAuthSecurityHandler;
 
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBElement;
@@ -51,9 +50,11 @@ public class Client {
 
     ClientConfig config = new ClientConfig();
     // setup BASIC Auth
-    BasicAuthSecurityHandler basicAuth = new BasicAuthSecurityHandler();
-    basicAuth.setUserName(username);
-    basicAuth.setPassword(password);
+//    BasicAuthSecurityHandler basicAuth = new BasicAuthSecurityHandler();
+//    basicAuth.setUserName(username);
+//    basicAuth.setPassword(password);
+    HttpBasicAuthSecurityHandler basicAuth = new HttpBasicAuthSecurityHandler
+      (username,password);
     config.handlers(basicAuth);
     this.client = new RestClient(config);
     this.userEndpointUri =

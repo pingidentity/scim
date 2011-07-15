@@ -32,7 +32,6 @@
   <property name="xsom.dir"             location="ext/xsom" />
   <property name="relaxngDatatype.dir"  location="ext/relaxngDatatype" />
   <property name="wink.dir"             location="ext/wink" />
-  <property name="commons-codec.dir"    location="ext/commons-codec" />
   <property name="jackson.dir"          location="ext/jackson" />
 
 
@@ -132,9 +131,6 @@
       <include name="slf4j-api-*.jar"/>
       <include name="slf4j-simple-*.jar"/>
       <!--<include name="stax-api-*.jar"/>-->
-    </fileset>
-    <fileset dir="${commons-codec.dir}/">
-      <include name="commons-codec-1.5.jar"/>
     </fileset>
   </path>
   <path id="wink-jars-with-json">
