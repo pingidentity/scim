@@ -1,0 +1,57 @@
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
+<project name="UnboundID SCIM SDK for Java : Client Examples" basedir="."
+         default="compile">
+
+  <description>
+    This project provides client examples to communicate with a
+    server offering a Simple Cloud Identity Management (SCIM) interface.
+  </description>
+
+
+
+
+  <!-- Define the amount of memory to use for forked VMs -->
+  <property name="MEM" value="512M" />
+
+  <!-- Define a number of project-wide properties. -->
+  <property name="src.dir"              location="src" />
+  <property name="build.dir"            location="build" />
+  <property name="lib.dir"              location="lib" />
+  <property name="classes.dir"          location="${build.dir}/classes" />
+
+  <!-- Define a number of project-wide classpath values. -->
+  <path id="client-jars">
+    <fileset dir="${lib.dir}">
+      <include name="*.jar" />
+    </fileset>
+  </path>
+
+  <!-- Clean up after an earlier build. -->
+  <target name="clean" description="Clean up after an earlier build">
+    <delete dir="${build.dir}" />
+  </target>
+
+  <!-- Compile the Java source files. -->
+  <target name="compile" description="Compile the Java source files"
+          depends="clean">
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${classes.dir}" />
+
+    <javac srcdir="${src.dir}" destdir="${classes.dir}"
+           source="1.5" target="1.5" deprecation="true" fork="true"
+           memoryInitialSize="${MEM}" memoryMaximumSize="${MEM}"
+           optimize="true" debug="on" debuglevel="lines,source,vars"
+           includeantruntime="false">
+      <compilerarg value="-Xlint:all" />
+      <classpath>
+        <pathelement location="${classes.dir}" />
+        <path refid="client-jars"/>
+      </classpath>
+    </javac>
+  </target>
+
+</project>

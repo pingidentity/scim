@@ -19,9 +19,9 @@
   <property name="build.dir"            location="build" />
   <property name="docs.dir"             location="docs" />
   <property name="distroot.dir"         location="dist-root" />
+  <property name="client.distroot.dir"  location="client-dist-root" />
   <property name="resource.dir"         location="resource" />
   <property name="classes.dir"          location="${build.dir}/classes" />
-  <property name="lib.dir"              location="${build.dir}/lib" />
   <property name="package.dir"          location="${build.dir}/package" />
   <property name="serversdk.dir"        location="unboundid-server-sdk-3.1.0.0" />
   <property name="serversdk.lib.dir"    location="${serversdk.dir}/lib" />
@@ -83,11 +83,11 @@
 
 
   <!-- Define a number of project-wide classpath values. -->
-    <path id="json-jars">
-      <fileset dir="${json.dir}">
-        <include name="*.jar" />
-      </fileset>
-    </path>
+  <path id="json-jars">
+    <fileset dir="${json.dir}">
+      <include name="*.jar" />
+    </fileset>
+  </path>
   <path id="jetty-jars">
     <fileset dir="${jetty.dir}/lib">
       <include name="jetty-client-*.jar"/>
@@ -116,7 +116,7 @@
       <include name="*.jar" />
     </fileset>
   </path>
-  <path id="external-jars">
+  <path id="server-jars">
     <path refid="jetty-jars"/>
     <path refid="ldapsdk-jars"/>
     <path refid="json-jars"/>
@@ -147,6 +147,9 @@
     <fileset dir="${jackson.dir}/">
       <include name="jackson-all-*.jar"/>
     </fileset>
+  </path>
+  <path id="client-jars">
+    <path refid="wink-jars"/>
   </path>
 
   <!-- Clean up after an earlier build. -->
@@ -294,7 +297,8 @@
       <compilerarg value="-Xlint:all" />
       <classpath>
         <pathelement location="${classes.dir}" />
-        <path refid="external-jars"/>
+        <path refid="client-jars"/>
+        <path refid="server-jars"/>
       </classpath>
     </javac>
 
@@ -347,44 +351,55 @@
 
     <property name="ri.package.dir"
               location="${package.dir}/${buildid}" />
+    <property name="server.package.dir"
+              location="${ri.package.dir}/server" />
+    <property name="client.package.dir"
+              location="${ri.package.dir}/client" />
 
     <mkdir dir="${ri.package.dir}" />
-    <mkdir dir="${ri.package.dir}/lib" />
-    <mkdir dir="${ri.package.dir}/docs" />
-    <mkdir dir="${ri.package.dir}/docs/javadoc" />
-    <mkdir dir="${ri.package.dir}/resource" />
+    <mkdir dir="${server.package.dir}" />
+    <mkdir dir="${server.package.dir}/lib" />
+    <mkdir dir="${server.package.dir}/docs" />
+    <mkdir dir="${server.package.dir}/docs/javadoc" />
+    <mkdir dir="${server.package.dir}/resource" />
 
-    <copy todir="${ri.package.dir}">
+    <mkdir dir="${client.package.dir}" />
+    <mkdir dir="${client.package.dir}/lib" />
+    <mkdir dir="${client.package.dir}/src" />
+    <mkdir dir="${client.package.dir}/docs" />
+    <mkdir dir="${client.package.dir}/docs/javadoc" />
+
+    <copy todir="${server.package.dir}">
       <fileset dir="${distroot.dir}">
         <include name="**/*" />
         <exclude name="**/.svn" />
       </fileset>
     </copy>
 
-    <copy todir="${ri.package.dir}/docs">
-      <fileset dir="${ri.package.dir}">
+    <copy todir="${server.package.dir}/docs">
+      <fileset dir="${server.package.dir}">
         <include name="LICENSE*.txt" />
       </fileset>
     </copy>
 
-    <copy todir="${ri.package.dir}/docs/examples">
+    <copy todir="${server.package.dir}/docs/examples">
       <fileset dir="${src.dir}/com/unboundid/scim/sdk/examples">
         <include name="*.java" />
         <exclude name="**/package-info.java" />
       </fileset>
     </copy>
 
-    <copy todir="${ri.package.dir}/lib">
-      <path refid="external-jars"/>
+    <copy todir="${server.package.dir}/lib">
+      <path refid="server-jars"/>
     </copy>
 
-    <copy todir="${ri.package.dir}/resource/schema">
+    <copy todir="${server.package.dir}/resource/schema">
       <fileset dir="${resource.dir}/schema">
         <include name="*.xsd" />
       </fileset>
     </copy>
 
-    <jar jarfile="${ri.package.dir}/lib/unboundid-scimri.jar"
+    <jar jarfile="${server.package.dir}/lib/unboundid-scimri.jar"
          compress="true"
          index="true">
       <fileset dir="${classes.dir}">
@@ -423,56 +438,70 @@
       </manifest>
     </jar>
 
-    <javadoc destdir="${ri.package.dir}/docs/javadoc" source="1.5"
+    <fixcrlf srcDir="${server.package.dir}/tools" excludes="*.bat" eol="lf" />
+    <fixcrlf srcDir="${server.package.dir}/tools" includes="*.bat" eol="crlf" />
+    <chmod perm="755">
+      <fileset dir="${server.package.dir}/tools">
+        <exclude name="*.bat" />
+      </fileset>
+    </chmod>
+
+    <copy todir="${client.package.dir}">
+      <fileset dir="${client.distroot.dir}">
+        <include name="**/*" />
+        <exclude name="**/.svn" />
+      </fileset>
+    </copy>
+
+    <copy todir="${client.package.dir}/lib">
+      <path refid="client-jars"/>
+    </copy>
+
+    <copy todir="${client.package.dir}/src">
+      <fileset dir="${src.dir}">
+        <include name="com/unboundid/scim/wink/**/*.java" />
+        <exclude name="**/package-info.java" />
+      </fileset>
+      <fileset dir="${gensrc.dir}/schema">
+        <include name="**/*.java" />
+        <exclude name="**/package-info.java" />
+      </fileset>
+    </copy>
+
+    <javadoc destdir="${client.package.dir}/docs/javadoc" source="1.5"
              useexternalfile="true"
              additionalparam="-quiet" linksource="yes"
-             windowtitle="UnboundID SCIM Reference Implementation for Java ${MAJOR_VERSION}.${MINOR_VERSION}.${POINT_VERSION}${VERSION_QUALIFIER}"
-             doctitle="UnboundID SCIM Reference Implementation for Java&lt;br&gt;${MAJOR_VERSION}.${MINOR_VERSION}.${POINT_VERSION}${VERSION_QUALIFIER}"
+             windowtitle="UnboundID SCIM SDK for Java ${MAJOR_VERSION}.${MINOR_VERSION}.${POINT_VERSION}${VERSION_QUALIFIER}"
+             doctitle="UnboundID SCIM SDK for Java&lt;br&gt;${MAJOR_VERSION}.${MINOR_VERSION}.${POINT_VERSION}${VERSION_QUALIFIER}"
              maxmemory="${MEM}" access="protected"
              stylesheetfile="${resource.dir}/unboundid-javadoc.css"
              bottom="&lt;div id=&quot;footer&quot;&gt;Copyright &amp;copy; 2011-${year} &amp;ndash; UnboundID Corp. &amp;ndash; All Rights Reserved.&lt;/div&gt;">
-      <fileset dir="${src.dir}" defaultexcludes="yes">
+      <fileset dir="${src.dir}/com/unboundid/scim/wink" defaultexcludes="yes">
         <exclude name="**/*Helper*" />
         <exclude name="**/*Constants*" />
       </fileset>
       <classpath>
         <pathelement location="${classes.dir}" />
-        <path refid="external-jars"/>
+        <path refid="client-jars"/>
+        <path refid="server-jars"/>
       </classpath>
     </javadoc>
 
-    <delete file="${ri.package.dir}/docs/javadoc/resources/inherit.gif" />
+    <delete file="${client.package.dir}/docs/javadoc/resources/inherit.gif" />
     <copy file="${resource.dir}/inherit.gif"
-          toFile="${ri.package.dir}/docs/javadoc/resources/inherit.gif" />
-
-    <fixcrlf srcDir="${ri.package.dir}/tools" excludes="*.bat" eol="lf" />
-    <fixcrlf srcDir="${ri.package.dir}/tools" includes="*.bat" eol="crlf" />
-    <chmod perm="755">
-      <fileset dir="${ri.package.dir}/tools">
-        <exclude name="*.bat" />
-      </fileset>
-    </chmod>
-
-    <zip destfile="${ri.package.dir}/src.zip" compress="true">
-      <zipfileset dir="${src.dir}" filemode="644" dirmode="755">
-      </zipfileset>
-      <zipfileset dir="${messages.gensrc.dir}" filemode="644" dirmode="755">
-      </zipfileset>
-      <zipfileset dir="${messages.dir}" filemode="644" dirmode="755">
-      </zipfileset>
-    </zip>
+          toFile="${client.package.dir}/docs/javadoc/resources/inherit.gif" />
 
     <zip destfile="${package.dir}/${buildid}.zip" compress="true">
       <zipfileset dir="${package.dir}" includes="${buildid}/**/*"
                   filemode="644" dirmode="755">
-        <exclude name="${buildid}/tools/*" />
+        <exclude name="${buildid}/server/tools/*" />
       </zipfileset>
       <zipfileset dir="${package.dir}" filemode="644" dirmode="755">
-        <include name="${buildid}/tools/*.bat" />
+        <include name="${buildid}/server/tools/*.bat" />
       </zipfileset>
       <zipfileset dir="${package.dir}" filemode="755" dirmode="755">
-        <include name="${buildid}/tools/*" />
-        <exclude name="${buildid}/tools/*.bat" />
+        <include name="${buildid}/server/tools/*" />
+        <exclude name="${buildid}/server/tools/*.bat" />
       </zipfileset>
     </zip>
 
@@ -552,8 +581,8 @@
         <fileset dir="${testng.dir}">
           <include name="*.jar" />
         </fileset>
-        <path refid="wink-jars"/>
-        <path refid="external-jars"/>
+        <path refid="client-jars"/>
+        <path refid="server-jars"/>
         <path refid="instrument.classes" />
       </classpath>
     </javac>
@@ -575,8 +604,8 @@
         <pathelement location="${coverage.instrumented.dir}" />
         <pathelement location="${classes.dir}" />
         <pathelement location="${unit.classes.dir}" />
-        <path refid="wink-jars"/>
-        <path refid="external-jars"/>
+        <path refid="client-jars"/>
+        <path refid="server-jars"/>
         <path refid="instrument.classes" />
         <path refid="emma.lib" />
         <fileset dir="${testng.dir}">
@@ -649,7 +678,7 @@
   <target name="push" description="Push libs to the Server SDK workspace"
           depends="package" >
     <copy todir="${serversdk.lib.dir}">
-      <fileset dir="${ri.package.dir}/lib" >
+      <fileset dir="${server.package.dir}/lib" >
         <exclude name="unboundid-ldapsdk-se.jar" />
       </fileset>
     </copy>
