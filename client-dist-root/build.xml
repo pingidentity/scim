@@ -19,9 +19,11 @@
 
   <!-- Define a number of project-wide properties. -->
   <property name="src.dir"              location="src" />
+  <property name="gensrc.dir"           location="gen-src" />
   <property name="build.dir"            location="build" />
   <property name="lib.dir"              location="lib" />
   <property name="classes.dir"          location="${build.dir}/classes" />
+  <property name="jaxb.dir"             location="ext/jaxb" />
   <property name="server.dir"           location="../server" />
 
   <!-- Define some test properties -->
@@ -29,6 +31,12 @@
   <property name="test.port"            value="8181" />
   <property name="test.username"        value="cn=Directory Manager" />
   <property name="test.password"        value="password" />
+
+  <!-- Define properties used for processing SCIM schema using JAXB. -->
+  <property name="schema.classes.dir" location="${build.dir}/schema" />
+  <property name="schema.gensrc.dir"  location="${gensrc.dir}/schema" />
+  <property name="schema.core"        location="resource/schema/scim-core.xsd" />
+  <property name="schema.package"     value="com.unboundid.scim.schema" />
 
   <!-- Define a number of project-wide classpath values. -->
   <path id="client-jars">
@@ -40,13 +48,42 @@
   <!-- Clean up after an earlier build. -->
   <target name="clean" description="Clean up after an earlier build">
     <delete dir="${build.dir}" />
+    <delete dir="${gensrc.dir}" />
+  </target>
+
+  <!-- Generate source files for the SCIM schema using JAXB. -->
+  <target name="xjc-schema">
+
+    <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+      <classpath>
+        <fileset dir="${jaxb.dir}">
+          <include name="*.jar"/>
+        </fileset>
+      </classpath>
+    </taskdef>
+
+    <delete dir="${schema.gensrc.dir}" />
+    <mkdir dir="${schema.gensrc.dir}"/>
+    <xjc destdir="${schema.gensrc.dir}"
+        removeOldOutput="yes"
+        extension="false"
+        package="${schema.package}"
+        schema="${schema.core}"/>
   </target>
 
   <!-- Compile the Java source files. -->
   <target name="compile" description="Compile the Java source files"
-          depends="clean">
+          depends="clean,xjc-schema">
     <mkdir dir="${build.dir}" />
     <mkdir dir="${classes.dir}" />
+
+    <javac srcdir="${schema.gensrc.dir}" destdir="${classes.dir}"
+           source="1.5" target="1.5" deprecation="true" fork="true"
+           memoryInitialSize="${MEM}" memoryMaximumSize="${MEM}"
+           optimize="true" debug="on" debuglevel="lines,source,vars"
+           includeantruntime="false">
+      <compilerarg value="-Xlint:all" />
+    </javac>
 
     <javac srcdir="${src.dir}" destdir="${classes.dir}"
            source="1.5" target="1.5" deprecation="true" fork="true"

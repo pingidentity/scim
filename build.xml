@@ -45,7 +45,6 @@
 
 
   <!-- Define properties used for processing SCIM schema using JAXB. -->
-  <property name="schema.classes.dir" location="${build.dir}/schema" />
   <property name="schema.gensrc.dir"  location="${gensrc.dir}/schema" />
   <property name="schema.core"        location="${resource.dir}/schema/scim-core.xsd" />
   <property name="schema.package"     value="com.unboundid.scim.schema" />
@@ -153,10 +152,12 @@
   </path>
 
   <path id="client-jars-with-json">
+    <path refid="ldapsdk-jars"/>
     <path refid="wink-jars-with-json"/>
   </path>
 
   <path id="client-jars-no-json">
+    <path refid="ldapsdk-jars"/>
     <path refid="wink-jars-no-json"/>
   </path>
 
@@ -249,11 +250,6 @@
 
   <!-- Generate source files for the SCIM schema using JAXB. -->
   <target name="generateschemasources">
-
-    <!-- Recreate the build/schema directory if necessary. -->
-    <delete dir="${schema.classes.dir}" />
-    <mkdir dir="${build.dir}" />
-    <mkdir dir="${schema.classes.dir}" />
 
     <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
       <classpath>
@@ -371,12 +367,6 @@
     <mkdir dir="${server.package.dir}/docs/javadoc" />
     <mkdir dir="${server.package.dir}/resource" />
 
-    <mkdir dir="${client.package.dir}" />
-    <mkdir dir="${client.package.dir}/lib" />
-    <mkdir dir="${client.package.dir}/src" />
-    <mkdir dir="${client.package.dir}/docs" />
-    <mkdir dir="${client.package.dir}/docs/javadoc" />
-
     <copy todir="${server.package.dir}">
       <fileset dir="${distroot.dir}">
         <include name="**/*" />
@@ -416,8 +406,7 @@
     <jar jarfile="${server.package.dir}/lib/unboundid-scimri-server.jar"
          compress="true"
          index="true">
-      <fileset dir="${classes.dir}">
-      </fileset>
+      <fileset dir="${classes.dir}"/>
       <manifest>
         <!--<attribute name="Main-Class" value="com.unboundid.util.Launcher" />-->
         <attribute name="Build-Time" value="${timestamp}" />
@@ -460,10 +449,24 @@
       </fileset>
     </chmod>
 
+    <mkdir dir="${client.package.dir}" />
+    <mkdir dir="${client.package.dir}/ext" />
+    <mkdir dir="${client.package.dir}/lib" />
+    <mkdir dir="${client.package.dir}/src" />
+    <mkdir dir="${client.package.dir}/resource" />
+    <mkdir dir="${client.package.dir}/docs" />
+    <mkdir dir="${client.package.dir}/docs/javadoc" />
+
     <copy todir="${client.package.dir}">
       <fileset dir="${client.distroot.dir}">
         <include name="**/*" />
         <exclude name="**/.svn" />
+      </fileset>
+    </copy>
+
+    <copy todir="${client.package.dir}/ext">
+      <fileset dir="ext">
+        <include name="jaxb/*.jar" />
       </fileset>
     </copy>
 
@@ -476,9 +479,11 @@
         <include name="com/unboundid/scim/wink/**/*.java" />
         <exclude name="**/package-info.java" />
       </fileset>
-      <fileset dir="${gensrc.dir}/schema">
-        <include name="**/*.java" />
-        <exclude name="**/package-info.java" />
+    </copy>
+
+    <copy todir="${client.package.dir}/resource/schema">
+      <fileset dir="${resource.dir}/schema">
+        <include name="*.xsd" />
       </fileset>
     </copy>
 
