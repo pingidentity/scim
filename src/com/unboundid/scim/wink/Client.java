@@ -2,6 +2,7 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
+
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.schema.ObjectFactory;
@@ -17,7 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * Example SCIM client that exercised the SCIM API.
+ * Example SCIM client that exercises the SCIM API.
  */
 public class Client {
   /**
