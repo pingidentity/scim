@@ -3,16 +3,14 @@
   ~ All Rights Reserved.
   -->
 
-<project name="UnboundID SCIM SDK for Java : Client Examples" basedir="."
+<project name="UnboundID SCIM SDK for Java Client : Client Examples"
+         basedir="."
          default="all">
 
   <description>
-    This project provides client examples that to communicate with a
-    server offering a Simple Cloud Identity Management (SCIM) interface.
+    This project provides a client example that communicates with a
+    Simple Cloud Identity Management (SCIM) server interface.
   </description>
-
-
-
 
   <!-- Define the amount of memory to use for forked VMs -->
   <property name="MEM" value="512M" />

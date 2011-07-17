@@ -4,6 +4,17 @@ Copyright 2011 UnboundID Corp.  All Rights Reserved.
 The following third party components may be included in this product:
 --------------------------------------------------------------------------------
 The following software may be included in this product:
+jackson-all-1.8.2.jar
+
+Use of any of this software is governed by the terms of the license below:
+
+This copy of Jackson JSON processor is licensed under the
+Apache (Software) License, version 2.0 ("the License").
+You can obtain a copy of the license at http://www.apache
+.org/licenses/LICENSE-2.0.html
+
+--------------------------------------------------------------------------------
+The following software may be included in this product:
 jetty-client-7.4.1.v20110513.jar
 jetty-continuation-7.4.1.v20110513.jar
 jetty-http-7.4.1.v20110513.jar
@@ -24,10 +35,29 @@ You can obtain a copy of the license at http://www.apache
 The following software may be included in this product:
 json.jar
 
-Use of any of this software is governed by the terms below:
+Use of any of this software is governed by the terms of the license below:
 
-"The software shall be used for good, not evil." If your conscience cannot live
-with that, then choose a different package.
+Copyright (c) 2002 JSON.org
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+The Software shall be used for Good, not Evil.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 --------------------------------------------------------------------------------
 
 The following software may be included in this product:
@@ -35,7 +65,7 @@ servlet-api-2.5.jar
 
 Use of any of this software is governed by the terms below:
 
-Copyright (c) Sun Microsystems, Inc and Apache Software Foundation.
+Copyright (c) Sun Microsystems, Inc
 Common Development and Distribution License.
 You can obtain a copy of the license at
 https://glassfish.dev.java.net/public/CDDLv1.0.html.
