@@ -16,6 +16,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
 import java.util.List;
+import java.util.Set;
 
 
 
@@ -61,6 +62,19 @@ public abstract class ResourceMapper
    * @return  {@code true} if this mapper supports resource creation.
    */
   public abstract boolean supportsCreate();
+
+
+
+  /**
+   * Retrieve the set of LDAP attribute types that should be requested in order
+   * to return the specified query attributes.
+   *
+   * @param queryAttributes  The requested query attributes.
+   *
+   * @return  The set of LDAP attribute types that should be requested.
+   */
+  public abstract Set<String> toLDAPAttributeTypes(
+      final SCIMQueryAttributes queryAttributes);
 
 
 
@@ -123,7 +137,7 @@ public abstract class ResourceMapper
   /**
    * Map the provided SCIM sort parameters to an LDAP sort control.
    *
-   * @param sortParameters  The SCIm sort parameters to be mapped.
+   * @param sortParameters  The SCIM sort parameters to be mapped.
    *
    * @return  An LDAP sort control.
    */

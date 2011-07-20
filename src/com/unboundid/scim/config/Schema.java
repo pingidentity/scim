@@ -5,7 +5,8 @@
 
 package com.unboundid.scim.config;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 
@@ -27,22 +28,35 @@ public class Schema
   private List<ResourceDescriptor> resourceDescriptors;
 
   /**
-   * The set of descriptors for attributes defined in this schema.
+   * The set of descriptors for attributes defined in this schema, indexed
+   * by the lower case name of the attribute.
    */
-  private List<AttributeDescriptor> attributeDescriptors;
+  private LinkedHashMap<String,AttributeDescriptor> attributeDescriptorMap;
 
 
 
   /**
    * Create a new instance of a SCIM schema.
    *
-   * @param schemaURI  The URI of the schema.
+   * @param schemaURI             The URI of the schema.
+   * @param resourceDescriptors   The set of descriptors for resources defined
+   *                              in this schema.
+   * @param attributeDescriptors  The set of descriptors for attributes defined
+   *                              in this schema.
    */
-  Schema(final String schemaURI)
+  Schema(final String schemaURI,
+         final List<ResourceDescriptor> resourceDescriptors,
+         final List<AttributeDescriptor> attributeDescriptors)
   {
     this.schemaURI = schemaURI;
-    this.resourceDescriptors  = new ArrayList<ResourceDescriptor>();
-    this.attributeDescriptors = new ArrayList<AttributeDescriptor>();
+    this.resourceDescriptors  = resourceDescriptors;
+
+    attributeDescriptorMap = new LinkedHashMap<String, AttributeDescriptor>();
+    for (final AttributeDescriptor attributeDescriptor : attributeDescriptors)
+    {
+      attributeDescriptorMap.put(attributeDescriptor.getName().toLowerCase(),
+                                 attributeDescriptor);
+    }
   }
 
 
@@ -76,9 +90,9 @@ public class Schema
    *
    * @return  The set of descriptors for attributes defined in this schema.
    */
-  public List<AttributeDescriptor> getAttributeDescriptors()
+  public Collection<AttributeDescriptor> getAttributeDescriptors()
   {
-    return attributeDescriptors;
+    return attributeDescriptorMap.values();
   }
 
 
@@ -93,15 +107,7 @@ public class Schema
    */
   public AttributeDescriptor getAttribute(final String name)
   {
-    // TODO use a map
-    for (AttributeDescriptor attributeDescriptor : attributeDescriptors)
-    {
-      if (attributeDescriptor.getName().equals(name))
-      {
-        return attributeDescriptor;
-      }
-    }
-    return null;
+    return attributeDescriptorMap.get(name.toLowerCase());
   }
 
 

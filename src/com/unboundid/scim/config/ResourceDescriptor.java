@@ -4,8 +4,9 @@
  */
 package com.unboundid.scim.config;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 
 
 
@@ -21,8 +22,8 @@ public class ResourceDescriptor
 
   private String name;
 
-  private List<AttributeDescriptor> attributeDescriptors =
-      new LinkedList<AttributeDescriptor>();
+  private LinkedHashMap<String,AttributeDescriptor> attributeDescriptors =
+      new LinkedHashMap<String,AttributeDescriptor>();
 
 
 
@@ -36,15 +37,7 @@ public class ResourceDescriptor
    */
   public AttributeDescriptor getAttribute(final String name)
   {
-    // TODO use a map
-    for (AttributeDescriptor attributeDescriptor : attributeDescriptors)
-    {
-      if (attributeDescriptor.getName().equals(name))
-      {
-        return attributeDescriptor;
-      }
-    }
-    return null;
+    return attributeDescriptors.get(name.toLowerCase());
   }
 
 
@@ -83,23 +76,22 @@ public class ResourceDescriptor
    * @return The list of attribute descriptors for the resource. It is never
    *         {@code null}.
    */
-  public List<AttributeDescriptor> getAttributeDescriptors()
+  public Collection<AttributeDescriptor> getAttributeDescriptors()
   {
-    return attributeDescriptors;
+    return Collections.unmodifiableCollection(attributeDescriptors.values());
   }
 
 
 
   /**
-   * Specifies the list of attribute descriptors for the resource.
+   * Adds the provided attribute descriptor to the list of attribute
+   * descriptors for the resource.
    *
-   * @param attributeDescriptors The list of attribute descriptors for the
-   *                             resource. It must not be {@code null}.
+   * @param descriptor  The attribute descriptor to be added.
    */
-  public void setAttributeDescriptors(
-      final List<AttributeDescriptor> attributeDescriptors)
+  public void addAttributeDescriptor(final AttributeDescriptor descriptor)
   {
-    this.attributeDescriptors = attributeDescriptors;
+    attributeDescriptors.put(descriptor.getName().toLowerCase(), descriptor);
   }
 
 

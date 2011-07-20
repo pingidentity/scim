@@ -82,11 +82,10 @@ public class XmlSchemaParser
 
         Iterator<XSElementDecl> jtr = s.iterateElementDecls();
 
-        Schema schema = new Schema(targetNamespace);
         List<ResourceDescriptor> resourceDescriptors =
-            schema.getResourceDescriptors();
+            new ArrayList<ResourceDescriptor>();
         List<AttributeDescriptor> attributeDescriptors =
-            schema.getAttributeDescriptors();
+            new ArrayList<AttributeDescriptor>();
 
         // We assume that top level complex types are SCIM attributes rather
         // than SCIM resources.
@@ -164,9 +163,8 @@ public class XmlSchemaParser
                           .isRepeated())
                   {
                     AttributeDescriptor pluralAttribute =
-                        this.createPluralAttribute(c);
-                    resourceDescriptor.getAttributeDescriptors().add
-                        (pluralAttribute);
+                        createPluralAttribute(c);
+                    resourceDescriptor.addAttributeDescriptor(pluralAttribute);
                     attributeDescriptors.add(pluralAttribute);
                   }
                   else
@@ -179,8 +177,8 @@ public class XmlSchemaParser
                           createComplexAttribute(cname, complexType);
                       if (complexAttribute != null)
                       {
-                        resourceDescriptor.getAttributeDescriptors().add
-                            (complexAttribute);
+                        resourceDescriptor.addAttributeDescriptor(
+                            complexAttribute);
                         attributeDescriptors.add(complexAttribute);
                       }
                     }
@@ -195,8 +193,8 @@ public class XmlSchemaParser
                                   AttributeDescriptor.DataType.parse(
                                       cxsElementDecl.getType().getName()))
                               );
-                      resourceDescriptor.getAttributeDescriptors().add
-                          (simpleAttributeDescriptor);
+                      resourceDescriptor.addAttributeDescriptor(
+                          simpleAttributeDescriptor);
                       attributeDescriptors.add(simpleAttributeDescriptor);
                     }
                   }
@@ -206,7 +204,8 @@ public class XmlSchemaParser
           }
         }
 
-        schemaList.add(schema);
+        schemaList.add(new Schema(targetNamespace, resourceDescriptors,
+                                  attributeDescriptors));
       }
     }
 

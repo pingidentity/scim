@@ -104,7 +104,9 @@ public class SCIMServer
     this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
     this.queryResourceMappers = new HashMap<String, ResourceMapper>();
 
-    this.registerResourceMapper(new UserResourceMapper(),
+    final ResourceMapper resourceMapper = new UserResourceMapper();
+    resourceMapper.initializeMapper();
+    this.registerResourceMapper(resourceMapper,
                                 RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
   }
 

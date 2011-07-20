@@ -44,6 +44,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -151,10 +152,26 @@ public abstract class LDAPBackend
   {
     try
     {
+      final SCIMServer scimServer = SCIMServer.getInstance();
+      final Set<ResourceMapper> mappers =
+          scimServer.getResourceMappers(request.getResourceName());
+
+      final Set<String> requestAttributeSet = new HashSet<String>();
+      for (final ResourceMapper m : mappers)
+      {
+        requestAttributeSet.addAll(
+            m.toLDAPAttributeTypes(request.getAttributes()));
+      }
+      requestAttributeSet.add("createTimestamp");
+      requestAttributeSet.add("modifyTimestamp");
+
+      final String[] requestAttributes = new String[requestAttributeSet.size()];
+      requestAttributeSet.toArray(requestAttributes);
+
       final Filter filter = Filter.createPresenceFilter("objectclass");
       final SearchRequest searchRequest =
           new SearchRequest(request.getResourceID(), SearchScope.BASE,
-                            filter, "*", "createTimestamp", "modifyTimestamp");
+                            filter, requestAttributes);
       addCommonControls(request, searchRequest);
 
       final SearchResultEntry searchResultEntry =
@@ -166,10 +183,6 @@ public abstract class LDAPBackend
       }
       else
       {
-        final SCIMServer scimServer = SCIMServer.getInstance();
-        final Set<ResourceMapper> mappers =
-            scimServer.getResourceMappers(request.getResourceName());
-
         final SCIMObject scimObject = new SCIMObject();
         scimObject.setResourceName(request.getResourceName());
 
@@ -219,8 +232,12 @@ public abstract class LDAPBackend
     {
       final SCIMFilter scimFilter = request.getFilter();
 
-      final String[] attributes =
-          new String[] { "*", "createTimestamp", "modifyTimestamp"};
+      final Set<String> requestAttributeSet =
+          resourceMapper.toLDAPAttributeTypes(request.getAttributes());
+      requestAttributeSet.add("createTimestamp");
+      requestAttributeSet.add("modifyTimestamp");
+      requestAttributeSet.add("objectClass");
+
       final ResourceSearchResultListener resultListener =
           new ResourceSearchResultListener(request);
       SearchRequest searchRequest = null;
@@ -229,20 +246,34 @@ public abstract class LDAPBackend
         final String[] attrPath = scimFilter.getAttributePath();
         if (attrPath.length == 1 && attrPath[0].equalsIgnoreCase("id"))
         {
+          final String[] requestAttributes =
+              new String[requestAttributeSet.size()];
+          requestAttributeSet.toArray(requestAttributes);
+
           searchRequest =
               new SearchRequest(resultListener, scimFilter.getFilterValue(),
                                 SearchScope.BASE,
                                 Filter.createPresenceFilter("objectclass"),
-                                attributes);
+                                requestAttributes);
         }
       }
 
       if (searchRequest == null)
       {
+        // Map the SCIM filter to an LDAP filter.
         final Filter filter = resourceMapper.toLDAPFilter(scimFilter);
+
+        // The LDAP filter results will still need to be filtered using the
+        // SCIM filter, so we need to request all the filter attributes.
+        addFilterAttributes(requestAttributeSet, filter);
+
+        final String[] requestAttributes =
+            new String[requestAttributeSet.size()];
+        requestAttributeSet.toArray(requestAttributes);
+
         searchRequest =
             new SearchRequest(resultListener, baseDN, SearchScope.SUB,
-                              filter, attributes);
+                              filter, requestAttributes);
       }
 
       final SortParameters sortParameters = request.getSortParameters();
@@ -326,6 +357,18 @@ public abstract class LDAPBackend
     final Set<ResourceMapper> mappers =
         scimServer.getResourceMappers(request.getResourceName());
 
+    final Set<String> requestAttributeSet = new HashSet<String>();
+    for (final ResourceMapper m : mappers)
+    {
+      requestAttributeSet.addAll(
+          m.toLDAPAttributeTypes(request.getAttributes()));
+    }
+    requestAttributeSet.add("createTimestamp");
+    requestAttributeSet.add("modifyTimestamp");
+
+    final String[] requestAttributes = new String[requestAttributeSet.size()];
+    requestAttributeSet.toArray(requestAttributes);
+
     Entry entry = null;
     Entry addedEntry = null;
     List<Attribute> attributes = new ArrayList<Attribute>();
@@ -357,8 +400,7 @@ public abstract class LDAPBackend
 
       final AddRequest addRequest = new AddRequest(entry);
       addRequest.addControl(
-          new PostReadRequestControl("*", "createTimestamp",
-                                     "modifyTimestamp"));
+          new PostReadRequestControl(requestAttributes));
       addCommonControls(request, addRequest);
       final LDAPResult addResult =
           getLDAPInterface(request.getAuthenticatedUserID()).add(addRequest);
@@ -446,6 +488,18 @@ public abstract class LDAPBackend
     final Set<ResourceMapper> mappers =
         scimServer.getResourceMappers(request.getResourceName());
 
+    final Set<String> requestAttributeSet = new HashSet<String>();
+    for (final ResourceMapper m : mappers)
+    {
+      requestAttributeSet.addAll(
+          m.toLDAPAttributeTypes(request.getAttributes()));
+    }
+    requestAttributeSet.add("createTimestamp");
+    requestAttributeSet.add("modifyTimestamp");
+
+    final String[] requestAttributes = new String[requestAttributeSet.size()];
+    requestAttributeSet.toArray(requestAttributes);
+
     final String entryDN = request.getResourceID();
     final List<Modification> mods = new ArrayList<Modification>();
     Entry modifiedEntry = null;
@@ -467,8 +521,7 @@ public abstract class LDAPBackend
 
       final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
       modifyRequest.addControl(
-          new PostReadRequestControl("*", "createTimestamp",
-                                     "modifyTimestamp"));
+          new PostReadRequestControl(requestAttributes));
       addCommonControls(request, modifyRequest);
       final LDAPResult addResult = ldapInterface.modify(modifyRequest);
 
@@ -693,4 +746,40 @@ public abstract class LDAPBackend
 
 
 
+  /**
+   * Add all the attributes used in the specified filter to the provided
+   * set of attributes.
+   *
+   * @param attributes  The set of attributes to which the filter attributes
+   *                    should be added.
+   *
+   * @param filter      The filter whose attributes are of interest.
+   */
+  private static void addFilterAttributes(final Set<String> attributes,
+                                          final Filter filter)
+  {
+    switch (filter.getFilterType())
+    {
+      case Filter.FILTER_TYPE_AND:
+      case Filter.FILTER_TYPE_OR:
+        for (final Filter f : filter.getComponents())
+        {
+          addFilterAttributes(attributes, f);
+        }
+        break;
+
+      case Filter.FILTER_TYPE_NOT:
+        addFilterAttributes(attributes, filter.getNOTComponent());
+        break;
+
+      case Filter.FILTER_TYPE_APPROXIMATE_MATCH:
+      case Filter.FILTER_TYPE_EQUALITY:
+      case Filter.FILTER_TYPE_GREATER_OR_EQUAL:
+      case Filter.FILTER_TYPE_LESS_OR_EQUAL:
+      case Filter.FILTER_TYPE_PRESENCE:
+      case Filter.FILTER_TYPE_SUBSTRING:
+        attributes.add(filter.getAttributeName());
+        break;
+    }
+  }
 }
