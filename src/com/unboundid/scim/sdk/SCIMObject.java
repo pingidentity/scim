@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 
 
@@ -27,11 +28,6 @@ public class SCIMObject
    * The SCIM name for the schemas attribute.
    */
   public static final String SCHEMAS_ATTRIBUTE_NAME = "schemas";
-
-  /**
-   * The SCIM name for the schemas attribute.
-   */
-  public static final String SCHEMAS_ATTRIBUTE_URI_NAME = "uri";
 
   /**
    * The type of SCIM resource represented by this object, or {@code null}
@@ -134,9 +130,9 @@ public class SCIMObject
    * @return  An immutable collection of the URIs of schemas currently
    *          contributing attributes to this object.
    */
-  public Collection<String> getSchemas()
+  public Set<String> getSchemas()
   {
-    return Collections.unmodifiableCollection(attributes.keySet());
+    return Collections.unmodifiableSet(attributes.keySet());
   }
 
 

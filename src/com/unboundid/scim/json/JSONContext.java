@@ -130,10 +130,7 @@ public class JSONContext
     // Write out the schemas for the user.
     jsonWriter.key("schemas");
     jsonWriter.array();
-    jsonWriter.object();
-    jsonWriter.key("uri");
     jsonWriter.value(SCIMConstants.SCHEMA_URI_CORE);
-    jsonWriter.endObject();
     jsonWriter.endArray();
 
     final String id = user.getId();
@@ -652,22 +649,19 @@ public class JSONContext
   {
     final JSONObject jsonObject = new JSONObject(tokener);
 
-    final JSONObject responseObject = jsonObject.getJSONObject("Response");
-
     final Response response = new Response();
-    if (responseObject.has("Resource"))
+    if (jsonObject.has("Resource"))
     {
-      final JSONObject resourceObject =
-          responseObject.optJSONObject("Resource");
+      final JSONObject resourceObject = jsonObject.optJSONObject("Resource");
       if (resourceObject != null)
       {
         response.setResource(readUser(resourceObject));
       }
     }
-    else if (responseObject.has("Errors"))
+    else if (jsonObject.has("Errors"))
     {
       final Response.Errors errors = new Response.Errors();
-      final JSONArray errorsArray = responseObject.getJSONArray("Errors");
+      final JSONArray errorsArray = jsonObject.getJSONArray("Errors");
       for (int i = 0; i < errorsArray.length(); i++)
       {
         final JSONObject errorObject = errorsArray.getJSONObject(i);
@@ -682,22 +676,20 @@ public class JSONContext
 
       response.setErrors(errors);
     }
-    else
+    else if (jsonObject.has("totalResults"))
     {
-      if (responseObject.has("totalResults"))
+      response.setTotalResults(jsonObject.optLong("totalResults"));
+
+      if (jsonObject.has("itemsPerPage"))
       {
-        response.setTotalResults(responseObject.optLong("totalResults"));
+        response.setItemsPerPage(jsonObject.optInt("itemsPerPage"));
       }
-      if (responseObject.has("itemsPerPage"))
+      if (jsonObject.has("startIndex"))
       {
-        response.setItemsPerPage(responseObject.optInt("itemsPerPage"));
-      }
-      if (responseObject.has("startIndex"))
-      {
-        response.setStartIndex(responseObject.optLong("startIndex"));
+        response.setStartIndex(jsonObject.optLong("startIndex"));
       }
 
-      final JSONArray resourcesArray = responseObject.optJSONArray("Resources");
+      final JSONArray resourcesArray = jsonObject.optJSONArray("Resources");
       if (resourcesArray != null)
       {
         final Response.Resources resources = new Response.Resources();
@@ -709,6 +701,11 @@ public class JSONContext
 
         response.setResources(resources);
       }
+    }
+    else
+    {
+      // This must be a single resource without a response object.
+      response.setResource(readUser(jsonObject));
     }
 
     return response;

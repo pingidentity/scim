@@ -35,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -599,7 +600,14 @@ public class SCIMClient
         getResources(resourceEndPoint, filter, null, null, attributes);
     final Response.Resources resources = response.getResources();
 
-    return resources.getResource();
+    if (resources == null)
+    {
+      return Collections.emptyList();
+    }
+    else
+    {
+      return resources.getResource();
+    }
   }
 
 
