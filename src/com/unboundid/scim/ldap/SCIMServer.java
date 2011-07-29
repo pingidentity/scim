@@ -189,8 +189,31 @@ public class SCIMServer
       final HttpServlet servlet = new SCIMServlet(backend);
       contextHandler.addServlet(new ServletHolder(servlet), "/*");
 
+      // Alternate JAX-RS Implementation using Apache Wink.
+//      final ServletHolder winkServletHolder =
+//          new ServletHolder(RestServlet.class);
+//      winkServletHolder.setInitParameter(
+//          RestServlet.APPLICATION_INIT_PARAM,
+//          "com.unboundid.scim.ldap.wink.SCIMApplication");
+//      contextHandler.addServlet(winkServletHolder, "/*");
+
       backends = newBackends;
     }
+  }
+
+
+
+  /**
+   * Retrieve the SCIM backend registered under the provided base URI.
+   *
+   * @param baseURI  The base URI that the backend was registered under.
+   *
+   * @return  The SCIM backend registered under the provided base URI, or
+   *          {@code null} if there is no such backend.
+   */
+  public SCIMBackend getBackend(final String baseURI)
+  {
+    return backends.get(normalizeURI(baseURI));
   }
 
 

@@ -235,13 +235,12 @@ public final class SCIMAttributeValue
   {
     if (value instanceof Date)
     {
-
+      return getDateStringValue();
     }
     else
     {
       return value.toString();
     }
-    return (String)value;
   }
 
 

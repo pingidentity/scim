@@ -147,6 +147,7 @@
     <path refid="jackson-jars"/>
     <path refid="xsom-jars"/>
     <path refid="relaxngDatatype-jars"/>
+    <!--<path refid="wink-jars-no-json"/>-->
   </path>
 
   <path id="client-jars-with-json">
