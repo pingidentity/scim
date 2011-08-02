@@ -122,7 +122,9 @@
   <path id="wink-jars-no-json">
     <fileset dir="${wink.dir}/dist">
       <include name="wink-*jar"/>
-      <exclude name="wink-server*jar"/>
+      <exclude name="wink-client-*jar"/>
+      <exclude name="wink-common-*jar"/>
+      <exclude name="wink-server-*jar"/>
     </fileset>
     <fileset dir="${wink.dir}/lib">
       <include name="jsr311-api-*.jar"/>
@@ -144,15 +146,15 @@
     <path refid="jetty-jars"/>
     <path refid="ldapsdk-jars"/>
     <path refid="json-jars"/>
-    <path refid="jackson-jars"/>
     <path refid="xsom-jars"/>
     <path refid="relaxngDatatype-jars"/>
-    <!--<path refid="wink-jars-no-json"/>-->
+    <path refid="wink-jars-no-json"/>
   </path>
 
   <path id="client-jars-with-json">
     <path refid="ldapsdk-jars"/>
     <path refid="wink-jars-with-json"/>
+    <path refid="jackson-jars"/>
   </path>
 
   <path id="client-jars-no-json">

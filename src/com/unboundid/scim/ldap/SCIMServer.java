@@ -5,6 +5,7 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.scim.config.SchemaManager;
+import org.apache.wink.server.internal.servlet.RestServlet;
 import org.eclipse.jetty.http.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -17,7 +18,6 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
-import javax.servlet.http.HttpServlet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -186,16 +186,21 @@ public class SCIMServer
       security.setHandler(contextHandler);
       security.setServer(server);
 
-      final HttpServlet servlet = new SCIMServlet(backend);
-      contextHandler.addServlet(new ServletHolder(servlet), "/*");
+      // Original servlet implementation.
+//      final HttpServlet servlet = new SCIMServlet(backend);
+//      contextHandler.addServlet(new ServletHolder(servlet), "/*");
 
-      // Alternate JAX-RS Implementation using Apache Wink.
-//      final ServletHolder winkServletHolder =
-//          new ServletHolder(RestServlet.class);
-//      winkServletHolder.setInitParameter(
-//          RestServlet.APPLICATION_INIT_PARAM,
-//          "com.unboundid.scim.ldap.wink.SCIMApplication");
-//      contextHandler.addServlet(winkServletHolder, "/*");
+      // JAX-RS implementation using Apache Wink.
+      System.setProperty("wink.httpMethodOverrideHeaders",
+                         "X-HTTP-Method-Override");
+      System.setProperty("wink.response.defaultCharset",
+                         "true");
+      final ServletHolder winkServletHolder =
+          new ServletHolder(RestServlet.class);
+      winkServletHolder.setInitParameter(
+          RestServlet.APPLICATION_INIT_PARAM,
+          "com.unboundid.scim.ldap.wink.SCIMApplication");
+      contextHandler.addServlet(winkServletHolder, "/*");
 
       backends = newBackends;
     }

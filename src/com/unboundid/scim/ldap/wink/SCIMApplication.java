@@ -22,6 +22,8 @@ public class SCIMApplication extends Application
   {
     final Set<Class<?>> classes = new HashSet<Class<?>>();
     classes.add(UserResource.class);
+    classes.add(UsersResource.class);
+
     return classes;
   }
 }
