@@ -335,10 +335,10 @@ public class SCIMObject
    */
   public boolean matchesFilter(final SCIMFilter filter)
   {
-    final String schema = filter.getAttributeSchema();
-    final String[] attributePath = filter.getAttributePath();
+    final String schema = filter.getFilterAttribute().getAttributeSchema();
+    final String attributeName = filter.getFilterAttribute().getAttributeName();
 
-    final SCIMAttribute attribute = getAttribute(schema, attributePath[0]);
+    final SCIMAttribute attribute = getAttribute(schema, attributeName);
     if (attribute == null)
     {
       return false;

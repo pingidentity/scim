@@ -51,20 +51,9 @@ public final class SCIMConstants
   public static final String QUERY_PARAMETER_ATTRIBUTES = "attributes";
 
   /**
-   * The HTTP query parameter used in a URI to filter by a SCIM attribute.
+   * The HTTP query parameter used in a URI to provide a filter expression.
    */
-  public static final String QUERY_PARAMETER_FILTER_BY = "filterBy";
-
-  /**
-   * The HTTP query parameter used in a URI to specify the filter comparison
-   * method.
-   */
-  public static final String QUERY_PARAMETER_FILTER_OP = "filterOp";
-
-  /**
-   * The HTTP query parameter used in a URI to specify the filter value.
-   */
-  public static final String QUERY_PARAMETER_FILTER_VALUE = "filterValue";
+  public static final String QUERY_PARAMETER_FILTER = "filter";
 
   /**
    * The HTTP query parameter used in a URI to sort by a SCIM attribute.

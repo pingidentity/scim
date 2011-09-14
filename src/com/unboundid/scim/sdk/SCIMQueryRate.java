@@ -6,7 +6,6 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.ldap.SCIMFilter;
 import com.unboundid.util.ColumnFormatter;
 import com.unboundid.util.CommandLineTool;
 import com.unboundid.util.Debug;
@@ -591,7 +590,7 @@ public class SCIMQueryRate
     try
     {
       client.getResources(endpointURI.getValue(),
-                          new SCIMFilter("userName", "equals", "no-user"),
+                          "userName eq 'no-user'",
                           null, null, attrs);
     }
     catch (IOException e)

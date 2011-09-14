@@ -5,152 +5,214 @@
 
 package com.unboundid.scim.ldap;
 
-import static com.unboundid.scim.sdk.SCIMConstants.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
 /**
- * This class represents the filter parameters of a SCIM request.
+ * This class represents a SCIM query filter.
  */
 public class SCIMFilter
 {
   /**
-   * The filter operation. e.g. equals, contains, startswith, or present.
+   * The filter type.
    */
-  private final String filterOp;
+  private final SCIMFilterType filterType;
 
   /**
-   * The filter attribute value, or {@code null} if a value is not required.
+   * The attribute or sub-attribute to filter by, or {@code null} if not
+   * applicable.
    */
-  private final String filterValue;
+  private final AttributePath filterAttribute;
 
   /**
-   * The schema URI of the attribute to filter by.
+   * The filter attribute value, or {@code null} if not applicable.
+   * The class is String (string or datetime), Long (number) or Boolean.
    */
-  private final String attributeSchema;
+  private final Object filterValue;
 
   /**
-   * The path to the attribute to filter by. e.g. userName or name.lastName
+   * The filter components for 'or' and 'and' filter types, or {@code null}
+   * if not applicable.
    */
-  private final String[] attributePath;
-
-
-
-  /**
-   * Create a new SCIM filter from the provided information.
-   *
-   * @param filterOp         The filter operation. e.g. equals, contains,
-   *                         startswith, or present.
-   * @param filterValue      The filter attribute value, or {@code null} if a
-   *                         value is not required.
-   * @param attributeSchema  The schema URI of the attribute to filter by.
-   * @param attributePath    The path to the attribute to filter by.
-   *                         e.g. userName or name.lastName
-   */
-  public SCIMFilter(final String filterOp, final String filterValue,
-                    final String attributeSchema,
-                    final String ... attributePath)
-  {
-    this.filterOp        = filterOp;
-    this.filterValue     = filterValue;
-    this.attributeSchema = attributeSchema;
-    this.attributePath   = attributePath;
-  }
+  private final List<SCIMFilter> filterComponents;
 
 
 
   /**
    * Create a new SCIM filter from the provided information.
    *
-   * @param filterBy         The full path to the attribute to filter by.
-   * @param filterOp         The filter operation. e.g. equals, contains,
-   *                         startswith, or present.
-   * @param filterValue      The filter attribute value, or {@code null} if a
-   *                         value is not required.
+   * @param filterType        The filter type.
+   * @param filterAttribute   The attribute or sub-attribute to filter by, or
+   *                          {@code null} if not applicable.
+   * @param filterValue       The filter attribute value, or {@code null} if not
+   *                          applicable.
+   * @param filterComponents  The filter components for 'or' and 'and' filter
+   *                          types, or {@code null} if not applicable.
    */
-  public SCIMFilter(final String filterBy,
-                    final String filterOp,
-                    final String filterValue)
+  public SCIMFilter(final SCIMFilterType filterType,
+                    final AttributePath filterAttribute,
+                    final Object filterValue,
+                    final List<SCIMFilter> filterComponents)
   {
-    this.filterOp        = filterOp;
-    this.filterValue     = filterValue;
-
-    final int lastColonPos =
-        filterBy.lastIndexOf(SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
-    if (lastColonPos == -1)
-    {
-      attributeSchema = SCHEMA_URI_CORE;
-      attributePath = filterBy.split("\\.");
-    }
-    else
-    {
-      attributeSchema = filterBy.substring(0, lastColonPos);
-      attributePath = filterBy.substring(lastColonPos+1).split("\\.");
-    }
+    this.filterType        = filterType;
+    this.filterAttribute   = filterAttribute;
+    this.filterValue       = filterValue;
+    this.filterComponents  = filterComponents;
   }
 
 
 
   /**
-   * Create a new case-exact equality filter.
+   * Parse a filter from its string representation.
    *
-   * @param filterBy     The full path to the attribute to filter by.
-   * @param filterValue  The filter attribute value.
+   * @param filterString  The string representation of the filter expression.
    *
-   * @return  A new case-exact equality filter.
+   * @return  The parsed filter.
+   */
+  public static SCIMFilter parse(final String filterString)
+  {
+    final FilterParser parser = new FilterParser(filterString);
+
+    return parser.parse();
+  }
+
+
+
+  /**
+   * Create a new and filter.
+   *
+   * @param filterComponents  The filter components.
+   *
+   * @return  A new and filter.
+   */
+  public static SCIMFilter createAndFilter(
+      final List<SCIMFilter> filterComponents)
+  {
+    return new SCIMFilter(SCIMFilterType.AND, null, null,
+                          new ArrayList<SCIMFilter>(filterComponents));
+  }
+
+
+
+  /**
+   * Create a new or filter.
+   *
+   * @param filterComponents  The filter components.
+   *
+   * @return  A new or filter.
+   */
+  public static SCIMFilter createOrFilter(
+      final List<SCIMFilter> filterComponents)
+  {
+    return new SCIMFilter(SCIMFilterType.OR, null, null,
+                          new ArrayList<SCIMFilter>(filterComponents));
+  }
+
+
+
+  /**
+   * Create a new equality filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new equality filter.
    */
   public static SCIMFilter createEqualityFilter(
-      final String filterBy, final String filterValue)
+      final String filterAttribute, final String filterValue)
   {
-    return new SCIMFilter(filterBy, "equals", filterValue);
+    return new SCIMFilter(SCIMFilterType.EQUALITY,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
   }
 
 
 
   /**
-   * Create a new case-ignore equality filter.
+   * Create a new equality filter.
    *
-   * @param filterBy     The full path to the attribute to filter by.
-   * @param filterValue  The filter attribute value.
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
    *
-   * @return  A new case-ignore equality filter.
+   * @return  A new equality filter.
    */
-  public static SCIMFilter createIgnoresCaseEqualityFilter(
-      final String filterBy, final String filterValue)
+  public static SCIMFilter createEqualityFilter(
+      final AttributePath filterAttribute, final String filterValue)
   {
-    return new SCIMFilter(filterBy, "equalsIgnoreCase", filterValue);
+    return new SCIMFilter(SCIMFilterType.EQUALITY, filterAttribute,
+                          filterValue, null);
   }
 
 
 
   /**
-   * Create a new 'contains' filter.
+   * Create a new contains filter.
    *
-   * @param filterBy     The full path to the attribute to filter by.
-   * @param filterValue  The filter attribute value.
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
    *
-   * @return  A new 'contains' filter.
+   * @return  A new contains filter.
    */
   public static SCIMFilter createContainsFilter(
-      final String filterBy, final String filterValue)
+      final String filterAttribute, final String filterValue)
   {
-    return new SCIMFilter(filterBy, "contains", filterValue);
+    return new SCIMFilter(SCIMFilterType.CONTAINS,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
   }
 
 
 
   /**
-   * Create a new 'startsWith' filter.
+   * Create a new contains filter.
    *
-   * @param filterBy     The full path to the attribute to filter by.
-   * @param filterValue  The filter attribute value.
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
    *
-   * @return  A new 'startsWith' filter.
+   * @return  A new contains filter.
+   */
+  public static SCIMFilter createContainsFilter(
+      final AttributePath filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.CONTAINS, filterAttribute,
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new starts with filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new starts with filter.
    */
   public static SCIMFilter createStartsWithFilter(
-      final String filterBy, final String filterValue)
+      final String filterAttribute, final String filterValue)
   {
-    return new SCIMFilter(filterBy, "startsWith", filterValue);
+    return new SCIMFilter(SCIMFilterType.STARTS_WITH,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new starts with filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new starts with filter.
+   */
+  public static SCIMFilter createStartsWithFilter(
+      final AttributePath filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.STARTS_WITH, filterAttribute,
+                          filterValue, null);
   }
 
 
@@ -158,26 +220,195 @@ public class SCIMFilter
   /**
    * Create a new presence filter.
    *
-   * @param filterBy     The full path to the attribute to filter by.
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
    *
    * @return  A new presence filter.
    */
-  public static SCIMFilter createPresenceFilter(final String filterBy)
+  public static SCIMFilter createPresenceFilter(
+      final String filterAttribute)
   {
-    return new SCIMFilter(filterBy, "present", null);
+    return new SCIMFilter(SCIMFilterType.PRESENCE,
+                          AttributePath.parse(filterAttribute), null, null);
   }
 
 
 
   /**
-   * Retrieve the filter operation. e.g. equals, contains, startswith, or
-   * present.
+   * Create a new presence filter.
    *
-   * @return  The filter operation.
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   *
+   * @return  A new presence filter.
    */
-  public String getFilterOp()
+  public static SCIMFilter createPresenceFilter(
+      final AttributePath filterAttribute)
   {
-    return filterOp;
+    return new SCIMFilter(SCIMFilterType.PRESENCE, filterAttribute, null, null);
+  }
+
+
+
+  /**
+   * Create a new greater than filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new greater than filter.
+   */
+  public static SCIMFilter createGreaterThanFilter(
+      final String filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.GREATER_THAN,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new greater than filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new greater than filter.
+   */
+  public static SCIMFilter createGreaterThanFilter(
+      final AttributePath filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.GREATER_THAN, filterAttribute,
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new greater or equal filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new greater or equal filter.
+   */
+  public static SCIMFilter createGreaterOrEqualFilter(
+      final String filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.GREATER_OR_EQUAL,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new greater or equal filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new greater or equal filter.
+   */
+  public static SCIMFilter createGreaterOrEqualFilter(
+      final AttributePath filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.GREATER_OR_EQUAL, filterAttribute,
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new less than filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new less than filter.
+   */
+  public static SCIMFilter createLessThanFilter(
+      final String filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.LESS_THAN,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new less than filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new less than filter.
+   */
+  public static SCIMFilter createLessThanFilter(
+      final AttributePath filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.LESS_THAN, filterAttribute,
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new less or equal filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new less or equal filter.
+   */
+  public static SCIMFilter createLessOrEqualFilter(
+      final String filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.LESS_OR_EQUAL,
+                          AttributePath.parse(filterAttribute),
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Create a new less or equal filter.
+   *
+   * @param filterAttribute  The attribute or sub-attribute to filter by.
+   * @param filterValue      The filter attribute value.
+   *
+   * @return  A new less or equal filter.
+   */
+  public static SCIMFilter createLessOrEqualFilter(
+      final AttributePath filterAttribute, final String filterValue)
+  {
+    return new SCIMFilter(SCIMFilterType.LESS_OR_EQUAL, filterAttribute,
+                          filterValue, null);
+  }
+
+
+
+  /**
+   * Retrieve the filter type.
+   *
+   * @return  The filter type.
+   */
+  public SCIMFilterType getFilterType()
+  {
+    return filterType;
+  }
+
+
+
+  /**
+   * Retrieve the attribute or sub-attribute to filter by, or {@code null} if
+   * not applicable for this filter type.
+   *
+   * @return  The attribute or sub-attribute to filter by
+   */
+  public AttributePath getFilterAttribute()
+  {
+    return filterAttribute;
   }
 
 
@@ -185,36 +416,131 @@ public class SCIMFilter
   /**
    * Retrieve the filter attribute value.
    *
-   * @return  The filter attribute value, or {@code null} if a value is not
-   *          required.
+   * @return  The filter attribute value, or {@code null} if not applicable
+   *          for this filter type.
    */
   public String getFilterValue()
   {
-    return filterValue;
+    if (filterValue != null)
+    {
+      return filterValue.toString();
+    }
+    else
+    {
+      return null;
+    }
   }
 
 
 
   /**
-   * Retrieve the schema URI of the attribute to filter by.
+   * Retrieve the filter components for an 'and' or 'or' filter.
    *
-   * @return  The schema URI of the attribute to filter by.
+   * @return  The filter components for an 'and' or 'or' filter.
    */
-  public String getAttributeSchema()
+  public List<SCIMFilter> getFilterComponents()
   {
-    return attributeSchema;
+    return filterComponents;
   }
 
 
 
   /**
-   * Retrieve the path to the attribute to filter by. e.g. userName or
-   * name.lastName
-   *
-   * @return  The path to the attribute to filter by.
+   * {@inheritDoc}
    */
-  public String[] getAttributePath()
+  @Override
+  public String toString()
   {
-    return attributePath;
+    final StringBuilder builder = new StringBuilder();
+    toString(builder);
+    return builder.toString();
+  }
+
+
+
+  /**
+   * Append the string representation of the filter to the provided buffer.
+   *
+   * @param builder  The buffer to which the string representation of the
+   *                 filter is to be appended.
+   */
+  public void toString(final StringBuilder builder)
+  {
+    switch (filterType)
+    {
+      case AND:
+      case OR:
+        builder.append('(');
+
+        for (int i = 0; i < filterComponents.size(); i++)
+        {
+          if (i != 0)
+          {
+            builder.append(' ');
+            builder.append(filterType);
+            builder.append(' ');
+          }
+
+          builder.append(filterComponents.get(i));
+        }
+
+        builder.append(')');
+        break;
+
+      case EQUALITY:
+      case CONTAINS:
+      case STARTS_WITH:
+      case GREATER_THAN:
+      case GREATER_OR_EQUAL:
+      case LESS_THAN:
+      case LESS_OR_EQUAL:
+        builder.append(filterAttribute);
+        builder.append(' ');
+        builder.append(filterType);
+        builder.append(' ');
+
+        if (filterValue instanceof String)
+        {
+          final String stringValue = (String)filterValue;
+
+          builder.append('\'');
+          for (int i = 0; i < stringValue.length(); i++)
+          {
+            final char c = stringValue.charAt(i);
+            switch (c)
+            {
+              case '\'':
+              case '\\':
+                builder.append('\\');
+                builder.append(c);
+                break;
+
+              case '\n':
+                builder.append("\\n");
+                break;
+
+              case '\t':
+                builder.append("\\t");
+                break;
+
+              default:
+                builder.append(c);
+                break;
+            }
+          }
+          builder.append('\'');
+        }
+        else
+        {
+          builder.append(filterValue);
+        }
+        break;
+
+      case PRESENCE:
+        builder.append(filterAttribute);
+        builder.append(' ');
+        builder.append(filterType);
+        break;
+    }
   }
 }

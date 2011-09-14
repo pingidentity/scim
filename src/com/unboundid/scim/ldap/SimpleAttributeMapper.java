@@ -73,41 +73,54 @@ public class SimpleAttributeMapper extends AttributeMapper
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
   {
-    final String filterOp = filter.getFilterOp();
+    final SCIMFilterType filterType = filter.getFilterType();
     final String filterValue = filter.getFilterValue();
 
-    if (filterOp.equalsIgnoreCase("equals"))
+    switch (filterType)
     {
-      // This will also return entries that do not match the exact case.
-      return Filter.createEqualityFilter(ldapAttributeType, filterValue);
-    }
-    else if (filterOp.equalsIgnoreCase("equalsIgnoreCase"))
-    {
-      // This only works if the mapped LDAP attribute is case-ignore.
-      return Filter.createEqualityFilter(ldapAttributeType, filterValue);
-    }
-    else if (filterOp.equalsIgnoreCase("contains"))
-    {
-      return Filter.createSubstringFilter(ldapAttributeType,
-                                          null,
-                                          new String[] { filterValue },
-                                          null);
-    }
-    else if (filterOp.equalsIgnoreCase("startswith"))
-    {
-      return Filter.createSubstringFilter(ldapAttributeType,
-                                          filterValue,
-                                          null,
-                                          null);
-    }
-    else if (filterOp.equalsIgnoreCase("present"))
-    {
-      return Filter.createPresenceFilter(ldapAttributeType);
-    }
-    else
-    {
-      throw new RuntimeException(
-          "Filter op " + filterOp + " is not supported");
+      case EQUALITY:
+      {
+        return Filter.createEqualityFilter(ldapAttributeType, filterValue);
+      }
+
+      case CONTAINS:
+      {
+        return Filter.createSubstringFilter(ldapAttributeType,
+                                            null,
+                                            new String[] { filterValue },
+                                            null);
+      }
+
+      case STARTS_WITH:
+      {
+        return Filter.createSubstringFilter(ldapAttributeType,
+                                            filterValue,
+                                            null,
+                                            null);
+      }
+
+      case PRESENCE:
+      {
+        return Filter.createPresenceFilter(ldapAttributeType);
+      }
+
+      case GREATER_THAN:
+      case GREATER_OR_EQUAL:
+      {
+        return Filter.createGreaterOrEqualFilter(ldapAttributeType,
+                                                 filterValue);
+      }
+
+      case LESS_THAN:
+      case LESS_OR_EQUAL:
+      {
+        return Filter.createLessOrEqualFilter(ldapAttributeType,
+                                              filterValue);
+      }
+
+      default:
+        throw new RuntimeException(
+            "Filter type " + filterType + " is not supported");
     }
   }
 

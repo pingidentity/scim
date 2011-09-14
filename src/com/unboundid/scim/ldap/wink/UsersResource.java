@@ -73,7 +73,7 @@ public class UsersResource
   private final SCIMQueryAttributes queryAttributes;
 
   /**
-   * The filter parameters, or {@code null} if there are no filter parameters.
+   * The filter, or {@code null} if there is no filter.
    */
   private final SCIMFilter filter;
 
@@ -108,9 +108,7 @@ public class UsersResource
    * @param servletContext   The servlet context of the current request.
    * @param securityContext  The security context of the current request.
    * @param attributes       The query attributes, or {@code null}.
-   * @param filterBy         The filterBy query parameter, or {@code null}.
-   * @param filterOp         The filterOp query parameter, or {@code null}.
-   * @param filterValue      The filterValue query parameter, or {@code null}.
+   * @param filterString     The filter query parameter, or {@code null}.
    * @param sortBy           The sortBy query parameter, or {@code null}.
    * @param sortOrder        The sortOrder query parameter, or {@code null}.
    * @param pageStartIndex   The startIndex query parameter, or {@code null}.
@@ -120,12 +118,8 @@ public class UsersResource
                        @Context final SecurityContext securityContext,
                        @QueryParam(QUERY_PARAMETER_ATTRIBUTES)
                        final String attributes,
-                       @QueryParam(QUERY_PARAMETER_FILTER_BY)
-                       final String filterBy,
-                       @QueryParam(QUERY_PARAMETER_FILTER_OP)
-                       final String filterOp,
-                       @QueryParam(QUERY_PARAMETER_FILTER_VALUE)
-                       final String filterValue,
+                       @QueryParam(QUERY_PARAMETER_FILTER)
+                       final String filterString,
                        @QueryParam(QUERY_PARAMETER_SORT_BY)
                        final String sortBy,
                        @QueryParam(QUERY_PARAMETER_SORT_ORDER)
@@ -161,27 +155,9 @@ public class UsersResource
     }
 
     // Parse the filter parameters.
-    if (filterBy != null && !filterBy.isEmpty())
+    if (filterString != null && !filterString.isEmpty())
     {
-      final String filterBySchemaURI;
-      final String attributePath;
-      final int lastColonPos =
-          filterBy.lastIndexOf(SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
-      if (lastColonPos == -1)
-      {
-        filterBySchemaURI = SCHEMA_URI_CORE;
-        attributePath = filterBy;
-      }
-      else
-      {
-        filterBySchemaURI = filterBy.substring(0, lastColonPos);
-        attributePath = filterBy.substring(lastColonPos+1);
-      }
-
-      final String[] filterByPath = attributePath.split("\\.");
-
-      filter = new SCIMFilter(
-          filterOp, filterValue, filterBySchemaURI, filterByPath);
+      filter = SCIMFilter.parse(filterString);
     }
     else
     {

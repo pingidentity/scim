@@ -217,23 +217,13 @@ public class ConfigurableResourceMapper extends ResourceMapper
   {
     final Filter objectClassFilter =
         Filter.createEqualityFilter("objectclass", structuralObjectClass);
-    Filter filterComponent = null;
 
     if (filter == null)
     {
       return objectClassFilter;
     }
 
-    final String[] attrPath = filter.getAttributePath();
-    final SCIMAttributeType filterAttributeType =
-        new SCIMAttributeType(filter.getAttributeSchema(), attrPath[0]);
-
-    final AttributeMapper attributeMapper =
-        attributeMappers.get(filterAttributeType);
-    if (attributeMapper != null)
-    {
-      filterComponent = attributeMapper.toLDAPFilter(filter);
-    }
+    final Filter filterComponent = toLDAPFilterComponent(filter);
 
     if (filterComponent == null)
     {
@@ -243,6 +233,63 @@ public class ConfigurableResourceMapper extends ResourceMapper
     {
       return Filter.createANDFilter(filterComponent, objectClassFilter);
     }
+  }
+
+
+
+  /**
+   * Map a SCIM filter component to an LDAP filter component.
+   *
+   * @param filter  The SCIM filter component to be mapped.
+   *
+   * @return  The LDAP filter component, or {@code null} if the filter
+   *          component could not be mapped.
+   */
+  private Filter toLDAPFilterComponent(final SCIMFilter filter)
+  {
+    final SCIMFilterType filterType = filter.getFilterType();
+
+    switch (filterType)
+    {
+      case AND:
+        final List<Filter> andFilterComponents = new ArrayList<Filter>();
+        for (SCIMFilter f : filter.getFilterComponents())
+        {
+          final Filter filterComponent = toLDAPFilterComponent(f);
+          if (filterComponent != null)
+          {
+            andFilterComponents.add(filterComponent);
+          }
+        }
+        return Filter.createANDFilter(andFilterComponents);
+
+      case OR:
+        final List<Filter> orFilterComponents = new ArrayList<Filter>();
+        for (SCIMFilter f : filter.getFilterComponents())
+        {
+          final Filter filterComponent = toLDAPFilterComponent(f);
+          if (filterComponent != null)
+          {
+            orFilterComponents.add(filterComponent);
+          }
+        }
+        return Filter.createANDFilter(orFilterComponents);
+
+      default:
+        final AttributePath filterAttribute = filter.getFilterAttribute();
+        final SCIMAttributeType filterAttributeType =
+            new SCIMAttributeType(filterAttribute.getAttributeSchema(),
+                                  filterAttribute.getAttributeName());
+        final AttributeMapper attributeMapper =
+            attributeMappers.get(filterAttributeType);
+        if (attributeMapper != null)
+        {
+          return attributeMapper.toLDAPFilter(filter);
+        }
+        break;
+    }
+
+    return null;
   }
 
 

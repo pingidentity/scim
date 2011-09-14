@@ -36,6 +36,7 @@ import com.unboundid.scim.schema.Error;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.util.StaticUtils;
@@ -243,18 +244,22 @@ public abstract class LDAPBackend
       SearchRequest searchRequest = null;
       if (scimFilter != null)
       {
-        final String[] attrPath = scimFilter.getAttributePath();
-        if (attrPath.length == 1 && attrPath[0].equalsIgnoreCase("id"))
+        if (scimFilter.getFilterType() == SCIMFilterType.EQUALITY)
         {
-          final String[] requestAttributes =
-              new String[requestAttributeSet.size()];
-          requestAttributeSet.toArray(requestAttributes);
+          final AttributePath path = scimFilter.getFilterAttribute();
+          if (path.getAttributeSchema().equals(SCIMConstants.SCHEMA_URI_CORE) &&
+              path.getAttributeName().equalsIgnoreCase("id"))
+          {
+            final String[] requestAttributes =
+                new String[requestAttributeSet.size()];
+            requestAttributeSet.toArray(requestAttributes);
 
-          searchRequest =
-              new SearchRequest(resultListener, scimFilter.getFilterValue(),
-                                SearchScope.BASE,
-                                Filter.createPresenceFilter("objectclass"),
-                                requestAttributes);
+            searchRequest =
+                new SearchRequest(resultListener, scimFilter.getFilterValue(),
+                                  SearchScope.BASE,
+                                  Filter.createPresenceFilter("objectclass"),
+                                  requestAttributes);
+          }
         }
       }
 

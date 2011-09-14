@@ -186,10 +186,6 @@ public class SCIMServer
       security.setHandler(contextHandler);
       security.setServer(server);
 
-      // Original servlet implementation.
-//      final HttpServlet servlet = new SCIMServlet(backend);
-//      contextHandler.addServlet(new ServletHolder(servlet), "/*");
-
       // JAX-RS implementation using Apache Wink.
       System.setProperty("wink.httpMethodOverrideHeaders",
                          "X-HTTP-Method-Override");

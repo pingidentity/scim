@@ -7,7 +7,6 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.ldap.PageParameters;
-import com.unboundid.scim.ldap.SCIMFilter;
 import com.unboundid.scim.ldap.SortParameters;
 import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
@@ -582,7 +581,7 @@ public class SCIMClient
    * resource endpoint.
    *
    * @param resourceEndPoint  The resource end-point. e.g. Users
-   * @param filter            The filter parameters, or {@code null} if the
+   * @param filter            The filter parameter, or {@code null} if the
    *                          results should not be filtered.
    * @param attributes        The set of attributes to be retrieved. If empty,
    *                          then the server returns all attributes.
@@ -592,7 +591,7 @@ public class SCIMClient
    * @throws IOException  If an error occurred while retrieving the resources.
    */
   public List<Resource> getResources(final String resourceEndPoint,
-                                     final SCIMFilter filter,
+                                     final String filter,
                                      final String ... attributes)
       throws IOException
   {
@@ -617,7 +616,7 @@ public class SCIMClient
    * A GET operation is invoked on the specified resource endpoint.
    *
    * @param resourceEndPoint      The resource end-point. e.g. Users
-   * @param filter                The filter parameters, or {@code null} if the
+   * @param filter                The filter parameter, or {@code null} if the
    *                              results should not be filtered.
    * @param sortParameters        The sorting parameters, or {@code null}
    *                              if the results should not be sorted.
@@ -632,7 +631,7 @@ public class SCIMClient
    */
   public Response getResources(
       final String resourceEndPoint,
-      final SCIMFilter filter,
+      final String filter,
       final SortParameters sortParameters,
       final PageParameters pageParameters,
       final String ... attributes)

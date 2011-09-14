@@ -9,9 +9,10 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.Schema;
 import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.ldap.AttributePath;
 import com.unboundid.scim.ldap.SCIMFilter;
+import com.unboundid.scim.ldap.SCIMFilterType;
 
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -285,20 +286,20 @@ public final class SCIMAttribute
    */
   public boolean matchesFilter(final SCIMFilter filter)
   {
-    if (!filter.getAttributeSchema().equals(getSchema()))
+    if (!filter.getFilterAttribute().getAttributeSchema().equals(getSchema()))
     {
       return false;
     }
 
-    final String[] attributePath = filter.getAttributePath();
-    if (attributePath.length == 0 ||
-        !attributePath[0].equalsIgnoreCase(getName()))
+    final String schema = filter.getFilterAttribute().getAttributeSchema();
+    final String attributeName = filter.getFilterAttribute().getAttributeName();
+    final String subAttributeName =
+        filter.getFilterAttribute().getSubAttributeName();
+
+    if (!attributeName.equalsIgnoreCase(getName()))
     {
       return false;
     }
-
-    final String[] childPath =
-        Arrays.copyOfRange(attributePath, 1, attributePath.length);
 
     if (isPlural())
     {
@@ -314,18 +315,14 @@ public final class SCIMAttribute
 
             if (a != null)
             {
-              // This is done so the client specifies 'emails.value' rather
+              // This is done because the client specifies 'emails.value' rather
               // than 'emails.email.value'.
-              final String[] insertedPath =
-                  Arrays.copyOf(attributePath, attributePath.length);
-              insertedPath[0] = a.getName();
-              final SCIMFilter insertedFilter =
-                  new SCIMFilter(filter.getFilterOp(),
-                                 filter.getFilterValue(),
-                                 filter.getAttributeSchema(),
-                                 insertedPath);
-
-              if (a.matchesFilter(insertedFilter))
+              final AttributePath childPath =
+                  new AttributePath(schema, a.getName(), subAttributeName);
+              if (a.matchesFilter(new SCIMFilter(filter.getFilterType(),
+                                                 childPath,
+                                                 filter.getFilterValue(),
+                                                 filter.getFilterComponents())))
               {
                 return true;
               }
@@ -339,23 +336,25 @@ public final class SCIMAttribute
       final SCIMAttributeValue v = getSingularValue();
       if (v.isComplex())
       {
-        if (childPath.length > 0)
+        if (subAttributeName != null)
         {
-          final SCIMAttribute a = v.getAttribute(childPath[0]);
+          final SCIMAttribute a = v.getAttribute(subAttributeName);
           if (a != null)
           {
+            final AttributePath childPath =
+                new AttributePath(schema, subAttributeName, null);
             return a.matchesFilter(
-                new SCIMFilter(filter.getFilterOp(),
+                new SCIMFilter(filter.getFilterType(),
+                               childPath,
                                filter.getFilterValue(),
-                               filter.getAttributeSchema(),
-                               childPath));
+                               filter.getFilterComponents()));
           }
         }
       }
       else
       {
-        final String filterOp = filter.getFilterOp();
-        if (filterOp.equalsIgnoreCase("present"))
+        final SCIMFilterType filterType = filter.getFilterType();
+        if (filterType == SCIMFilterType.PRESENCE)
         {
           return true;
         }
@@ -374,7 +373,7 @@ public final class SCIMAttribute
               attributeValue = v.getBooleanValue().toString();
               break;
 
-            case INTEGER: // TODO
+            case INTEGER:
             case STRING:
               attributeValue = v.getStringValue();
               break;
@@ -383,21 +382,17 @@ public final class SCIMAttribute
 
         if (attributeValue != null)
         {
-          if (filterOp.equalsIgnoreCase("equals"))
+          // TODO support caseExact attributes
+          switch (filterType)
           {
-            return attributeValue.equals(filterValue);
-          }
-          else if (filterOp.equalsIgnoreCase("equalsIgnoreCase"))
-          {
-            return attributeValue.equalsIgnoreCase(filterValue);
-          }
-          else if (filterOp.equalsIgnoreCase("contains"))
-          {
-            return attributeValue.contains(filterValue);
-          }
-          else if (filterOp.equalsIgnoreCase("startswith"))
-          {
-            return attributeValue.startsWith(filterValue);
+            case EQUALITY:
+              return attributeValue.equalsIgnoreCase(filterValue);
+            case CONTAINS:
+              return attributeValue.toLowerCase().contains(
+                  filterValue.toLowerCase());
+            case STARTS_WITH:
+              return attributeValue.toLowerCase().startsWith(
+                  filterValue.toLowerCase());
           }
         }
       }

@@ -98,21 +98,21 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
   {
-    final String filterOp = filter.getFilterOp();
+    final SCIMFilterType filterType = filter.getFilterType();
 
     String filterValue = filter.getFilterValue();
 
-    final String[] attrPath = filter.getAttributePath();
-    if (attrPath.length < 2)
+    final String subAttributeName =
+        filter.getFilterAttribute().getSubAttributeName();
+    if (subAttributeName == null)
     {
       return Filter.createORFilter();
     }
 
-    final String subAttribute = attrPath[1];
     ValueMapper valueMapper = null;
     for (final ValueMapper m : valueMappers)
     {
-      if (m.getScimAttribute().equalsIgnoreCase(subAttribute))
+      if (m.getScimAttribute().equalsIgnoreCase(subAttributeName))
       {
         valueMapper = m;
       }
@@ -125,44 +125,57 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
 
     final String ldapAttributeType = valueMapper.getLdapAttributeType();
 
-    if (filterOp.equalsIgnoreCase("equals"))
+    switch (filterType)
     {
-      // This will also return entries that do not match the exact case.
-      final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
-      return Filter.createEqualityFilter(ldapAttributeType,
-                                         ldapFilterValue);
-    }
-    else if (filterOp.equalsIgnoreCase("equalsIgnoreCase"))
-    {
-      // This only works if the mapped LDAP attribute is case-ignore.
-      final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
-      return Filter.createEqualityFilter(ldapAttributeType,
-                                         ldapFilterValue);
-    }
-    else if (filterOp.equalsIgnoreCase("contains"))
-    {
-      final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
-      return Filter.createSubstringFilter(ldapAttributeType,
-                                          null,
-                                          new String[] { ldapFilterValue },
-                                          null);
-    }
-    else if (filterOp.equalsIgnoreCase("startswith"))
-    {
-      final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
-      return Filter.createSubstringFilter(ldapAttributeType,
-                                          ldapFilterValue,
-                                          null,
-                                          null);
-    }
-    else if (filterOp.equalsIgnoreCase("present"))
-    {
-      return Filter.createPresenceFilter(ldapAttributeType);
-    }
-    else
-    {
-      throw new RuntimeException(
-          "Filter op " + filterOp + " is not supported");
+      case EQUALITY:
+      {
+        final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
+        return Filter.createEqualityFilter(ldapAttributeType,
+                                           ldapFilterValue);
+      }
+
+      case CONTAINS:
+      {
+        final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
+        return Filter.createSubstringFilter(ldapAttributeType,
+                                            null,
+                                            new String[] { ldapFilterValue },
+                                            null);
+      }
+
+      case STARTS_WITH:
+      {
+        final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
+        return Filter.createSubstringFilter(ldapAttributeType,
+                                            ldapFilterValue,
+                                            null,
+                                            null);
+      }
+
+      case PRESENCE:
+      {
+        return Filter.createPresenceFilter(ldapAttributeType);
+      }
+
+      case GREATER_THAN:
+      case GREATER_OR_EQUAL:
+      {
+        final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
+        return Filter.createGreaterOrEqualFilter(ldapAttributeType,
+                                                 ldapFilterValue);
+      }
+
+      case LESS_THAN:
+      case LESS_OR_EQUAL:
+      {
+        final String ldapFilterValue = valueMapper.toLDAPValue(filterValue);
+        return Filter.createLessOrEqualFilter(ldapAttributeType,
+                                              ldapFilterValue);
+      }
+
+      default:
+        throw new RuntimeException(
+            "Filter type " + filterType + " is not supported");
     }
   }
 

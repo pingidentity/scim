@@ -6,8 +6,6 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.ldap.PageParameters;
-import com.unboundid.scim.ldap.SCIMException;
-import com.unboundid.scim.ldap.SCIMFilter;
 import com.unboundid.scim.ldap.SortParameters;
 import org.eclipse.jetty.util.URIUtil;
 import org.eclipse.jetty.util.UrlEncoded;
@@ -61,7 +59,7 @@ public final class ScimURI
   /**
    * The filter parameters, or {@code null} if there are no filter parameters.
    */
-  private final SCIMFilter filter;
+  private final String filter;
 
   /**
    * The sorting parameters, or {@code null} if there are no sorting
@@ -125,8 +123,8 @@ public final class ScimURI
    * @param queryAttributes       The query attributes specifying the attributes
    *                              to be returned in the response to an operation
    *                              on this URI.
-   * @param filter                The filter parameters, or {@code null} if
-   *                              there are no filter parameters.
+   * @param filter                The filter parameter, or {@code null} if
+   *                              there is no filter parameter.
    * @param sortParameters        The sorting parameters, or {@code null} if
    *                              there are no sorting parameters.
    * @param pageParameters        The pagination parameters, or {@code null} if
@@ -138,7 +136,7 @@ public final class ScimURI
                  final String mediaTypeSuffix,
                  final SCIMAttributeType resourceAttribute,
                  final SCIMQueryAttributes queryAttributes,
-                 final SCIMFilter filter,
+                 final String filter,
                  final SortParameters sortParameters,
                  final PageParameters pageParameters)
   {
@@ -236,11 +234,11 @@ public final class ScimURI
 
 
   /**
-   * Retrieve the filter parameters, if any.
+   * Retrieve the filter parameter, if any.
    *
-   * @return  The filter parameters, or {@code null} if there are none.
+   * @return  The filter parameter, or {@code null} if there is none.
    */
-  public SCIMFilter getFilter()
+  public String getFilter()
   {
     return filter;
   }
@@ -267,217 +265,6 @@ public final class ScimURI
   public PageParameters getPageParameters()
   {
     return pageParameters;
-  }
-
-
-
-  /**
-   * Create a SCIM URI from the provided information.
-   *
-   * @param baseURI       The component of the URI preceding the resource name.
-   * @param pathInfo      The remaining part of the URI preceding any query
-   *                      string. e.g. /User/{id}
-   * @param queryString   The query string, or {@code null} if there is none.
-   *
-   * @return  A SCIM URI.
-   *
-   * @throws SCIMException  If an error occurs while parsing the URI.
-   */
-  public static ScimURI parseURI(final String baseURI,
-                                 final String pathInfo,
-                                 final String queryString)
-      throws SCIMException
-  {
-    String s = pathInfo;
-    String mediaTypeSuffix = null;
-    if (s.endsWith(".xml"))
-    {
-      mediaTypeSuffix = "xml";
-      s = s.substring(0, s.length() - 4);
-    }
-    else if (s.endsWith(".json"))
-    {
-      mediaTypeSuffix = "json";
-      s = s.substring(0, s.length() - 5);
-    }
-
-    int pos = s.indexOf('/');
-    if (pos == 0)
-    {
-      s = s.substring(1);
-      pos = s.indexOf('/');
-    }
-
-    final String endPoint;
-    final String remainingPathInfo;
-    if (pos == -1)
-    {
-      endPoint = s;
-      remainingPathInfo = null;
-    }
-    else
-    {
-      endPoint = s.substring(0, pos);
-      remainingPathInfo = s.substring(pos);
-    }
-
-    return parseURI(baseURI, endPoint, mediaTypeSuffix,
-                    remainingPathInfo, queryString);
-  }
-
-
-
-  /**
-   * Create a SCIM URI from the provided information.
-   *
-   * @param baseURI           The component of the URI preceding the resource
-   *                          name.
-   * @param resourceEndPoint  The name of the resource.
-   * @param mediaTypeSuffix   Any ".xml" or ".json" suffix that was specified
-   *                          in the URI.
-   * @param pathInfo          The remaining part of the URI preceding any query
-   *                          string, or {@code null} if there is none.
-   * @param queryString       The query string, or {@code null} if there is
-   *                          none.
-   *
-   * @return  A SCIM URI.
-   */
-  public static ScimURI parseURI(final String baseURI,
-                                 final String resourceEndPoint,
-                                 final String mediaTypeSuffix,
-                                 final String pathInfo,
-                                 final String queryString)
-  {
-    String resourceID = null;
-    SCIMAttributeType resourceAttribute = null;
-
-    if (pathInfo != null && !pathInfo.isEmpty())
-    {
-      // Split up the components of the resource identifier.
-      final String[] split = pathInfo.split("/");
-      if (split.length < 2 || split[1].isEmpty())
-      {
-        throw new RuntimeException(
-            "The operation does not specify a resource ID");
-      }
-
-      if (split.length > 3 || !split[0].isEmpty())
-      {
-        throw new RuntimeException(
-            "The URI does not specify a valid user operation");
-      }
-
-      resourceID = URIUtil.decodePath(split[1]);
-
-      if (split.length > 2)
-      {
-        resourceAttribute =
-            SCIMAttributeType.fromQualifiedName(URIUtil.decodePath(split[2]));
-      }
-    }
-
-    // Parse the query string.
-    SCIMFilter filter = null;
-    SortParameters sortParameters = null;
-    PageParameters pageParameters = null;
-    final String[] attributes;
-    if (queryString != null && !queryString.isEmpty())
-    {
-      final UrlEncoded queryMap = new UrlEncoded(queryString);
-      if (queryMap.containsKey(QUERY_PARAMETER_ATTRIBUTES))
-      {
-        final String commaList = queryMap.getString(QUERY_PARAMETER_ATTRIBUTES);
-        if (commaList != null && !commaList.isEmpty())
-        {
-          attributes = commaList.split(",");
-        }
-        else
-        {
-          attributes = new String[0];
-        }
-      }
-      else
-      {
-        attributes = new String[0];
-      }
-
-      final String filterBy = queryMap.getString(QUERY_PARAMETER_FILTER_BY);
-      if (filterBy != null && !filterBy.isEmpty())
-      {
-        final String filterBySchemaURI;
-        final String attributePath;
-        final int lastColonPos =
-            filterBy.lastIndexOf(SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
-        if (lastColonPos == -1)
-        {
-          filterBySchemaURI = SCHEMA_URI_CORE;
-          attributePath = filterBy;
-        }
-        else
-        {
-          filterBySchemaURI = filterBy.substring(0, lastColonPos);
-          attributePath = filterBy.substring(lastColonPos+1);
-        }
-
-        final String[] filterByPath = attributePath.split("\\.");
-
-        final String filterOp =
-            queryMap.getString(QUERY_PARAMETER_FILTER_OP);
-        final String filterValue =
-            queryMap.getString(QUERY_PARAMETER_FILTER_VALUE);
-
-        filter = new SCIMFilter(
-            filterOp, filterValue, filterBySchemaURI, filterByPath);
-      }
-
-      final String sortBy = queryMap.getString(QUERY_PARAMETER_SORT_BY);
-      if (sortBy != null && !sortBy.isEmpty())
-      {
-        sortParameters =
-            new SortParameters(
-                SCIMAttributeType.fromQualifiedName(sortBy),
-                queryMap.getString(QUERY_PARAMETER_SORT_ORDER));
-      }
-
-      long startIndex = -1;
-      int count = -1;
-      final String pageStartIndex =
-          queryMap.getString(QUERY_PARAMETER_PAGE_START_INDEX);
-      final String pageSize =
-          queryMap.getString(QUERY_PARAMETER_PAGE_SIZE);
-      if (pageStartIndex != null && !pageStartIndex.isEmpty())
-      {
-        startIndex = Long.parseLong(pageStartIndex);
-      }
-      if (pageSize != null && !pageSize.isEmpty())
-      {
-        count = Integer.parseInt(pageSize);
-      }
-
-      if (startIndex >= 0 && count >= 0)
-      {
-        pageParameters = new PageParameters(startIndex, count);
-      }
-      else if (startIndex >= 0)
-      {
-        pageParameters = new PageParameters(startIndex, 0);
-      }
-      else if (count >= 0)
-      {
-        pageParameters = new PageParameters(0, count);
-      }
-    }
-    else
-    {
-      attributes = new String[0];
-    }
-
-    final SCIMQueryAttributes queryAttributes =
-        new SCIMQueryAttributes(attributes);
-
-    return new ScimURI(baseURI, resourceEndPoint, resourceID, mediaTypeSuffix,
-                       resourceAttribute, queryAttributes, filter,
-                       sortParameters, pageParameters);
   }
 
 
@@ -544,34 +331,7 @@ public final class ScimURI
 
       if (filter != null)
       {
-        parameters.put(QUERY_PARAMETER_FILTER_OP, filter.getFilterOp());
-
-        final StringBuilder filterBy = new StringBuilder();
-        final String schema = filter.getAttributeSchema();
-        if (!schema.equals(SCHEMA_URI_CORE))
-        {
-          filterBy.append(schema);
-          filterBy.append(SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
-        }
-        boolean first = true;
-        for (final String attributeName : filter.getAttributePath())
-        {
-          if (first)
-          {
-            first = false;
-          }
-          else
-          {
-            filterBy.append('.');
-          }
-          filterBy.append(attributeName);
-        }
-        parameters.put(QUERY_PARAMETER_FILTER_BY, filterBy.toString());
-
-        if (filter.getFilterValue() != null)
-        {
-          parameters.put(QUERY_PARAMETER_FILTER_VALUE, filter.getFilterValue());
-        }
+        parameters.put(QUERY_PARAMETER_FILTER, filter);
       }
 
       if (sortParameters != null)

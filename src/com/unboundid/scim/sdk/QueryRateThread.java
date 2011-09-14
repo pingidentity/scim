@@ -6,7 +6,6 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.ldap.SCIMFilter;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.util.Debug;
 import com.unboundid.util.FixedRateBarrier;
@@ -153,9 +152,9 @@ public class QueryRateThread
 
       try
       {
-        final SCIMFilter filter = parseFilter(filterValue);
         final Response response =
-            client.getResources(endpointURI, filter, null, null, attributes);
+            client.getResources(endpointURI, filterValue, null, null,
+                                attributes);
         final Response.Resources resources = response.getResources();
         if (resources != null)
         {
@@ -225,45 +224,5 @@ public class QueryRateThread
 
     resultCode.compareAndSet(null, ResultCode.SUCCESS);
     return resultCode.get();
-  }
-
-
-
-  /**
-   * Parse the provided filter as a SCIM filter.
-   *
-   * @param filter  The string representation of the SCIM filter.
-   *
-   * @return  The parsed filter.
-   */
-  private SCIMFilter parseFilter(final String filter)
-  {
-    final String[] split = filter.split(" ", 3);
-
-    String filterOp = null;
-    if (split[1].equalsIgnoreCase("eq"))
-    {
-      filterOp = "equalsIgnoreCase";
-    }
-    else if (split[1].equalsIgnoreCase("co"))
-    {
-      filterOp = "contains";
-    }
-    else if (split[1].equalsIgnoreCase("sw"))
-    {
-      filterOp = "startsWith";
-    }
-    else if (split[1].equalsIgnoreCase("pr"))
-    {
-      filterOp = "present";
-    }
-
-    String value = null;
-    if (split[2] != null)
-    {
-      value = split[2].substring(1, split[2].length() - 1);
-    }
-
-    return new SCIMFilter(split[0], filterOp, value);
   }
 }

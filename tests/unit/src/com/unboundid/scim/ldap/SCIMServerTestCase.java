@@ -351,49 +351,33 @@ public class SCIMServerTestCase
       assertNotNull(u.getName().getGivenName());
     }
 
-    resources = client.getResources(
-        "Users",
-        SCIMFilter.createEqualityFilter(
-            "id", "uid=user.1,dc=example,dc=com"));
+    resources = client.getResources("Users",
+                                    "id eq 'uid=user.1,dc=example,dc=com'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources(
-        "Users", SCIMFilter.createEqualityFilter("userName", "user.1"));
+    resources = client.getResources("Users", "userName eq 'user.1'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources(
-        "Users", SCIMFilter.createEqualityFilter("userName", "User.1"));
-    assertEquals(resources.size(), 0);
-
-    resources = client.getResources(
-        "Users",
-        SCIMFilter.createIgnoresCaseEqualityFilter("userName", "User.1"));
+    resources = client.getResources("Users", "userName eq 'User.1'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources(
-        "Users", SCIMFilter.createStartsWithFilter("userName", "user"));
+    resources = client.getResources("Users", "userName sw 'user'");
     assertEquals(resources.size(), 2);
 
-    resources = client.getResources(
-        "Users", SCIMFilter.createContainsFilter("userName", "1"));
+    resources = client.getResources("Users", "userName co '1'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources(
-        "Users", SCIMFilter.createPresenceFilter("userName"));
+    resources = client.getResources("Users", "userName pr");
     assertEquals(resources.size(), 2);
 
-    resources = client.getResources(
-        "Users", SCIMFilter.createEqualityFilter("name.formatted", "User One"));
+    resources = client.getResources("Users", "name.formatted eq 'User One'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources(
-        "Users",
-        SCIMFilter.createEqualityFilter("emails.value", "user.1@example.com"));
+    resources = client.getResources("Users",
+                                    "emails.value eq 'user.1@example.com'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources(
-        "Users",
-        SCIMFilter.createEqualityFilter("addresses.locality", "Austin"));
+    resources = client.getResources("Users", "addresses.locality eq 'Austin'");
     assertEquals(resources.size(), 1);
   }
 
