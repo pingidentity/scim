@@ -79,8 +79,7 @@ public class ResourceSearchResultListener implements SearchResultListener
 
     if (scimObject != null)
     {
-      LDAPBackend.setIdAndMetaAttributes(scimObject, searchEntry,
-                                         allAttributes);
+      LDAPBackend.setIdAndMetaAttributes(scimObject, request, searchEntry);
 
       if (request.getFilter() == null ||
           scimObject.matchesFilter(request.getFilter()))

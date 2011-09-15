@@ -38,10 +38,10 @@ import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.util.StaticUtils;
 import org.eclipse.jetty.http.HttpStatus;
 
+import javax.ws.rs.core.UriBuilder;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -187,8 +187,7 @@ public abstract class LDAPBackend
         final SCIMObject scimObject = new SCIMObject();
         scimObject.setResourceName(request.getResourceName());
 
-        setIdAndMetaAttributes(scimObject, searchResultEntry,
-                               request.getAttributes());
+        setIdAndMetaAttributes(scimObject, request, searchResultEntry);
 
         for (final ResourceMapper m : mappers)
         {
@@ -424,7 +423,7 @@ public abstract class LDAPBackend
     final SCIMObject returnObject = new SCIMObject();
     returnObject.setResourceName(request.getResourceName());
 
-    setIdAndMetaAttributes(returnObject, addedEntry, request.getAttributes());
+    setIdAndMetaAttributes(returnObject, request, addedEntry);
 
     for (final ResourceMapper m : mappers)
     {
@@ -544,8 +543,7 @@ public abstract class LDAPBackend
     final SCIMObject returnObject = new SCIMObject();
     returnObject.setResourceName(request.getResourceName());
 
-    setIdAndMetaAttributes(returnObject, modifiedEntry,
-                           request.getAttributes());
+    setIdAndMetaAttributes(returnObject, request, modifiedEntry);
 
     for (final ResourceMapper m : mappers)
     {
@@ -566,19 +564,19 @@ public abstract class LDAPBackend
 
 
   /**
-   * Set the id and meta attributes in a SCIM object from the provided LDAP
-   * entry.
+   * Set the id and meta attributes in a SCIM object from the provided
+   * information.
    *
-   * @param scimObject       The SCIM object whose id and meta attributes are
-   *                         to be set.
-   * @param entry            The LDAP entry from which the attribute values are
-   *                         to be derived.
-   * @param queryAttributes  The attributes requested by the client.
+   * @param scimObject  The SCIM object whose id and meta attributes are to be
+   *                    set.
+   * @param request     The SCIM request.
+   * @param entry       The LDAP entry from which the attribute values are to
+   *                    be derived.
    */
   public static void setIdAndMetaAttributes(
       final SCIMObject scimObject,
-      final Entry entry,
-      final SCIMQueryAttributes queryAttributes)
+      final SCIMRequest request,
+      final Entry entry)
   {
     final ResourceDescriptor resourceDescriptor =
         SchemaManager.instance().getResourceDescriptor(
@@ -633,6 +631,15 @@ public abstract class LDAPBackend
         // Unlikely to come here.
       }
     }
+
+    final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
+    uriBuilder.path(scimObject.getResourceName());
+    uriBuilder.path(entry.getDN());
+    metaAttrs.add(
+        SCIMAttribute.createSingularAttribute(
+            metaDescriptor.getAttribute("location"),
+            SCIMAttributeValue.createStringValue(
+                uriBuilder.build().toString())));
 
     scimObject.addAttribute(
         SCIMAttribute.createSingularAttribute(

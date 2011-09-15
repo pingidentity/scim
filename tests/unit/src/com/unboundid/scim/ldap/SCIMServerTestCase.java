@@ -298,6 +298,10 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
+    assertNotNull(user1.getMeta().getLocation());
+
+    // Ensure that we can retrieve the user again using meta.location
+    assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
 
     // Fetch selected attributes only. (id and meta should always be returned)
     final User partialUser1 =
@@ -346,9 +350,13 @@ public class SCIMServerTestCase
       assertNotNull(u.getMeta());
       assertNotNull(u.getMeta().getCreated());
       assertNotNull(u.getMeta().getLastModified());
+      assertNotNull(u.getMeta().getLocation());
       assertNotNull(u.getName());
       assertNotNull(u.getName().getFamilyName());
       assertNotNull(u.getName().getGivenName());
+
+      // Ensure that we can retrieve the user again using meta.location
+      assertNotNull(client.getUserByURI(u.getMeta().getLocation()));
     }
 
     resources = client.getResources("Users",
@@ -518,6 +526,7 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
+    assertNotNull(user1.getMeta().getLocation());
 
     // Verify that the entry was actually created.
     final Entry entry = testDS.getEntry("uid=bjensen,dc=example,dc=com");
@@ -528,6 +537,7 @@ public class SCIMServerTestCase
 
     // Verify that we can fetch the user using the returned resource URI.
     assertNotNull(client.getUserByURI(response.getResourceURI()));
+    assertEquals(response.getResourceURI(), user1.getMeta().getLocation());
   }
 
 
@@ -685,6 +695,10 @@ public class SCIMServerTestCase
         "homePostalAddress", "456 Hollywood Blvd$Hollywood, CA 91608 USA"));
     assertTrue(entry2.hasAttribute("description"));
     assertNotNull(user1.getMeta().getLastModified());
+    assertNotNull(user1.getMeta().getLocation());
+
+    // Ensure that we can retrieve the user again using meta.location
+    assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
 
     // Remove some values from the user.
 

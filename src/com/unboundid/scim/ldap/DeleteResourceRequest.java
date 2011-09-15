@@ -5,6 +5,10 @@
 
 package com.unboundid.scim.ldap;
 
+import java.net.URI;
+
+
+
 /**
  * This class represents a SCIM Delete Resource request delete a single
  * resource.
@@ -27,17 +31,19 @@ public final class DeleteResourceRequest extends SCIMRequest
   /**
    * Create a new SCIM Delete Resource request from the provided information.
    *
+   * @param baseURL              The base URL for the SCIM service.
    * @param authenticatedUserID  The authenticated user name or {@code null} if
    *                             the request is not authenticated.
    * @param resourceName  The name of the resource identified by the request
    *                      endpoint. e.g. User or Group.
    * @param resourceID    The target resource ID.
    */
-  public DeleteResourceRequest(final String authenticatedUserID,
+  public DeleteResourceRequest(final URI baseURL,
+                               final String authenticatedUserID,
                                final String resourceName,
                                final String resourceID)
   {
-    super(authenticatedUserID);
+    super(baseURL, authenticatedUserID);
     this.resourceName        = resourceName;
     this.resourceID          = resourceID;
   }

@@ -8,6 +8,8 @@ package com.unboundid.scim.ldap;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
+import java.net.URI;
+
 
 
 /**
@@ -42,6 +44,7 @@ public final class PutResourceRequest extends SCIMRequest
   /**
    * Create a new SCIM Put Resource request from the provided information.
    *
+   * @param baseURL              The base URL for the SCIM service.
    * @param authenticatedUserID  The authenticated user name or {@code null} if
    *                             the request is not authenticated.
    * @param resourceName         The name of the resource identified by the
@@ -50,13 +53,14 @@ public final class PutResourceRequest extends SCIMRequest
    * @param resourceObject       The new contents of the resource.
    * @param attributes           The set of requested attributes.
    */
-  public PutResourceRequest(final String authenticatedUserID,
+  public PutResourceRequest(final URI baseURL,
+                            final String authenticatedUserID,
                             final String resourceName,
                             final String resourceID,
                             final SCIMObject resourceObject,
                             final SCIMQueryAttributes attributes)
   {
-    super(authenticatedUserID);
+    super(baseURL, authenticatedUserID);
     this.resourceName        = resourceName;
     this.resourceID          = resourceID;
     this.resourceObject      = resourceObject;

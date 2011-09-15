@@ -247,7 +247,8 @@ public class UsersResource
   {
     // Process the request.
     final GetResourcesRequest getResourcesRequest =
-        new GetResourcesRequest(authID,
+        new GetResourcesRequest(uriInfo.getBaseUri(),
+                                authID,
                                 RESOURCE_ENDPOINT_USERS,
                                 filter,
                                 sortParameters,

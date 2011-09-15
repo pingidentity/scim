@@ -505,7 +505,8 @@ public class UserResource
   {
     // Process the request.
     final GetResourceRequest getResourceRequest =
-        new GetResourceRequest(authID,
+        new GetResourceRequest(uriInfo.getBaseUri(),
+                               authID,
                                RESOURCE_NAME_USER,
                                userID,
                                queryAttributes);
@@ -522,6 +523,15 @@ public class UserResource
     }
     responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
                            Boolean.TRUE.toString());
+
+    final Resource resource = scimResponse.getResponse().getResource();
+    if (resource != null)
+    {
+      final UriBuilder uriBuilder = uriInfo.getBaseUriBuilder();
+      uriBuilder.path(RESOURCE_NAME_USER);
+      uriBuilder.path(resource.getId());
+      responseBuilder.location(uriBuilder.build());
+    }
 
     return responseBuilder.build();
   }
@@ -570,7 +580,8 @@ public class UserResource
 
     // Process the request.
     final PostResourceRequest postResourceRequest =
-        new PostResourceRequest(authID, RESOURCE_NAME_USER,
+        new PostResourceRequest(uriInfo.getBaseUri(),
+                                authID, RESOURCE_NAME_USER,
                                 requestObject, queryAttributes);
     final SCIMResponse scimResponse =
         backend.postResource(postResourceRequest);
@@ -583,7 +594,8 @@ public class UserResource
     final Resource resource = scimResponse.getResponse().getResource();
     if (resource != null)
     {
-      final UriBuilder uriBuilder = uriInfo.getAbsolutePathBuilder();
+      final UriBuilder uriBuilder = uriInfo.getBaseUriBuilder();
+      uriBuilder.path(RESOURCE_NAME_USER);
       uriBuilder.path(resource.getId());
       responseBuilder.location(uriBuilder.build());
     }
@@ -637,7 +649,8 @@ public class UserResource
 
     // Process the request.
     final PutResourceRequest putResourceRequest =
-        new PutResourceRequest(authID, RESOURCE_NAME_USER,
+        new PutResourceRequest(uriInfo.getBaseUri(),
+                               authID, RESOURCE_NAME_USER,
                                userID, requestObject,
                                queryAttributes);
     final SCIMResponse scimResponse = backend.putResource(putResourceRequest);
@@ -646,6 +659,15 @@ public class UserResource
     final Response.ResponseBuilder responseBuilder =
         Response.status(scimResponse.getStatusCode());
     setResponseEntity(responseBuilder, produceMediaType, scimResponse);
+
+    final Resource resource = scimResponse.getResponse().getResource();
+    if (resource != null)
+    {
+      final UriBuilder uriBuilder = uriInfo.getBaseUriBuilder();
+      uriBuilder.path(RESOURCE_NAME_USER);
+      uriBuilder.path(resource.getId());
+      responseBuilder.location(uriBuilder.build());
+    }
 
     return responseBuilder.build();
   }
@@ -664,7 +686,8 @@ public class UserResource
   {
     // Process the request.
     final DeleteResourceRequest deleteResourceRequest =
-        new DeleteResourceRequest(authID, RESOURCE_NAME_USER, userID);
+        new DeleteResourceRequest(uriInfo.getBaseUri(),
+                                  authID, RESOURCE_NAME_USER, userID);
     final SCIMResponse scimResponse =
         backend.deleteResource(deleteResourceRequest);
 

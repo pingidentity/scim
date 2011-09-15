@@ -9,6 +9,8 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
+import java.net.URI;
+
 
 
 /**
@@ -38,6 +40,7 @@ public final class GetResourceRequest extends SCIMRequest
   /**
    * Create a new SCIM Get Resource request from the provided information.
    *
+   * @param baseURL              The base URL for the SCIM service.
    * @param authenticatedUserID  The authenticated user name or {@code null} if
    *                             the request is not authenticated.
    * @param resourceName         The name of the resource identified by the
@@ -45,12 +48,13 @@ public final class GetResourceRequest extends SCIMRequest
    * @param resourceID           The requested resource ID.
    * @param attributes           The set of requested attributes.
    */
-  public GetResourceRequest(final String authenticatedUserID,
+  public GetResourceRequest(final URI baseURL,
+                            final String authenticatedUserID,
                             final String resourceName,
                             final String resourceID,
                             final SCIMQueryAttributes attributes)
   {
-    super(authenticatedUserID);
+    super(baseURL, authenticatedUserID);
     this.resourceName        = resourceName;
     this.resourceID          = resourceID;
     this.attributes          = attributes;
