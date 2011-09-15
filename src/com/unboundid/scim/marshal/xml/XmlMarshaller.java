@@ -18,7 +18,6 @@ import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -511,37 +510,9 @@ public class XmlMarshaller implements Marshaller
     }
     else
     {
-      if (attributeDescriptor.getDataType() != null)
-      {
-        switch (scimAttribute.getAttributeDescriptor().getDataType())
-        {
-          case DATETIME:
-            xmlStreamWriter.writeCharacters(
-                scimAttribute.getSingularValue().getDateStringValue());
-            break;
-
-          case BOOLEAN:
-            Boolean booleanValue =
-                scimAttribute.getSingularValue().getBooleanValue();
-            xmlStreamWriter.writeCharacters(
-                DatatypeConverter.printBoolean(booleanValue));
-            break;
-
-          case INTEGER:
-          case STRING:
-          default:
-            final String stringValue =
-                scimAttribute.getSingularValue().getStringValue();
-            xmlStreamWriter.writeCharacters(stringValue);
-            break;
-        }
-      }
-      else
-      {
-        final String stringValue =
-            scimAttribute.getSingularValue().getStringValue();
-        xmlStreamWriter.writeCharacters(stringValue);
-      }
+      final String stringValue =
+          scimAttribute.getSingularValue().getStringValue();
+      xmlStreamWriter.writeCharacters(stringValue);
     }
 
     xmlStreamWriter.writeEndElement();

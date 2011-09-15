@@ -373,8 +373,7 @@ public class SCIMServerTestCase
     resources = client.getResources("Users", "name.formatted eq 'User One'");
     assertEquals(resources.size(), 1);
 
-    resources = client.getResources("Users",
-                                    "emails.value eq 'user.1@example.com'");
+    resources = client.getResources("Users", "emails eq 'user.1@example.com'");
     assertEquals(resources.size(), 1);
 
     resources = client.getResources("Users", "addresses.locality eq 'Austin'");

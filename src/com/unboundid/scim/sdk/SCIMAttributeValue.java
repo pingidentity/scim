@@ -37,7 +37,7 @@ public final class SCIMAttributeValue
    * The simple attribute value, or {@code null} if the attribute value is
    * complex.
    */
-  private final Object value;
+  private final String value;
 
   /**
    * The attributes comprising the complex value, keyed by the name of the
@@ -53,7 +53,7 @@ public final class SCIMAttributeValue
    * @param value       The simple attribute value, or {@code null} if the
    *                    attribute value is complex.
    */
-  private SCIMAttributeValue(final Object value)
+  private SCIMAttributeValue(final String value)
   {
     this.value      = value;
     this.attributes = null;
@@ -98,7 +98,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createBooleanValue(final Boolean value)
   {
-    return new SCIMAttributeValue(value);
+    return new SCIMAttributeValue(value.toString());
   }
 
 
@@ -112,7 +112,9 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createDateValue(final Date value)
   {
-    return new SCIMAttributeValue(value);
+    final Calendar calendar = new GregorianCalendar(utcTimeZone);
+    calendar.setTime(value);
+    return new SCIMAttributeValue(DatatypeConverter.printDateTime(calendar));
   }
 
 
@@ -233,14 +235,7 @@ public final class SCIMAttributeValue
    */
   public String getStringValue()
   {
-    if (value instanceof Date)
-    {
-      return getDateStringValue();
-    }
-    else
-    {
-      return value.toString();
-    }
+    return value;
   }
 
 
@@ -254,7 +249,21 @@ public final class SCIMAttributeValue
    */
   public Boolean getBooleanValue()
   {
-    return (Boolean)value;
+    return Boolean.valueOf(value);
+  }
+
+
+
+  /**
+   * Retrieves the simple Long value, or {@code null} if the attribute
+   * value is complex.
+   *
+   * @return  The simple Long value, or {@code null} if the attribute
+   *          value is complex.
+   */
+  public Long getLongValue()
+  {
+    return Long.valueOf(value);
   }
 
 
@@ -268,31 +277,8 @@ public final class SCIMAttributeValue
    */
   public Date getDateValue()
   {
-    return (Date)value;
-  }
-
-
-
-  /**
-   * Retrieves the simple Date value as an XML DateTime string, or {@code null}
-   * if the attribute value is complex.
-   *
-   * @return  The simple Date value as an XML DateTime string, or {@code null}
-   *          if the attribute value is complex.
-   */
-  public String getDateStringValue()
-  {
-    final Date dateValue = (Date)value;
-    if (dateValue != null)
-    {
-      final Calendar calendar = new GregorianCalendar(utcTimeZone);
-      calendar.setTime(dateValue);
-      return DatatypeConverter.printDateTime(calendar);
-    }
-    else
-    {
-      return null;
-    }
+    final Calendar calendar = DatatypeConverter.parseDateTime(value);
+    return calendar.getTime();
   }
 
 

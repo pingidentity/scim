@@ -18,13 +18,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -133,30 +131,7 @@ public class XmlUnmarshaller implements Unmarshaller
   {
     final SCIMAttributeValue v;
 
-    if (attributeDescriptor.getDataType() != null)
-    {
-      switch (attributeDescriptor.getDataType())
-      {
-        case DATETIME:
-          final Calendar calendar =
-              DatatypeConverter.parseDateTime(node.getTextContent());
-          v = SCIMAttributeValue.createDateValue(calendar.getTime());
-          break;
-
-        case BOOLEAN:
-          v = SCIMAttributeValue.createBooleanValue(
-              Boolean.valueOf(node.getTextContent()));
-          break;
-
-        default:
-          v = SCIMAttributeValue.createStringValue(node.getTextContent());
-          break;
-      }
-    }
-    else
-    {
-      v = SCIMAttributeValue.createStringValue(node.getTextContent());
-    }
+    v = SCIMAttributeValue.createStringValue(node.getTextContent());
 
     return SCIMAttribute.createSingularAttribute(attributeDescriptor, v);
   }

@@ -98,11 +98,11 @@ public class PluralAttributeMapper extends AttributeMapper
 
     String filterValue = filter.getFilterValue();
 
-    final String subAttributeName =
+    String subAttributeName =
         filter.getFilterAttribute().getSubAttributeName();
     if (subAttributeName == null)
     {
-      return Filter.createORFilter();
+      subAttributeName = "value";
     }
 
     final List<ValueMapper> selectedMappers = new ArrayList<ValueMapper>();

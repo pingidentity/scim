@@ -363,28 +363,24 @@ public class JsonMarshaller implements Marshaller
       {
         switch (scimAttribute.getAttributeDescriptor().getDataType())
         {
-          case DATETIME:
-            jsonWriter.value(val.getDateStringValue());
-            break;
-
           case BOOLEAN:
-            final Boolean booleanValue = val.getBooleanValue();
-            jsonWriter.value(booleanValue);
+            jsonWriter.value(val.getBooleanValue());
             break;
 
-          case INTEGER: // TODO
+          case INTEGER:
+            jsonWriter.value(val.getLongValue());
+            break;
+
+          case DATETIME:
           case STRING:
           default:
-            final String stringValue = val.getStringValue();
-            jsonWriter.value(stringValue);
+            jsonWriter.value(val.getStringValue());
             break;
         }
       }
       else
       {
-        final String stringValue =
-            scimAttribute.getSingularValue().getStringValue();
-        jsonWriter.value(stringValue);
+        jsonWriter.value(val.getStringValue());
       }
     }
   }

@@ -184,7 +184,10 @@ public class FilterParser
     }
 
     final SCIMFilter filter =
-        new SCIMFilter(filterType, filterAttribute, filterValue, null);
+        new SCIMFilter(filterType, filterAttribute,
+                       filterValue != null ? filterValue.toString() : null,
+                       (filterValue != null) && (filterValue instanceof String),
+                       null);
 
     final String nextWord = readWord();
     if (nextWord != null)

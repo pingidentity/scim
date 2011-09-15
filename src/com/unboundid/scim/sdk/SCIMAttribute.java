@@ -293,8 +293,12 @@ public final class SCIMAttribute
 
     final String schema = filter.getFilterAttribute().getAttributeSchema();
     final String attributeName = filter.getFilterAttribute().getAttributeName();
-    final String subAttributeName =
+    String subAttributeName =
         filter.getFilterAttribute().getSubAttributeName();
+    if (subAttributeName == null)
+    {
+      subAttributeName = "value";
+    }
 
     if (!attributeName.equalsIgnoreCase(getName()))
     {
@@ -315,13 +319,14 @@ public final class SCIMAttribute
 
             if (a != null)
             {
-              // This is done because the client specifies 'emails.value' rather
-              // than 'emails.email.value'.
+              // This is done because the client specifies 'emails' rather
+              // than 'emails.email'.
               final AttributePath childPath =
                   new AttributePath(schema, a.getName(), subAttributeName);
               if (a.matchesFilter(new SCIMFilter(filter.getFilterType(),
                                                  childPath,
                                                  filter.getFilterValue(),
+                                                 filter.isQuoteFilterValue(),
                                                  filter.getFilterComponents())))
               {
                 return true;
@@ -347,6 +352,7 @@ public final class SCIMAttribute
                 new SCIMFilter(filter.getFilterType(),
                                childPath,
                                filter.getFilterValue(),
+                               filter.isQuoteFilterValue(),
                                filter.getFilterComponents()));
           }
         }
@@ -360,25 +366,7 @@ public final class SCIMAttribute
         }
 
         final String filterValue = filter.getFilterValue();
-        String attributeValue = null;
-        if (attributeDescriptor != null)
-        {
-          switch (attributeDescriptor.getDataType())
-          {
-            case DATETIME:
-              attributeValue = v.getDateStringValue();
-              break;
-
-            case BOOLEAN:
-              attributeValue = v.getBooleanValue().toString();
-              break;
-
-            case INTEGER:
-            case STRING:
-              attributeValue = v.getStringValue();
-              break;
-          }
-        }
+        String attributeValue = v.getStringValue();
 
         if (attributeValue != null)
         {
