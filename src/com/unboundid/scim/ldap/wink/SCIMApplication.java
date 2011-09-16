@@ -5,7 +5,9 @@
 
 package com.unboundid.scim.ldap.wink;
 
-import javax.ws.rs.core.Application;
+import com.unboundid.scim.sdk.SCIMConstants;
+import org.apache.wink.common.WinkApplication;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,15 +17,15 @@ import java.util.Set;
  * This class is a JAX-RS Application that returns the SCIM resource
  * implementations.
  */
-public class SCIMApplication extends Application
+public class SCIMApplication extends WinkApplication
 {
   @Override
-  public Set<Class<?>> getClasses()
+  public Set<Object> getInstances()
   {
-    final Set<Class<?>> classes = new HashSet<Class<?>>();
-    classes.add(UserResource.class);
-    classes.add(UsersResource.class);
+    final Set<Object> instances = new HashSet<Object>();
+    instances.add(new CRUDResource(SCIMConstants.RESOURCE_NAME_USER));
+    instances.add(new QueryResource(SCIMConstants.RESOURCE_ENDPOINT_USERS));
 
-    return classes;
+    return instances;
   }
 }
