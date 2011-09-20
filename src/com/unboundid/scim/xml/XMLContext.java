@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.xml;
 
+import com.unboundid.scim.schema.Group;
 import com.unboundid.scim.schema.ObjectFactory;
 import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
@@ -56,60 +57,39 @@ public class XMLContext
 
 
   /**
-   * Writes a SCIM user object to its XML representation.
+   * Writes a SCIM resource object to its XML representation.
    *
-   * @param writer  The writer to which the XML representation will be written.
-   * @param user    The SCIM user to be written.
+   * @param writer    The writer to which the XML representation will be
+   *                  written.
+   * @param resource  The SCIM resource to be written.
    *
    * @throws java.io.IOException  If an error occurs while writing the object.
    */
-  public void writeUser(final Writer writer, final User user)
+  public void writeResource(final Writer writer, final Resource resource)
       throws IOException
   {
     try
     {
       final Marshaller marshaller = jaxbContext.createMarshaller();
-      marshaller.marshal(new ObjectFactory().createUser(user), writer);
+      if (resource instanceof User)
+      {
+        marshaller.marshal(
+            new ObjectFactory().createUser((User)resource), writer);
+      }
+      else if (resource instanceof Group)
+      {
+        marshaller.marshal(
+            new ObjectFactory().createGroup((Group) resource), writer);
+      }
+      else
+      {
+        throw new IllegalArgumentException("Cannot write resources of class " +
+                                           resource.getClass().getName());
+      }
     }
     catch (Exception e)
     {
       throw new IOException("Error writing XML to a character stream", e);
-    }
-  }
-
-
-
-  /**
-   * Reads a SCIM user object from a string containing the user's XML
-   * representation.
-   *
-   * @param xmlString  The string from which the XML representation will be
-   *                   read.
-   *
-   * @return  The SCIM user that was read.
-   *
-   * @throws IOException  If an error occurs while reading the object.
-   */
-  public User readUser(final String xmlString)
-      throws IOException
-  {
-    try
-    {
-      final Reader reader = new StringReader(xmlString);
-      try
-      {
-        final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        Object unmarshal = unmarshaller.unmarshal(reader);
-        return (User)((JAXBElement) unmarshal).getValue();
-      }
-      finally
-      {
-        reader.close();
-      }
-    }
-    catch (Exception e)
-    {
-      throw new IOException("Error reading a user from an XML string", e);
     }
   }
 
@@ -146,7 +126,7 @@ public class XMLContext
         else if (value instanceof Resource)
         {
           final Response response = new Response();
-          response.setResource((User) value);
+          response.setResource((Resource) value);
 
           return response;
         }

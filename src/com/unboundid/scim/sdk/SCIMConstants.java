@@ -36,9 +36,19 @@ public final class SCIMConstants
       "urn:scim:schemas:extension:enterprise:1.0";
 
   /**
+   * The resource name for the Group resource in the core schema.
+   */
+  public static final String RESOURCE_NAME_GROUP = "Group";
+
+  /**
    * The resource name for the User resource in the core schema.
    */
   public static final String RESOURCE_NAME_USER = "User";
+
+  /**
+   * The end point for Groups in the REST protocol.
+   */
+  public static final String RESOURCE_ENDPOINT_GROUPS = "Groups";
 
   /**
    * The end point for Users in the REST protocol.

@@ -57,6 +57,9 @@ import static com.unboundid.util.StaticUtils.NO_STRINGS;
  *   <LI>"-w {password}" or "--authPassword {password}" -- Specifies the
  *       password to use when authenticating using basic auth or a
  *       password-based SASL mechanism.</LI>
+ *   <LI>"--resourceName {resource-name}" -- specifies the name of resources to
+ *       be queried.  If this isn't specified, then a default of "User" will
+ *       be used.</LI>
  *   <LI>"--endpointURI {endpointURI}" -- specifies the endpoint URI to use for
  *       the queries.  If this isn't specified, then a default of "/Users" will
  *       be used. The endpoint may have a .json or .xml suffix to indicate that
@@ -135,6 +138,9 @@ public class SCIMQueryRate
 
   // The argument used to specify the filters for the queries.
   private StringArgument filter;
+
+  // The argument used to specify the name of resources to be queried.
+  private StringArgument resourceName;
 
   // The argument used to specify the timestamp format.
   private StringArgument timestampFormat;
@@ -272,6 +278,15 @@ public class SCIMQueryRate
                                         "{path}", description, true, true, true,
                                         false);
     parser.addArgument(authPasswordFile);
+
+
+    description = "The name of resources to be queried.  If this " +
+                  "isn't specified, then a default of 'User' will " +
+                  "be used.";
+    resourceName = new StringArgument(null, "resourceName", false, 1,
+                                     "{resource-name}", description, null,
+                                     Arrays.asList("User"));
+    parser.addArgument(resourceName);
 
 
     description = "The endpoint URI to use for the queries.  If this " +
@@ -589,7 +604,8 @@ public class SCIMQueryRate
     // Check that a connection can be established.
     try
     {
-      client.getResources(endpointURI.getValue(),
+      client.getResources(resourceName.getValue(),
+                          endpointURI.getValue(),
                           "userName eq 'no-user'",
                           null, null, attrs);
     }
@@ -605,10 +621,12 @@ public class SCIMQueryRate
          new QueryRateThread[numThreads.getValue()];
     for (int i=0; i < threads.length; i++)
     {
-      threads[i] = new QueryRateThread(i, client, endpointURI.getValue(),
-           filterPattern, attrs, barrier, queryCounter,
-           resourceCounter, queryDurations, errorCounter,
-           fixedRateBarrier);
+      threads[i] =
+          new QueryRateThread(i, client,
+                              resourceName.getValue(), endpointURI.getValue(),
+                              filterPattern, attrs, barrier, queryCounter,
+                              resourceCounter, queryDurations, errorCounter,
+                              fixedRateBarrier);
       threads[i].start();
     }
 

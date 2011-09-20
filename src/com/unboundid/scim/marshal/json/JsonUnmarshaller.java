@@ -10,7 +10,6 @@ import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
-import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,6 +23,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+
+
 /**
  * This class provides a SCIM object un-marshaller implementation to read SCIM
  * objects from their JSON representation.
@@ -34,46 +35,67 @@ public class JsonUnmarshaller implements Unmarshaller
   /**
    * {@inheritDoc}
    */
-  public SCIMObject unmarshal(final File file) throws Exception {
-    return this.unmarshal(new FileInputStream(file));
+  public SCIMObject unmarshal(final File file, final String resourceName)
+      throws Exception
+  {
+    final FileInputStream fileInputStream = new FileInputStream(file);
+    try
+    {
+      return unmarshal(fileInputStream, resourceName);
+    }
+    finally
+    {
+      fileInputStream.close();
+    }
   }
+
+
 
   /**
    * {@inheritDoc}
    */
-  public SCIMObject unmarshal(final InputStream inputStream) throws Exception {
-    SCIMObject scimObject = new SCIMObject();
-    JSONObject jsonObject = new JSONObject(new JSONTokener(inputStream));
+  public SCIMObject unmarshal(final InputStream inputStream,
+                              final String resourceName)
+      throws Exception
+  {
+    final SCIMObject scimObject = new SCIMObject();
+    final JSONObject jsonObject = new JSONObject(new JSONTokener(inputStream));
 
     // The first keyed object ought to be a schemas array, but it may not be
     // present if 1) the attrs are all core and 2) the client decided to omit
     // the schema declaration.
     //Object schemas = jsonObject.get(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
-    // for now assume user - we need to inject in context info viz. what
-    // we've got
-    ResourceDescriptor resourceDescriptor = SchemaManager
-      .instance().getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
+
+    final ResourceDescriptor resourceDescriptor =
+        SchemaManager.instance().getResourceDescriptor(resourceName);
     if (resourceDescriptor == null)
     {
       throw new RuntimeException("No resource descriptor found for " +
-                                 SCIMConstants.RESOURCE_NAME_USER);
+                                 resourceName);
     }
 
     scimObject.setResourceName(resourceDescriptor.getName());
 
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor
-      .getAttributeDescriptors()) {
-      String externalAttributeName = attributeDescriptor.getName();
-      Object jsonAttribute = jsonObject.opt(externalAttributeName);
-      if (jsonAttribute != null) {
-        SCIMAttribute attr;
-        if (attributeDescriptor.isPlural()) {
+        .getAttributeDescriptors())
+    {
+      final String externalAttributeName = attributeDescriptor.getName();
+      final Object jsonAttribute = jsonObject.opt(externalAttributeName);
+      if (jsonAttribute != null)
+      {
+        final SCIMAttribute attr;
+        if (attributeDescriptor.isPlural())
+        {
           attr = createPluralAttribute((JSONArray) jsonAttribute,
-            attributeDescriptor);
-        } else if (attributeDescriptor.isComplex()) {
+                                       attributeDescriptor);
+        }
+        else if (attributeDescriptor.isComplex())
+        {
           attr = createComplexAttribute((JSONObject) jsonAttribute,
-            attributeDescriptor);
-        } else {
+                                        attributeDescriptor);
+        }
+        else
+        {
           attr = this.createSimpleAttribute(jsonAttribute, attributeDescriptor);
         }
         scimObject.addAttribute(attr);
@@ -83,15 +105,19 @@ public class JsonUnmarshaller implements Unmarshaller
   }
 
 
+
   /**
    * Parse a simple attribute from its representation as a JSON Object.
    *
    * @param jsonAttribute       The JSON object representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
+   *
    * @return The parsed attribute.
    */
-  private SCIMAttribute createSimpleAttribute(final Object jsonAttribute,
-    final AttributeDescriptor attributeDescriptor) {
+  private SCIMAttribute createSimpleAttribute(
+      final Object jsonAttribute,
+      final AttributeDescriptor attributeDescriptor)
+  {
 
     final SCIMAttributeValue v =
         SCIMAttributeValue.createStringValue(jsonAttribute.toString());
@@ -99,57 +125,73 @@ public class JsonUnmarshaller implements Unmarshaller
     return SCIMAttribute.createSingularAttribute(attributeDescriptor, v);
   }
 
+
+
   /**
    * Parse a plural attribute from its representation as a JSON Object.
    *
    * @param jsonAttribute       The JSON object representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
+   *
    * @return The parsed attribute.
+   *
    * @throws org.json.JSONException Thrown if error creating plural attribute.
    */
-  private SCIMAttribute createPluralAttribute(final JSONArray jsonAttribute,
-    final AttributeDescriptor attributeDescriptor)
-    throws JSONException {
-    List<SCIMAttributeValue> pluralScimAttributes =
-      new LinkedList<SCIMAttributeValue>();
+  private SCIMAttribute createPluralAttribute(
+      final JSONArray jsonAttribute,
+      final AttributeDescriptor attributeDescriptor)
+      throws JSONException
+  {
+    final List<SCIMAttributeValue> pluralScimAttributes =
+        new LinkedList<SCIMAttributeValue>();
 
-    List<AttributeDescriptor> complexAttributeDescriptors =
-      attributeDescriptor.getComplexAttributeDescriptors();
+    final List<AttributeDescriptor> complexAttributeDescriptors =
+        attributeDescriptor.getComplexAttributeDescriptors();
     // for a plural there should only be a single child. For example,
     // in the case of the plural attribute 'emails' we should find 'email'
-    String pluralsChildAttributeName = complexAttributeDescriptors.get(0)
-      .getName();
+    final String pluralsChildAttributeName =
+        complexAttributeDescriptors.get(0).getName();
 
-    for (int i = 0; i < jsonAttribute.length(); i++) {
-      JSONObject jsonObject = jsonAttribute.getJSONObject(i);
-      AttributeDescriptor pluralAttributeDescriptorInstance =
-        attributeDescriptor.getAttribute(pluralsChildAttributeName);
+    for (int i = 0; i < jsonAttribute.length(); i++)
+    {
+      final JSONObject jsonObject = jsonAttribute.getJSONObject(i);
+      final AttributeDescriptor pluralAttributeDescriptorInstance =
+          attributeDescriptor.getAttribute(pluralsChildAttributeName);
       pluralScimAttributes.add(SCIMAttributeValue.createComplexValue(
-        createComplexAttribute(jsonObject, pluralAttributeDescriptorInstance)));
+          createComplexAttribute(jsonObject,
+                                 pluralAttributeDescriptorInstance)));
     }
     SCIMAttributeValue[] vals =
-      new SCIMAttributeValue[pluralScimAttributes.size()];
+        new SCIMAttributeValue[pluralScimAttributes.size()];
     vals = pluralScimAttributes.toArray(vals);
     return SCIMAttribute.createPluralAttribute(attributeDescriptor, vals);
   }
+
+
 
   /**
    * Parse a complex attribute from its representation as a JSON Object.
    *
    * @param jsonAttribute       The JSON object representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
+   *
    * @return The parsed attribute.
+   *
    * @throws org.json.JSONException Thrown if error creating complex attribute.
    */
-  private SCIMAttribute createComplexAttribute(final JSONObject jsonAttribute,
-    final AttributeDescriptor attributeDescriptor) throws JSONException {
-    SCIMAttribute complexScimAttr;
-    Iterator keys = jsonAttribute.keys();
-    List<SCIMAttribute> complexAttrs = new LinkedList<SCIMAttribute>();
-    while (keys.hasNext()) {
-      String key = (String) keys.next();
-      Object o = jsonAttribute.get(key);
-      AttributeDescriptor complexAttr = attributeDescriptor.getAttribute(key);
+  private SCIMAttribute createComplexAttribute(
+      final JSONObject jsonAttribute,
+      final AttributeDescriptor attributeDescriptor) throws JSONException
+  {
+    final SCIMAttribute complexScimAttr;
+    final Iterator keys = jsonAttribute.keys();
+    final List<SCIMAttribute> complexAttrs = new LinkedList<SCIMAttribute>();
+    while (keys.hasNext())
+    {
+      final String key = (String) keys.next();
+      final Object o = jsonAttribute.get(key);
+      final AttributeDescriptor complexAttr =
+          attributeDescriptor.getAttribute(key);
       if (complexAttr != null)
       {
         SCIMAttribute childAttr = createSimpleAttribute(o, complexAttr);
@@ -157,8 +199,9 @@ public class JsonUnmarshaller implements Unmarshaller
       }
     }
 
-    complexScimAttr = SCIMAttribute.createSingularAttribute(attributeDescriptor,
-      SCIMAttributeValue.createComplexValue(complexAttrs));
+    complexScimAttr = SCIMAttribute.createSingularAttribute(
+        attributeDescriptor,
+        SCIMAttributeValue.createComplexValue(complexAttrs));
     return complexScimAttr;
   }
 }

@@ -22,21 +22,25 @@ public interface Unmarshaller {
    * Reads a SCIM object from a file.
    *
    * @param file  The file containing the SCIM object to be read.
+   * @param resourceName The name of the SCIM resource to be read.
    *
    * @return  The SCIM object that was read.
    *
    * @throws Exception  If the object could not be read.
    */
-  SCIMObject unmarshal(File file) throws Exception;
+  SCIMObject unmarshal(File file, final String resourceName)
+      throws Exception;
 
   /**
    * Reads a SCIM object from an input stream.
    *
    * @param inputStream  The input stream containing the SCIM object to be read.
+   * @param resourceName The name of the SCIM resource to be read.
    *
    * @return  The SCIM object that was read.
    *
    * @throws Exception  If the object could not be read.
    */
-  SCIMObject unmarshal(InputStream inputStream) throws Exception;
+  SCIMObject unmarshal(InputStream inputStream, final String resourceName)
+      throws Exception;
 }

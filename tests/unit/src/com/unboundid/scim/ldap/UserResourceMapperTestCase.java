@@ -138,7 +138,7 @@ public class UserResourceMapperTestCase
 
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
-    final SCIMObject user = unmarshaller.unmarshal(testXML);
+    final SCIMObject user = unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
 
     final UserResourceMapper mapper = new UserResourceMapper();
     mapper.initializeMapper();

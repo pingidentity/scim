@@ -110,10 +110,10 @@
               </xs:sequence>
             </xs:complexType>
           </xs:element>
-          <xs:element name="photoUrls" minOccurs="0">
+          <xs:element name="photos" minOccurs="0">
             <xs:complexType>
               <xs:sequence>
-                <xs:element name="photoUrl"
+                <xs:element name="photo"
                             type="tns:pluralAttribute"
                             minOccurs="0"
                             maxOccurs="unbounded"/>
@@ -129,20 +129,10 @@
               </xs:sequence>
             </xs:complexType>
           </xs:element>
-          <xs:element name="memberOf" minOccurs="0">
+          <xs:element name="groups" minOccurs="0">
             <xs:complexType>
               <xs:sequence>
                 <xs:element name="group"
-                            type="tns:pluralAttribute"
-                            minOccurs="0"
-                            maxOccurs="unbounded"/>
-              </xs:sequence>
-            </xs:complexType>
-          </xs:element>
-          <xs:element name="roles" minOccurs="0">
-            <xs:complexType>
-              <xs:sequence>
-                <xs:element name="role"
                             type="tns:pluralAttribute"
                             minOccurs="0"
                             maxOccurs="unbounded"/>
@@ -153,6 +143,16 @@
             <xs:complexType>
               <xs:sequence>
                 <xs:element name="entitlement"
+                            type="tns:pluralAttribute"
+                            minOccurs="0"
+                            maxOccurs="unbounded"/>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="roles" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="role"
                             type="tns:pluralAttribute"
                             minOccurs="0"
                             maxOccurs="unbounded"/>
@@ -170,6 +170,18 @@
     <xs:complexContent>
       <xs:extension base="tns:Resource">
         <xs:sequence>
+          <xs:element name="displayName" type="xs:string"
+            minOccurs="0"/>
+          <xs:element name="members" minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="member"
+                  type="tns:pluralAttribute"
+                  minOccurs="0"
+                  maxOccurs="unbounded"/>
+                </xs:sequence>
+              </xs:complexType>
+          </xs:element>
           <xs:any namespace="##other" minOccurs="0"/>
         </xs:sequence>
       </xs:extension>

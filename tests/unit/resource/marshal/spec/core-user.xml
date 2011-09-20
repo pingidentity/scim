@@ -26,10 +26,7 @@
     <userType>Employee</userType>
     <preferredLanguage>en_US</preferredLanguage>
     <locale>en_US</locale>
-    <utcOffset>
-        <hours>-8</hours>
-        <minutes>00</minutes>
-    </utcOffset>
+    <timezone>America/Los_Angeles</timezone>
     <emails>
         <email>
             <value>bjensen@example.com</value>
@@ -58,22 +55,22 @@
             <type>aim</type>
         </im>
     </ims>
-    <photoUrls>
-        <photoUrl>
+    <photos>
+        <photo>
             <value>
                 https://photos.example.com/profilephoto/uid=005D0000001Az1u,
                 ou=People,dc=example,dc=com/F"
             </value>
             <type>photo</type>
-        </photoUrl>
-        <photoUrl>
+        </photo>
+        <photo>
             <value>
                 https://photos.example.com/profilephoto/uid=005D0000001Az1u,
                 ou=People,dc=example,dc=com/T"
             </value>
             <type>thumbnail</type>
-        </photoUrl>
-    </photoUrls>
+        </photo>
+    </photos>
     <addresses>
         <address>
             <formatted>100 Universal City Plaza Hollywood, CA 91608 USA
@@ -96,7 +93,7 @@
             <type>home</type>
         </address>
     </addresses>
-    <memberOf>
+    <groups>
         <group>
             <value>00300000005N2Y6AA</value>
             <primary>true</primary>
@@ -111,5 +108,5 @@
             <value>00300000005N98YT1</value>
             <type>US Employees</type>
         </group>
-    </memberOf>
+    </groups>
 </scim:User>

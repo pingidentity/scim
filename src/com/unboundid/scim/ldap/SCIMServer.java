@@ -24,7 +24,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_GROUPS;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_USERS;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_GROUP;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 
@@ -104,10 +106,16 @@ public class SCIMServer
     this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
     this.queryResourceMappers = new HashMap<String, ResourceMapper>();
 
-    final ResourceMapper resourceMapper = new UserResourceMapper();
-    resourceMapper.initializeMapper();
-    this.registerResourceMapper(resourceMapper,
+    final ResourceMapper userResourceMapper = new UserResourceMapper();
+    final ResourceMapper groupResourceMapper = new GroupResourceMapper();
+
+    userResourceMapper.initializeMapper();
+    groupResourceMapper.initializeMapper();
+
+    this.registerResourceMapper(userResourceMapper,
                                 RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
+    this.registerResourceMapper(groupResourceMapper,
+                                RESOURCE_NAME_GROUP, RESOURCE_ENDPOINT_GROUPS);
   }
 
 

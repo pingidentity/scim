@@ -54,6 +54,9 @@ public class QueryRateThread
   // The set of requested attributes for query requests.
   private final String[] attributes;
 
+  // The name of resources to be queried.
+  private final String resourceName;
+
   // The endpoint URI to use for queries.
   private final String endpointURI;
 
@@ -71,6 +74,7 @@ public class QueryRateThread
    *
    * @param  threadNumber     The thread number for this thread.
    * @param  client           The client to use for the queries.
+   * @param  resourceName     The name of resources to be queried.
    * @param  endpointURI      The endpointURI to use for the queries.
    * @param  filterPattern    The value pattern for the filters.
    * @param  attributes       The set of attributes to return.
@@ -90,6 +94,7 @@ public class QueryRateThread
    */
   QueryRateThread(final int threadNumber,
                   final SCIMClient client,
+                  final String resourceName,
                   final String endpointURI,
                   final ValuePattern filterPattern,
                   final String[] attributes,
@@ -104,6 +109,7 @@ public class QueryRateThread
     setDaemon(true);
 
     this.client          = client;
+    this.resourceName    = resourceName;
     this.endpointURI     = endpointURI;
     this.filterPattern   = filterPattern;
     this.attributes      = attributes;
@@ -153,8 +159,8 @@ public class QueryRateThread
       try
       {
         final Response response =
-            client.getResources(endpointURI, filterValue, null, null,
-                                attributes);
+            client.getResources(resourceName, endpointURI, filterValue,
+                                null, null, attributes);
         final Response.Resources resources = response.getResources();
         if (resources != null)
         {

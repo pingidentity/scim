@@ -37,7 +37,7 @@ public class UnmarshallerTestCase
 
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
-    final SCIMObject o = unmarshaller.unmarshal(testXML);
+    final SCIMObject o = unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
 
     for (final String attribute : Arrays.asList("id",
                                                 "addresses",

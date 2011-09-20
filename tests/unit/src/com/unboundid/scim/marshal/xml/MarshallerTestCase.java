@@ -107,7 +107,8 @@ public class MarshallerTestCase
     marshaller.marshal(user1, testXML);
 
     final Unmarshaller unmarshaller = context.unmarshaller();
-    final SCIMObject user2 = unmarshaller.unmarshal(testXML);
+    final SCIMObject user2 =
+        unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
 
     assertEquals(user2.getResourceName(), RESOURCE_NAME_USER);
     for (final String attribute : Arrays.asList("id",

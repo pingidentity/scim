@@ -8,6 +8,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.json.JSONContext;
 import com.unboundid.scim.ldap.PageParameters;
 import com.unboundid.scim.ldap.SortParameters;
+import com.unboundid.scim.schema.Group;
 import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
@@ -27,6 +28,7 @@ import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_LOCATION;
 import static com.unboundid.scim.sdk.SCIMConstants.HEADER_NAME_METHOD_OVERRIDE;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_JSON;
 import static com.unboundid.scim.sdk.SCIMConstants.MEDIA_TYPE_XML;
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_GROUP;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 import java.io.ByteArrayInputStream;
@@ -385,8 +387,7 @@ public class SCIMClient
 
   /**
    * Retrieve the user with the given ID. A GET operation is invoked on the
-   * User resource endpoint. The content type (JSON or XML) used for the
-   * operation is not specified by the caller.
+   * User resource endpoint.
    *
    * @param userID      The ID of the user to be retrieved.
    * @param attributes  The set of attributes to be retrieved. If empty, then
@@ -400,8 +401,55 @@ public class SCIMClient
   public User getUser(final String userID, final String ... attributes)
       throws IOException
   {
+    return (User)getResource(RESOURCE_NAME_USER, userID, attributes);
+  }
+
+
+
+  /**
+   * Retrieve the group with the given ID. A GET operation is invoked on the
+   * Group resource endpoint.
+   *
+   * @param groupID     The ID of the group to be retrieved.
+   * @param attributes  The set of attributes to be retrieved. If empty, then
+   *                    the server returns all attributes.
+   *
+   * @return  The requested group or {@code null} if the group does not exist.
+   *          The group may be incomplete if not all attributes were returned.
+   *
+   * @throws IOException  If an error occurred while retrieving the user.
+   */
+  public Group getGroup(final String groupID, final String ... attributes)
+      throws IOException
+  {
+    return (Group)getResource(RESOURCE_NAME_GROUP, groupID, attributes);
+  }
+
+
+
+  /**
+   * Retrieve the resource with the given ID. A GET operation is invoked on the
+   * endpoint for the specified resource name. The content type (JSON or XML)
+   * used for the operation is not specified by the caller.
+   *
+   * @param resourceName  The name of the resource. e.g. User.
+   * @param resourceID    The ID of the resource to be retrieved.
+   * @param attributes    The set of attributes to be retrieved. If empty, then
+   *                      the server returns all attributes.
+   *
+   * @return  The requested resource or {@code null} if the resource does not
+   *          exist. The resource may be incomplete if not all attributes were
+   *          returned.
+   *
+   * @throws IOException  If an error occurred while retrieving the user.
+   */
+  public Resource getResource(final String resourceName,
+                              final String resourceID,
+                              final String ... attributes)
+      throws IOException
+  {
     final ScimURI uri =
-        new ScimURI(baseURI, RESOURCE_NAME_USER, userID, null, null,
+        new ScimURI(baseURI, resourceName, resourceID, null, null,
                     new SCIMQueryAttributes(attributes));
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
     if (authentication != null)
@@ -443,8 +491,8 @@ public class SCIMClient
         switch (exchange.getResponseStatus())
         {
           case HttpStatus.OK_200:
-            // The user was found.
-            return (User)readResponse(exchange).getResource();
+            // The resource was found.
+            return readResponse(exchange, resourceName).getResource();
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -540,7 +588,8 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was found.
-            return (User)readResponse(exchange).getResource();
+            return (User)readResponse(exchange,
+                                      RESOURCE_NAME_USER).getResource();
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -578,25 +627,28 @@ public class SCIMClient
 
   /**
    * Retrieve selected resources. A GET operation is invoked on the specified
-   * resource endpoint.
+   * query endpoint.
    *
-   * @param resourceEndPoint  The resource end-point. e.g. Users
-   * @param filter            The filter parameter, or {@code null} if the
-   *                          results should not be filtered.
-   * @param attributes        The set of attributes to be retrieved. If empty,
-   *                          then the server returns all attributes.
+   * @param resourceName   The resource name e.g. User
+   * @param queryEndpoint  The query end-point e.g. Users
+   * @param filter         The filter parameter, or {@code null} if the
+   *                       results should not be filtered.
+   * @param attributes     The set of attributes to be retrieved. If empty,
+   *                       then the server returns all attributes.
    *
    * @return  The selected resources.
    *
    * @throws IOException  If an error occurred while retrieving the resources.
    */
-  public List<Resource> getResources(final String resourceEndPoint,
+  public List<Resource> getResources(final String resourceName,
+                                     final String queryEndpoint,
                                      final String filter,
                                      final String ... attributes)
       throws IOException
   {
     final Response response =
-        getResources(resourceEndPoint, filter, null, null, attributes);
+        getResources(resourceName, queryEndpoint, filter,
+                     null, null, attributes);
     final Response.Resources resources = response.getResources();
 
     if (resources == null)
@@ -615,22 +667,24 @@ public class SCIMClient
    * Retrieve selected resources, with optional sorting and pagination.
    * A GET operation is invoked on the specified resource endpoint.
    *
-   * @param resourceEndPoint      The resource end-point. e.g. Users
-   * @param filter                The filter parameter, or {@code null} if the
-   *                              results should not be filtered.
-   * @param sortParameters        The sorting parameters, or {@code null}
-   *                              if the results should not be sorted.
-   * @param pageParameters        The pagination parameters, or {@code null}
-   *                              if the results should not be paginated.
-   * @param attributes            The set of attributes to be retrieved. If
-   *                              empty, then the server returns all attributes.
+   * @param resourceName    The resource name e.g. User
+   * @param queryEndpoint   The query end-point. e.g. Users
+   * @param filter          The filter parameter, or {@code null} if the
+   *                        results should not be filtered.
+   * @param sortParameters  The sorting parameters, or {@code null}
+   *                        if the results should not be sorted.
+   * @param pageParameters  The pagination parameters, or {@code null}
+   *                        if the results should not be paginated.
+   * @param attributes      The set of attributes to be retrieved. If
+   *                        empty, then the server returns all attributes.
    *
    * @return  The response.
    *
    * @throws IOException  If an error occurred while retrieving the resources.
    */
   public Response getResources(
-      final String resourceEndPoint,
+      final String resourceName,
+      final String queryEndpoint,
       final String filter,
       final SortParameters sortParameters,
       final PageParameters pageParameters,
@@ -638,7 +692,7 @@ public class SCIMClient
       throws IOException
   {
     final ScimURI uri =
-        new ScimURI(baseURI, resourceEndPoint, null, null, null,
+        new ScimURI(baseURI, queryEndpoint, null, null, null,
                     new SCIMQueryAttributes(attributes), filter,
                     sortParameters, pageParameters);
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
@@ -682,7 +736,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The request was successful.
-            return readResponse(exchange);
+            return readResponse(exchange, resourceName);
 
           default:
             final String statusMessage =
@@ -727,11 +781,35 @@ public class SCIMClient
    *
    * @throws IOException  If an error occurred while creating the user.
    */
-  public PostUserResponse postUser(final User user, final String ... attributes)
+  public PostResourceResponse postUser(final User user,
+                                       final String ... attributes)
+      throws IOException
+  {
+    return postResource(RESOURCE_NAME_USER, user, attributes);
+  }
+
+
+
+  /**
+   * Create a new resource. A POST operation is invoked on the end-point for
+   * the specified resource name.
+   *
+   * @param resourceName The name of the resource to be created.
+   * @param resource     The contents of the resource to be created.
+   * @param attributes   The set of attributes to be retrieved. If empty, then
+   *                     the server returns all attributes.
+   *
+   * @return  The response from the request.
+   *
+   * @throws IOException  If an error occurred while creating the user.
+   */
+  public PostResourceResponse postResource(final String resourceName,
+                                           final Resource resource,
+                                           final String ... attributes)
       throws IOException
   {
     final ScimURI uri =
-        new ScimURI(baseURI, RESOURCE_NAME_USER, null, null, null,
+        new ScimURI(baseURI, resourceName, null, null, null,
                     new SCIMQueryAttributes(attributes));
 
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
@@ -776,11 +854,11 @@ public class SCIMClient
     {
       if (emitJSON)
       {
-        jsonContext.writeUser(writer, user);
+        jsonContext.writeResource(writer, resource);
       }
       else
       {
-        xmlContext.writeUser(writer, user);
+        xmlContext.writeResource(writer, resource);
       }
     }
     finally
@@ -809,13 +887,14 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
           case HttpStatus.CREATED_201:
-            // The user was created.
+            // The resource was created.
             final String resourceURI =
                 exchange.getResponseFields().getStringField(
                     HEADER_NAME_LOCATION);
-            final User returnUser = (User)readResponse(exchange).getResource();
+            final Resource returnResource =
+                readResponse(exchange, resourceName).getResource();
 
-            return new PostUserResponse(resourceURI, returnUser);
+            return new PostResourceResponse(resourceURI, returnResource);
 
           default:
             final String statusMessage =
@@ -1056,8 +1135,34 @@ public class SCIMClient
                       final String ... attributes)
       throws IOException
   {
+    return (User)putResource(RESOURCE_NAME_USER, userID, user, attributes);
+  }
+
+
+
+  /**
+   * Replace the contents of an existing resource. A PUT operation is invoked on
+   * the endpoint for the specified resource name.
+   *
+   * @param resourceName The name of the resource to be replaced.
+   * @param resourceID       The ID of the resource to be replaced.
+   * @param resource         The new contents of the resource.
+   * @param attributes   The set of attributes to be returned. If empty, then
+   *                     the server returns all attributes.
+   *
+   * @return  The updated contents of the resource, or {@code null} if the
+   *          resource did not exist.
+   *
+   * @throws IOException  If an error occurred while replacing the resource.
+   */
+  public Resource putResource(final String resourceName,
+                              final String resourceID,
+                              final Resource resource,
+                              final String... attributes)
+      throws IOException
+  {
     final ScimURI uri =
-        new ScimURI(baseURI, RESOURCE_NAME_USER, userID, null, null,
+        new ScimURI(baseURI, resourceName, resourceID, null, null,
                     new SCIMQueryAttributes(attributes));
 
     final ExceptionContentExchange exchange = new ExceptionContentExchange();
@@ -1108,11 +1213,11 @@ public class SCIMClient
     {
       if (emitJSON)
       {
-        jsonContext.writeUser(writer, user);
+        jsonContext.writeResource(writer, resource);
       }
       else
       {
-        xmlContext.writeUser(writer, user);
+        xmlContext.writeResource(writer, resource);
       }
     }
     finally
@@ -1141,7 +1246,7 @@ public class SCIMClient
         {
           case HttpStatus.OK_200:
             // The user was replaced.
-            return (User)readResponse(exchange).getResource();
+            return readResponse(exchange, resourceName).getResource();
 
           case HttpStatus.NOT_FOUND_404:
             // The user was not found.
@@ -1181,12 +1286,15 @@ public class SCIMClient
    * Read a SCIM response from the response of a HTTP exchange.
    *
    * @param exchange  The HTTP exchange containing the response.
+   * @param resourceName  Indicates the name of resources expected in the
+   *                      response.
    *
    * @return  The SCIM response.
    *
    * @throws IOException  If a response could not be read.
    */
-  private Response readResponse(final ContentExchange exchange)
+  private Response readResponse(final ContentExchange exchange,
+                                final String resourceName)
       throws IOException
   {
     final String contentType =
@@ -1200,7 +1308,8 @@ public class SCIMClient
     }
     else
     {
-      return jsonContext.readResponse(exchange.getResponseContent());
+      return jsonContext.readResponse(exchange.getResponseContent(),
+                                      resourceName);
     }
   }
 }

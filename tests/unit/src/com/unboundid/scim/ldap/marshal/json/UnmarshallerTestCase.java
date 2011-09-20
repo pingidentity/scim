@@ -13,6 +13,10 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
+
+
+
 @Test
 public class UnmarshallerTestCase extends SCIMRITestCase {
   /**
@@ -26,7 +30,7 @@ public class UnmarshallerTestCase extends SCIMRITestCase {
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller(Context.Format
       .Json);
-    final SCIMObject o = unmarshaller.unmarshal(testJson);
+    final SCIMObject o = unmarshaller.unmarshal(testJson, RESOURCE_NAME_USER);
     // weak need todo a deep assert
     assertNotNull(o);
   }

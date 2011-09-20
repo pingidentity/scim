@@ -7,9 +7,11 @@ package com.unboundid.scim.json;
 
 import com.unboundid.scim.schema.Address;
 import com.unboundid.scim.schema.Error;
+import com.unboundid.scim.schema.Group;
 import com.unboundid.scim.schema.Meta;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
+import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -44,45 +46,23 @@ public class JSONContext
 
 
   /**
-   * Writes a SCIM user object to its JSON representation.
+   * Writes a SCIM resource object to its JSON representation.
    *
-   * @param writer The writer to which the JSON representation will be written.
-   * @param user   The SCIM user to be written.
+   * @param writer    The writer to which the JSON representation will be
+   *                  written.
+   * @param resource  The SCIM resource to be written.
    * @throws IOException If an error occurs while writing the object.
    */
-  public void writeUser(final Writer writer, final User user)
+  public void writeResource(final Writer writer, final Resource resource)
     throws IOException
   {
     try
     {
-      writeUser(new JSONWriter(writer), user);
+      writeResource(new JSONWriter(writer), resource);
     }
     catch (Exception e)
     {
       throw new IOException("Error writing JSON to a character stream", e);
-    }
-  }
-
-
-  /**
-   * Reads a SCIM user object from a string containing the user's JSON
-   * representation.
-   *
-   * @param jsonString The string from which the JSON representation will be
-   *                   read.
-   * @return The SCIM user that was read.
-   * @throws IOException If an error occurs while reading the object.
-   */
-  public User readUser(final String jsonString)
-    throws IOException
-  {
-    try
-    {
-      return readUser(new JSONTokener(jsonString));
-    }
-    catch (Exception e)
-    {
-      throw new IOException("Error reading a user from a JSON string", e);
     }
   }
 
@@ -92,19 +72,22 @@ public class JSONContext
    * Reads a SCIM response from a string containing the response's JSON
    * representation.
    *
-   * @param jsonString  The string from which the JSON representation will be
-   *                    read.
+   * @param jsonString    The string from which the JSON representation will be
+   *                      read.
+   * @param resourceName  Indicates the name of resources expected in the
+   *                      response.
    *
    * @return  The SCIM response that was read.
    *
    * @throws IOException  If an error occurs while reading the response.
    */
-  public Response readResponse(final String jsonString)
+  public Response readResponse(final String jsonString,
+                               final String resourceName)
       throws IOException
   {
     try
     {
-      return readResponse(new JSONTokener(jsonString));
+      return readResponse(new JSONTokener(jsonString), resourceName);
     }
     catch (Exception e)
     {
@@ -115,32 +98,33 @@ public class JSONContext
 
 
   /**
-   * Writes a SCIM user object to a JSON writer.
+   * Writes a SCIM resource object to a JSON writer.
    *
    * @param jsonWriter  The JSON writer to which the user will be written.
-   * @param user        The user to be written.
+   * @param resource    The resource to be written.
    *
-   * @throws JSONException   If an error occurs while writing the user.
+   * @throws JSONException   If an error occurs while writing the resource.
    */
-  private void writeUser(final JSONWriter jsonWriter, final User user)
+  private void writeResource(final JSONWriter jsonWriter,
+                             final Resource resource)
       throws JSONException
   {
     jsonWriter.object();
 
-    // Write out the schemas for the user.
+    // Write out the schemas for the resource.
     jsonWriter.key("schemas");
     jsonWriter.array();
     jsonWriter.value(SCIMConstants.SCHEMA_URI_CORE);
     jsonWriter.endArray();
 
-    final String id = user.getId();
+    final String id = resource.getId();
     if (id != null)
     {
       jsonWriter.key("id");
       jsonWriter.value(id);
     }
 
-    final Meta meta = user.getMeta();
+    final Meta meta = resource.getMeta();
     if (meta != null)
     {
       jsonWriter.key("meta");
@@ -177,6 +161,36 @@ public class JSONContext
       jsonWriter.endObject();
     }
 
+    if (resource instanceof User)
+    {
+      writeUser(jsonWriter, (User) resource);
+    }
+    else if (resource instanceof Group)
+    {
+      writeGroup(jsonWriter, (Group) resource);
+    }
+    else
+    {
+      throw new IllegalArgumentException("Cannot write resources of class " +
+                                         resource.getClass().getName());
+    }
+
+    jsonWriter.endObject();
+  }
+
+
+
+  /**
+   * Writes attributes from a SCIM user object to a JSON writer.
+   *
+   * @param jsonWriter  The JSON writer to which the attributes will be written.
+   * @param user        The user whose attributes are to be written.
+   *
+   * @throws JSONException   If an error occurs while writing the attributes.
+   */
+  private void writeUser(final JSONWriter jsonWriter, final User user)
+      throws JSONException
+  {
     final String userName = user.getUserName();
     if (userName != null)
     {
@@ -291,7 +305,12 @@ public class JSONContext
       jsonWriter.value(locale);
     }
 
-    // TODO utcOffset
+    final String timezone = user.getTimezone();
+    if (timezone != null)
+    {
+      jsonWriter.key("timezone");
+      jsonWriter.value(timezone);
+    }
 
     final User.Emails emails = user.getEmails();
     if (emails != null && !emails.getEmail().isEmpty())
@@ -335,13 +354,13 @@ public class JSONContext
       jsonWriter.endArray();
     }
 
-    final User.PhotoUrls photoUrls = user.getPhotoUrls();
-    if (photoUrls != null && !photoUrls.getPhotoUrl().isEmpty())
+    final User.Photos photos = user.getPhotos();
+    if (photos != null && !photos.getPhoto().isEmpty())
     {
-      jsonWriter.key("photoUrls");
+      jsonWriter.key("photos");
       jsonWriter.array();
 
-      for (final PluralAttribute plural : photoUrls.getPhotoUrl())
+      for (final PluralAttribute plural : photos.getPhoto())
       {
         writePlural(jsonWriter, plural);
       }
@@ -420,13 +439,13 @@ public class JSONContext
       jsonWriter.endArray();
     }
 
-    final User.MemberOf memberOf = user.getMemberOf();
-    if (memberOf != null && !memberOf.getGroup().isEmpty())
+    final User.Groups groups = user.getGroups();
+    if (groups != null && !groups.getGroup().isEmpty())
     {
-      jsonWriter.key("memberOf");
+      jsonWriter.key("groups");
       jsonWriter.array();
 
-      for (final PluralAttribute plural : memberOf.getGroup())
+      for (final PluralAttribute plural : groups.getGroup())
       {
         writePlural(jsonWriter, plural);
       }
@@ -434,40 +453,101 @@ public class JSONContext
       jsonWriter.endArray();
     }
 
-    jsonWriter.endObject();
+    final User.Entitlements entitlements = user.getEntitlements();
+    if (entitlements != null && !entitlements.getEntitlement().isEmpty())
+    {
+      jsonWriter.key("entitlements");
+      jsonWriter.array();
+
+      for (final PluralAttribute plural : entitlements.getEntitlement())
+      {
+        writePlural(jsonWriter, plural);
+      }
+
+      jsonWriter.endArray();
+    }
+
+    final User.Roles roles = user.getRoles();
+    if (roles != null && !roles.getRole().isEmpty())
+    {
+      jsonWriter.key("roles");
+      jsonWriter.array();
+
+      for (final PluralAttribute plural : roles.getRole())
+      {
+        writePlural(jsonWriter, plural);
+      }
+
+      jsonWriter.endArray();
+    }
   }
 
 
 
   /**
-   * Reads a SCIM user object from a JSON tokener.
+   * Writes attributes from a SCIM group object to a JSON writer.
    *
-   * @param tokener  The tokener from which the object will be read.
+   * @param jsonWriter  The JSON writer to which the attributes will be written.
+   * @param group       The group whose attributes are to be written.
    *
-   * @return  The SCIM user that was read.
-   *
-   * @throws Exception  If an error occurs while reading the object.
+   * @throws JSONException   If an error occurs while writing the attributes.
    */
-  private User readUser(final JSONTokener tokener)
-      throws Exception
+  private void writeGroup(final JSONWriter jsonWriter, final Group group)
+      throws JSONException
   {
-    return readUser(new JSONObject(tokener));
+    final String displayName = group.getDisplayName();
+    if (displayName != null)
+    {
+      jsonWriter.key("displayName");
+      jsonWriter.value(displayName);
+    }
+
+    final Group.Members members = group.getMembers();
+    if (members != null && !members.getMember().isEmpty())
+    {
+      jsonWriter.key("members");
+      jsonWriter.array();
+
+      for (final PluralAttribute plural : members.getMember())
+      {
+        writePlural(jsonWriter, plural);
+      }
+
+      jsonWriter.endArray();
+    }
   }
 
 
 
   /**
-   * Reads a SCIM user from a JSON object.
+   * Reads a SCIM resource from a JSON object.
    *
-   * @param jsonObject  The JSON object from which the user will be read.
+   * @param jsonObject  The JSON object from which the resource will be read.
+   * @param resourceName The name of the resource to be read.
    *
-   * @return  The SCIM user that was read.
+   * @return  The SCIM resource that was read.
    *
    * @throws Exception  If an error occurs while reading the user.
    */
-  private User readUser(final JSONObject jsonObject)
+  private Resource readResource(final JSONObject jsonObject,
+                                final String resourceName)
       throws Exception
   {
+    final Resource resource;
+    if (resourceName.equals(SCIMConstants.RESOURCE_NAME_USER))
+    {
+      resource = readUser(jsonObject);
+    }
+    else if (resourceName.equals(SCIMConstants.RESOURCE_NAME_GROUP))
+    {
+      resource = readGroup(jsonObject);
+    }
+    else
+    {
+      throw new IllegalArgumentException(
+          "Cannot read '" + resourceName + "' resources");
+    }
+
     final DatatypeFactory datatypeFactory;
     try
     {
@@ -477,9 +557,8 @@ public class JSONContext
     {
       throw new RuntimeException("Unable to create a DatatypeFactory", e);
     }
-    final User user = new User();
 
-    user.setId(jsonObject.optString("id", null));
+    resource.setId(jsonObject.optString("id", null));
 
     final JSONObject metaObject = jsonObject.optJSONObject("meta");
     if (metaObject != null)
@@ -503,8 +582,27 @@ public class JSONContext
       meta.setLocation(metaObject.optString("location", null));
       meta.setVersion(metaObject.optString("version", null));
 
-      user.setMeta(meta);
+      resource.setMeta(meta);
     }
+
+    return resource;
+  }
+
+
+
+  /**
+   * Reads a SCIM user from a JSON object.
+   *
+   * @param jsonObject  The JSON object from which the user will be read.
+   *
+   * @return  The SCIM user that was read.
+   *
+   * @throws Exception  If an error occurs while reading the user.
+   */
+  private User readUser(final JSONObject jsonObject)
+      throws Exception
+  {
+    final User user = new User();
 
     user.setUserName(jsonObject.optString("userName", null));
     user.setExternalId(jsonObject.optString("externalId", null));
@@ -531,8 +629,7 @@ public class JSONContext
     user.setUserType(jsonObject.optString("userType", null));
     user.setPreferredLanguage(jsonObject.optString("preferredLanguage", null));
     user.setLocale(jsonObject.optString("locale", null));
-
-    // TODO utcOffset
+    user.setTimezone(jsonObject.optString("timezone", null));
 
     final JSONArray emailsArray = jsonObject.optJSONArray("emails");
     if (emailsArray != null)
@@ -576,18 +673,18 @@ public class JSONContext
       user.setIms(ims);
     }
 
-    final JSONArray photoUrlsArray = jsonObject.optJSONArray("photoUrls");
-    if (photoUrlsArray != null)
+    final JSONArray photosArray = jsonObject.optJSONArray("photos");
+    if (photosArray != null)
     {
-      final User.PhotoUrls photoUrls = new User.PhotoUrls();
+      final User.Photos photos = new User.Photos();
 
-      for (int i = 0; i < photoUrlsArray.length(); i++)
+      for (int i = 0; i < photosArray.length(); i++)
       {
-        final JSONObject o = photoUrlsArray.getJSONObject(i);
-        photoUrls.getPhotoUrl().add(toPlural(o));
+        final JSONObject o = photosArray.getJSONObject(i);
+        photos.getPhoto().add(toPlural(o));
       }
 
-      user.setPhotoUrls(photoUrls);
+      user.setPhotos(photos);
     }
 
     final JSONArray addressesArray = jsonObject.optJSONArray("addresses");
@@ -616,18 +713,46 @@ public class JSONContext
       user.setAddresses(addresses);
     }
 
-    final JSONArray memberOfArray = jsonObject.optJSONArray("memberOf");
-    if (memberOfArray != null)
+    final JSONArray groupsArray = jsonObject.optJSONArray("groups");
+    if (groupsArray != null)
     {
-      final User.MemberOf memberOf = new User.MemberOf();
+      final User.Groups groups = new User.Groups();
 
-      for (int i = 0; i < memberOfArray.length(); i++)
+      for (int i = 0; i < groupsArray.length(); i++)
       {
-        final JSONObject o = memberOfArray.getJSONObject(i);
-        memberOf.getGroup().add(toPlural(o));
+        final JSONObject o = groupsArray.getJSONObject(i);
+        groups.getGroup().add(toPlural(o));
       }
 
-      user.setMemberOf(memberOf);
+      user.setGroups(groups);
+    }
+
+    final JSONArray entitlementsArray = jsonObject.optJSONArray("entitlements");
+    if (entitlementsArray != null)
+    {
+      final User.Entitlements entitlements = new User.Entitlements();
+
+      for (int i = 0; i < entitlementsArray.length(); i++)
+      {
+        final JSONObject o = entitlementsArray.getJSONObject(i);
+        entitlements.getEntitlement().add(toPlural(o));
+      }
+
+      user.setEntitlements(entitlements);
+    }
+
+    final JSONArray rolesArray = jsonObject.optJSONArray("roles");
+    if (rolesArray != null)
+    {
+      final User.Roles roles = new User.Roles();
+
+      for (int i = 0; i < rolesArray.length(); i++)
+      {
+        final JSONObject o = rolesArray.getJSONObject(i);
+        roles.getRole().add(toPlural(o));
+      }
+
+      user.setRoles(roles);
     }
 
     return user;
@@ -636,15 +761,53 @@ public class JSONContext
 
 
   /**
+   * Reads a SCIM Group from a JSON object.
+   *
+   * @param jsonObject  The JSON object from which the group will be read.
+   *
+   * @return  The SCIM group that was read.
+   *
+   * @throws Exception  If an error occurs while reading the user.
+   */
+  private Group readGroup(final JSONObject jsonObject)
+      throws Exception
+  {
+    final Group group = new Group();
+
+    group.setDisplayName(jsonObject.optString("displayName", null));
+
+    final JSONArray membersArray = jsonObject.optJSONArray("members");
+    if (membersArray != null)
+    {
+      final Group.Members members = new Group.Members();
+
+      for (int i = 0; i < membersArray.length(); i++)
+      {
+        final JSONObject memberObject = membersArray.getJSONObject(i);
+        members.getMember().add(toPlural(memberObject));
+      }
+
+      group.setMembers(members);
+    }
+
+    return group;
+  }
+
+
+
+  /**
    * Reads a SCIM response from a JSON tokener.
    *
-   * @param tokener  The tokener from which the response will be read.
+   * @param tokener       The tokener from which the response will be read.
+   * @param resourceName  Indicates the name of resources expected in the
+   *                      response.
    *
    * @return  The SCIM response that was read.
    *
    * @throws Exception  If an error occurs while reading the response.
    */
-  private Response readResponse(final JSONTokener tokener)
+  private Response readResponse(final JSONTokener tokener,
+                                final String resourceName)
       throws Exception
   {
     final JSONObject jsonObject = new JSONObject(tokener);
@@ -655,7 +818,7 @@ public class JSONContext
       final JSONObject resourceObject = jsonObject.optJSONObject("Resource");
       if (resourceObject != null)
       {
-        response.setResource(readUser(resourceObject));
+        response.setResource(readResource(resourceObject, resourceName));
       }
     }
     else if (jsonObject.has("Errors"))
@@ -696,7 +859,8 @@ public class JSONContext
         for (int i = 0; i < resourcesArray.length(); i++)
         {
           final JSONObject resourceObject = resourcesArray.getJSONObject(i);
-          resources.getResource().add(readUser(resourceObject));
+          resources.getResource().add(
+              readResource(resourceObject, resourceName));
         }
 
         response.setResources(resources);
@@ -705,7 +869,7 @@ public class JSONContext
     else
     {
       // This must be a single resource without a response object.
-      response.setResource(readUser(jsonObject));
+      response.setResource(readResource(jsonObject, resourceName));
     }
 
     return response;

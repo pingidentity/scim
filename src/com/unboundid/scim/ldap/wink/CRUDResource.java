@@ -747,7 +747,7 @@ public class CRUDResource extends AbstractDynamicResource
     final SCIMObject requestObject;
     try
     {
-      requestObject = unmarshaller.unmarshal(inputStream);
+      requestObject = unmarshaller.unmarshal(inputStream, resourceName);
     }
     catch (Exception e)
     {
@@ -824,7 +824,7 @@ public class CRUDResource extends AbstractDynamicResource
     final SCIMObject requestObject;
     try
     {
-      requestObject = unmarshaller.unmarshal(inputStream);
+      requestObject = unmarshaller.unmarshal(inputStream, resourceName);
     }
     catch (Exception e)
     {

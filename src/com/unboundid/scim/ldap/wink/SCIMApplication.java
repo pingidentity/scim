@@ -24,6 +24,7 @@ public class SCIMApplication extends WinkApplication
   {
     final Set<Object> instances = new HashSet<Object>();
     instances.add(new CRUDResource(SCIMConstants.RESOURCE_NAME_USER));
+    instances.add(new CRUDResource(SCIMConstants.RESOURCE_NAME_GROUP));
     instances.add(new QueryResource(SCIMConstants.RESOURCE_ENDPOINT_USERS));
 
     return instances;
