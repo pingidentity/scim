@@ -1,0 +1,42 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>scim-parent</artifactId>
+        <groupId>com.unboundid.product.scim</groupId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>scim-ldap</artifactId>
+    <packaging>jar</packaging>
+    <name>UnboundID SCIM SDK LDAP</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.unboundid.product</groupId>
+            <artifactId>ldapsdk</artifactId>
+            <version>2.2.1-se-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.scim</groupId>
+            <artifactId>scim-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.scim</groupId>
+            <artifactId>scim-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>maven2-repository.java.net</id>
+            <name>Engineering Snapshots Repository</name>
+            <url>http://hudson:8081/nexus/content/repositories/snapshots</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+</project>
+
