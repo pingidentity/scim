@@ -11,6 +11,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
         <project.build.genSourceDirectory>${basedir}/target/generated/src/main/java</project.build.genSourceDirectory>
+
+        <unboundid.ldapsdk.version>2.2.1-se-SNAPSHOT</unboundid.ldapsdk.version>
     </properties>
 
     <distributionManagement>
@@ -42,6 +44,7 @@
         <module>scim-ldap</module>
         <module>scim-ri</module>
         <module>scim-client</module>
+        <module>scim-plugin</module>
     </modules>
 
     <build>
@@ -136,6 +139,31 @@
             <id>nexus-repo-snapshots</id>
             <name>Engineering Snapshots Repository</name>
             <url>http://maven-eng:8080/nexus/content/groups/public-snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <checksumPolicy>fail</checksumPolicy>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>releases</id>
+            <name>QA Releases Repository</name>
+            <url>http://hudson:8081/nexus/content/repositories/releases</url>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>snapshots</id>
+            <name>QA Snapshots Repository</name>
+            <url>http://hudson:8081/nexus/content/repositories/snapshots</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
