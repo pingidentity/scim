@@ -140,11 +140,8 @@ public class XmlUnmarshaller implements Unmarshaller
       final Node node,
       final AttributeDescriptor attributeDescriptor)
   {
-    final SCIMAttributeValue v;
-
-    v = SCIMAttributeValue.createStringValue(node.getTextContent());
-
-    return SCIMAttribute.createSingularAttribute(attributeDescriptor, v);
+    return SCIMAttribute.createSimpleAttribute(attributeDescriptor,
+                                               node.getTextContent());
   }
 
 

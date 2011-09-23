@@ -371,6 +371,7 @@ public class JsonMarshaller implements Marshaller
             jsonWriter.value(val.getLongValue());
             break;
 
+          case BINARY:
           case DATETIME:
           case STRING:
           default:

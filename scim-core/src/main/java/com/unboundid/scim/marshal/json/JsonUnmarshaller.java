@@ -118,11 +118,8 @@ public class JsonUnmarshaller implements Unmarshaller
       final Object jsonAttribute,
       final AttributeDescriptor attributeDescriptor)
   {
-
-    final SCIMAttributeValue v =
-        SCIMAttributeValue.createStringValue(jsonAttribute.toString());
-
-    return SCIMAttribute.createSingularAttribute(attributeDescriptor, v);
+    return SCIMAttribute.createSimpleAttribute(attributeDescriptor,
+                                               jsonAttribute.toString());
   }
 
 

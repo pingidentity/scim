@@ -10,6 +10,7 @@ import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.config.Schema;
 import com.unboundid.scim.config.SchemaManager;
 
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -21,8 +22,8 @@ import java.util.List;
  * allows for the following kinds of attributes.
  *
  * <ol>
- * <li>Singular simple type (String, Boolean, DateTime). An example is the
- *     'userName' attribute in the core schema.</li>
+ * <li>Singular simple type (String, Boolean, DateTime, Integer or Binary).
+ *     An example is the 'userName' attribute in the core schema.</li>
  *
  * <li>Singular complex type. An example is the 'name' attribute in the core
  *     schema.</li>
@@ -136,6 +137,24 @@ public final class SCIMAttribute
      final AttributeDescriptor descriptor, final SCIMAttributeValue value)
   {
     return new SCIMAttribute(descriptor, value);
+  }
+
+
+
+  /**
+   * Create a simple attribute from its string representation.
+   *
+   * @param descriptor The mapping descriptor of this attribute.
+   * @param value      The string value of this attribute.
+   *
+   * @return  A new singular attribute.
+   */
+  public static SCIMAttribute createSimpleAttribute(
+     final AttributeDescriptor descriptor, final String value)
+  {
+    return new SCIMAttribute(descriptor,
+                             SCIMAttributeValue.createSimpleValue(
+                                 descriptor.getDataType(), value));
   }
 
 
@@ -384,5 +403,27 @@ public final class SCIMAttribute
     }
 
     return false;
+  }
+
+
+
+  @Override
+  public String toString()
+  {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("SCIMAttribute");
+    sb.append("{attributeDescriptor=").append(attributeDescriptor);
+    if (singleValue != null)
+    {
+      sb.append(", singleValue=").append(singleValue);
+    }
+    else
+    {
+      sb.append(", pluralValues=").append(
+          pluralValues == null ? "null" :
+          Arrays.asList(pluralValues).toString());
+    }
+    sb.append('}');
+    return sb.toString();
   }
 }

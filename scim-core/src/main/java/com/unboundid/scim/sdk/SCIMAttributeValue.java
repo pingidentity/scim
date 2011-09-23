@@ -5,15 +5,14 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.config.AttributeDescriptor;
+
 import javax.xml.bind.DatatypeConverter;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TimeZone;
 
 
 
@@ -22,22 +21,17 @@ import java.util.TimeZone;
  * value. Values are categorized as either Simple or Complex.
  *
  * <ul>
- * <li>Simple values can be String, Boolean or DateTime.</li>
+ * <li>Simple values can be String, Boolean, DateTime, Integer or Binary.</li>
  * <li>Complex values are composed of a set of subordinate SCIM attributes.</li>
  * </ul>
  */
 public final class SCIMAttributeValue
 {
   /**
-   * The UTC time zone.
-   */
-  private static TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
-
-  /**
    * The simple attribute value, or {@code null} if the attribute value is
    * complex.
    */
-  private final String value;
+  private final SimpleValue value;
 
   /**
    * The attributes comprising the complex value, keyed by the name of the
@@ -50,10 +44,9 @@ public final class SCIMAttributeValue
   /**
    * Create a new instance of a SCIM attribute value.
    *
-   * @param value       The simple attribute value, or {@code null} if the
-   *                    attribute value is complex.
+   * @param value  The simple value.
    */
-  private SCIMAttributeValue(final String value)
+  private SCIMAttributeValue(final SimpleValue value)
   {
     this.value      = value;
     this.attributes = null;
@@ -84,7 +77,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createStringValue(final String value)
   {
-    return new SCIMAttributeValue(value);
+    return new SCIMAttributeValue(new SimpleValue(value));
   }
 
 
@@ -98,7 +91,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createBooleanValue(final Boolean value)
   {
-    return new SCIMAttributeValue(value.toString());
+    return new SCIMAttributeValue(new SimpleValue(value));
   }
 
 
@@ -112,14 +105,37 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createDateValue(final Date value)
   {
-    final Calendar calendar = new GregorianCalendar(utcTimeZone);
-    calendar.setTime(value);
-    return new SCIMAttributeValue(DatatypeConverter.printDateTime(calendar));
+    return new SCIMAttributeValue(new SimpleValue(value));
   }
 
 
+
+  /**
+   * Create a simple attribute value from its string representation.
+   *
+   * @param dataType  The data type of this attribute value.
+   * @param value     The string value of this attribute.
+   *
+   * @return  A new simple attribute value.
+   */
+  public static SCIMAttributeValue createSimpleValue(
+     final AttributeDescriptor.DataType dataType, final String value)
+  {
+    switch (dataType)
+    {
+      case BINARY:
+        return new SCIMAttributeValue(
+            new SimpleValue(DatatypeConverter.parseBase64Binary(value)));
+      default:
+        return new SCIMAttributeValue(new SimpleValue(value));
+    }
+  }
+
+
+
   @Override
-  public String toString() {
+  public String toString()
+  {
     return "SCIMAttributeValue{" +
       "value=" + value +
       ", attributes=" + attributes +
@@ -235,7 +251,7 @@ public final class SCIMAttributeValue
    */
   public String getStringValue()
   {
-    return value;
+    return value.getStringValue();
   }
 
 
@@ -249,7 +265,7 @@ public final class SCIMAttributeValue
    */
   public Boolean getBooleanValue()
   {
-    return Boolean.valueOf(value);
+    return value.getBooleanValue();
   }
 
 
@@ -263,7 +279,7 @@ public final class SCIMAttributeValue
    */
   public Long getLongValue()
   {
-    return Long.valueOf(value);
+    return value.getLongValue();
   }
 
 
@@ -277,8 +293,21 @@ public final class SCIMAttributeValue
    */
   public Date getDateValue()
   {
-    final Calendar calendar = DatatypeConverter.parseDateTime(value);
-    return calendar.getTime();
+    return value.getDateValue();
+  }
+
+
+
+  /**
+   * Retrieves the simple Binary value, or {@code null} if the attribute
+   * value is complex.
+   *
+   * @return  The simple Binary value, or {@code null} if the attribute
+   *          value is complex.
+   */
+  public byte[] getBinaryValue()
+  {
+    return value.getBinaryValue();
   }
 
 

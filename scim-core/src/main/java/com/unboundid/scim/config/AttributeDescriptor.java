@@ -4,7 +4,6 @@
  */
 package com.unboundid.scim.config;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +33,11 @@ public class AttributeDescriptor {
     /**
      * Integer data type.
      */
-    INTEGER("xs:integer"),;
+    INTEGER("xs:integer"),
+    /**
+     * Binary data type.
+     */
+    BINARY("xs:base64Binary");
 
     private final String xmlType;
 
@@ -49,7 +52,7 @@ public class AttributeDescriptor {
     /**
      * Returns the type in XML schema syntax; e.g., 'string' > 'xs:string'.
      *
-     * @return XML The external data type.
+     * @return XML The XML data type.
      */
     public String getXmlType() {
       return xmlType;
@@ -71,25 +74,17 @@ public class AttributeDescriptor {
 
   }
 
-  private String schema;
+  private final String schema;
 
-  private String name;
+  private final String name;
 
-  private boolean complex;
+  private final boolean complex;
 
-  private boolean plural;
+  private final boolean plural;
 
-  private DataType dataType;
+  private final DataType dataType;
 
-  private List<AttributeDescriptor> complexAttributeDescriptors =
-    new ArrayList<AttributeDescriptor>();
-
-
-  /**
-   * Create a new attribute descriptor.
-   */
-  public AttributeDescriptor() {
-  }
+  private final List<AttributeDescriptor> complexAttributeDescriptors;
 
 
   /**
@@ -196,16 +191,6 @@ public class AttributeDescriptor {
 
 
   /**
-   * Specifies the URI for the schema that defines the SCIM attribute.
-   *
-   * @param schema The URI for the schema that defines the SCIM attribute.
-   *               It must not be {@code null}.
-   */
-  public void setSchema(final String schema) {
-    this.schema = schema;
-  }
-
-  /**
    * The attribute name to be used in any external representation of the SCIM
    * attribute.
    *
@@ -214,19 +199,6 @@ public class AttributeDescriptor {
    */
   public String getName() {
     return name;
-  }
-
-
-  /**
-   * Specifies the attribute name to be used in any external representation of
-   * the SCIM attribute.
-   *
-   * @param name The attribute name to be used in any external
-   *             representation of the SCIM attribute. It must
-   *             not be {@code null}.
-   */
-  public void setName(final String name) {
-    this.name = name;
   }
 
 
@@ -240,15 +212,6 @@ public class AttributeDescriptor {
   }
 
   /**
-   * Specifies whether the attribute is a complex attribute.
-   *
-   * @param complex {@code true} if the attribute is complex.
-   */
-  public void setComplex(final boolean complex) {
-    this.complex = complex;
-  }
-
-  /**
    * Indicates whether the attribute is a plural attribute.
    *
    * @return {@code true} if the attribute is plural.
@@ -258,16 +221,6 @@ public class AttributeDescriptor {
   }
 
   /**
-   * Specifies whether the attribute is a plural attribute.
-   *
-   * @param plural {@code true} if the attribute is plural.
-   */
-  public void setPlural(final boolean plural) {
-    this.plural = plural;
-  }
-
-
-  /**
    * Retrieves the set of descriptors for subordinate attributes of a complex
    * attribute.
    *
@@ -275,22 +228,9 @@ public class AttributeDescriptor {
    *         attribute, or {@code null} if the attribute is not a complex
    *         attribute.
    */
-  public List<AttributeDescriptor> getComplexAttributeDescriptors() {
+  public List<AttributeDescriptor> getComplexAttributeDescriptors()
+  {
     return complexAttributeDescriptors;
-  }
-
-
-  /**
-   * Specifies the set of descriptors for subordinate attributes of a complex
-   * attribute.
-   *
-   * @param descriptors The set of descriptors for subordinate attributes of
-   *                    a complex attribute, or {@code null} if the attribute
-   *                    is not a complex attribute.
-   */
-  public void setComplexAttributeDescriptors(
-    final List<AttributeDescriptor> descriptors) {
-    this.complexAttributeDescriptors = descriptors;
   }
 
 
@@ -303,9 +243,12 @@ public class AttributeDescriptor {
    * @return The attribute descriptor for the specified subordinate attribute,
    *         or {@code null} if there is no such subordinate attribute.
    */
-  public AttributeDescriptor getAttribute(final String externalName) {
-    for (AttributeDescriptor r : this.complexAttributeDescriptors) {
-      if (r.getName().equals(externalName)) {
+  public AttributeDescriptor getAttribute(final String externalName)
+  {
+    for (AttributeDescriptor r : this.complexAttributeDescriptors)
+    {
+      if (r.getName().equals(externalName))
+      {
         return r;
       }
     }
@@ -328,7 +271,8 @@ public class AttributeDescriptor {
 
 
   @Override
-  public String toString() {
+  public String toString()
+  {
     return "AttributeDescriptor{" +
       "schema='" + schema + '\'' +
       ", name='" + name + '\'' +

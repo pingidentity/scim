@@ -3,9 +3,9 @@
         {
             "urn":"urn:scim:schemas:core:1.0"
         },
-      {
+        {
           "urn":"http://hr.example.com"
-      }
+        }
 
     ],
     "id":"uid=babs",
@@ -23,10 +23,7 @@
     "userType":"Employee",
     "preferredLanguage":"en_US",
     "locale":"en_US",
-    "utcOffset":{
-        "hours":"-8",
-        "minutes":"0"
-    },
+    "timezone":"America/Los_Angeles",
     "emails":[
         {
             "value":"babs@example.com",
@@ -60,7 +57,7 @@
             "type":"aim"
         }
     ],
-    "photoUrls":[
+    "photos":[
         {
             "value":"https://photos.example.com/profilephoto/uid=005D0000001Az1u,ou=People,dc=example,dc=com/F",
             "type":"https://photos.example.com/profilephoto/uid=005D0000001Az1u,ou=People,dc=example,dc=com/T"
@@ -90,7 +87,8 @@
             "country":"USA",
             "type":"home"
         }
-    ], "memberOf":[
+    ],
+    "groups":[
     {
         "value":"00300000005N2Y6AA",
         "primary":true,
