@@ -8,12 +8,16 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.scim.config.Schema;
+import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 
@@ -35,6 +39,14 @@ public abstract class AttributeMapper
 
 
   /**
+   * The SCIM schema for the SCIM attribute type that is mapped by this
+   * attribute mapper.
+   */
+  private final Schema schema;
+
+
+
+  /**
    * Create a new instance of an attribute mapper.
    *
    * @param scimAttributeType  The SCIM attribute type that is mapped by this
@@ -43,6 +55,23 @@ public abstract class AttributeMapper
   protected AttributeMapper(final SCIMAttributeType scimAttributeType)
   {
     this.scimAttributeType = scimAttributeType;
+
+    final SchemaManager schemaManager = SchemaManager.instance();
+    schema = schemaManager.getSchema(scimAttributeType.getSchema());
+  }
+
+
+
+  /**
+   * Retrieve the SCIM schema for the SCIM attribute type that is mapped by this
+   * attribute mapper.
+   *
+   * @return  The SCIM schema for the SCIM attribute type that is mapped by this
+   *          attribute mapper.
+   */
+  public Schema getSchema()
+  {
+    return schema;
   }
 
 
@@ -116,4 +145,133 @@ public abstract class AttributeMapper
    * @return  A SCIM attribute, or {@code null} if no attribute was created.
    */
   public abstract SCIMAttribute toSCIMAttribute(final Entry entry);
+
+
+
+  /**
+   * Create an attribute mapper from an attribute definition.
+   *
+   * @param attributeDefinition  The attribute definition.
+   * @param resourceSchema       The resource schema URN.
+   *
+   * @return  An attribute mapper, or {@code null} if the attribute definition
+   *          contains no mappings.
+   */
+  public static AttributeMapper create(
+      final AttributeDefinition attributeDefinition,
+      final String resourceSchema)
+  {
+    final String schema;
+    if (attributeDefinition.getSchema() == null)
+    {
+      schema = resourceSchema;
+    }
+    else
+    {
+      schema = attributeDefinition.getSchema();
+    }
+    final SCIMAttributeType scimAttributeType =
+        new SCIMAttributeType(schema, attributeDefinition.getName());
+
+    if (attributeDefinition.getSimple() != null)
+    {
+      final SimpleAttributeDefinition simpleDefinition =
+          attributeDefinition.getSimple();
+
+      if (simpleDefinition.getMapping() == null)
+      {
+        return null;
+      }
+
+      final AttributeTransformation t =
+          AttributeTransformation.create(simpleDefinition.getMapping());
+
+      return new SimpleAttributeMapper(scimAttributeType, t);
+    }
+    else if (attributeDefinition.getComplex() != null)
+    {
+      final ComplexAttributeDefinition complexDefinition =
+          attributeDefinition.getComplex();
+
+      final List<SubAttributeTransformation> transformations =
+          new ArrayList<SubAttributeTransformation>();
+
+      for (final SubAttributeDefinition subAttributeDefinition :
+          complexDefinition.getSubAttribute())
+      {
+        if (subAttributeDefinition.getMapping() != null)
+        {
+          transformations.add(
+              SubAttributeTransformation.create(subAttributeDefinition));
+        }
+      }
+
+      if (transformations.isEmpty())
+      {
+        return null;
+      }
+
+      return new ComplexSingularAttributeMapper(scimAttributeType,
+                                                transformations);
+    }
+    else if (attributeDefinition.getSimplePlural() != null)
+    {
+      final SimplePluralAttributeDefinition simplePluralDefinition =
+          attributeDefinition.getSimplePlural();
+
+      final List<PluralValueMapper> pluralMappers =
+          new ArrayList<PluralValueMapper>();
+
+      for (final PluralType pluralType : simplePluralDefinition.getPluralType())
+      {
+        final PluralValueMapper m = PluralValueMapper.create(pluralType);
+        if (m != null)
+        {
+          pluralMappers.add(m);
+        }
+      }
+
+      if (simplePluralDefinition.getMapping() != null)
+      {
+        pluralMappers.add(PluralValueMapper.create(
+            simplePluralDefinition.getMapping()));
+      }
+
+      if (pluralMappers.isEmpty())
+      {
+        return null;
+      }
+
+      return new PluralAttributeMapper(scimAttributeType, pluralMappers);
+    }
+    else if (attributeDefinition.getComplexPlural() != null)
+    {
+      final ComplexPluralAttributeDefinition complexPluralDefinition =
+          attributeDefinition.getComplexPlural();
+
+      final List<PluralValueMapper> pluralMappers =
+          new ArrayList<PluralValueMapper>();
+
+      for (final PluralType pluralType :
+          complexPluralDefinition.getPluralType())
+      {
+        final PluralValueMapper m = PluralValueMapper.create(pluralType);
+        if (m != null)
+        {
+          pluralMappers.add(m);
+        }
+      }
+
+      if (pluralMappers.isEmpty())
+      {
+        return null;
+      }
+
+      return new PluralAttributeMapper(scimAttributeType, pluralMappers);
+    }
+    else
+    {
+      return null;
+    }
+  }
 }

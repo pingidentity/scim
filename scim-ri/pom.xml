@@ -107,6 +107,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <unit.resource.dir>${basedir}/src/test/resources</unit.resource.dir>
+                        <base.dir>${basedir}</base.dir>
                         <ds.host>${ds.host}</ds.host>
                         <ds.port>${ds.port}</ds.port>
                         <ds.ssl.port>${ds.ssl.port}</ds.ssl.port>

@@ -5,18 +5,18 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.config.Schema;
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
+import com.unboundid.scim.sdk.SimpleValue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,12 +46,6 @@ public class PluralAttributeMapper extends AttributeMapper
    */
   private final Set<String> ldapAttributeTypes;
 
-  /**
-   * The SCIM schema for the SCIM attribute type that is mapped by this
-   * attribute mapper.
-   */
-  private final Schema schema;
-
 
 
   /**
@@ -59,7 +53,7 @@ public class PluralAttributeMapper extends AttributeMapper
    *
    * @param scimAttributeType  The SCIM attribute type that is mapped by this
    *                           attribute mapper.
-   * @param pluralMappers     The set of complex value mappers for this
+   * @param pluralMappers      The set of complex value mappers for this
    *                           attribute mapper.
    */
   public PluralAttributeMapper(
@@ -73,14 +67,13 @@ public class PluralAttributeMapper extends AttributeMapper
     for (final PluralValueMapper pluralMapper : pluralMappers)
     {
       valueMappers.put(pluralMapper.getTypeValue(), pluralMapper);
-      for (final ValueMapper m : pluralMapper.getValueMappers())
+      for (final SubAttributeTransformation sat :
+          pluralMapper.getTransformations())
       {
-        ldapAttributeTypes.add(m.getLdapAttributeType());
+        ldapAttributeTypes.add(
+            sat.getAttributeTransformation().getLdapAttribute());
       }
     }
-
-    final SchemaManager schemaManager = SchemaManager.instance();
-    schema = schemaManager.getSchema(scimAttributeType.getSchema());
   }
 
 
@@ -98,8 +91,6 @@ public class PluralAttributeMapper extends AttributeMapper
   {
     final SCIMFilterType filterType = filter.getFilterType();
 
-    String filterValue = filter.getFilterValue();
-
     String subAttributeName =
         filter.getFilterAttribute().getSubAttributeName();
     if (subAttributeName == null)
@@ -107,38 +98,46 @@ public class PluralAttributeMapper extends AttributeMapper
       subAttributeName = "value";
     }
 
-    final List<ValueMapper> selectedMappers = new ArrayList<ValueMapper>();
+    final List<SubAttributeTransformation> selectedTransformations =
+        new ArrayList<SubAttributeTransformation>();
     for (final PluralValueMapper pluralValueMapper : valueMappers.values())
     {
-      for (final ValueMapper m : pluralValueMapper.getValueMappers())
+      for (final SubAttributeTransformation sat :
+          pluralValueMapper.getTransformations())
       {
-        if (m.getScimAttribute().equalsIgnoreCase(subAttributeName))
+        if (sat.getSubAttribute().equalsIgnoreCase(subAttributeName))
         {
-          selectedMappers.add(m);
+          selectedTransformations.add(sat);
         }
       }
     }
 
-    if (selectedMappers.isEmpty())
+    if (selectedTransformations.isEmpty())
     {
       return Filter.createORFilter();
     }
 
     final List<String> ldapFilterTypes =
-        new ArrayList<String>(selectedMappers.size());
+        new ArrayList<String>(selectedTransformations.size());
     final List<String> ldapFilterValues =
-        new ArrayList<String>(selectedMappers.size());
+        new ArrayList<String>(selectedTransformations.size());
 
-    for (final ValueMapper m : selectedMappers)
+    for (final SubAttributeTransformation sat : selectedTransformations)
     {
-      String ldapFilterValue = null;
-      if (filterValue != null)
+      final AttributeTransformation at = sat.getAttributeTransformation();
+      final String filterValue;
+      if (filter.getFilterValue() != null)
       {
-        ldapFilterValue = m.toLDAPValue(filterValue);
+        filterValue = at.getTransformation().toLDAPFilterValue(
+            filter.getFilterValue());
+      }
+      else
+      {
+        filterValue = null;
       }
 
-      ldapFilterTypes.add(m.getLdapAttributeType());
-      ldapFilterValues.add(ldapFilterValue);
+      ldapFilterTypes.add(at.getLdapAttribute());
+      ldapFilterValues.add(filterValue);
     }
 
     final List<Filter> filterComponents =
@@ -234,7 +233,7 @@ public class PluralAttributeMapper extends AttributeMapper
     if (scimAttribute != null)
     {
       final AttributeDescriptor descriptor =
-          schema.getAttribute(getSCIMAttributeType().getName());
+          getSchema().getAttribute(getSCIMAttributeType().getName());
 
       for (SCIMAttributeValue v : scimAttribute.getPluralValues())
       {
@@ -264,19 +263,21 @@ public class PluralAttributeMapper extends AttributeMapper
 
         if (pluralValueMapper != null)
         {
-          for (final ValueMapper valueMapper :
-              pluralValueMapper.getValueMappers())
+          for (final SubAttributeTransformation sat :
+              pluralValueMapper.getTransformations())
           {
-            final String scimType = valueMapper.getScimAttribute();
-            final String ldapType = valueMapper.getLdapAttributeType();
+            final AttributeTransformation at = sat.getAttributeTransformation();
+            final String scimType = sat.getSubAttribute();
+            final String ldapType = at.getLdapAttribute();
 
             final SCIMAttribute subAttribute = v.getAttribute(scimType);
             if (subAttribute != null)
             {
-              final String stringValue =
-                  valueMapper.toLDAPValue(
-                      subAttribute.getSingularValue());
-              attributes.add(new Attribute(ldapType, stringValue));
+              final AttributeDescriptor subDescriptor =
+                  complexDescriptor.getAttribute(scimType);
+              final ASN1OctetString value = at.getTransformation().toLDAPValue(
+                  subDescriptor, subAttribute.getSingularValue().getValue());
+              attributes.add(new Attribute(ldapType, value));
             }
           }
         }
@@ -291,7 +292,7 @@ public class PluralAttributeMapper extends AttributeMapper
   public SCIMAttribute toSCIMAttribute(final Entry entry)
   {
     final AttributeDescriptor descriptor =
-        schema.getAttribute(getSCIMAttributeType().getName());
+        getSchema().getAttribute(getSCIMAttributeType().getName());
     final AttributeDescriptor complexDescriptor =
         descriptor.getComplexAttributeDescriptors().get(0);
 
@@ -303,19 +304,28 @@ public class PluralAttributeMapper extends AttributeMapper
         final List<SCIMAttribute> subAttributes =
             new ArrayList<SCIMAttribute>();
 
-        for (final ValueMapper valueMapper :
-            pluralValueMapper.getValueMappers())
+        for (final SubAttributeTransformation sat :
+            pluralValueMapper.getTransformations())
         {
-          final String scimType = valueMapper.getScimAttribute();
-          final String ldapType = valueMapper.getLdapAttributeType();
+          final AttributeTransformation at = sat.getAttributeTransformation();
+          final String scimType = sat.getSubAttribute();
+          final String ldapType = at.getLdapAttribute();
 
-          final String stringValue = entry.getAttributeValue(ldapType);
-          if (stringValue != null)
+          final AttributeDescriptor subDescriptor =
+              complexDescriptor.getAttribute(scimType);
+          final Attribute a = entry.getAttribute(ldapType);
+          if (a != null)
           {
-            final SCIMAttributeValue scimValue =
-                valueMapper.toSCIMValue(stringValue);
-            subAttributes.add(SCIMAttribute.createSingularAttribute(
-                complexDescriptor.getAttribute(scimType), scimValue));
+            final ASN1OctetString[] rawValues = a.getRawValues();
+            if (rawValues.length > 0)
+            {
+              final SimpleValue simpleValue =
+                  at.getTransformation().toSCIMValue(subDescriptor,
+                                                     rawValues[0]);
+              subAttributes.add(
+                  SCIMAttribute.createSingularAttribute(
+                      subDescriptor, new SCIMAttributeValue(simpleValue)));
+            }
           }
         }
 
@@ -340,24 +350,31 @@ public class PluralAttributeMapper extends AttributeMapper
       }
       else
       {
-        if (pluralValueMapper.getValueMappers().size() > 0)
+        if (pluralValueMapper.getTransformations().size() > 0)
         {
-          final ValueMapper valueMapper =
-              pluralValueMapper.getValueMappers().get(0);
+          final SubAttributeTransformation sat =
+              pluralValueMapper.getTransformations().iterator().next();
 
-          final String scimType = valueMapper.getScimAttribute();
-          final String ldapType = valueMapper.getLdapAttributeType();
+          final AttributeTransformation at = sat.getAttributeTransformation();
+          final String scimType = sat.getSubAttribute();
+          final String ldapType = at.getLdapAttribute();
           final Attribute a = entry.getAttribute(ldapType);
           if (a != null)
           {
-            for (final String s : a.getValues())
+            for (final ASN1OctetString v : a.getRawValues())
             {
               final List<SCIMAttribute> subAttributes =
                   new ArrayList<SCIMAttribute>();
 
-              final SCIMAttributeValue scimValue = valueMapper.toSCIMValue(s);
+              final AttributeDescriptor subDescriptor =
+                  complexDescriptor.getAttribute(scimType);
+              final SimpleValue simpleValue =
+                  at.getTransformation().toSCIMValue(subDescriptor, v);
+
+              final SCIMAttributeValue scimValue =
+                  new SCIMAttributeValue(simpleValue);
               subAttributes.add(SCIMAttribute.createSingularAttribute(
-                  complexDescriptor.getAttribute(scimType), scimValue));
+                  subDescriptor, scimValue));
 
               final SCIMAttributeValue complexValue =
                   SCIMAttributeValue.createComplexValue(subAttributes);

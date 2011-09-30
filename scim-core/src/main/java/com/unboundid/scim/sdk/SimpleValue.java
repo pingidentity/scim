@@ -36,7 +36,7 @@ public class SimpleValue
    *
    * @param stringValue  The string value.
    */
-  SimpleValue(final String stringValue)
+  public SimpleValue(final String stringValue)
   {
     this.value = stringValue;
   }
@@ -48,7 +48,7 @@ public class SimpleValue
    *
    * @param booleanValue  The boolean value.
    */
-  SimpleValue(final Boolean booleanValue)
+  public SimpleValue(final Boolean booleanValue)
   {
     this.value = booleanValue.toString();
   }
@@ -60,7 +60,7 @@ public class SimpleValue
    *
    * @param dateValue  The datetime value.
    */
-  SimpleValue(final Date dateValue)
+  public SimpleValue(final Date dateValue)
   {
     final Calendar calendar = new GregorianCalendar(utcTimeZone);
     calendar.setTime(dateValue);
@@ -73,7 +73,7 @@ public class SimpleValue
    *
    * @param bytes  The binary value.
    */
-  SimpleValue(final byte[] bytes)
+  public SimpleValue(final byte[] bytes)
   {
     this.value = bytes;
   }

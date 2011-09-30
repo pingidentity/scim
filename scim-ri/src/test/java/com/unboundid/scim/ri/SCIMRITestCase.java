@@ -340,6 +340,8 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     final SCIMServerConfig ssConfig = new SCIMServerConfig();
     ssConfig.setListenPort(ssPort);
     ssConfig.setMaxThreads(16);
+    ssConfig.setResourcesFile(
+        getFile("src/main/assemblies/config/resources.xml"));
 
     final LDAPExternalServerConfig ldapConfig =
         new LDAPExternalServerConfig();
@@ -3614,4 +3616,20 @@ public abstract class SCIMRITestCase extends SCIMTestCase
 
     return serverSocket;
   }
+
+
+
+  /**
+   * Obtain a reference to a file anywhere under the base directory.
+   *
+   * @param path  The relative path to the desired file.
+   *
+   * @return  A reference to the desired file.
+   */
+  protected static File getFile(final String path)
+  {
+    final File baseDir = new File(System.getProperty("base.dir"));
+    return new File(baseDir, path);
+  }
+
 }

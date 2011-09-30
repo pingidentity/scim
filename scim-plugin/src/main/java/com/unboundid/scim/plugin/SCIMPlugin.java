@@ -11,7 +11,6 @@ import com.unboundid.directory.sdk.ds.api.Plugin;
 import com.unboundid.directory.sdk.ds.config.PluginConfig;
 import com.unboundid.directory.sdk.ds.types.DirectoryServerContext;
 import com.unboundid.directory.sdk.ds.types.StartupPluginResult;
-import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.ri.SCIMServer;
@@ -20,7 +19,6 @@ import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.args.ArgumentException;
 import com.unboundid.util.args.ArgumentParser;
-import com.unboundid.util.args.DNArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
@@ -49,6 +47,12 @@ public final class SCIMPlugin
 //      "cn=SCIM User,cn=Root DNs,cn=config";
 
   /**
+   * The name of the argument that will be used to define the resources
+   * supported by the SCIM protocol interface.
+   */
+  private static final String ARG_NAME_USE_RESOURCES_FILE = "useResourcesFile";
+
+  /**
    * The name of the argument that will be used to specify the XML schema
    * supported by the SCIM protocol interface.
    */
@@ -65,12 +69,6 @@ public final class SCIMPlugin
    * the SCIM protocol interface.
    */
   private static final String ARG_NAME_BASE_URI = "baseURI";
-
-  /**
-   * The name of the argument that will be used to specify the base DN for
-   * entries representing SCIM resources.
-   */
-  private static final String ARG_NAME_BASE_DN = "baseDN";
 
   /**
    * The server context for the server in which this extension is running.
@@ -142,8 +140,16 @@ public final class SCIMPlugin
   {
     // This is a required argument.
     parser.addArgument(
-        new FileArgument(null, ARG_NAME_USE_SCHEMA_FILE,
+        new FileArgument(null, ARG_NAME_USE_RESOURCES_FILE,
                          true, 1, "{path}",
+                         "The path to an XML file defining the resources " +
+                         "supported by the SCIM interface.",
+                         true, true, true, false));
+
+    // This argument is not required because built-in defaults are available.
+    parser.addArgument(
+        new FileArgument(null, ARG_NAME_USE_SCHEMA_FILE,
+                         false, 1, "{path}",
                          "The path to a file or directory containing XML " +
                          "schema definitions for resources supported by " +
                          "the SCIM interface.",
@@ -163,12 +169,6 @@ public final class SCIMPlugin
                            "The base URI of the SCIM interface. If no base " +
                            "URI is specified then the default value '/' is " +
                            "used", "/"));
-
-    // This argument is required.
-    parser.addArgument(
-        new DNArgument(null, ARG_NAME_BASE_DN,
-                       true, 1, "{DN}",
-                       "The base DN for SCIM resource entries."));
   }
 
 
@@ -237,15 +237,11 @@ public final class SCIMPlugin
           "An error occurred while initializing the SCIM plugin.", e);
     }
 
-    final DNArgument baseDnArg =
-         (DNArgument) parser.getNamedArgument(ARG_NAME_BASE_DN);
-    final DN baseDN = baseDnArg.getValue();
-
     final StringArgument baseUriArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_BASE_URI);
     final String baseUri = baseUriArg.getValue();
     final SCIMBackend scimBackend =
-        new ServerContextBackend(baseDN.toString(), serverContext);
+        new ServerContextBackend(serverContext);
     scimServer.registerBackend(baseUri, scimBackend);
 
     serverContext.debugInfo("Finished SCIM plugin initialization");
@@ -276,37 +272,41 @@ public final class SCIMPlugin
     final FileArgument useSchemaFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_USE_SCHEMA_FILE);
 
-    final File f = useSchemaFileArg.getValue();
-    if (f.exists())
+    if (useSchemaFileArg.isPresent())
     {
-      final ArrayList<File> schemaFiles = new ArrayList<File>(1);
-      if (f.isFile())
+      final File f = useSchemaFileArg.getValue();
+      if (f.exists())
       {
-        schemaFiles.add(f);
+        final ArrayList<File> schemaFiles = new ArrayList<File>(1);
+        if (f.isFile())
+        {
+          schemaFiles.add(f);
+        }
+        else
+        {
+          for (final File subFile : f.listFiles())
+          {
+            if (subFile.isFile())
+            {
+              schemaFiles.add(subFile);
+            }
+          }
+        }
+
+        if (schemaFiles.isEmpty())
+        {
+          unacceptableReasons.add("No schema files found at " +
+                                  useSchemaFileArg.toString());
+          acceptable = false;
+        }
       }
       else
       {
-        for (final File subFile : f.listFiles())
-        {
-          if (subFile.isFile())
-          {
-            schemaFiles.add(subFile);
-          }
-        }
-      }
-
-      if (schemaFiles.isEmpty())
-      {
-        unacceptableReasons.add("No schema files found at " +
-                                useSchemaFileArg.toString());
+        unacceptableReasons.add("Schema file or directory " +
+                                useSchemaFileArg.toString() +
+                                " does not exist");
         acceptable = false;
       }
-    }
-    else
-    {
-      unacceptableReasons.add("Schema file or directory " +
-                              useSchemaFileArg.toString() + " does not exist");
-      acceptable = false;
     }
 
     return acceptable;
@@ -364,15 +364,11 @@ public final class SCIMPlugin
       return ResultCode.OTHER;
     }
 
-    final DNArgument baseDnArg =
-         (DNArgument) parser.getNamedArgument(ARG_NAME_BASE_DN);
-    final DN baseDN = baseDnArg.getValue();
-
     final StringArgument baseUriArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_BASE_URI);
     final String baseUri = baseUriArg.getValue();
     final SCIMBackend scimBackend =
-        new ServerContextBackend(baseDN.toString(), serverContext);
+        new ServerContextBackend(serverContext);
     scimServer.registerBackend(baseUri, scimBackend);
 
     try
@@ -478,11 +474,10 @@ public final class SCIMPlugin
 
     exampleMap.put(
          Arrays.asList(
-              ARG_NAME_USE_SCHEMA_FILE + "=resource/schema",
-              ARG_NAME_PORT + "=8080",
-              ARG_NAME_BASE_DN + "=dc=example,dc=com"),
+              ARG_NAME_USE_RESOURCES_FILE + "=config/resources.xml",
+              ARG_NAME_PORT + "=8080"),
          "Creates a SCIM protocol interface listening on port 8080. The " +
-         "interface supports resources from the SCIM core schema.");
+         "interface supports the resources defined in resources.xml.");
 
     return exampleMap;
   }
@@ -501,6 +496,9 @@ public final class SCIMPlugin
    */
   private static SCIMServerConfig getSCIMConfig(final ArgumentParser parser)
   {
+    final FileArgument useResourcesFileArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
+
     final FileArgument useSchemaFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_USE_SCHEMA_FILE);
 
@@ -510,6 +508,7 @@ public final class SCIMPlugin
     final SCIMServerConfig scimServerConfig = new SCIMServerConfig();
 
     scimServerConfig.setListenPort(portArg.getValue());
+    scimServerConfig.setResourcesFile(useResourcesFileArg.getValue());
 
     if (useSchemaFileArg.isPresent())
     {

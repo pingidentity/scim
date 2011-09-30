@@ -58,8 +58,36 @@ public abstract class ResourceMapper
 
 
   /**
+   * Retrieve the name of the SCIM resource handled by this resource mapper.
+   * This is also the resource endpoint in the REST protocol.
+   *
+   * @return  The name of the SCIM resource handled by this resource mapper.
+   */
+  public abstract String getResourceName();
+
+
+
+  /**
+   * Retrieve the query endpoint for resources handled by this resource mapper.
+   *
+   * @return  The query endpoint for resources handled by this resource mapper.
+   */
+  public abstract String getQueryEndpoint();
+
+
+
+  /**
+   * Indicates whether this mapper supports querying of resources.
+   *
+   * @return  {@code true} if this mapper supports resource query.
+   */
+  public abstract boolean supportsQuery();
+
+
+
+  /**
    * Indicates whether this mapper supports creation of new resources through
-   * {@link #toLDAPEntry(com.unboundid.scim.sdk.SCIMObject, String)}.
+   * {@link #toLDAPEntry(com.unboundid.scim.sdk.SCIMObject)}.
    *
    * @return  {@code true} if this mapper supports resource creation.
    */
@@ -84,14 +112,12 @@ public abstract class ResourceMapper
    * Construct an LDAP entry from the provided SCIM object.
    *
    * @param scimObject  The SCIM object to form the contents of the entry.
-   * @param baseDN      The base DN below which all entries are created.
    *
    * @return  An LDAP entry.
    *
    * @throws LDAPException  If the entry could not be constructed.
    */
-  public abstract Entry toLDAPEntry(final SCIMObject scimObject,
-                                    final String baseDN)
+  public abstract Entry toLDAPEntry(final SCIMObject scimObject)
       throws LDAPException;
 
 
@@ -133,6 +159,15 @@ public abstract class ResourceMapper
    * @return  An LDAP filter.
    */
   public abstract Filter toLDAPFilter(final SCIMFilter filter);
+
+
+
+  /**
+   * Get the search base DN to be used for querying.
+   *
+   * @return  The search base DN to be used for querying.
+   */
+  public abstract String getSearchBaseDN();
 
 
 

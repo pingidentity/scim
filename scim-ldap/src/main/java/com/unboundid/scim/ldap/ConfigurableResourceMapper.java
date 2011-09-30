@@ -7,12 +7,10 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Control;
-import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
-import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -23,7 +21,16 @@ import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.AttributePath;
+import org.xml.sax.SAXException;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
 
 
@@ -47,22 +55,29 @@ public class ConfigurableResourceMapper extends ResourceMapper
   private String resourceName;
 
   /**
-   * The LDAP structural object class representing resources handled by this
-   * resource mapper.
+   * The query endpoint for resources handled by this resource mapper.
    */
-  private String structuralObjectClass;
+  private String queryEndpoint;
 
   /**
-   * The LDAP object class values to be used in entries created for new
-   * resources.
+   * The LDAP Search base DN to be used for querying.
    */
-  private Attribute objectClassAttribute;
+  private String searchBaseDN;
 
   /**
-   * The LDAP attribute whose value should be used to form the RDN of entries
-   * created for new resources.
+   * The LDAP filter to match all resources handled by this resource manager.
    */
-  private String rdnAttributeType;
+  private Filter searchFilter;
+
+  /**
+   * The LDAP Add parameters.
+   */
+  private LDAPAddParameters addParameters;
+
+  /**
+   * A DN constructed value for the DN template.
+   */
+  private ConstructedValue dnConstructor;
 
   /**
    * The attribute mappers for this resource mapper.
@@ -79,29 +94,41 @@ public class ConfigurableResourceMapper extends ResourceMapper
   /**
    * Create a new instance of the resource mapper.
    *
-   * @param resourceName           The name of the SCIM resource handled by
-   *                               this resource mapper.
-   * @param structuralObjectClass  The LDAP structural object class representing
-   *                               resources handled by this resource mapper.
-   * @param objectClassValues      The LDAP object class values to be used in
-   *                               entries created for new resources.
-   * @param rdnAttributeType       The LDAP attribute whose value should be used
-   *                               to form the RDN of entries created for new
-   *                               resources.
-   * @param mappers                The attribute mappers for this resource
-   *                               mapper.
+   * @param resourceName   The name of the SCIM resource handled by this
+   *                       resource mapper.
+   * @param queryEndpoint  The  query endpoint for resources handled by this
+   *                       resource mapper.
+   * @param searchBaseDN   The LDAP Search base DN.
+   * @param searchFilter   The LDAP Search filter.
+   * @param addParameters  The LDAP Add parameters.
+   * @param mappers        The attribute mappers for this resource mapper.
    */
   public ConfigurableResourceMapper(final String resourceName,
-                                    final String structuralObjectClass,
-                                    final String[] objectClassValues,
-                                    final String rdnAttributeType,
+                                    final String queryEndpoint,
+                                    final String searchBaseDN,
+                                    final String searchFilter,
+                                    final LDAPAddParameters addParameters,
                                     final Collection<AttributeMapper> mappers)
   {
-    this.resourceName          = resourceName;
-    this.structuralObjectClass = structuralObjectClass;
-    this.rdnAttributeType      = rdnAttributeType;
+    this.resourceName      = resourceName;
+    this.queryEndpoint     = queryEndpoint;
+    this.addParameters     = addParameters;
+    this.searchBaseDN      = searchBaseDN;
 
-    objectClassAttribute = new Attribute("objectClass", objectClassValues);
+    try
+    {
+      this.searchFilter = Filter.create(searchFilter);
+    }
+    catch (LDAPException e)
+    {
+      throw new IllegalArgumentException(e.getExceptionMessage());
+    }
+
+    if (addParameters != null)
+    {
+      this.dnConstructor =
+          new ConstructedValue(addParameters.getDNTemplate().trim());
+    }
 
     attributeMappers =
         new HashMap<SCIMAttributeType, AttributeMapper>(mappers.size());
@@ -112,6 +139,79 @@ public class ConfigurableResourceMapper extends ResourceMapper
       attributeMappers.put(m.getSCIMAttributeType(), m);
       ldapAttributeTypes.addAll(m.getLDAPAttributeTypes());
     }
+  }
+
+
+
+  /**
+   * Parse an XML file defining a set of resource mappings.
+   *
+   * @param file  An XML file defining a set of resource mappings.
+   *
+   * @return  A list of resource mappers.
+   *
+   * @throws JAXBException  If an error occurs during the parsing.
+   * @throws SAXException   If the XML schema cannot be instantiated.
+   */
+  public static List<ResourceMapper> parse(final File file)
+      throws JAXBException, SAXException
+  {
+    final ObjectFactory factory = new ObjectFactory();
+    final String packageName = factory.getClass().getPackage().getName();
+    final JAXBContext context = JAXBContext.newInstance(packageName);
+
+    final Unmarshaller unmarshaller = context.createUnmarshaller();
+    final URL url = ResourcesDefinition.class.getResource("resources.xsd");
+    if (url != null) {
+      final SchemaFactory sf = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
+      final Schema schema = sf.newSchema(url);
+      unmarshaller.setSchema(schema);
+    }
+
+    final JAXBElement jaxbElement = (JAXBElement) unmarshaller.unmarshal(file);
+    final ResourcesDefinition resources =
+        (ResourcesDefinition)jaxbElement.getValue();
+
+    final List<ResourceMapper> resourceMappers =
+        new ArrayList<ResourceMapper>();
+    for (final ResourceDefinition resource : resources.getResource())
+    {
+      if (resource.getLDAPSearch() == null)
+      {
+        continue;
+      }
+
+      final List<AttributeMapper> attributeMappers =
+          new ArrayList<AttributeMapper>();
+      for (final AttributeDefinition attributeDefinition :
+          resource.getAttribute())
+      {
+        final AttributeMapper m =
+            AttributeMapper.create(attributeDefinition, resource.getSchema());
+        if (m != null)
+        {
+          attributeMappers.add(m);
+        }
+      }
+
+      String searchBaseDN = null;
+      String searchFilter = null;
+      if (resource.getLDAPSearch() != null)
+      {
+        searchBaseDN = resource.getLDAPSearch().getBaseDN().trim();
+        searchFilter = resource.getLDAPSearch().getFilter().trim();
+      }
+
+      resourceMappers.add(
+          new ConfigurableResourceMapper(resource.getName(),
+                                         resource.getQueryEndpoint(),
+                                         searchBaseDN,
+                                         searchFilter,
+                                         resource.getLDAPAdd(),
+                                         attributeMappers));
+    }
+
+    return resourceMappers;
   }
 
 
@@ -133,9 +233,33 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
 
   @Override
+  public String getResourceName()
+  {
+    return resourceName;
+  }
+
+
+
+  @Override
+  public String getQueryEndpoint()
+  {
+    return queryEndpoint;
+  }
+
+
+
+  @Override
+  public boolean supportsQuery()
+  {
+    return searchBaseDN != null;
+  }
+
+
+
+  @Override
   public boolean supportsCreate()
   {
-    return true;
+    return addParameters != null;
   }
 
 
@@ -159,27 +283,52 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
 
   @Override
-  public Entry toLDAPEntry(final SCIMObject scimObject, final String baseDN)
+  public Entry toLDAPEntry(final SCIMObject scimObject)
       throws LDAPException
   {
     final Entry entry = new Entry("");
-    entry.addAttribute(objectClassAttribute);
+
+    if (addParameters == null)
+    {
+      throw new RuntimeException(
+          "No LDAP Add Parameters were specified for the " + resourceName +
+          " Resource Mapper");
+    }
+
+    for (final FixedAttribute fixedAttribute :
+        addParameters.getFixedAttribute())
+    {
+      boolean preserveExisting = false;
+      final String attributeName = fixedAttribute.getLdapAttribute();
+      if (entry.hasAttribute(attributeName))
+      {
+        switch (fixedAttribute.getOnConflict())
+        {
+          case MERGE:
+            break;
+          case OVERWRITE:
+            entry.removeAttribute(attributeName);
+            break;
+          case PRESERVE:
+            preserveExisting = true;
+            break;
+        }
+      }
+
+      if (!preserveExisting)
+      {
+        entry.addAttribute(
+            new Attribute(attributeName, fixedAttribute.getFixedValue()));
+      }
+    }
+
     for (final Attribute a : toLDAPAttributes(scimObject))
     {
       entry.addAttribute(a);
     }
 
-    RDN rdn = null;
-    if (entry.hasAttribute(rdnAttributeType))
-    {
-      rdn = new RDN(rdnAttributeType,
-                    entry.getAttributeValue(rdnAttributeType));
-    }
-
-    if (rdn != null)
-    {
-      entry.setDN(new DN(rdn, new DN(baseDN)));
-    }
+    // TODO allow SCIM object values to be referenced
+    entry.setDN(dnConstructor.constructValue(entry));
 
     return entry;
   }
@@ -219,24 +368,34 @@ public class ConfigurableResourceMapper extends ResourceMapper
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
   {
-    final Filter objectClassFilter =
-        Filter.createEqualityFilter("objectclass", structuralObjectClass);
+    if (searchFilter == null)
+    {
+      return null;
+    }
 
     if (filter == null)
     {
-      return objectClassFilter;
+      return searchFilter;
     }
 
     final Filter filterComponent = toLDAPFilterComponent(filter);
 
     if (filterComponent == null)
     {
-      return objectClassFilter;
+      return searchFilter;
     }
     else
     {
-      return Filter.createANDFilter(filterComponent, objectClassFilter);
+      return Filter.createANDFilter(filterComponent, searchFilter);
     }
+  }
+
+
+
+  @Override
+  public String getSearchBaseDN()
+  {
+    return searchBaseDN;
   }
 
 
@@ -351,9 +510,19 @@ public class ConfigurableResourceMapper extends ResourceMapper
   public SCIMObject toSCIMObject(final Entry entry,
                                  final SCIMQueryAttributes queryAttributes)
   {
-    if (!entry.hasObjectClass(structuralObjectClass))
+    if (searchFilter != null)
     {
-      return null;
+      try
+      {
+        if (!searchFilter.matchesEntry(entry))
+        {
+          return null;
+        }
+      }
+      catch (LDAPException e)
+      {
+        throw new RuntimeException(e.getExceptionMessage());
+      }
     }
 
     final List<SCIMAttribute> attributes =

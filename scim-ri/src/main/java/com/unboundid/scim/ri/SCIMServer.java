@@ -4,10 +4,9 @@
  */
 package com.unboundid.scim.ri;
 
+import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
-import com.unboundid.scim.ldap.UserResourceMapper;
-import com.unboundid.scim.ldap.GroupResourceMapper;
 import com.unboundid.scim.config.SchemaManager;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.eclipse.jetty.http.security.Constraint;
@@ -25,13 +24,9 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_GROUPS;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_USERS;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_GROUP;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
 
 
@@ -118,16 +113,15 @@ public class SCIMServer
     this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
     this.queryResourceMappers = new HashMap<String, ResourceMapper>();
 
-    final ResourceMapper userResourceMapper = new UserResourceMapper();
-    final ResourceMapper groupResourceMapper = new GroupResourceMapper();
-
-    userResourceMapper.initializeMapper();
-    groupResourceMapper.initializeMapper();
-
-    this.registerResourceMapper(userResourceMapper,
-                                RESOURCE_NAME_USER, RESOURCE_ENDPOINT_USERS);
-    this.registerResourceMapper(groupResourceMapper,
-                                RESOURCE_NAME_GROUP, RESOURCE_ENDPOINT_GROUPS);
+    if (serverConfig.getResourcesFile() != null)
+    {
+      final List<ResourceMapper> mappers =
+          ConfigurableResourceMapper.parse(serverConfig.getResourcesFile());
+      for (final ResourceMapper resourceMapper : mappers)
+      {
+        this.registerResourceMapper(resourceMapper);
+      }
+    }
   }
 
 
@@ -246,27 +240,25 @@ public class SCIMServer
    *
    * @param resourceMapper    The resource mapper to be registered. It must not
    *                          be {@code null}.
-   * @param resourceEndPoint  The SCIM resource end-point. e.g. User
-   * @param queryEndPoint     The SCIM resource query end-point with which the
-   *                          mapper is associated. e.g. Users
    */
-  public void registerResourceMapper(final ResourceMapper resourceMapper,
-                                     final String resourceEndPoint,
-                                     final String queryEndPoint)
+  public void registerResourceMapper(final ResourceMapper resourceMapper)
   {
+    final String resourceName = resourceMapper.getResourceName();
+    final String queryEndpoint = resourceMapper.getQueryEndpoint();
+
     synchronized (this)
     {
-      if (resourceEndPoint != null)
+      if (resourceName != null)
       {
         final Map<String, Set<ResourceMapper>> newResourceMappers =
             new HashMap<String, Set<ResourceMapper>>();
 
-        Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
+        Set<ResourceMapper> mappers = resourceMappers.get(resourceName);
         if (mappers != null && mappers.contains(resourceMapper))
         {
           throw new RuntimeException("The resource mapper was already " +
                                      "registered for resource end-point " +
-                                     resourceEndPoint);
+                                     resourceName);
         }
 
         for (Map.Entry<String, Set<ResourceMapper>> e :
@@ -276,11 +268,11 @@ public class SCIMServer
                                  new HashSet<ResourceMapper>(e.getValue()));
         }
 
-        mappers = newResourceMappers.get(resourceEndPoint);
+        mappers = newResourceMappers.get(resourceName);
         if (mappers == null)
         {
           mappers = new HashSet<ResourceMapper>();
-          newResourceMappers.put(resourceEndPoint, mappers);
+          newResourceMappers.put(resourceName, mappers);
         }
 
         mappers.add(resourceMapper);
@@ -289,19 +281,19 @@ public class SCIMServer
       }
     }
 
-    if (queryEndPoint != null)
+    if (queryEndpoint != null && resourceMapper.supportsQuery())
     {
-      if (queryResourceMappers.get(queryEndPoint) == resourceMapper)
+      if (queryResourceMappers.get(queryEndpoint) == resourceMapper)
       {
         throw new RuntimeException("The resource mapper was already " +
                                    "registered for resource query end-point " +
-                                   resourceEndPoint);
+                                   queryEndpoint);
       }
 
       final Map<String, ResourceMapper> newQueryResourceMappers =
           new HashMap<String, ResourceMapper>(queryResourceMappers);
 
-      newQueryResourceMappers.put(queryEndPoint, resourceMapper);
+      newQueryResourceMappers.put(queryEndpoint, resourceMapper);
       queryResourceMappers = newQueryResourceMappers;
     }
   }

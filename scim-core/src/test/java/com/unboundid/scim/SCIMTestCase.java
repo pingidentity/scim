@@ -10,6 +10,7 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.InputStream;
 
 /**
@@ -41,6 +42,18 @@ public class SCIMTestCase
   protected static InputStream getResource(final String fileName)
   {
     return SCIMTestCase.class.getResourceAsStream(fileName);
+  }
+
+  /**
+   * Obtain a reference to a file in the test resources.
+   *
+   * @param fileName  The name of the desired file.
+   *
+   * @return  A reference to the desired test resource file.
+   */
+  protected static File getResourceFile(final String fileName)
+  {
+    return new File(SCIMTestCase.class.getResource(fileName).getFile());
   }
 
   /**

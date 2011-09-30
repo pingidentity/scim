@@ -32,6 +32,11 @@ public class SCIMServerConfig
    */
   private File[] schemaFiles;
 
+  /**
+   * The XML file defining the SCIM resources.
+   */
+  private File resourcesFile;
+
 
 
   /**
@@ -116,5 +121,29 @@ public class SCIMServerConfig
   public void setSchemaFiles(final File[] schemaFiles)
   {
     this.schemaFiles = schemaFiles;
+  }
+
+
+
+  /**
+   * Retrieve the XML file defining the SCIM resources.
+   *
+   * @return  The XML file defining the SCIM resources.
+   */
+  public File getResourcesFile()
+  {
+    return resourcesFile;
+  }
+
+
+
+  /**
+   * Specifies the XML file defining the SCIM resources.
+   *
+   * @param resourcesFile  The XML file defining the SCIM resources.
+   */
+  public void setResourcesFile(final File resourcesFile)
+  {
+    this.resourcesFile = resourcesFile;
   }
 }

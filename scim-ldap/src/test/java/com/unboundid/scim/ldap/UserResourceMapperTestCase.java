@@ -32,7 +32,7 @@ import java.util.List;
 
 
 /**
- * This class provides test coverage for the {@link UserResourceMapper}.
+ * This class provides test coverage for the {@link ConfigurableResourceMapper}.
  */
 public class UserResourceMapperTestCase
     extends SCIMTestCase
@@ -94,8 +94,7 @@ public class UserResourceMapperTestCase
             SCIMAttributeValue.createPluralStringValue(
                 coreSchema, "818-123-4567", "mobile", false)));
 
-    final UserResourceMapper mapper = new UserResourceMapper();
-    mapper.initializeMapper();
+    final ResourceMapper mapper = getUserResourceMapper();
 
     final Entry entry = new Entry("cn=test", mapper.toLDAPAttributes(user));
     assertTrue(entry.hasAttributeValue("uid", "bjensen"));
@@ -146,8 +145,7 @@ public class UserResourceMapperTestCase
     final Unmarshaller unmarshaller = context.unmarshaller();
     final SCIMObject user = unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
 
-    final UserResourceMapper mapper = new UserResourceMapper();
-    mapper.initializeMapper();
+    final ResourceMapper mapper = getUserResourceMapper();
 
     final Entry entry = new Entry("cn=test", mapper.toLDAPAttributes(user));
     assertTrue(entry.hasAttributeValue("uid", "user.0"));
@@ -191,8 +189,7 @@ public class UserResourceMapperTestCase
             new Attribute("telephoneNumber", "+1 319 805 3070"),
             new Attribute("homePhone", "+1 003 490 8631"));
 
-    final UserResourceMapper mapper = new UserResourceMapper();
-    mapper.initializeMapper();
+    final ResourceMapper mapper = getUserResourceMapper();
 
     List<SCIMAttribute> attributes =
         mapper.toSCIMAttributes(RESOURCE_NAME_USER, entry,
@@ -209,5 +206,29 @@ public class UserResourceMapperTestCase
     final Marshaller marshaller = context.marshaller();
     final Writer writer = new StringWriter();
     marshaller.marshal(object, writer);
+  }
+
+
+
+  /**
+   * Get a User resource mapper.
+   *
+   * @return  A User resource mapper.
+   * @throws Exception  If the resource mapper could not be created.
+   */
+  private ResourceMapper getUserResourceMapper()
+      throws Exception
+  {
+    List<ResourceMapper> mappers = ConfigurableResourceMapper.parse(
+        getResourceFile("/com/unboundid/scim/ldap/resources.xml"));
+    for (final ResourceMapper m : mappers)
+    {
+      if (m.getResourceName().equals(RESOURCE_NAME_USER))
+      {
+        return m;
+      }
+    }
+
+    throw new RuntimeException("No User resource mapper found");
   }
 }

@@ -49,8 +49,10 @@ import static com.unboundid.scim.ri.RIMessages.*;
  *       server should listen for client HTTP connections.  If this is not
  *       provided, then a free port will be automatically chosen for use by the
  *       server.</LI>
+ *   <LI>"--useResourcesFile {path}" -- specifies the path to an XML file
+ *       containing resource definitions to use for the SCIM server.</LI>
  *   <LI>"-S {path}" or "--useSchemaFile {path}" -- specifies the path to a file
- *       or directory containing resource schema definitions to use for the
+ *       or directory containing XML schema definitions to use for the
  *       SCIM server.  If the specified path represents a file, then it must be
  *       an XML file containing a valid XML schema.  If the path is a
  *       directory, then its files will be processed in lexicographic order by
@@ -104,6 +106,10 @@ public class InMemoryServerTool
   // The argument used to specify the path to a directory containing LDAP
   // schema definitions.
   private FileArgument useLdapSchemaFileArgument;
+
+  // The argument used to specify the path to a directory containing XML
+  // resource definitions.
+  private FileArgument useResourcesFileArgument;
 
   // The argument used to specify the path to a directory containing XML
   // schema definitions.
@@ -189,6 +195,7 @@ public class InMemoryServerTool
     accessLogFileArgument          = null;
     ldapAccessLogFileArgument      = null;
     ldifFileArgument               = null;
+    useResourcesFileArgument       = null;
     useSchemaFileArgument          = null;
     useLdapSchemaFileArgument      = null;
     portArgument                   = null;
@@ -235,7 +242,14 @@ public class InMemoryServerTool
       throw new ArgumentException(e.getExceptionMessage());
     }
 
-    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", true, 1,
+    useResourcesFileArgument = new FileArgument(
+        null, "useResourcesFile", true, 1,
+        INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
+        INFO_MEM_SERVER_TOOL_ARG_DESC_USE_RESOURCES_FILE.get(), true, true,
+        false, false);
+    parser.addArgument(useResourcesFileArgument);
+
+    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
          INFO_MEM_SERVER_TOOL_ARG_DESC_USE_SCHEMA_FILE.get(), true, true, false,
          false);
@@ -349,9 +363,8 @@ public class InMemoryServerTool
     // Create the SCIM server instance using the provided configuration, but
     // don't start it yet.
     final String baseURI = baseURIArgument.getValue();
-    final DN baseDN = baseDNArgument.getValue();
     final SCIMBackend backend =
-        new InMemoryLDAPBackend(baseDN.toString(), directoryServer);
+        new InMemoryLDAPBackend(directoryServer);
 
     scimServer = SCIMServer.getInstance();
     try
@@ -403,6 +416,8 @@ public class InMemoryServerTool
     }
 
     serverConfig.setListenPort(listenPort);
+
+    serverConfig.setResourcesFile(useResourcesFileArgument.getValue());
 
     if (useSchemaFileArgument.isPresent())
     {
@@ -554,13 +569,13 @@ public class InMemoryServerTool
 
     final String[] example1Args =
     {
-        "--useSchemaFile", "resource/schema"
+        "--useResourcesFile", "config/resources.xml"
     };
     exampleUsages.put(example1Args, INFO_MEM_SERVER_TOOL_EXAMPLE_1.get());
 
     final String[] example2Args =
     {
-      "--useSchemaFile", "resource/schema",
+      "--useResourcesFile", "config/resources.xml",
       "--baseURI", "scim",
       "--port", "8080",
       "--ldifFile", "test.ldif"

@@ -5,17 +5,18 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
-import com.unboundid.scim.config.Schema;
-import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.config.AttributeDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
+import com.unboundid.scim.sdk.SimpleValue;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,17 +31,9 @@ import java.util.Set;
 public class SimpleAttributeMapper extends AttributeMapper
 {
   /**
-   * The LDAP attribute that is mapped by this attribute mapper.
+   * The attribute transformation to be applied by this attribute mapper.
    */
-  private final String ldapAttributeType;
-
-
-
-  /**
-   * The SCIM schema for the SCIM attribute type that is mapped by this
-   * attribute mapper.
-   */
-  private final Schema schema;
+  private final AttributeTransformation attributeTransformation;
 
 
 
@@ -49,17 +42,14 @@ public class SimpleAttributeMapper extends AttributeMapper
    *
    * @param scimAttributeType  The SCIM attribute type that is mapped by this
    *                           attribute mapper.
-   * @param ldapAttributeType  The LDAP attribute that is mapped by this
-   *                           attribute mapper.
+   * @param transformation     The attribute transformation to be applied
+   *                           by this attribute mapper.
    */
   public SimpleAttributeMapper(final SCIMAttributeType scimAttributeType,
-                               final String ldapAttributeType)
+                               final AttributeTransformation transformation)
   {
     super(scimAttributeType);
-    this.ldapAttributeType = ldapAttributeType;
-
-    final SchemaManager schemaManager = SchemaManager.instance();
-    schema = schemaManager.getSchema(scimAttributeType.getSchema());
+    this.attributeTransformation = transformation;
   }
 
 
@@ -67,7 +57,7 @@ public class SimpleAttributeMapper extends AttributeMapper
   @Override
   public Set<String> getLDAPAttributeTypes()
   {
-    return Collections.singleton(ldapAttributeType);
+    return Collections.singleton(attributeTransformation.getLdapAttribute());
   }
 
 
@@ -75,8 +65,19 @@ public class SimpleAttributeMapper extends AttributeMapper
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
   {
+    final String ldapAttributeType = attributeTransformation.getLdapAttribute();
     final SCIMFilterType filterType = filter.getFilterType();
-    final String filterValue = filter.getFilterValue();
+    final String filterValue;
+    if (filter.getFilterValue() != null)
+    {
+      filterValue =
+          attributeTransformation.getTransformation().toLDAPFilterValue(
+              filter.getFilterValue());
+    }
+    else
+    {
+      filterValue = null;
+    }
 
     switch (filterType)
     {
@@ -131,7 +132,7 @@ public class SimpleAttributeMapper extends AttributeMapper
   @Override
   public String toLDAPSortAttributeType()
   {
-    return ldapAttributeType;
+    return attributeTransformation.getLdapAttribute();
   }
 
 
@@ -140,14 +141,18 @@ public class SimpleAttributeMapper extends AttributeMapper
   public void toLDAPAttributes(final SCIMObject scimObject,
                                final Collection<Attribute> attributes)
   {
+    final String ldapAttributeType = attributeTransformation.getLdapAttribute();
     final SCIMAttribute scimAttribute =
         scimObject.getAttribute(getSCIMAttributeType().getSchema(),
                                 getSCIMAttributeType().getName());
     if (scimAttribute != null)
     {
-      attributes.add(
-          new Attribute(ldapAttributeType,
-                        scimAttribute.getSingularValue().getStringValue()));
+      final AttributeDescriptor descriptor =
+          getSchema().getAttribute(getSCIMAttributeType().getName());
+      final ASN1OctetString ldapValue =
+          attributeTransformation.getTransformation().toLDAPValue(
+              descriptor, scimAttribute.getSingularValue().getValue());
+      attributes.add(new Attribute(ldapAttributeType, ldapValue));
     }
   }
 
@@ -156,12 +161,21 @@ public class SimpleAttributeMapper extends AttributeMapper
   @Override
   public SCIMAttribute toSCIMAttribute(final Entry entry)
   {
-    final String value = entry.getAttributeValue(ldapAttributeType);
-    if (value != null)
+    final String ldapAttributeType = attributeTransformation.getLdapAttribute();
+    final Attribute a = entry.getAttribute(ldapAttributeType);
+    if (a != null)
     {
-      return SCIMAttribute.createSingularAttribute(
-          schema.getAttribute(getSCIMAttributeType().getName()),
-          SCIMAttributeValue.createStringValue(value));
+      final ASN1OctetString[] rawValues = a.getRawValues();
+      if (rawValues.length > 0)
+      {
+        final AttributeDescriptor descriptor =
+            getSchema().getAttribute(getSCIMAttributeType().getName());
+        final SimpleValue simpleValue =
+            attributeTransformation.getTransformation().toSCIMValue(
+                descriptor, rawValues[0]);
+        return SCIMAttribute.createSingularAttribute(
+            descriptor, new SCIMAttributeValue(simpleValue));
+      }
     }
 
     return null;

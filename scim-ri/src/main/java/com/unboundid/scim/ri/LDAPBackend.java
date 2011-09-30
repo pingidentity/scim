@@ -75,20 +75,10 @@ public abstract class LDAPBackend
   extends SCIMBackend
 {
   /**
-   * The base DN of the LDAP server.
-   */
-  private String baseDN;
-
-
-
-  /**
    * Create a new instance of an LDAP backend.
-   *
-   * @param baseDN  The base DN of the LDAP server.
    */
-  public LDAPBackend(final String baseDN)
+  public LDAPBackend()
   {
-    this.baseDN = baseDN;
   }
 
 
@@ -235,7 +225,7 @@ public abstract class LDAPBackend
     final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper resourceMapper =
         scimServer.getQueryResourceMapper(request.getEndPoint());
-    if (resourceMapper == null)
+    if (resourceMapper == null || !resourceMapper.supportsQuery())
     {
       return createErrorResponse(
           HttpStatus.FORBIDDEN_403,
@@ -291,8 +281,8 @@ public abstract class LDAPBackend
         requestAttributeSet.toArray(requestAttributes);
 
         searchRequest =
-            new SearchRequest(resultListener, baseDN, SearchScope.SUB,
-                              filter, requestAttributes);
+            new SearchRequest(resultListener, resourceMapper.getSearchBaseDN(),
+                              SearchScope.SUB, filter, requestAttributes);
       }
 
       final SortParameters sortParameters = request.getSortParameters();
@@ -397,7 +387,7 @@ public abstract class LDAPBackend
       {
         if (entry == null && m.supportsCreate())
         {
-          entry = m.toLDAPEntry(request.getResourceObject(), baseDN);
+          entry = m.toLDAPEntry(request.getResourceObject());
         }
         else
         {

@@ -33,14 +33,12 @@ public class InMemoryLDAPBackend
   /**
    * Create a new in-memory LDAP backend.
    *
-   * @param baseDN      The base DN for the LDAP server.
    * @param ldapServer  An in-memory LDAP server. The server will be shut down
    *                    by the backend when the backend is taken out of service.
    */
-  public InMemoryLDAPBackend(final String baseDN,
-                             final InMemoryDirectoryServer ldapServer)
+  public InMemoryLDAPBackend(final InMemoryDirectoryServer ldapServer)
   {
-    super(baseDN);
+    super();
     this.ldapServer = ldapServer;
   }
 

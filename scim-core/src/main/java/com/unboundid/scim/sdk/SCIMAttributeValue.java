@@ -46,7 +46,7 @@ public final class SCIMAttributeValue
    *
    * @param value  The simple value.
    */
-  private SCIMAttributeValue(final SimpleValue value)
+  public SCIMAttributeValue(final SimpleValue value)
   {
     this.value      = value;
     this.attributes = null;
@@ -238,6 +238,20 @@ public final class SCIMAttributeValue
   public boolean isComplex()
   {
     return this.value == null;
+  }
+
+
+
+  /**
+   * Retrieves the simple value, or {@code null} if the attribute value is
+   * complex.
+   *
+   * @return  The simple value, or {@code null} if the attribute value is
+   * complex.
+   */
+  public SimpleValue getValue()
+  {
+    return value;
   }
 
 

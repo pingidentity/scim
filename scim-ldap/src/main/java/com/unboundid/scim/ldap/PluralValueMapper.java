@@ -5,7 +5,11 @@
 
 package com.unboundid.scim.ldap;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 
@@ -22,9 +26,10 @@ public class PluralValueMapper
   private final String typeValue;
 
   /**
-   * The value mappers for each sub-attribute.
+   * The set of sub-attribute transformations indexed by the name of the
+   * sub-attribute.
    */
-  private final List<ValueMapper> valueMappers;
+  private final Map<String, SubAttributeTransformation> map;
 
 
 
@@ -34,13 +39,68 @@ public class PluralValueMapper
    * @param typeValue          The value of the "type" sub-attribute for SCIM
    *                           attribute values that are mapped by this
    *                           plural value mapper.
-   * @param valueMappers       The value mappers for each sub-attribute.
+   * @param transformations    The set of sub-attribute transformations.
    */
-  public PluralValueMapper(final String typeValue,
-                           final List<ValueMapper> valueMappers)
+  public PluralValueMapper(
+      final String typeValue,
+      final List<SubAttributeTransformation> transformations)
   {
     this.typeValue    = typeValue;
-    this.valueMappers = valueMappers;
+    map = new HashMap<String, SubAttributeTransformation>();
+    for (final SubAttributeTransformation t : transformations)
+    {
+      map.put(t.getSubAttribute(), t);
+    }
+  }
+
+
+
+  /**
+   * Create a plural value mapper from the JAXB type representation of the
+   * plural type.
+   *
+   * @param pluralType  The JAXB type defining the mapping.
+   *
+   * @return  A new plural value mapper, or {@code null} if there are no
+   *          mappings defined for the plural type.
+   */
+  public static PluralValueMapper create(final PluralType pluralType)
+  {
+    if (pluralType.getSubMapping().isEmpty())
+    {
+      return null;
+    }
+
+    final String typeValue = pluralType.getName();
+    final List<SubAttributeTransformation> transformations =
+        new ArrayList<SubAttributeTransformation>();
+    for (final SubAttributeMapping m : pluralType.getSubMapping())
+    {
+      transformations.add(SubAttributeTransformation.create(m));
+    }
+
+    return new PluralValueMapper(typeValue, transformations);
+  }
+
+
+
+  /**
+   * Create a plural value mapper from the JAXB type representation of the
+   * default mapping.
+   *
+   * @param mapping  The JAXB type defining the default mapping.
+   *
+   * @return  A new plural value mapper.
+   */
+  public static PluralValueMapper create(final AttributeMapping mapping)
+  {
+    final String typeValue = null;
+    final List<SubAttributeTransformation> transformations =
+        new ArrayList<SubAttributeTransformation>();
+    final AttributeTransformation at = AttributeTransformation.create(mapping);
+    transformations.add(new SubAttributeTransformation("value", at));
+
+    return new PluralValueMapper(typeValue, transformations);
   }
 
 
@@ -60,12 +120,28 @@ public class PluralValueMapper
 
 
   /**
-   * Retrieve the value mappers for each sub-attribute.
+   * Retrieve the set of sub-attribute transformations.
    *
-   * @return  The value mappers for each sub-attribute.
+   * @return  The set of sub-attribute transformations.
    */
-  public List<ValueMapper> getValueMappers()
+  public Collection<SubAttributeTransformation> getTransformations()
   {
-    return valueMappers;
+    return map.values();
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString()
+  {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("PluralValueMapper");
+    sb.append("{typeValue='").append(typeValue).append('\'');
+    sb.append(", map=").append(map);
+    sb.append('}');
+    return sb.toString();
   }
 }

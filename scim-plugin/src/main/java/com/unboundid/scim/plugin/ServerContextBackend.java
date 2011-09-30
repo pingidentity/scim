@@ -36,13 +36,11 @@ public class ServerContextBackend extends LDAPBackend
   /**
    * Create a new external LDAP backend.
    *
-   * @param baseDN         The base DN for entries representing SCIM resources.
    * @param serverContext  The server context provided by the extension.
    */
-  public ServerContextBackend(final String baseDN,
-                              final ServerContext serverContext)
+  public ServerContextBackend(final ServerContext serverContext)
   {
-    super(baseDN);
+    super();
     this.serverContext = serverContext;
   }
 

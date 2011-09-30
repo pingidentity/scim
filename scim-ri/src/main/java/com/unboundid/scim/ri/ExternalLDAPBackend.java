@@ -34,7 +34,7 @@ public class ExternalLDAPBackend extends LDAPBackend
    */
   public ExternalLDAPBackend(final LDAPExternalServerConfig config)
   {
-    super(config.getDsBaseDN());
+    super();
     this.ldapExternalServer = new LDAPExternalServer(config);
   }
 
