@@ -12,6 +12,52 @@
 
     <build>
         <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.9</version>
+            <configuration>
+              <skip>true</skip>
+
+              <debugForkedProcess>${debugForkedProcess}</debugForkedProcess>
+        <!-- Setting forkMode to none keeps the surefire tests from continuing to
+                   run if you ^C the tests, but it also means that debugForkedProcess
+                   cannot be used to debug the tests.
+              <forkMode>none</forkMode> -->
+
+              <environmentVariables>
+                <TERM>xterm</TERM>
+              </environmentVariables>
+              <systemPropertyVariables>
+                <!-- Eventually, this is how we will pass in the desired server version for the tests.
+                <serverInstanceVersion>3.2.0.0-GA</serverInstanceVersion>
+                -->
+                <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
+                <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
+              </systemPropertyVariables>
+
+              <properties>
+                <property>
+                  <name>listener</name>
+                  <value>com.unboundid.directory.tests.standalone.TestListener</value>
+                </property>
+              </properties>
+
+            </configuration>
+
+            <executions>
+              <execution>
+                <id>surefire-it</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>test</goal>
+                </goals>
+                <configuration>
+                  <skip>false</skip>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
     </build>
 
@@ -22,7 +68,7 @@
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <!-- This shouldn't depend on the RI... -->
-         <dependency>
+        <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-ri</artifactId>
             <version>1.0.0-SNAPSHOT</version>
@@ -32,6 +78,12 @@
             <artifactId>server-sdk</artifactId>
             <version>3.1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.unboundid.directory.testtools</groupId>
+            <artifactId>standalone-ds-test-harness</artifactId>
+            <version>0.5-SNAPSHOT</version>
+            <scope>test</scope>
+      </dependency>
     </dependencies>
 
 </project>
