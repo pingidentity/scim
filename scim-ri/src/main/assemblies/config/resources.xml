@@ -24,7 +24,7 @@
      ! LDAP for User entries.
      !-->
     <LDAPSearch>
-      <!-- The LDAP search base DNs when querying for resources -->
+      <!-- The LDAP search base DN when querying for resources -->
       <baseDN>dc=example,dc=com</baseDN>
       <!-- An LDAP filter to identify LDAP entries representing users. -->
       <filter>(objectClass=inetOrgPerson)</filter>

@@ -71,7 +71,7 @@
                   minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
     <xs:attribute name="dataType" type="DataType" use="required"/>
-    <xs:attribute name="caseExact" type="xs:boolean"/>
+    <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
   </xs:complexType>
 
   <xs:complexType name="ComplexAttributeDefinition">
@@ -90,6 +90,7 @@
     </xs:sequence>
     <xs:attribute name="tag" type="xs:string" use="required"/>
     <xs:attribute name="dataType" type="DataType" use="required"/>
+    <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
   </xs:complexType>
 
   <xs:complexType name="ComplexPluralAttributeDefinition">
@@ -112,7 +113,7 @@
     <xs:attribute name="readOnly" type="xs:boolean" default="false"/>
     <xs:attribute name="required" type="xs:boolean" default="false"/>
     <xs:attribute name="dataType" type="DataType" use="required"/>
-    <xs:attribute name="caseExact" type="xs:boolean"/>
+    <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
   </xs:complexType>
 
   <xs:complexType name="PluralType">
