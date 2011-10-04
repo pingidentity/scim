@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.client;
+package com.unboundid.scim.ri.client;
 
 
 
@@ -35,10 +35,17 @@ public class ClientTest
   public static void main(final String[] args)
       throws Exception
   {
-    final String host = System.getProperty("test.host");
-    final String port = System.getProperty("test.port");
-    final String userName = System.getProperty("test.username");
-    final String password = System.getProperty("test.password");
+    if(args.length < 4 || args.length > 4)
+    {
+      System.out.print("Usage: client-test [host] [port] [username] " +
+          "[password]");
+      System.exit(1);
+    }
+
+    final String host = args[0];
+    final String port = args[1];
+    final String userName = args[2];
+    final String password = args[3];
 
     final Client client =
         new Client(userName, password, host, Integer.parseInt(port));

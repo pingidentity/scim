@@ -7,6 +7,7 @@ package com.unboundid.scim.client;
 import com.unboundid.scim.schema.Name;
 import com.unboundid.scim.schema.PluralAttribute;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.ri.client.Client;
 import com.unboundid.scim.ri.SCIMRITestCase;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientResponse;

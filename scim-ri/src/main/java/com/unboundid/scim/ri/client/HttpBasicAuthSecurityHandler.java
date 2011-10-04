@@ -2,15 +2,16 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.client;
+package com.unboundid.scim.ri.client;
 
-import com.unboundid.util.Base64;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientRequest;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.handlers.ClientHandler;
 import org.apache.wink.client.handlers.HandlerContext;
 import org.apache.wink.common.http.HttpStatus;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * This class provides HTTP Basic Authentication handling.
@@ -27,7 +28,8 @@ public class HttpBasicAuthSecurityHandler implements ClientHandler {
   public HttpBasicAuthSecurityHandler(final String username,
     final String password) {
     this.username = username;
-    String encoded = Base64.encode(username + ":" + password);
+    String encoded = DatatypeConverter.printBase64Binary(
+        (username + ":" + password).getBytes());
     this.encodedCredentials = "Basic " + encoded;
   }
 

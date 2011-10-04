@@ -4,11 +4,12 @@
         xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
     <formats>
         <format>zip</format>
+        <format>dir</format>
     </formats>
     <fileSets>
         <fileSet>
-            <outputDirectory />
-            <directory>${project.basedir}/src/main/assemblies</directory>
+            <outputDirectory>server</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/server</directory>
             <includes>
                 <include>*.txt</include>
                 <include>ldif/*</include>
@@ -16,16 +17,16 @@
             </includes>
         </fileSet>
         <fileSet>
-            <outputDirectory>tools</outputDirectory>
-            <directory>${project.basedir}/src/main/assemblies/tools</directory>
+            <outputDirectory>server/tools</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/server/tools</directory>
             <includes>
                 <include>*.bat</include>
             </includes>
             <lineEnding>crlf</lineEnding>
         </fileSet>
         <fileSet>
-            <outputDirectory>tools</outputDirectory>
-            <directory>${project.basedir}/src/main/assemblies/tools</directory>
+            <outputDirectory>server/tools</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/server/tools</directory>
             <excludes>
                 <exclude>*.bat</exclude>
             </excludes>
@@ -33,23 +34,37 @@
             <fileMode>755</fileMode>
         </fileSet>
         <fileSet>
-            <outputDirectory />
+            <outputDirectory>server</outputDirectory>
             <directory>${project.basedir}/../scim-core/src/main/resources/com/unboundid/scim</directory>
             <includes>
                 <include>schema/*.xsd</include>
             </includes>
         </fileSet>
         <fileSet>
-            <outputDirectory>lib</outputDirectory>
+            <outputDirectory>client</outputDirectory>
             <directory>${project.basedir}/../scim-core/src/main/resources/com/unboundid/scim</directory>
             <includes>
                 <include>schema/*.xsd</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <outputDirectory>client</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/client</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>client/src/main/java</outputDirectory>
+            <directory>${project.basedir}/src/main/java</directory>
+            <includes>
+                <include>com/unboundid/scim/ri/client/*.java</include>
+            </includes>
+        </fileSet>
     </fileSets>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>lib</outputDirectory>
+            <outputDirectory>server/lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
         </dependencySet>
     </dependencySets>

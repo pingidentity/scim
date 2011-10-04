@@ -43,7 +43,6 @@
         <module>scim-core</module>
         <module>scim-ldap</module>
         <module>scim-ri</module>
-        <module>scim-client</module>
         <module>scim-plugin</module>
     </modules>
 

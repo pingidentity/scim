@@ -341,7 +341,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     ssConfig.setListenPort(ssPort);
     ssConfig.setMaxThreads(16);
     ssConfig.setResourcesFile(
-        getFile("src/main/assemblies/config/resources.xml"));
+        getFile("src/main/assemblies/server/config/resources.xml"));
 
     final LDAPExternalServerConfig ldapConfig =
         new LDAPExternalServerConfig();

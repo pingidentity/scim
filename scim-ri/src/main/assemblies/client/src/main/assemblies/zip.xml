@@ -4,21 +4,31 @@
         xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
     <formats>
         <format>zip</format>
+        <format>dir</format>
     </formats>
     <fileSets>
         <fileSet>
-            <outputDirectory />
-            <directory>${project.basedir}/src/main/assemblies</directory>
+            <outputDirectory>bin</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/bin</directory>
             <includes>
-                <include>*.txt</include>
+                <include>*.bat</include>
             </includes>
+            <lineEnding>crlf</lineEnding>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>bin</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/bin</directory>
+            <excludes>
+                <exclude>*.bat</exclude>
+            </excludes>
+            <lineEnding>lf</lineEnding>
+            <fileMode>755</fileMode>
         </fileSet>
     </fileSets>
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
         </dependencySet>
     </dependencySets>
 </assembly>

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.client;
+package com.unboundid.scim.ri.client;
 
 import com.unboundid.scim.schema.ObjectFactory;
 import com.unboundid.scim.schema.User;

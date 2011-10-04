@@ -9,7 +9,7 @@
     </parent>
     <artifactId>scim-ri</artifactId>
     <packaging>jar</packaging>
-    <name>UnboundID SCIM Reference Implementation Server</name>
+    <name>UnboundID SCIM Reference Implementation</name>
 
     <properties>
         <ds.host>127.0.0.1</ds.host>
@@ -154,12 +154,6 @@
             <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
             <classifier>tests</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.unboundid.product.scim</groupId>
-            <artifactId>scim-client</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
