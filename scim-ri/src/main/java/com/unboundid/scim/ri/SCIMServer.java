@@ -401,16 +401,24 @@ public class SCIMServer
     {
       server.stop();
 
+      System.out.println("Jetty server stopped");
+
       try
       {
         server.join();
+
+        System.out.println("Jetty server joined");
+
       }
       catch (InterruptedException e)
       {
         // No action required.
+        System.out.println("Jetty server join was interrupted");
+
       }
 
       server.destroy();
+      System.out.println("Jetty server destroyed");
       server = null;
     }
 

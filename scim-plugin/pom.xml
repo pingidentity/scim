@@ -12,6 +12,9 @@
 
     <build>
         <plugins>
+          <!-- Run the tests like this, setting the dsZipPath environment variable:
+               dsZipPath=ds-3.2.0.0-GA-image.zip mvn install
+            -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -34,6 +37,7 @@
                 -->
                 <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                 <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
+                <pluginZipFile>${project.build.directory}/${project.build.finalName}.zip</pluginZipFile>
               </systemPropertyVariables>
 
               <properties>

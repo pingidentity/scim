@@ -244,6 +244,28 @@ public final class SCIMPlugin
         new ServerContextBackend(serverContext);
     scimServer.registerBackend(baseUri, scimBackend);
 
+    if (serverContext.isRunning())
+    {
+      // This is needed to start listening if the plugin was dynamically added
+      // after the server was started (e.g., via dsconfig).
+      try
+      {
+        scimServer.startListening();
+        serverContext.logMessage(
+            LogSeverity.NOTICE,
+            "The server is listening for SCIM requests on port " +
+            scimServer.getListenPort());
+      }
+      catch (final Exception e)
+      {
+        serverContext.debugCaught(e);
+        throw new LDAPException(
+            ResultCode.OTHER,
+            "An error occurred while attempting to start listening for " +
+            "SCIM requests:" + StaticUtils.getExceptionMessage(e), e);
+      }
+    }
+
     serverContext.debugInfo("Finished SCIM plugin initialization");
   }
 
@@ -451,7 +473,14 @@ public final class SCIMPlugin
   @Override()
   public void finalizePlugin()
   {
-    // No finalization is required.
+    try
+    {
+      SCIMServer.getInstance().shutdown();
+    }
+    catch (Exception e)
+    {
+      serverContext.debugCaught(e);
+    }
   }
 
 
