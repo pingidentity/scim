@@ -19,12 +19,13 @@
         <repository>
             <id>releases</id>
             <name>Engineering Releases Repository</name>
-            <url>http://hudson:8081/nexus/content/repositories/releases</url>
+            <url>http://maven-eng:8080/nexus/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
             <name>Engineering Snapshots Repository</name>
-            <url>http://hudson:8081/nexus/content/repositories/snapshots</url>
+            <url>http://maven-eng:8080/nexus/content/repositories/snapshots</url>
+            <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
 
