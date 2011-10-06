@@ -10,6 +10,7 @@ import com.unboundid.scim.schema.ObjectFactory;
 import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.Debug;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -50,6 +51,7 @@ public class XMLContext
     }
     catch (JAXBException e)
     {
+      Debug.debugException(e);
       throw new RuntimeException("Cannot create JAXB contexts for XML", e);
     }
   }
@@ -89,6 +91,7 @@ public class XMLContext
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new IOException("Error writing XML to a character stream", e);
     }
   }
@@ -145,6 +148,7 @@ public class XMLContext
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new IOException("Error reading a response from an XML string", e);
     }
   }

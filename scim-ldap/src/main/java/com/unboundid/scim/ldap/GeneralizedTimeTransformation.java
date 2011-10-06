@@ -7,6 +7,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;
 import com.unboundid.util.StaticUtils;
@@ -40,6 +41,7 @@ public class GeneralizedTimeTransformation extends Transformation
         }
         catch (ParseException e)
         {
+          Debug.debugException(e);
           throw new RuntimeException(
               "Error in transformation from LDAP generalized time value: " +
               e.getMessage());

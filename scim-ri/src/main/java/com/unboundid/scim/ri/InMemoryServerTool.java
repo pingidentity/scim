@@ -11,8 +11,9 @@ import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.schema.Schema;
+import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.util.CommandLineTool;
-import com.unboundid.util.Debug;
 import com.unboundid.util.MinimalLogFormatter;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.args.ArgumentException;
@@ -21,7 +22,6 @@ import com.unboundid.util.args.DNArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
-import com.unboundid.scim.sdk.SCIMBackend;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -239,6 +239,7 @@ public class InMemoryServerTool
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       throw new ArgumentException(e.getExceptionMessage());
     }
 
@@ -317,6 +318,7 @@ public class InMemoryServerTool
     }
     catch (final LDAPException le)
     {
+      Debug.debugException(le);
       err(ERR_MEM_SERVER_TOOL_ERROR_INITIALIZING_CONFIG.get(
           StaticUtils.getExceptionMessage(le)));
       return le.getResultCode();
@@ -331,6 +333,7 @@ public class InMemoryServerTool
     }
     catch (final LDAPException le)
     {
+      Debug.debugException(le);
       err(ERR_MEM_SERVER_TOOL_ERROR_CREATING_SERVER_INSTANCE.get(
           StaticUtils.getExceptionMessage(le)));
       return le.getResultCode();
@@ -350,6 +353,7 @@ public class InMemoryServerTool
       }
       catch (final LDAPException le)
       {
+        Debug.debugException(le);
         err(ERR_MEM_SERVER_TOOL_ERROR_POPULATING_SERVER_INSTANCE.get(
              ldifFile.getAbsolutePath(), StaticUtils.getExceptionMessage(le)));
         return le.getResultCode();
@@ -373,6 +377,7 @@ public class InMemoryServerTool
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       err(ERR_MEM_SERVER_TOOL_ERROR_INITIALIZING_SERVER.get(
           StaticUtils.getExceptionMessage(e)));
       return ResultCode.LOCAL_ERROR;
@@ -387,6 +392,7 @@ public class InMemoryServerTool
     }
     catch (final Exception e)
     {
+      Debug.debugException(e);
       err(ERR_MEM_SERVER_TOOL_ERROR_STARTING_SERVER.get(
           StaticUtils.getExceptionMessage(e)));
       return ResultCode.LOCAL_ERROR;

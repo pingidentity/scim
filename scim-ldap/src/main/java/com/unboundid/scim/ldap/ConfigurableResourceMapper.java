@@ -13,6 +13,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -121,6 +122,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       throw new IllegalArgumentException(e.getExceptionMessage());
     }
 
@@ -521,6 +523,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
       }
       catch (LDAPException e)
       {
+        Debug.debugException(e);
         throw new RuntimeException(e.getExceptionMessage());
       }
     }

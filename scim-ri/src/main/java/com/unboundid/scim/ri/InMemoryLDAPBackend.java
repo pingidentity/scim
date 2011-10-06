@@ -14,6 +14,7 @@ import com.unboundid.ldap.sdk.PLAINBindRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMRequest;
 
 
@@ -79,7 +80,7 @@ public class InMemoryLDAPBackend
     }
     catch (final Exception e)
     {
-      // TODO log the failure.
+      Debug.debugException(e);
       return false;
     }
   }

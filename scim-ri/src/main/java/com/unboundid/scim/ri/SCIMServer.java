@@ -5,6 +5,7 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.config.SchemaManager;
@@ -407,6 +408,7 @@ public class SCIMServer
       }
       catch (InterruptedException e)
       {
+        Debug.debugException(e);
         // No action required.
       }
 

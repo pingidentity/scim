@@ -6,6 +6,7 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.scim.marshal.json.JSONContext;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ScimURI;
 import com.unboundid.scim.sdk.SortParameters;
@@ -485,6 +486,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 
@@ -581,6 +583,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 
@@ -729,6 +732,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 
@@ -880,6 +884,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 
@@ -990,6 +995,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 
@@ -1073,6 +1079,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 
@@ -1239,6 +1246,7 @@ public class SCIMClient
     }
     catch (InterruptedException e)
     {
+      Debug.debugException(e);
       throw new IOException("HTTP exchange interrupted", e);
     }
 

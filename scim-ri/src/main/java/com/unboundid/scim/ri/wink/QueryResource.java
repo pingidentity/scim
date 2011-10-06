@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.ri.wink;
 
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.SCIMBackend;
@@ -300,6 +301,7 @@ public class QueryResource extends AbstractDynamicResource
         }
         catch (Exception e)
         {
+          Debug.debugException(e);
           throw new WebApplicationException(
               e, Response.Status.INTERNAL_SERVER_ERROR);
         }

@@ -8,6 +8,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.util.StaticUtils;
 
 import java.util.ArrayList;
@@ -517,6 +518,7 @@ class ConstructedValue
       }
       catch (Exception e)
       {
+        Debug.debugException(e);
         throw new IllegalArgumentException(
             String.format("'%s' is not a valid regular expression: '%s'",
                           regex, StaticUtils.getExceptionMessage(e)), e);
@@ -554,6 +556,7 @@ class ConstructedValue
       }
       catch (Exception e)
       {
+        Debug.debugException(e);
         // We might get
         throw new RuntimeException(
             String.format(

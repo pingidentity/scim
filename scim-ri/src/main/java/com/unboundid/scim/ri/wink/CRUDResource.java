@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.ri.wink;
 
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
@@ -751,6 +752,7 @@ public class CRUDResource extends AbstractDynamicResource
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new WebApplicationException(
           e, Response.Status.INTERNAL_SERVER_ERROR);
     }
@@ -828,6 +830,7 @@ public class CRUDResource extends AbstractDynamicResource
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new WebApplicationException(
           e, Response.Status.INTERNAL_SERVER_ERROR);
     }
@@ -931,6 +934,7 @@ public class CRUDResource extends AbstractDynamicResource
         }
         catch (Exception e)
         {
+          Debug.debugException(e);
           throw new WebApplicationException(
               e, Response.Status.INTERNAL_SERVER_ERROR);
         }

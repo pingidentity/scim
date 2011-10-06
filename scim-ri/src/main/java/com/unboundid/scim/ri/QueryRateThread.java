@@ -7,7 +7,7 @@ package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.schema.Response;
-import com.unboundid.util.Debug;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.util.FixedRateBarrier;
 import com.unboundid.util.ValuePattern;
 

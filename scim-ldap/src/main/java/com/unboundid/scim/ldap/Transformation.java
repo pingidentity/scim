@@ -7,6 +7,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;
 
@@ -40,6 +41,7 @@ public abstract class Transformation
     }
     catch (ClassNotFoundException e)
     {
+      Debug.debugException(e);
       throw new IllegalArgumentException(
           "Class '" + className + "' not found", e);
     }
@@ -51,6 +53,7 @@ public abstract class Transformation
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new IllegalArgumentException(
           "Cannot create instance of class '" + className + "'", e);
     }

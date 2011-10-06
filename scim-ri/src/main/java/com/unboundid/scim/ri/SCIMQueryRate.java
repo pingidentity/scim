@@ -6,9 +6,9 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.util.ColumnFormatter;
 import com.unboundid.util.CommandLineTool;
-import com.unboundid.util.Debug;
 import com.unboundid.util.FixedRateBarrier;
 import com.unboundid.util.FormattableColumn;
 import com.unboundid.util.HorizontalAlignment;
@@ -456,6 +456,7 @@ public class SCIMQueryRate
     }
     catch (ParseException pe)
     {
+      Debug.debugException(pe);
       err("Unable to parse the filter pattern:  ", pe.getMessage());
       return ResultCode.PARAM_ERROR;
     }
@@ -586,6 +587,7 @@ public class SCIMQueryRate
       }
       catch (IOException e)
       {
+        Debug.debugException(e);
         err("Unable to set basic authentication:  ", e.getMessage());
         return ResultCode.LOCAL_ERROR;
       }
@@ -597,6 +599,7 @@ public class SCIMQueryRate
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       err("Unable to start the SCIM client:  ", e.getMessage());
       return ResultCode.LOCAL_ERROR;
     }
@@ -611,6 +614,7 @@ public class SCIMQueryRate
     }
     catch (IOException e)
     {
+      Debug.debugException(e);
       err("Unable to connect to the server:  ", e.getMessage());
       return ResultCode.CONNECT_ERROR;
     }
@@ -642,7 +646,11 @@ public class SCIMQueryRate
     try
     {
       barrier.await();
-    } catch (Exception e) {}
+    }
+    catch (Exception e)
+    {
+      Debug.debugException(e);
+    }
     long overallStartTime = System.nanoTime();
     long nextIntervalStartTime = System.currentTimeMillis() + intervalMillis;
 
@@ -664,7 +672,11 @@ public class SCIMQueryRate
         {
           Thread.sleep(sleepTimeMillis);
         }
-      } catch (Exception e) {}
+      }
+      catch (Exception e)
+      {
+        Debug.debugException(e);
+      }
 
       final long endTime          = System.nanoTime();
       final long intervalDuration = endTime - lastEndTime;

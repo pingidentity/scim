@@ -110,6 +110,7 @@ public class FilterParser
     }
     catch (final Exception e)
     {
+      Debug.debugException(e);
       final String msg = String.format(
           "Expected an attribute reference at position %d: %s",
           markPos, e.getMessage());
@@ -480,6 +481,7 @@ public class FilterParser
         }
         catch (NumberFormatException e)
         {
+          Debug.debugException(e);
           final String msg = String.format(
               "Invalid filter value '%s' at position %d. Expected a string " +
               "in quotes, a number or a boolean value (true,false)",

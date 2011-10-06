@@ -29,6 +29,7 @@ import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
 import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.SCIMResponse;
@@ -63,6 +64,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 
 // TODO Throw checked exceptions instead of runtime exceptions
@@ -213,6 +215,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       throw new RuntimeException(e);
     }
   }
@@ -350,6 +353,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       throw new RuntimeException(e);
     }
   }
@@ -422,6 +426,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       throw new RuntimeException(e);
     }
 
@@ -477,6 +482,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       if (e.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
       {
         return createNotFoundResponse(request.getResourceID());
@@ -542,6 +548,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
+      Debug.debugException(e);
       throw new RuntimeException(e);
     }
 
@@ -615,6 +622,7 @@ public abstract class LDAPBackend
       }
       catch (ParseException e)
       {
+        Debug.debugException(e);
         // Unlikely to come here.
       }
     }
@@ -633,6 +641,7 @@ public abstract class LDAPBackend
       }
       catch (ParseException e)
       {
+        Debug.debugException(e);
         // Unlikely to come here.
       }
     }
@@ -682,6 +691,7 @@ public abstract class LDAPBackend
     }
     catch (LDAPException e)
     {
+      Debug.debugException(Level.FINE, e);
       return "u:" + userID;
     }
   }

@@ -4,6 +4,8 @@
  */
 package com.unboundid.scim.config;
 
+import com.unboundid.scim.sdk.Debug;
+
 import java.util.List;
 
 /**
@@ -68,6 +70,7 @@ public class AttributeDescriptor {
       try {
         return DataType.valueOf(type.toUpperCase());
       } catch (Exception e) {
+        Debug.debugException(e);
         return null;
       }
     }

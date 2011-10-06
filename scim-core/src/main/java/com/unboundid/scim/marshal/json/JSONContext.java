@@ -14,6 +14,7 @@ import com.unboundid.scim.schema.PluralAttribute;
 import com.unboundid.scim.schema.Resource;
 import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.schema.User;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMConstants;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -62,6 +63,7 @@ public class JSONContext
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new IOException("Error writing JSON to a character stream", e);
     }
   }
@@ -91,6 +93,7 @@ public class JSONContext
     }
     catch (Exception e)
     {
+      Debug.debugException(e);
       throw new IOException("Error reading a response from a JSON string", e);
     }
   }
@@ -555,6 +558,7 @@ public class JSONContext
     }
     catch (DatatypeConfigurationException e)
     {
+      Debug.debugException(e);
       throw new RuntimeException("Unable to create a DatatypeFactory", e);
     }
 
