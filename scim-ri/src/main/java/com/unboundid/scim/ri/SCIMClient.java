@@ -1313,6 +1313,19 @@ public class SCIMClient
     final Map <String,String> parameters = new HashMap<String, String>();
     final String mediaType =
         HttpFields.valueParameters(contentType, parameters);
+
+    final String acceptHeader =
+        exchange.getRequestFields().getStringField(HEADER_NAME_ACCEPT);
+    if (contentType != null && acceptHeader != null)
+    {
+      if (!acceptHeader.contains(contentType))
+      {
+        throw new RuntimeException(
+            "The returned content type '" + contentType +
+            "' is not permitted by the accept header '" + acceptHeader + "'");
+      }
+    }
+
     if (mediaType != null && mediaType.equalsIgnoreCase(MEDIA_TYPE_XML))
     {
       return xmlContext.readResponse(exchange.getResponseContent());

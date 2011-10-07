@@ -26,6 +26,8 @@ public class SCIMApplication extends WinkApplication
     instances.add(new CRUDResource(SCIMConstants.RESOURCE_NAME_USER));
     instances.add(new CRUDResource(SCIMConstants.RESOURCE_NAME_GROUP));
     instances.add(new QueryResource(SCIMConstants.RESOURCE_ENDPOINT_USERS));
+    instances.add(new XMLQueryResource(SCIMConstants.RESOURCE_ENDPOINT_USERS));
+    instances.add(new JSONQueryResource(SCIMConstants.RESOURCE_ENDPOINT_USERS));
 
     return instances;
   }
