@@ -49,6 +49,11 @@ public class ServerExtensionTestCase extends BaseTestCase
                                         final int listenPort)
   {
     instance.dsconfig(
+        "set-log-publisher-prop",
+        "--publisher-name", "Server SDK Extension Debug Logger",
+        "--set", "enabled:true");
+
+    instance.dsconfig(
         "create-plugin",
         "--plugin-name", pluginName,
         "--type", "third-party",
@@ -57,6 +62,7 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "extension-class:com.unboundid.scim.plugin.SCIMPlugin",
         "--set", "extension-argument:port=" + listenPort,
         "--set",
-        "extension-argument:useResourcesFile=config/scim/resources.xml");
+        "extension-argument:useResourcesFile=config/scim/resources.xml",
+        "--set", "extension-argument:debugEnabled");
   }
 }

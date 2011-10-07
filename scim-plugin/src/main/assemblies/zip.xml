@@ -8,7 +8,7 @@
     <fileSets>
         <fileSet>
             <outputDirectory>config/scim</outputDirectory>
-            <directory>${project.basedir}/../scim-ri/src/main/assemblies/config</directory>
+            <directory>${project.basedir}/../scim-ri/src/main/assemblies/server/config</directory>
         </fileSet>
     </fileSets>
     <dependencySets>

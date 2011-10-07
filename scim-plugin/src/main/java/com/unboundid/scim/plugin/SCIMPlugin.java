@@ -2,6 +2,7 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
+
 package com.unboundid.scim.plugin;
 
 
@@ -15,10 +16,13 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.ri.SCIMServer;
 import com.unboundid.scim.ri.SCIMServerConfig;
+import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.args.ArgumentException;
 import com.unboundid.util.args.ArgumentParser;
+import com.unboundid.util.args.BooleanArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
@@ -29,6 +33,9 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 
 
@@ -69,6 +76,24 @@ public final class SCIMPlugin
    * the SCIM protocol interface.
    */
   private static final String ARG_NAME_BASE_URI = "baseURI";
+
+  /**
+   * The name of the argument that will be used to enable debug logging in the
+   * SCIM plugin.
+   */
+  private static final String ARG_NAME_DEBUG_ENABLED = "debugEnabled";
+
+  /**
+   * The name of the argument that will be used to specify the level of debug
+   * logging in the SCIM plugin.
+   */
+  private static final String ARG_NAME_DEBUG_LEVEL = "debugLevel";
+
+  /**
+   * The name of the argument that will be used to specify the types of debug
+   * logging in the SCIM plugin.
+   */
+  private static final String ARG_NAME_DEBUG_TYPE = "debugType";
 
   /**
    * The server context for the server in which this extension is running.
@@ -162,13 +187,32 @@ public final class SCIMPlugin
                             "The port number of the SCIM interface.",
                             0, 65535));
 
-    // This argument is not required because it has a sensible default.
+    // This argument is required but has a default.
     parser.addArgument(
         new StringArgument(null, ARG_NAME_BASE_URI,
                            true, 1, "{URL-path}",
                            "The base URI of the SCIM interface. If no base " +
                            "URI is specified then the default value '/' is " +
                            "used", "/"));
+
+    // Debug log arguments.
+    parser.addArgument(
+        new BooleanArgument(null, ARG_NAME_DEBUG_ENABLED,
+                           "Enables debug logging in the SCIM plugin"));
+
+    parser.addArgument(
+        new StringArgument(null, ARG_NAME_DEBUG_LEVEL,
+                           false, 1,
+                           "(SEVERE|WARN|INFO|CONFIG|FINE|FINER|FINEST)",
+                           "Specifies the level of debug logging in the SCIM" +
+                           " plugin"));
+
+    parser.addArgument(
+        new StringArgument(null, ARG_NAME_DEBUG_TYPE,
+                           false, 1,
+                           "{debug-type,...}",
+                           "Specifies the types of debug logging in the SCIM" +
+                           " plugin"));
   }
 
 
@@ -190,7 +234,33 @@ public final class SCIMPlugin
                                final ArgumentParser parser)
       throws LDAPException
   {
-    serverContext.debugInfo("Beginning SCIM plugin initialization");
+    Debug.getLogger().addHandler(new DebugLogHandler(serverContext));
+    Debug.getLogger().setUseParentHandlers(false);
+
+    final BooleanArgument debugEnabledArg =
+        (BooleanArgument) parser.getNamedArgument(ARG_NAME_DEBUG_ENABLED);
+    final StringArgument debugLevelArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_LEVEL);
+    final StringArgument debugTypeArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
+
+    final Properties properties = new Properties();
+    properties.setProperty(Debug.PROPERTY_DEBUG_ENABLED,
+                           Boolean.toString(debugEnabledArg.isPresent()));
+    if (debugLevelArg.isPresent())
+    {
+      properties.setProperty(Debug.PROPERTY_DEBUG_LEVEL,
+                             debugLevelArg.getValue());
+    }
+    if (debugTypeArg.isPresent())
+    {
+      properties.setProperty(Debug.PROPERTY_DEBUG_TYPE,
+                             debugTypeArg.getValue());
+    }
+    Debug.initialize(properties);
+
+    Debug.debug(Level.INFO, DebugType.OTHER,
+                "Beginning SCIM plugin initialization");
 
     this.serverContext = serverContext;
 
@@ -217,7 +287,7 @@ public final class SCIMPlugin
 //      }
 //      catch (LDIFException e)
 //      {
-//        serverContext.debugCaught(e);
+//        Debug.debugException(e);
 //        throw new LDAPException(ResultCode.OTHER, e);
 //      }
 //    }
@@ -231,7 +301,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
       throw new LDAPException(
           ResultCode.OTHER,
           "An error occurred while initializing the SCIM plugin.", e);
@@ -258,7 +328,7 @@ public final class SCIMPlugin
       }
       catch (final Exception e)
       {
-        serverContext.debugCaught(e);
+        Debug.debugException(e);
         throw new LDAPException(
             ResultCode.OTHER,
             "An error occurred while attempting to start listening for " +
@@ -266,7 +336,8 @@ public final class SCIMPlugin
       }
     }
 
-    serverContext.debugInfo("Finished SCIM plugin initialization");
+    Debug.debug(Level.INFO, DebugType.OTHER,
+                "Finished SCIM plugin initialization");
   }
 
 
@@ -290,6 +361,48 @@ public final class SCIMPlugin
                       final List<String> unacceptableReasons)
   {
     boolean acceptable = true;
+
+    final StringArgument debugLevelArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_LEVEL);
+    final StringArgument debugTypeArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
+
+    final Properties properties = new Properties();
+    if (debugLevelArg.isPresent())
+    {
+      try
+      {
+        Level.parse(debugLevelArg.getValue());
+      }
+      catch (IllegalArgumentException e)
+      {
+        Debug.debugException(e);
+        unacceptableReasons.add("Invalid value '" + debugLevelArg.getValue() +
+                                "' for the SCIM plugin debug level");
+        acceptable = false;
+      }
+    }
+
+    if (debugTypeArg.isPresent())
+    {
+      properties.setProperty(Debug.PROPERTY_DEBUG_TYPE,
+                             debugTypeArg.getValue());
+      final StringTokenizer t =
+          new StringTokenizer(debugTypeArg.getValue(), ", ");
+      while (t.hasMoreTokens())
+      {
+        final String debugTypeName = t.nextToken();
+        if (DebugType.forName(debugTypeName) == null)
+        {
+          unacceptableReasons.add(
+              "Invalid value '" + debugTypeName +
+              "' for a SCIM plugin debug type.  Allowed values include:  " +
+              DebugType.getTypeNameList() + '.');
+          acceptable = false;
+        }
+      }
+    }
+    Debug.initialize(properties);
 
     final FileArgument useSchemaFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_USE_SCHEMA_FILE);
@@ -362,6 +475,28 @@ public final class SCIMPlugin
   {
     ResultCode rc = ResultCode.SUCCESS;
 
+    final BooleanArgument debugEnabledArg =
+        (BooleanArgument) parser.getNamedArgument(ARG_NAME_DEBUG_ENABLED);
+    final StringArgument debugLevelArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_LEVEL);
+    final StringArgument debugTypeArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
+
+    final Properties properties = new Properties();
+    properties.setProperty(Debug.PROPERTY_DEBUG_ENABLED,
+                           Boolean.toString(debugEnabledArg.isPresent()));
+    if (debugLevelArg.isPresent())
+    {
+      properties.setProperty(Debug.PROPERTY_DEBUG_LEVEL,
+                             debugLevelArg.getValue());
+    }
+    if (debugTypeArg.isPresent())
+    {
+      properties.setProperty(Debug.PROPERTY_DEBUG_TYPE,
+                             debugTypeArg.getValue());
+    }
+    Debug.initialize(properties);
+
     final SCIMServer scimServer = SCIMServer.getInstance();
     try
     {
@@ -369,7 +504,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
     }
 
     final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
@@ -380,7 +515,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
       messages.add("An error occurred while initializing the SCIM plugin:" +
                    StaticUtils.getExceptionMessage(e));
       return ResultCode.OTHER;
@@ -403,7 +538,7 @@ public final class SCIMPlugin
     }
     catch (final Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
       messages.add("An error occurred while attempting to start listening " +
                    "for SCIM requests:" + StaticUtils.getExceptionMessage(e));
       return ResultCode.OTHER;
@@ -433,7 +568,7 @@ public final class SCIMPlugin
     }
     catch (final Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
       return new StartupPluginResult(
           false, true,
           "An error occurred while attempting to start listening for " +
@@ -460,7 +595,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
     }
   }
 
@@ -479,7 +614,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      serverContext.debugCaught(e);
+      Debug.debugException(e);
     }
   }
 
