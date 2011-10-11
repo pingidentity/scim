@@ -8,15 +8,18 @@ package com.unboundid.scim.ri.wink;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.SCIMBackend;
-import com.unboundid.scim.sdk.SCIMResponse;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.ri.SCIMServer;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
-import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SCIMResponse;
 import org.apache.wink.common.AbstractDynamicResource;
+import org.eclipse.jetty.http.HttpStatus;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.Consumes;
@@ -34,11 +37,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 
@@ -55,14 +58,14 @@ public class CRUDResource extends AbstractDynamicResource
   /**
    * The name of the resource and the REST endpoint. e.g. User
    */
-  private final String resourceName;
+  private final ResourceDescriptor resourceDescriptor;
 
 
 
   @Override
   public String getPath()
   {
-    return resourceName;
+    return resourceDescriptor.getName();
   }
 
 
@@ -70,11 +73,11 @@ public class CRUDResource extends AbstractDynamicResource
   /**
    * Create a new dynamic resource for CRUD operations on a SCIM resource.
    *
-   * @param resourceName  The name of the resource and the REST endpoint.
+   * @param resourceDescriptor  The resource descriptor to use.
    */
-  public CRUDResource(final String resourceName)
+  public CRUDResource(final ResourceDescriptor resourceDescriptor)
   {
-    this.resourceName = resourceName;
+    this.resourceDescriptor = resourceDescriptor;
   }
 
 
@@ -677,34 +680,34 @@ public class CRUDResource extends AbstractDynamicResource
     final GetResourceRequest getResourceRequest =
         new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
                                requestContext.getAuthID(),
-                               resourceName,
+                               resourceDescriptor,
                                userID,
                                requestContext.getQueryAttributes());
-    final SCIMResponse scimResponse = backend.getResource(getResourceRequest);
-
-    // Build the response.
-    final Response.ResponseBuilder responseBuilder =
-        Response.status(scimResponse.getStatusCode());
-    setResponseEntity(responseBuilder, mediaType, scimResponse);
+    Response.ResponseBuilder responseBuilder;
+    try {
+      BaseResource resource =
+          backend.getResource(getResourceRequest);
+      // Build the response.
+      responseBuilder = Response.status(Response.Status.OK);
+      setResponseEntity(responseBuilder, mediaType, resource);
+      URI location = resource.getMeta().getLocation();
+      if(location != null)
+      {
+        responseBuilder.location(location);
+      }
+    } catch (SCIMException e) {
+      // Build the response.
+      responseBuilder = Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, mediaType, e);
+    }
 
     if (requestContext.getOrigin() != null)
     {
       responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
-                             requestContext.getOrigin());
+          requestContext.getOrigin());
     }
     responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
-                           Boolean.TRUE.toString());
-
-    final com.unboundid.scim.schema.Resource resource =
-        scimResponse.getResponse().getResource();
-    if (resource != null)
-    {
-      final UriBuilder uriBuilder =
-          requestContext.getUriInfo().getBaseUriBuilder();
-      uriBuilder.path(resourceName);
-      uriBuilder.path(resource.getId());
-      responseBuilder.location(uriBuilder.build());
-    }
+        Boolean.TRUE.toString());
 
     return responseBuilder.build();
   }
@@ -745,10 +748,11 @@ public class CRUDResource extends AbstractDynamicResource
           com.unboundid.scim.marshal.Context.Format.Xml);
     }
 
-    final SCIMObject requestObject;
+    final BaseResource postedResource;
     try
     {
-      requestObject = unmarshaller.unmarshal(inputStream, resourceName);
+      postedResource = unmarshaller.unmarshal(inputStream, resourceDescriptor,
+          BaseResource.BASE_RESOURCE_FACTORY);
     }
     catch (Exception e)
     {
@@ -760,26 +764,23 @@ public class CRUDResource extends AbstractDynamicResource
     // Process the request.
     final PostResourceRequest postResourceRequest =
         new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                                requestContext.getAuthID(), resourceName,
-                                requestObject,
+                                requestContext.getAuthID(),
+                                resourceDescriptor,
+                                postedResource.getScimObject(),
                                 requestContext.getQueryAttributes());
-    final SCIMResponse scimResponse =
-        backend.postResource(postResourceRequest);
-
-    // Build the response.
-    final Response.ResponseBuilder responseBuilder =
-        Response.status(scimResponse.getStatusCode());
-    setResponseEntity(responseBuilder, produceMediaType, scimResponse);
-
-    final com.unboundid.scim.schema.Resource resource =
-        scimResponse.getResponse().getResource();
-    if (resource != null)
-    {
-      final UriBuilder uriBuilder =
-          requestContext.getUriInfo().getBaseUriBuilder();
-      uriBuilder.path(resourceName);
-      uriBuilder.path(resource.getId());
-      responseBuilder.location(uriBuilder.build());
+    Response.ResponseBuilder responseBuilder;
+    try {
+      final BaseResource resource =
+          backend.postResource(postResourceRequest);
+      // Build the response.
+      responseBuilder = Response.status(Response.Status.CREATED);
+      setResponseEntity(responseBuilder, produceMediaType,
+          resource);
+      responseBuilder.location(resource.getMeta().getLocation());
+    } catch (SCIMException e) {
+      // Build the response.
+      responseBuilder = Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, produceMediaType, e);
     }
 
     return responseBuilder.build();
@@ -823,10 +824,11 @@ public class CRUDResource extends AbstractDynamicResource
           com.unboundid.scim.marshal.Context.Format.Xml);
     }
 
-    final SCIMObject requestObject;
+    final BaseResource puttedResource;
     try
     {
-      requestObject = unmarshaller.unmarshal(inputStream, resourceName);
+      puttedResource = unmarshaller.unmarshal(inputStream, resourceDescriptor,
+          BaseResource.BASE_RESOURCE_FACTORY);
     }
     catch (Exception e)
     {
@@ -838,25 +840,22 @@ public class CRUDResource extends AbstractDynamicResource
     // Process the request.
     final PutResourceRequest putResourceRequest =
         new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                               requestContext.getAuthID(), resourceName,
-                               userID, requestObject,
+                               requestContext.getAuthID(),
+                               resourceDescriptor,
+                               userID, puttedResource.getScimObject(),
                                requestContext.getQueryAttributes());
-    final SCIMResponse scimResponse = backend.putResource(putResourceRequest);
-
-    // Build the response.
-    final Response.ResponseBuilder responseBuilder =
-        Response.status(scimResponse.getStatusCode());
-    setResponseEntity(responseBuilder, produceMediaType, scimResponse);
-
-    final com.unboundid.scim.schema.Resource resource =
-        scimResponse.getResponse().getResource();
-    if (resource != null)
-    {
-      final UriBuilder uriBuilder =
-          requestContext.getUriInfo().getBaseUriBuilder();
-      uriBuilder.path(resourceName);
-      uriBuilder.path(resource.getId());
-      responseBuilder.location(uriBuilder.build());
+    Response.ResponseBuilder responseBuilder;
+    try {
+      final BaseResource scimResponse = backend.putResource(putResourceRequest);
+      // Build the response.
+      responseBuilder = Response.status(Response.Status.OK);
+      setResponseEntity(responseBuilder, produceMediaType,
+          scimResponse);
+      responseBuilder.location(scimResponse.getMeta().getLocation());
+    } catch (SCIMException e) {
+      // Build the response.
+      responseBuilder =Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, produceMediaType, e);
     }
 
     return responseBuilder.build();
@@ -883,14 +882,17 @@ public class CRUDResource extends AbstractDynamicResource
     final DeleteResourceRequest deleteResourceRequest =
         new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
                                   requestContext.getAuthID(),
-                                  resourceName, userID);
-    final SCIMResponse scimResponse =
-        backend.deleteResource(deleteResourceRequest);
-
-    // Build the response.
-    final Response.ResponseBuilder responseBuilder =
-        Response.status(scimResponse.getStatusCode());
-    setResponseEntity(responseBuilder, mediaType, scimResponse);
+                                  resourceDescriptor, userID);
+    Response.ResponseBuilder responseBuilder;
+    try {
+      backend.deleteResource(deleteResourceRequest);
+      // Build the response.
+      responseBuilder = Response.status(HttpStatus.OK_200);
+    } catch (SCIMException e) {
+      // Build the response.
+      responseBuilder = Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, mediaType, e);
+    }
 
     return responseBuilder.build();
   }
@@ -930,7 +932,7 @@ public class CRUDResource extends AbstractDynamicResource
       {
         try
         {
-          marshaller.marshal(scimResponse.getResponse(), outputStream);
+          scimResponse.marshal(marshaller, outputStream);
         }
         catch (Exception e)
         {

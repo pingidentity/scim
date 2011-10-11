@@ -4,9 +4,13 @@
  */
 package com.unboundid.scim.marshal;
 
-import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.ResourceFactory;
+import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.MarshalException;
+import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMException;
 
-import java.io.File;
 import java.io.InputStream;
 
 
@@ -18,29 +22,53 @@ import java.io.InputStream;
  * thread-safe.
  */
 public interface Unmarshaller {
-  /**
-   * Reads a SCIM object from a file.
-   *
-   * @param file  The file containing the SCIM object to be read.
-   * @param resourceName The name of the SCIM resource to be read.
-   *
-   * @return  The SCIM object that was read.
-   *
-   * @throws Exception  If the object could not be read.
-   */
-  SCIMObject unmarshal(File file, final String resourceName)
-      throws Exception;
 
   /**
-   * Reads a SCIM object from an input stream.
+   * Reads a SCIM resource from an input stream.
+   *
+   * @param <R> The type of resource instance.
+   * @param inputStream  The input stream containing the SCIM object to be read.
+   * @param resourceDescriptor The descriptor of the SCIM resource to be read.
+   * @param resourceFactory The resource factory to use to create the resource
+   *                        instance.
+   *
+   * @return  The SCIM resource that was read.
+   *
+   * @throws MarshalException If an error occurred.
+   */
+  <R extends BaseResource> R unmarshal(
+      final InputStream inputStream,
+      final ResourceDescriptor resourceDescriptor,
+      final ResourceFactory<R> resourceFactory)
+      throws MarshalException;
+
+  /**
+   * Reads a SCIM query response from an input stream.
+   *
+   * @param <R> The type of resource instance.
+   * @param inputStream  The input stream containing the SCIM object to be read.
+   * @param resourceDescriptor The descriptor of the SCIM resource to be read.
+   * @param resourceFactory The resource factory to use to create the resource
+   *                        instance.
+   *
+   * @return The SCIM query response that was read.
+   *
+   * @throws MarshalException If an error occurred.
+   */
+  <R extends BaseResource> Resources<R> unmarshalResources(
+      final InputStream inputStream,
+      final ResourceDescriptor resourceDescriptor,
+      final ResourceFactory<R> resourceFactory)
+      throws MarshalException;
+
+  /**
+   * Reads a SCIM error response from an input stream.
    *
    * @param inputStream  The input stream containing the SCIM object to be read.
-   * @param resourceName The name of the SCIM resource to be read.
+   * @return The SCIM error response that was read.
    *
-   * @return  The SCIM object that was read.
-   *
-   * @throws Exception  If the object could not be read.
+   * @throws MarshalException If an error occurred.
    */
-  SCIMObject unmarshal(InputStream inputStream, final String resourceName)
-      throws Exception;
+  SCIMException unmarshalError(final InputStream inputStream)
+      throws MarshalException;
 }

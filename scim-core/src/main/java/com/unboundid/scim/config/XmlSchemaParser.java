@@ -14,6 +14,8 @@ import com.sun.xml.xsom.XSSchemaSet;
 import com.sun.xml.xsom.XSTerm;
 import com.sun.xml.xsom.XSType;
 import com.sun.xml.xsom.parser.XSOMParser;
+import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -153,7 +155,7 @@ public class XmlSchemaParser
               new AttributeDescriptor(
                   new AttributeDescriptor.Builder(
                       targetNamespace,
-                      xsElementDecl.getName()).dataType(
+                      xsElementDecl.getName(), "TBD").dataType(
                       AttributeDescriptor.DataType.parse(
                           xsElementDecl.getType().getName()))
               );
@@ -165,9 +167,9 @@ public class XmlSchemaParser
         XSComplexType scimResourceType = xsType.asComplexType();
 
         // create SCIM resource descriptor
-        ResourceDescriptor resourceDescriptor = new ResourceDescriptor();
-        resourceDescriptor.setName(scimResourceType.getName());
-        resourceDescriptor.setSchema(targetNamespace);
+        ResourceDescriptor resourceDescriptor = new ResourceDescriptor(
+            scimResourceType.getName(), "TBD", targetNamespace,
+            scimResourceType.getName()+"s");
         resourceDescriptors.add(resourceDescriptor);
 
         XSParticle[] children = scimResourceType.getContentType().asParticle
@@ -224,7 +226,7 @@ public class XmlSchemaParser
                         new AttributeDescriptor(
                             new AttributeDescriptor.Builder(
                                 c.getOwnerSchema().getTargetNamespace(),
-                                cxsElementDecl.getName()).dataType(
+                                cxsElementDecl.getName(), "TBD").dataType(
                                 AttributeDescriptor.DataType.parse(
                                     cxsElementDecl.getType().getName()))
                         );
@@ -289,7 +291,8 @@ public class XmlSchemaParser
         new AttributeDescriptor(
             new AttributeDescriptor.Builder(
                 complexType.getOwnerSchema().getTargetNamespace(),
-                name).complex(true).plural(true)
+                name, "TBD").dataType(AttributeDescriptor.DataType.COMPLEX)
+                .plural(true)
                 .complexAttributeDescriptors(complexAttributeDescriptors)
     );
 
@@ -324,7 +327,8 @@ public class XmlSchemaParser
         AttributeDescriptor peerAttributeDescriptor = new AttributeDescriptor
             (new AttributeDescriptor.Builder(
                 complexType.getOwnerSchema().getTargetNamespace(),
-                xsElementDecl.getName()).complex(false).dataType(
+                xsElementDecl.getName(), "TBD").
+                dataType(AttributeDescriptor.DataType.COMPLEX).dataType(
                 AttributeDescriptor.DataType.parse(
                     xsElementDecl.getType().getName()))
             );
@@ -336,8 +340,8 @@ public class XmlSchemaParser
     {
       return new AttributeDescriptor(new AttributeDescriptor
           .Builder(complexType.getOwnerSchema().getTargetNamespace(),
-                   name).complex(true).complexAttributeDescriptors
-          (complexAttributeDescriptors)
+                   name, "TBD").dataType(AttributeDescriptor.DataType.COMPLEX)
+          .complexAttributeDescriptors(complexAttributeDescriptors)
       );
     }
     else

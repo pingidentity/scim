@@ -6,9 +6,8 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.SCIMTestCase;
-import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.schema.AttributeDescriptor;
 import org.testng.annotations.Test;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 import static com.unboundid.scim.SCIMTestUtils.generateName;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -64,17 +63,18 @@ public class SCIMObjectTestCase
         SCIMAttribute.createSingularAttribute(
           new AttributeDescriptor(
               new AttributeDescriptor.Builder(
-                  coreSchema,"meta").complex(true)),
+                  coreSchema,"meta", "description")
+                  .dataType(AttributeDescriptor.DataType.COMPLEX)),
           SCIMAttributeValue.createComplexValue(
                 SCIMAttribute.createSingularAttribute(
                     new AttributeDescriptor(
                         new AttributeDescriptor.Builder(
-                            coreSchema,"created")),
+                            coreSchema,"created", "description")),
                     SCIMAttributeValue.createDateValue(date)),
                 SCIMAttribute.createSingularAttribute(
                     new AttributeDescriptor(
                         new AttributeDescriptor.Builder(
-                            coreSchema,"lastModified")),
+                            coreSchema,"lastModified", "description")),
                     SCIMAttributeValue.createDateValue(date))));
 
     final SCIMAttribute employeeNumber =
@@ -82,14 +82,12 @@ public class SCIMObjectTestCase
             enterpriseUserSchema, "employeeNumber", "1000001");
 
     final SCIMObject user = new SCIMObject();
-    user.setResourceName(RESOURCE_NAME_USER);
     assertTrue(user.addAttribute(userID));
     assertTrue(user.addAttribute(meta));
     assertTrue(user.addAttribute(name));
     assertTrue(user.addAttribute(emails));
     user.setAttribute(employeeNumber);
 
-    assertEquals(user.getResourceName(), RESOURCE_NAME_USER);
     final Collection<String> schemas = user.getSchemas();
     assertNotNull(schemas);
     assertEquals(schemas.size(), 2);

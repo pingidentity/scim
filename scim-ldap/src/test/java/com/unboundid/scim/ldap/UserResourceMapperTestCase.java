@@ -7,9 +7,12 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -24,9 +27,9 @@ import static com.unboundid.util.LDAPTestUtils.generateUserEntry;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.OutputStream;
 import java.util.List;
 
 
@@ -49,7 +52,6 @@ public class UserResourceMapperTestCase
     final String coreSchema = SCHEMA_URI_CORE;
 
     final SCIMObject user = new SCIMObject();
-    user.setResourceName(RESOURCE_NAME_USER);
 
     user.addAttribute(
         SCIMAttribute.createSingularStringAttribute(
@@ -141,9 +143,13 @@ public class UserResourceMapperTestCase
     final InputStream testXML =
         getResource("/com/unboundid/scim/marshal/core-user.xml");
 
+    final ResourceDescriptor userResourceDescriptor =
+        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
-    final SCIMObject user = unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
+    final SCIMObject user = unmarshaller.unmarshal(testXML,
+        userResourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY).
+        getScimObject();
 
     final ResourceMapper mapper = getUserResourceMapper();
 
@@ -196,16 +202,18 @@ public class UserResourceMapperTestCase
                                 new SCIMQueryAttributes());
 
     final SCIMObject object = new SCIMObject();
-    object.setResourceName(RESOURCE_NAME_USER);
     for (final SCIMAttribute a : attributes)
     {
       object.addAttribute(a);
     }
 
+    final ResourceDescriptor userResourceDescriptor =
+        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
     final Context context = Context.instance();
     final Marshaller marshaller = context.marshaller();
-    final Writer writer = new StringWriter();
-    marshaller.marshal(object, writer);
+    final OutputStream outputStream = new ByteArrayOutputStream();
+    marshaller.marshal(BaseResource.BASE_RESOURCE_FACTORY.createResource(
+        userResourceDescriptor, object), outputStream);
   }
 
 

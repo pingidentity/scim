@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import java.net.URI;
 
 
@@ -25,6 +27,11 @@ public abstract class SCIMRequest
    */
   private final String authenticatedUserID;
 
+  /**
+   * The ResourceDescriptor associated with this request.
+   */
+  private final ResourceDescriptor resourceDescriptor;
+
 
 
   /**
@@ -33,11 +40,15 @@ public abstract class SCIMRequest
    * @param baseURL              The base URL for the SCIM service.
    * @param authenticatedUserID  The authenticated user name or {@code null} if
    *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
    */
-  public SCIMRequest(final URI baseURL, final String authenticatedUserID)
+  public SCIMRequest(final URI baseURL, final String authenticatedUserID,
+                     final ResourceDescriptor resourceDescriptor)
   {
     this.baseURL             = baseURL;
     this.authenticatedUserID = authenticatedUserID;
+    this.resourceDescriptor = resourceDescriptor;
   }
 
 
@@ -63,5 +74,16 @@ public abstract class SCIMRequest
   public String getAuthenticatedUserID()
   {
     return authenticatedUserID;
+  }
+
+
+
+  /**
+   * Get ResourceDescriptor associated with this request.
+   *
+   * @return The ResourceDescriptor associated with this request.
+   */
+  public ResourceDescriptor getResourceDescriptor() {
+    return resourceDescriptor;
   }
 }

@@ -9,7 +9,7 @@ import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
-import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMAttributeValue;

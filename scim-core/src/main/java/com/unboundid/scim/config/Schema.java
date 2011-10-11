@@ -5,6 +5,9 @@
 
 package com.unboundid.scim.config;
 
+import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;

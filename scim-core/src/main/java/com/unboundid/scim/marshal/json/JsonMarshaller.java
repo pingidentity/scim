@@ -5,25 +5,20 @@
 
 package com.unboundid.scim.marshal.json;
 
-import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.sdk.GenericResource;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Marshaller;
-import com.unboundid.scim.schema.Resource;
-import com.unboundid.scim.schema.Response;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
-import java.io.File;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,14 +33,15 @@ public class JsonMarshaller implements Marshaller
   /**
    * {@inheritDoc}
    */
-  public void marshal(final SCIMObject o, final OutputStream outputStream)
+  public void marshal(final BaseResource resource,
+                      final OutputStream outputStream)
       throws Exception
   {
     final OutputStreamWriter outputStreamWriter =
         new OutputStreamWriter(outputStream);
     try
     {
-      marshal(o, new JSONWriter(outputStreamWriter), true);
+      marshal(resource, new JSONWriter(outputStreamWriter), true);
     }
     finally
     {
@@ -53,77 +49,24 @@ public class JsonMarshaller implements Marshaller
     }
   }
 
-
-
   /**
-   * {@inheritDoc}
-   */
-  public void marshal(final SCIMObject o, final File file)
-      throws Exception
-  {
-    throw new UnsupportedOperationException("marshal to file not supported");
-  }
-
-
-
-  /**
-   * {@inheritDoc}
-   */
-  public void marshal(final SCIMObject o, final Writer writer)
-      throws Exception
-  {
-    marshal(o, new JSONWriter(writer), true);
-  }
-
-
-
-  /**
-   * {@inheritDoc}
-   */
-  public void marshal(final Response response, final OutputStream outputStream)
-      throws Exception
-  {
-    final OutputStreamWriter outputStreamWriter =
-        new OutputStreamWriter(outputStream);
-    try
-    {
-      this.marshal(response, new JSONWriter(outputStreamWriter));
-    }
-    finally
-    {
-      outputStreamWriter.close();
-    }
-  }
-
-
-
-  /**
-   * {@inheritDoc}
-   */
-  public void marshal(final Response response, final Writer writer)
-      throws Exception
-  {
-    this.marshal(response, new JSONWriter(writer));
-  }
-
-
-
-  /**
-   * Write a SCIM object to a JSON writer.
+   * Write a SCIM resource to a JSON writer.
    *
-   * @param o          The SCIM Object to be written.
+   * @param resource   The SCIM resource to be written.
    * @param jsonWriter Output to write the Object to.
    * @param includeSchemas  Indicates whether the schemas should be written
    *                        at the start of the object.
    * @throws org.json.JSONException Thrown if error writing to output.
    */
-  private void marshal(final SCIMObject o,
-    final JSONWriter jsonWriter, final boolean includeSchemas)
+  private void marshal(final BaseResource resource,
+                       final JSONWriter jsonWriter,
+                       final boolean includeSchemas)
       throws JSONException
   {
     jsonWriter.object();
 
-    final Set<String> schemas = new HashSet<String>(o.getSchemas());
+    final Set<String> schemas = new HashSet<String>(
+        resource.getScimObject().getSchemas());
     if (includeSchemas)
     {
       // Write out the schemas for this object.
@@ -139,7 +82,7 @@ public class JsonMarshaller implements Marshaller
     // first write out core schema, then if any extensions write them
     // out in their own json object keyed by the schema name
 
-    for (final SCIMAttribute attribute : o
+    for (final SCIMAttribute attribute : resource.getScimObject()
         .getAttributes(SCIMConstants.SCHEMA_URI_CORE))
     {
       if (attribute.isPlural())
@@ -159,7 +102,8 @@ public class JsonMarshaller implements Marshaller
       {
         jsonWriter.key(schema);
         jsonWriter.object();
-        for (SCIMAttribute attribute : o.getAttributes(schema))
+        for (SCIMAttribute attribute :
+            resource.getScimObject().getAttributes(schema))
         {
           if (attribute.isPlural())
           {
@@ -177,124 +121,97 @@ public class JsonMarshaller implements Marshaller
   }
 
   /**
-   * Write a SCIM response to a JSON writer.
-   *
-   * @param response    The SCIM resource to be written.
-   * @param jsonWriter  Output to write the resource to.
-   * @throws org.json.JSONException Thrown if error writing to output.
+   * {@inheritDoc}
    */
-  private void marshal(final Response response,
-                       final JSONWriter jsonWriter)
-    throws JSONException
+  public void marshal(final Resources<? extends BaseResource> response,
+                      final OutputStream outputStream)
+      throws Exception
   {
-    final Resource resource = response.getResource();
-    final Response.Resources resources = response.getResources();
-    final Response.Errors errors = response.getErrors();
+    final OutputStreamWriter outputStreamWriter =
+        new OutputStreamWriter(outputStream);
+    try
+    {
+      final JSONWriter jsonWriter = new JSONWriter(outputStreamWriter);
+      jsonWriter.object();
+      jsonWriter.key("totalResults");
+      jsonWriter.value(response.getTotalResults());
 
-    // If the response is a single resource then we omit the response object.
-    if (resource != null)
-    {
-      final GenericResource genericResource = (GenericResource) resource;
-      marshal(genericResource.getScimObject(), jsonWriter, true);
+      jsonWriter.key("itemsPerPage");
+      jsonWriter.value(response.getItemsPerPage());
+
+      jsonWriter.key("startIndex");
+      jsonWriter.value(response.getStartIndex());
+
+      // Figure out what schemas are referenced by the resources.
+      final Set<String> schemaURIs = new HashSet<String>();
+      for (final BaseResource resource : response)
+      {
+        schemaURIs.addAll(resource.getScimObject().getSchemas());
+      }
+
+      // Write the schemas.
+      jsonWriter.key(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
+      jsonWriter.array();
+      for (final String schemaURI : schemaURIs)
+      {
+        jsonWriter.value(schemaURI);
+      }
+      jsonWriter.endArray();
+
+      // Write the resources.
+      jsonWriter.key("Resources");
+      jsonWriter.array();
+      for (final BaseResource resource : response)
+      {
+        marshal(resource, jsonWriter, false);
+      }
+      jsonWriter.endArray();
+
+      jsonWriter.endObject();
     }
-    else
+    finally
     {
+      outputStreamWriter.close();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final SCIMException response,
+                      final OutputStream outputStream) throws Exception
+  {
+    final OutputStreamWriter outputStreamWriter =
+        new OutputStreamWriter(outputStream);
+    try
+    {
+      final JSONWriter jsonWriter = new JSONWriter(outputStreamWriter);
+
+      jsonWriter.object();
+      jsonWriter.key("Errors");
+      jsonWriter.array();
+
       jsonWriter.object();
 
-      if (errors != null)
+      jsonWriter.key("code");
+      jsonWriter.value(response.getStatusCode());
+
+      final String description = response.getMessage();
+      if (description != null)
       {
-        jsonWriter.key("Errors");
-        jsonWriter.array();
-
-        for (final com.unboundid.scim.schema.Error error : errors.getError())
-        {
-          jsonWriter.object();
-
-          final String description = error.getDescription();
-          if (description != null)
-          {
-            jsonWriter.key("description");
-            jsonWriter.value(description);
-          }
-
-          final String code = error.getCode();
-          if (code != null)
-          {
-            jsonWriter.key("code");
-            jsonWriter.value(code);
-          }
-
-          final String uri = error.getUri();
-          if (uri != null)
-          {
-            jsonWriter.key("uri");
-            jsonWriter.value(uri);
-          }
-
-          jsonWriter.endObject();
-        }
-
-        jsonWriter.endArray();
+        jsonWriter.key("description");
+        jsonWriter.value(description);
       }
-      else
-      {
-        if (response.getTotalResults() != null)
-        {
-          jsonWriter.key("totalResults");
-          jsonWriter.value(response.getTotalResults());
-        }
 
-        if (response.getItemsPerPage() != null)
-        {
-          jsonWriter.key("itemsPerPage");
-          jsonWriter.value(response.getItemsPerPage());
-        }
-
-        if (response.getStartIndex() != null)
-        {
-          jsonWriter.key("startIndex");
-          jsonWriter.value(response.getStartIndex());
-        }
-
-        if (resources != null && !resources.getResource().isEmpty())
-        {
-          // Figure out what schemas are referenced by the resources.
-          final Set<String> schemaURIs = new HashSet<String>();
-          final List<SCIMObject> scimObjects =
-              new ArrayList<SCIMObject>(resources.getResource().size());
-          for (final Resource r : resources.getResource())
-          {
-            // Each resource is carried as a SCIMObject wrapped into a Resource
-            // instance.
-            if (r instanceof GenericResource)
-            {
-              final GenericResource genericResource = (GenericResource) r;
-              final SCIMObject scimObject = genericResource.getScimObject();
-              schemaURIs.addAll(scimObject.getSchemas());
-              scimObjects.add(scimObject);
-            }
-          }
-
-          // Write the schemas.
-          jsonWriter.key(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
-          jsonWriter.array();
-          for (final String schemaURI : schemaURIs)
-          {
-            jsonWriter.value(schemaURI);
-          }
-          jsonWriter.endArray();
-
-          // Write the resources.
-          jsonWriter.key("Resources");
-          jsonWriter.array();
-          for (final SCIMObject scimObject : scimObjects)
-          {
-            marshal(scimObject, jsonWriter, false);
-          }
-          jsonWriter.endArray();
-        }
-      }
       jsonWriter.endObject();
+
+      jsonWriter.endArray();
+
+      jsonWriter.endObject();
+    }
+    finally
+    {
+      outputStreamWriter.close();
     }
   }
 
@@ -316,16 +233,10 @@ public class JsonMarshaller implements Marshaller
     SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
     jsonWriter.key(scimAttribute.getName());
     jsonWriter.array();
-    List<AttributeDescriptor> mappedAttributeDescriptors =
-        scimAttribute.getAttributeDescriptor().getComplexAttributeDescriptors();
     for (SCIMAttributeValue pluralValue : pluralValues)
     {
-      for (AttributeDescriptor attributeDescriptor :
-          mappedAttributeDescriptors)
+      for (SCIMAttribute attribute : pluralValue.getAttributes().values())
       {
-        SCIMAttribute attribute =
-            pluralValue.getAttribute(
-                attributeDescriptor.getName());
         this.writeComplexAttribute(attribute, jsonWriter);
       }
     }

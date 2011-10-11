@@ -5,7 +5,7 @@
 
 package com.unboundid.scim.sdk;
 
-import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.schema.AttributeDescriptor;
 
 import javax.xml.bind.DatatypeConverter;
 import java.util.Collection;

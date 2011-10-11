@@ -5,9 +5,12 @@
 
 package com.unboundid.scim.marshal.xml;
 
+import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -18,7 +21,10 @@ import static com.unboundid.scim.SCIMTestUtils.generateName;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Arrays;
 
 import static com.unboundid.scim.sdk.SCIMConstants.*;
@@ -45,7 +51,7 @@ public class MarshallerTestCase
     final File testXML = File.createTempFile("test-", ".xml");
     testXML.deleteOnExit();
 
-    final SCIMObject user1 = new SCIMObject(RESOURCE_NAME_USER);
+    final SCIMObject user1 = new SCIMObject();
 
     user1.addAttribute(
         SCIMAttribute.createSingularStringAttribute(
@@ -107,14 +113,22 @@ public class MarshallerTestCase
         SCIMAttribute.createSingularStringAttribute(
             SCHEMA_URI_ENTERPRISE_EXTENSION, "department", "Sales"));
 
+    final ResourceDescriptor userResourceDescriptor =
+        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     final Marshaller marshaller = context.marshaller();
-    marshaller.marshal(user1, testXML);
-
+    marshaller.marshal(BaseResource.BASE_RESOURCE_FACTORY.createResource(
+        userResourceDescriptor, user1), outputStream);
+    outputStream.close();
+    InputStream inputStream =
+        new ByteArrayInputStream(outputStream.toByteArray());
     final Unmarshaller unmarshaller = context.unmarshaller();
-    final SCIMObject user2 =
-        unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
+    final BaseResource resource = unmarshaller.unmarshal(inputStream,
+        userResourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
+    final SCIMObject user2 = resource.getScimObject();
+    inputStream.close();
 
-    assertEquals(user2.getResourceName(), RESOURCE_NAME_USER);
+    assertEquals(resource.getResourceDescriptor(), userResourceDescriptor);
     for (final String attribute : Arrays.asList("id",
                                                 "addresses",
                                                 "phoneNumbers",

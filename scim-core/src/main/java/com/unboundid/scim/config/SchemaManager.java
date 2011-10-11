@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.config;
 
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMConstants;
 
 import java.io.File;

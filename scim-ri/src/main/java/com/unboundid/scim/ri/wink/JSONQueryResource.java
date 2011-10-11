@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.ri.wink;
 
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -35,11 +37,12 @@ public class JSONQueryResource extends QueryResourceBase
   /**
    * Create a new dynamic resource for XML query operations on a SCIM resource.
    *
-   * @param resourceEndpoint  The REST endpoint for querying the resource.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             resource.
    */
-  public JSONQueryResource(final String resourceEndpoint)
+  public JSONQueryResource(final ResourceDescriptor resourceDescriptor)
   {
-    super(resourceEndpoint);
+    super(resourceDescriptor);
   }
 
 
@@ -47,7 +50,7 @@ public class JSONQueryResource extends QueryResourceBase
   @Override
   public String getPath()
   {
-    return getResourceEndpoint() + ".json";
+    return super.getPath() + ".json";
   }
 
 

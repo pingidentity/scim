@@ -2,7 +2,7 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.config;
+package com.unboundid.scim.schema;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,20 +22,42 @@ public class ResourceDescriptor
 
   private String name;
 
+  private String description;
+
+  private String queryEndpoint;
+
   private LinkedHashMap<String,AttributeDescriptor> attributeDescriptors =
       new LinkedHashMap<String,AttributeDescriptor>();
 
 
+  /**
+   * Construct a new resource descriptor with the provided information.
+   *
+   * @param name The addressable Resource endpoint name.
+   * @param description The Resource's human readable description.
+   * @param schema The Resource's associated schema URN
+   * @param queryEndpoint The Resource's HTTP addressable endpoint relative
+   *                      to the Base URL
+   */
+  public ResourceDescriptor(final String name, final String description,
+                            final String schema, final String queryEndpoint) {
+    this.name = name;
+    this.description = description;
+    this.schema = schema;
+    this.queryEndpoint = queryEndpoint;
+  }
 
   /**
    * Retrieve the attribute descriptor for a specified attribute.
    *
+   * @param schema The attribute descriptor's associated schema URN.
    * @param name The name of the attribute whose descriptor is to be retrieved.
    *
    * @return The attribute descriptor for the specified attribute, or {@code
    *         null} if there is no such attribute.
    */
-  public AttributeDescriptor getAttribute(final String name)
+  public AttributeDescriptor getAttribute(final String schema,
+                                          final String name)
   {
     return attributeDescriptors.get(name.toLowerCase());
   }
@@ -52,20 +74,6 @@ public class ResourceDescriptor
   public String getName()
   {
     return name;
-  }
-
-
-
-  /**
-   * Specifies the name of the resource to be used in any external
-   * representation of the resource.
-   *
-   * @param name Specifies the name of the resource to be used in any external
-   *             representation of the resource. It must not be {@code null}.
-   */
-  public void setName(final String name)
-  {
-    this.name = name;
   }
 
 
@@ -106,19 +114,24 @@ public class ResourceDescriptor
     return schema;
   }
 
-
-
   /**
-   * Sets the resource's XML schema (namespace) name.
+   * Retrieves the resource's human readable description.
    *
-   * @param schema The XML namespace name.
+   * @return The resource's human readable description.
    */
-  public void setSchema(final String schema)
-  {
-    this.schema = schema;
+  public String getDescription() {
+    return description;
   }
 
-
+  /**
+   * Retrieves the Resource's HTTP addressable endpoint relative to the
+   * Base URL.
+   *
+   * @return The Resource's HTTP addressable endpoint relative to the Base URL.
+   */
+  public String getQueryEndpoint() {
+    return queryEndpoint;
+  }
 
   @Override
   public String toString()

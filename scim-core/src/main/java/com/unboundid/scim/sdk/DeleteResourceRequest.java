@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import java.net.URI;
 
 
@@ -15,12 +17,6 @@ import java.net.URI;
  */
 public final class DeleteResourceRequest extends SCIMRequest
 {
-  /**
-   * The name of the resource identified by the request endpoint.
-   * e.g. User or Group.
-   */
-  private final String resourceName;
-
   /**
    * The target resource ID.
    */
@@ -34,33 +30,18 @@ public final class DeleteResourceRequest extends SCIMRequest
    * @param baseURL              The base URL for the SCIM service.
    * @param authenticatedUserID  The authenticated user name or {@code null} if
    *                             the request is not authenticated.
-   * @param resourceName  The name of the resource identified by the request
-   *                      endpoint. e.g. User or Group.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
    * @param resourceID    The target resource ID.
    */
   public DeleteResourceRequest(final URI baseURL,
                                final String authenticatedUserID,
-                               final String resourceName,
+                               final ResourceDescriptor resourceDescriptor,
                                final String resourceID)
   {
-    super(baseURL, authenticatedUserID);
-    this.resourceName        = resourceName;
+    super(baseURL, authenticatedUserID, resourceDescriptor);
     this.resourceID          = resourceID;
   }
-
-
-
-  /**
-   * Get the name of the resource identified by the request endpoint. e.g.
-   * User or Group.
-   *
-   * @return  The name of the resource identified by the request endpoint.
-   */
-  public String getResourceName()
-  {
-    return resourceName;
-  }
-
 
 
   /**

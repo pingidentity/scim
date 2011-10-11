@@ -6,7 +6,7 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.asn1.ASN1OctetString;
-import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;

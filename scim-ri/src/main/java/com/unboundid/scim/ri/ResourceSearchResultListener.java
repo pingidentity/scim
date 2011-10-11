@@ -8,6 +8,7 @@ package com.unboundid.scim.ri;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -44,7 +45,7 @@ public class ResourceSearchResultListener implements SearchResultListener
   /**
    * The SCIM objects to be returned.
    */
-  private final List<SCIMObject> resources;
+  private final List<BaseResource> resources;
 
 
 
@@ -58,9 +59,10 @@ public class ResourceSearchResultListener implements SearchResultListener
     final SCIMServer scimServer = SCIMServer.getInstance();
 
     this.resourceMapper =
-        scimServer.getQueryResourceMapper(request.getEndPoint());
+        scimServer.getQueryResourceMapper(
+            request.getResourceDescriptor().getQueryEndpoint());
     this.request        = request;
-    this.resources      = new ArrayList<SCIMObject>();
+    this.resources      = new ArrayList<BaseResource>();
   }
 
 
@@ -78,23 +80,26 @@ public class ResourceSearchResultListener implements SearchResultListener
     final SCIMQueryAttributes allAttributes = new SCIMQueryAttributes();
     final SCIMObject scimObject =
         resourceMapper.toSCIMObject(searchEntry, allAttributes);
+    final BaseResource resource =
+        new BaseResource(request.getResourceDescriptor(),
+        scimObject);
 
     if (scimObject != null)
     {
-      LDAPBackend.setIdAndMetaAttributes(scimObject, request, searchEntry);
+      LDAPBackend.setIdAndMetaAttributes(resource, request, searchEntry);
 
       if (request.getFilter() == null ||
           scimObject.matchesFilter(request.getFilter()))
       {
         if (request.getAttributes().allAttributesRequested())
         {
-          resources.add(scimObject);
+          resources.add(resource);
         }
         else
         {
           // Keep only the requested attributes.
-          final SCIMObject returnObject =
-              new SCIMObject(scimObject.getResourceName());
+          final BaseResource returnedResource =
+              new BaseResource(request.getResourceDescriptor());
           for (final SCIMAttributeType attributeType :
               request.getAttributes().getAttributeTypes())
           {
@@ -103,11 +108,11 @@ public class ResourceSearchResultListener implements SearchResultListener
                                         attributeType.getName());
             if (a != null)
             {
-              returnObject.addAttribute(a);
+              returnedResource.getScimObject().addAttribute(a);
             }
           }
 
-          resources.add(returnObject);
+          resources.add(returnedResource);
         }
       }
     }
@@ -135,7 +140,7 @@ public class ResourceSearchResultListener implements SearchResultListener
    *
    * @return  The SCIM objects to be returned.
    */
-  public List<SCIMObject> getResources()
+  public List<BaseResource> getResources()
   {
     return resources;
   }

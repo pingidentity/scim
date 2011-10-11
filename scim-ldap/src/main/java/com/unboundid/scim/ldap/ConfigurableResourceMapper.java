@@ -532,7 +532,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
         toSCIMAttributes(resourceName, entry,
                          queryAttributes);
 
-    final SCIMObject scimObject = new SCIMObject(resourceName);
+    final SCIMObject scimObject = new SCIMObject();
     for (final SCIMAttribute a : attributes)
     {
       scimObject.addAttribute(a);

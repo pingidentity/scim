@@ -5,14 +5,16 @@
 
 package com.unboundid.scim.marshal.xml;
 
+import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertNotNull;
 
 import org.testng.annotations.Test;
 
@@ -39,9 +41,13 @@ public class UnmarshallerTestCase
     final InputStream testXML =
         getResource("/com/unboundid/scim/marshal/core-user.xml");
 
+    final ResourceDescriptor userResourceDescriptor =
+        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
-    final SCIMObject o = unmarshaller.unmarshal(testXML, RESOURCE_NAME_USER);
+    final BaseResource resource = unmarshaller.unmarshal(testXML,
+        userResourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
+    final SCIMObject o = resource.getScimObject();
 
     for (final String attribute : Arrays.asList("id",
                                                 "addresses",
@@ -61,7 +67,6 @@ public class UnmarshallerTestCase
       assertTrue(o.hasAttribute(SCHEMA_URI_ENTERPRISE_EXTENSION, attribute));
     }
 
-    assertNotNull(o.getResourceName());
-    assertEquals(o.getResourceName(), RESOURCE_NAME_USER);
+    assertEquals(resource.getResourceDescriptor(), userResourceDescriptor);
   }
 }

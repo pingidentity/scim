@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import java.net.URI;
 
 
@@ -15,11 +17,6 @@ import java.net.URI;
  */
 public final class GetResourcesRequest extends SCIMRequest
 {
-  /**
-   * The endpoint identified in the request. e.g. Users or Groups.
-   */
-  private final String endPoint;
-
   /**
    * The filter parameters of the request.
    */
@@ -48,8 +45,8 @@ public final class GetResourcesRequest extends SCIMRequest
    * @param baseURL               The base URL for the SCIM service.
    * @param authenticatedUserID   The authenticated user name or {@code null} if
    *                              the request is not authenticated.
-   * @param endPoint              The endpoint identified in the request. e.g.
-   *                              Users or Groups.
+   * @param resourceDescriptor    The ResourceDescriptor associated with this
+   *                              request.
    * @param filter                The filter parameters of the request.
    * @param sortParameters        The sorting parameters of the request.
    * @param pageParameters        The pagination parameters of the request.
@@ -57,30 +54,17 @@ public final class GetResourcesRequest extends SCIMRequest
    */
   public GetResourcesRequest(final URI baseURL,
                              final String authenticatedUserID,
-                             final String endPoint,
+                             final ResourceDescriptor resourceDescriptor,
                              final SCIMFilter filter,
                              final SortParameters sortParameters,
                              final PageParameters pageParameters,
                              final SCIMQueryAttributes attributes)
   {
-    super(baseURL, authenticatedUserID);
-    this.endPoint       = endPoint;
+    super(baseURL, authenticatedUserID, resourceDescriptor);
     this.filter         = filter;
     this.sortParameters = sortParameters;
     this.pageParameters = pageParameters;
     this.attributes     = attributes;
-  }
-
-
-
-  /**
-   * Retrieve the endpoint identified in the request. e.g. Users or Groups.
-   *
-   * @return  The endpoint identified in the request. e.g. Users or Groups.
-   */
-  public String getEndPoint()
-  {
-    return endPoint;
   }
 
 

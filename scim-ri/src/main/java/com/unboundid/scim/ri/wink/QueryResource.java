@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.ri.wink;
 
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -36,11 +38,12 @@ public class QueryResource extends QueryResourceBase
   /**
    * Create a new dynamic resource for query operations on a SCIM resource.
    *
-   * @param resourceEndpoint  The REST endpoint for querying the resource.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             resource.
    */
-  public QueryResource(final String resourceEndpoint)
+  public QueryResource(final ResourceDescriptor resourceDescriptor)
   {
-    super(resourceEndpoint);
+    super(resourceDescriptor);
   }
 
 

@@ -2,9 +2,7 @@
  * Copyright 2011 UnboundID Corp.
  * All Rights Reserved.
  */
-package com.unboundid.scim.config;
-
-import com.unboundid.scim.sdk.Debug;
+package com.unboundid.scim.schema;
 
 import java.util.List;
 
@@ -23,42 +21,27 @@ public class AttributeDescriptor {
     /**
      * String data type.
      */
-    STRING("xs:string"),
+    STRING,
     /**
      * Boolean data type.
      */
-    BOOLEAN("xs:boolean"),
+    BOOLEAN,
     /**
      * Date Time data type.
      */
-    DATETIME("xs:dateTime"),
+    DATETIME,
     /**
      * Integer data type.
      */
-    INTEGER("xs:integer"),
+    INTEGER,
     /**
      * Binary data type.
      */
-    BINARY("xs:base64Binary");
-
-    private final String xmlType;
-
+    BINARY,
     /**
-     * Constructs a new DataType.
-     * @param type The external data type.
+     * Complex data type.
      */
-    DataType(final String type) {
-      xmlType = type;
-    }
-
-    /**
-     * Returns the type in XML schema syntax; e.g., 'string' > 'xs:string'.
-     *
-     * @return XML The XML data type.
-     */
-    public String getXmlType() {
-      return xmlType;
-    }
+    COMPLEX;
 
     /**
      * Parses a supplied data type into a SCIM defined data type.
@@ -70,7 +53,6 @@ public class AttributeDescriptor {
       try {
         return DataType.valueOf(type.toUpperCase());
       } catch (Exception e) {
-        Debug.debugException(e);
         return null;
       }
     }
@@ -81,7 +63,11 @@ public class AttributeDescriptor {
 
   private final String name;
 
-  private final boolean complex;
+  private final String description;
+
+  private final boolean readOnly;
+
+  private final boolean required;
 
   private final boolean plural;
 
@@ -98,7 +84,9 @@ public class AttributeDescriptor {
   public AttributeDescriptor(final Builder builder) {
     this.schema = builder.schema;
     this.name = builder.externalAttributeName;
-    this.complex = builder.complex;
+    this.description = builder.description;
+    this.readOnly = builder.readOnly;
+    this.required = builder.required;
     this.plural = builder.plural;
     this.dataType = builder.dataType;
     this.complexAttributeDescriptors = builder.complexAttributeDescriptors;
@@ -111,7 +99,9 @@ public class AttributeDescriptor {
   public static class Builder {
     private final String schema;
     private final String externalAttributeName;
-    private boolean complex;
+    private final String description;
+    private boolean readOnly;
+    private boolean required;
     private boolean plural;
     private DataType dataType;
     private List<AttributeDescriptor> complexAttributeDescriptors;
@@ -126,21 +116,36 @@ public class AttributeDescriptor {
      * @param externalAttributeName The attribute name to be used in any
      *                              external representation of the SCIM
      *                              attribute. It must not be {@code null}.
+     * @param description           The attribute's human readable description.
      */
-    public Builder(final String schema, final String externalAttributeName) {
+    public Builder(final String schema, final String externalAttributeName,
+                   final String description) {
       this.schema = schema;
       this.externalAttributeName = externalAttributeName;
+      this.description = description;
     }
 
-
     /**
-     * Specifies whether the attribute is a complex attribute.
+     * Specifies whether the attribute is read only.
      *
-     * @param complex {@code true} if the attribute is complex.
+     * @param readOnly {@code true} if the attribute is read only.
      * @return This attribute descriptor builder.
      */
-    public Builder complex(final boolean complex) {
-      this.complex = complex;
+    public Builder readOnly(final boolean readOnly)
+    {
+      this.readOnly = readOnly;
+      return this;
+    }
+
+    /**
+     * Specifies whether the attribute is required.
+     *
+     * @param required {@code true} if the attribute is required.
+     * @return This attribute descriptor builder.
+     */
+    public Builder required(final boolean required)
+    {
+      this.required = required;
       return this;
     }
 
@@ -204,16 +209,6 @@ public class AttributeDescriptor {
     return name;
   }
 
-
-  /**
-   * Indicates whether the attribute is a complex attribute.
-   *
-   * @return {@code true} if the attribute is complex.
-   */
-  public boolean isComplex() {
-    return complex;
-  }
-
   /**
    * Indicates whether the attribute is a plural attribute.
    *
@@ -273,16 +268,49 @@ public class AttributeDescriptor {
 
 
 
+  /**
+   * Retrieves this attribute's human readable description.
+   *
+   * @return This attribute's human redable description.
+   */
+  public String getDescription()
+  {
+    return description;
+  }
+
+  /**
+   * Specifies if this attribute is mutable.
+   *
+   * @return <code>false</code> if this attribute is mutable or
+   *         <code>true</code> otherwise.
+   */
+  public boolean isReadOnly()
+  {
+    return readOnly;
+  }
+
+  /**
+   * Specifies if this attribute is required.
+   *
+   * @return <code>true</code> if this attribute is required for
+   *         <code>false</code> otherwise.
+   */
+  public boolean isRequired()
+  {
+    return required;
+  }
+
   @Override
   public String toString()
   {
     return "AttributeDescriptor{" +
-      "schema='" + schema + '\'' +
-      ", name='" + name + '\'' +
-      ", complex=" + complex +
-      ", plural=" + plural +
-      ", dataType=" + dataType +
-      ", complexAttributeDescriptors=" + complexAttributeDescriptors +
+      "schema='" + getSchema() + '\'' +
+      ", name='" + getName() + '\'' +
+      ", description='" + getDescription() + '\'' +
+      ", plural=" + isPlural() +
+      ", dataType=" + getDataType() +
+      ", isRequired=" + isRequired() +
+      ", isReadOnly=" + isReadOnly() +
       '}';
   }
 }

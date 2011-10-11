@@ -45,6 +45,7 @@
         <module>scim-ldap</module>
         <module>scim-ri</module>
         <module>scim-plugin</module>
+        <module>scim-client</module>
     </modules>
 
     <build>

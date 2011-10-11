@@ -28,12 +28,6 @@ public class SCIMObject
   public static final String SCHEMAS_ATTRIBUTE_NAME = "schemas";
 
   /**
-   * The type of SCIM resource represented by this object, or {@code null}
-   * if the resource type is unknown.
-   */
-  private String resourceName;
-
-  /**
    * The set of attributes in this object grouped by the URI of the schema to
    * which they belong.
    * TODO: Do schema URIs have to be normalized?
@@ -48,52 +42,8 @@ public class SCIMObject
    */
   public SCIMObject()
   {
-    this(null);
-  }
-
-
-
-  /**
-   * Create an empty SCIM object with the specified resource name.
-   *
-   * @param resourceName  The name of the SCIM resource represented by this
-   *                      object, or {@code null} if the resource name is
-   *                      unknown.
-   */
-  public SCIMObject(final String resourceName)
-  {
-    this.resourceName = resourceName;
     this.attributes =
         new HashMap<String, LinkedHashMap<String, SCIMAttribute>>();
-  }
-
-
-
-  /**
-   * Retrieves the name of the SCIM resource represented by this object, or
-   * {@code null} if the resource name is unknown.
-   *
-   * @return  The name of the SCIM resource represented by this object, or
-   *          {@code null} if the resource name is unknown.
-   */
-  public String getResourceName()
-  {
-    return resourceName;
-  }
-
-
-
-  /**
-   * Specifies the name of the SCIM resource represented by this object, or
-   * {@code null} if the resource name is unknown.
-   *
-   * @param resourceName  The name of the SCIM resource represented by this
-   *                      object, or {@code null} if the resource name is
-   *                      unknown.
-   */
-  public void setResourceName(final String resourceName)
-  {
-    this.resourceName = resourceName;
   }
 
 

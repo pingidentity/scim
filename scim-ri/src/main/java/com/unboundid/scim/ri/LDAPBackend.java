@@ -29,33 +29,30 @@ import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
 import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
+import com.unboundid.scim.data.Meta;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMRequest;
-import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.AttributePath;
-import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.SchemaManager;
-import com.unboundid.scim.schema.Error;
-import com.unboundid.scim.schema.Response;
 import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
-import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.PageParameters;
+import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
-import com.unboundid.scim.sdk.GenericResource;
 import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.sdk.UnsupportedOperationException;
 import com.unboundid.util.StaticUtils;
-import org.eclipse.jetty.http.HttpStatus;
 
 import javax.ws.rs.core.UriBuilder;
 import java.text.ParseException;
@@ -114,55 +111,16 @@ public abstract class LDAPBackend
 
 
 
-  /**
-   * Create a SCIM response indicating that a specified resource was not found.
-   *
-   * @param resourceID  The ID of the resource that was not found.
-   *
-   * @return  A SCIM response indicating that a specified resource was not
-   *          found.
-   */
-  private SCIMResponse createNotFoundResponse(final String resourceID)
-  {
-    return createErrorResponse(HttpStatus.NOT_FOUND_404,
-                               "Resource " + resourceID + " not found");
-  }
-
-
-
-  /**
-   * Create a SCIM error response.
-   *
-   * @param statusCode    The status code to be returned.
-   * @param errorMessage  The error message.
-   *
-   * @return  A SCIM error response.
-   */
-  private SCIMResponse createErrorResponse(final int statusCode,
-                                           final String errorMessage)
-  {
-    final Response.Errors errors = new Response.Errors();
-    final Error error = new Error();
-    error.setCode(String.valueOf(statusCode));
-    error.setDescription(errorMessage);
-    errors.getError().add(error);
-
-    final Response response = new Response();
-    response.setErrors(errors);
-
-    return new SCIMResponse(statusCode, response);
-  }
-
-
-
   @Override
-  public SCIMResponse getResource(final GetResourceRequest request)
+  public BaseResource getResource(
+      final GetResourceRequest request) throws SCIMException
   {
     try
     {
       final SCIMServer scimServer = SCIMServer.getInstance();
       final Set<ResourceMapper> mappers =
-          scimServer.getResourceMappers(request.getResourceName());
+          scimServer.getResourceMappers(
+              request.getResourceDescriptor().getName());
 
       final Set<String> requestAttributeSet = new HashSet<String>();
       for (final ResourceMapper m : mappers)
@@ -187,53 +145,53 @@ public abstract class LDAPBackend
               searchRequest);
       if (searchResultEntry == null)
       {
-        return createNotFoundResponse(request.getResourceID());
+        throw new ResourceNotFoundException(
+            "Resource " + request.getResourceID() + " not found");
       }
       else
       {
-        final SCIMObject scimObject = new SCIMObject();
-        scimObject.setResourceName(request.getResourceName());
+        final BaseResource resource =
+            new BaseResource(request.getResourceDescriptor());
 
-        setIdAndMetaAttributes(scimObject, request, searchResultEntry);
+        setIdAndMetaAttributes(resource, request, searchResultEntry);
 
         for (final ResourceMapper m : mappers)
         {
           final List<SCIMAttribute> attributes =
-              m.toSCIMAttributes(request.getResourceName(), searchResultEntry,
+              m.toSCIMAttributes(request.getResourceDescriptor().getName(),
+                                 searchResultEntry,
                                  request.getAttributes());
           for (final SCIMAttribute a : attributes)
           {
-            scimObject.addAttribute(a);
+            resource.getScimObject().addAttribute(a);
           }
         }
 
-        final Response response = new Response();
-        response.setResource(new GenericResource(scimObject));
-
-        return new SCIMResponse(HttpStatus.OK_200, response);
+        return resource;
       }
     }
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new RuntimeException(e);
+      throw new ServerErrorException(e.getMessage());
     }
   }
 
 
 
   @Override
-  public SCIMResponse getResources(final GetResourcesRequest request)
+  public Resources getResources(final GetResourcesRequest request)
+      throws SCIMException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper resourceMapper =
-        scimServer.getQueryResourceMapper(request.getEndPoint());
+        scimServer.getQueryResourceMapper(
+            request.getResourceDescriptor().getQueryEndpoint());
     if (resourceMapper == null || !resourceMapper.supportsQuery())
     {
-      return createErrorResponse(
-          HttpStatus.FORBIDDEN_403,
+      throw new UnsupportedOperationException(
           "The requested operation is not supported on resource end-point '" +
-          request.getEndPoint() + "'");
+          request.getResourceDescriptor().getQueryEndpoint() + "'");
     }
 
     try
@@ -324,37 +282,31 @@ public abstract class LDAPBackend
               searchRequest);
 
       // Prepare the response.
-      final Response response = new Response();
-      final List<SCIMObject> scimObjects = resultListener.getResources();
-      final Response.Resources resources = new Response.Resources();
-      for (final SCIMObject o : scimObjects)
-      {
-        resources.getResource().add(new GenericResource(o));
-      }
-      response.setResources(resources);
-
+      final List<BaseResource> scimObjects = resultListener.getResources();
+      final Resources<BaseResource> resources;
       final VirtualListViewResponseControl vlvResponseControl =
           getVLVResponseControl(searchResult);
       if (vlvResponseControl != null)
       {
-        response.setTotalResults((long)vlvResponseControl.getContentCount());
+        int startIndex = 1;
         if (pageParameters != null)
         {
-          response.setStartIndex(pageParameters.getStartIndex());
+          startIndex = (int)pageParameters.getStartIndex();
         }
-        response.setItemsPerPage(scimObjects.size());
+        resources = new Resources<BaseResource>(scimObjects,
+            vlvResponseControl.getContentCount(), startIndex);
       }
       else
       {
-        response.setTotalResults((long) scimObjects.size());
+        resources = new Resources<BaseResource>(scimObjects);
       }
 
-      return new SCIMResponse(HttpStatus.OK_200, response);
+      return resources;
     }
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new RuntimeException(e);
+      throw new ServerErrorException(e.getMessage());
     }
   }
 
@@ -364,11 +316,13 @@ public abstract class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public SCIMResponse postResource(final PostResourceRequest request)
+  public BaseResource postResource(
+      final PostResourceRequest request) throws SCIMException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final Set<ResourceMapper> mappers =
-        scimServer.getResourceMappers(request.getResourceName());
+        scimServer.getResourceMappers(
+            request.getResourceDescriptor().getName());
 
     final Set<String> requestAttributeSet = new HashSet<String>();
     for (final ResourceMapper m : mappers)
@@ -401,9 +355,9 @@ public abstract class LDAPBackend
 
       if (entry == null)
       {
-        throw new RuntimeException(
+        throw new ServerErrorException(
             "There are no resource mappers that support creation of " +
-            request.getResourceName() + " resources");
+            request.getResourceDescriptor().getName() + " resources");
       }
 
       for (final Attribute a : attributes)
@@ -427,28 +381,26 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new RuntimeException(e);
+      throw new ServerErrorException(e.getMessage());
     }
 
-    final SCIMObject returnObject = new SCIMObject();
-    returnObject.setResourceName(request.getResourceName());
+    final BaseResource resource =
+        new BaseResource(request.getResourceDescriptor());
 
-    setIdAndMetaAttributes(returnObject, request, addedEntry);
+    setIdAndMetaAttributes(resource, request, addedEntry);
 
     for (final ResourceMapper m : mappers)
     {
       final List<SCIMAttribute> scimAttributes =
-          m.toSCIMAttributes(request.getResourceName(), addedEntry,
-                             request.getAttributes());
+          m.toSCIMAttributes(request.getResourceDescriptor().getName(),
+              addedEntry, request.getAttributes());
       for (final SCIMAttribute a : scimAttributes)
       {
-        returnObject.addAttribute(a);
+        resource.getScimObject().addAttribute(a);
       }
     }
 
-    final Response response = new Response();
-    response.setResource(new GenericResource(returnObject));
-    return new SCIMResponse(HttpStatus.CREATED_201, response);
+    return resource;
   }
 
 
@@ -457,7 +409,8 @@ public abstract class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public SCIMResponse deleteResource(final DeleteResourceRequest request)
+  public void deleteResource(final DeleteResourceRequest request)
+      throws SCIMException
   {
     try
     {
@@ -469,11 +422,12 @@ public abstract class LDAPBackend
               deleteRequest);
       if (result.getResultCode().equals(ResultCode.SUCCESS))
       {
-        return new SCIMResponse(HttpStatus.OK_200, new Response());
+        return;
       }
       else if (result.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
       {
-        return createNotFoundResponse(request.getResourceID());
+        throw new ResourceNotFoundException(
+            "Resource " + request.getResourceID() + " not found");
       }
       else
       {
@@ -485,9 +439,10 @@ public abstract class LDAPBackend
       Debug.debugException(e);
       if (e.getResultCode().equals(ResultCode.NO_SUCH_OBJECT))
       {
-        return createNotFoundResponse(request.getResourceID());
+        throw new ResourceNotFoundException(
+            "Resource " + request.getResourceID() + " not found");
       }
-      throw new RuntimeException(e);
+      throw new ServerErrorException(e.getMessage());
     }
   }
 
@@ -497,11 +452,13 @@ public abstract class LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  public SCIMResponse putResource(final PutResourceRequest request)
+  public BaseResource putResource(final PutResourceRequest request)
+      throws SCIMException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final Set<ResourceMapper> mappers =
-        scimServer.getResourceMappers(request.getResourceName());
+        scimServer.getResourceMappers(
+            request.getResourceDescriptor().getName());
 
     final Set<String> requestAttributeSet = new HashSet<String>();
     for (final ResourceMapper m : mappers)
@@ -525,7 +482,8 @@ public abstract class LDAPBackend
       final Entry currentEntry = ldapInterface.getEntry(entryDN);
       if (currentEntry == null)
       {
-        return createNotFoundResponse(request.getResourceID());
+        throw new ResourceNotFoundException(
+            "Resource " + request.getResourceID() + " not found");
       }
 
       for (final ResourceMapper m : mappers)
@@ -549,28 +507,26 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new RuntimeException(e);
+      throw new ServerErrorException(e.getMessage());
     }
 
-    final SCIMObject returnObject = new SCIMObject();
-    returnObject.setResourceName(request.getResourceName());
+    final BaseResource resource =
+        new BaseResource(request.getResourceDescriptor());
 
-    setIdAndMetaAttributes(returnObject, request, modifiedEntry);
+    setIdAndMetaAttributes(resource, request, modifiedEntry);
 
     for (final ResourceMapper m : mappers)
     {
       final List<SCIMAttribute> scimAttributes =
-          m.toSCIMAttributes(request.getResourceName(), modifiedEntry,
-                             request.getAttributes());
+          m.toSCIMAttributes(request.getResourceDescriptor().getName(),
+              modifiedEntry, request.getAttributes());
       for (final SCIMAttribute a : scimAttributes)
       {
-        returnObject.addAttribute(a);
+        resource.getScimObject().addAttribute(a);
       }
     }
 
-    final Response response = new Response();
-    response.setResource(new GenericResource(returnObject));
-    return new SCIMResponse(HttpStatus.OK_200, response);
+    return resource;
   }
 
 
@@ -579,46 +535,27 @@ public abstract class LDAPBackend
    * Set the id and meta attributes in a SCIM object from the provided
    * information.
    *
-   * @param scimObject  The SCIM object whose id and meta attributes are to be
+   * @param resource  The SCIM object whose id and meta attributes are to be
    *                    set.
    * @param request     The SCIM request.
    * @param entry       The LDAP entry from which the attribute values are to
    *                    be derived.
    */
   public static void setIdAndMetaAttributes(
-      final SCIMObject scimObject,
+      final BaseResource resource,
       final SCIMRequest request,
       final Entry entry)
   {
-    final ResourceDescriptor resourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(
-            scimObject.getResourceName());
-    if (resourceDescriptor == null)
-    {
-      return;
-    }
-
-    scimObject.addAttribute(
-        SCIMAttribute.createSingularAttribute(
-            resourceDescriptor.getAttribute("id"),
-            SCIMAttributeValue.createStringValue(
-                entry.getDN())));
-
-    final AttributeDescriptor metaDescriptor =
-        resourceDescriptor.getAttribute("meta");
-    final List<SCIMAttribute> metaAttrs = new ArrayList<SCIMAttribute>();
+    resource.setId(entry.getDN());
 
     final String createTimestamp =
         entry.getAttributeValue("createTimestamp");
+    Date createDate = null;
     if (createTimestamp != null)
     {
       try
       {
-        final Date date = StaticUtils.decodeGeneralizedTime(createTimestamp);
-        metaAttrs.add(
-            SCIMAttribute.createSingularAttribute(
-                metaDescriptor.getAttribute("created"),
-                SCIMAttributeValue.createDateValue(date)));
+        createDate = StaticUtils.decodeGeneralizedTime(createTimestamp);
       }
       catch (ParseException e)
       {
@@ -629,15 +566,12 @@ public abstract class LDAPBackend
 
     final String modifyTimestamp =
         entry.getAttributeValue("modifyTimestamp");
+    Date modifyDate = null;
     if (modifyTimestamp != null)
     {
       try
       {
-        final Date date = StaticUtils.decodeGeneralizedTime(modifyTimestamp);
-        metaAttrs.add(
-            SCIMAttribute.createSingularAttribute(
-                metaDescriptor.getAttribute("lastModified"),
-                SCIMAttributeValue.createDateValue(date)));
+        modifyDate = StaticUtils.decodeGeneralizedTime(modifyTimestamp);
       }
       catch (ParseException e)
       {
@@ -647,18 +581,11 @@ public abstract class LDAPBackend
     }
 
     final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
-    uriBuilder.path(scimObject.getResourceName());
+    uriBuilder.path(resource.getResourceDescriptor().getName());
     uriBuilder.path(entry.getDN());
-    metaAttrs.add(
-        SCIMAttribute.createSingularAttribute(
-            metaDescriptor.getAttribute("location"),
-            SCIMAttributeValue.createStringValue(
-                uriBuilder.build().toString())));
 
-    scimObject.addAttribute(
-        SCIMAttribute.createSingularAttribute(
-            resourceDescriptor.getAttribute("meta"),
-            SCIMAttributeValue.createComplexValue(metaAttrs)));
+    resource.setMeta(new Meta(createDate, modifyDate,
+        uriBuilder.build(), null));
   }
 
 

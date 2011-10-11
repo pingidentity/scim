@@ -7,11 +7,14 @@ package com.unboundid.scim.ri.wink;
 
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.ri.SCIMServer;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.PageParameters;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.SortParameters;
@@ -40,16 +43,16 @@ import static com.unboundid.scim.sdk.SCIMConstants.
 public class QueryResourceBase extends AbstractDynamicResource
 {
   /**
-   * The REST endpoint for querying the resource. e.g. Users
+   * The ResourceDescriptor associated with this resource.
    */
-  private final String resourceEndpoint;
+  private final ResourceDescriptor resourceDescriptor;
 
 
 
   @Override
   public String getPath()
   {
-    return resourceEndpoint;
+    return resourceDescriptor.getQueryEndpoint();
   }
 
 
@@ -57,22 +60,12 @@ public class QueryResourceBase extends AbstractDynamicResource
   /**
    * Create a new dynamic resource for query operations on a SCIM resource.
    *
-   * @param resourceEndpoint  The REST endpoint for querying the resource.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             resource.
    */
-  public QueryResourceBase(final String resourceEndpoint)
+  public QueryResourceBase(final ResourceDescriptor resourceDescriptor)
   {
-    this.resourceEndpoint = resourceEndpoint;
-  }
-
-
-
-  /**
-   * Retrieve the REST endpoint for querying the resource.
-   * @return  The REST endpoint for querying the resource
-   */
-  public String getResourceEndpoint()
-  {
-    return resourceEndpoint;
+    this.resourceDescriptor = resourceDescriptor;
   }
 
 
@@ -184,17 +177,27 @@ public class QueryResourceBase extends AbstractDynamicResource
     final GetResourcesRequest getResourcesRequest =
         new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
                                 requestContext.getAuthID(),
-                                resourceEndpoint,
+                                resourceDescriptor,
                                 filter,
                                 sortParameters,
                                 pageParameters,
                                 requestContext.getQueryAttributes());
-    final SCIMResponse scimResponse = backend.getResources(getResourcesRequest);
+    Response.ResponseBuilder responseBuilder;
+    try
+    {
+      final Resources resources = backend.getResources(getResourcesRequest);
 
-    // Build the response.
-    final Response.ResponseBuilder responseBuilder =
-        Response.status(scimResponse.getStatusCode());
-    setResponseEntity(responseBuilder, mediaType, scimResponse);
+      // Build the response.
+      responseBuilder =
+          Response.status(Response.Status.OK);
+      setResponseEntity(responseBuilder, mediaType, resources);
+    }
+    catch(SCIMException e)
+    {
+      responseBuilder =
+          Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, mediaType, e);
+    }
 
     if (requestContext.getOrigin() != null)
     {
@@ -242,7 +245,7 @@ public class QueryResourceBase extends AbstractDynamicResource
       {
         try
         {
-          marshaller.marshal(scimResponse.getResponse(), outputStream);
+          scimResponse.marshal(marshaller, outputStream);
         }
         catch (Exception e)
         {

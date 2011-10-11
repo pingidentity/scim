@@ -5,8 +5,8 @@
 
 package com.unboundid.scim;
 
-import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.config.ResourceDescriptor;
+import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -54,7 +54,8 @@ public class SCIMTestUtils
         manager.getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
 
     final AttributeDescriptor addressesDescriptor =
-        resourceDescriptor.getAttribute("addresses");
+        resourceDescriptor.getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "addresses");
     final AttributeDescriptor addressDescriptor =
         addressesDescriptor.getAttribute("address");
 
@@ -161,7 +162,8 @@ public class SCIMTestUtils
         manager.getResourceDescriptor(SCIMConstants.RESOURCE_NAME_USER);
 
     final AttributeDescriptor attributeDescriptor =
-        resourceDescriptor.getAttribute("name");
+        resourceDescriptor.getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "name");
 
     final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
 

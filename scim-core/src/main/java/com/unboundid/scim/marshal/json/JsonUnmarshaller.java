@@ -4,21 +4,25 @@
  */
 package com.unboundid.scim.marshal.json;
 
-import com.unboundid.scim.config.AttributeDescriptor;
-import com.unboundid.scim.config.ResourceDescriptor;
-import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.ResourceFactory;
+import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.sdk.MarshalException;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,50 +35,52 @@ import java.util.List;
  */
 public class JsonUnmarshaller implements Unmarshaller
 {
-
   /**
    * {@inheritDoc}
    */
-  public SCIMObject unmarshal(final File file, final String resourceName)
-      throws Exception
+  public <R extends BaseResource> R unmarshal(
+      final InputStream inputStream,
+      final ResourceDescriptor resourceDescriptor,
+      final ResourceFactory<R> resourceFactory) throws MarshalException
   {
-    final FileInputStream fileInputStream = new FileInputStream(file);
     try
     {
-      return unmarshal(fileInputStream, resourceName);
+      final JSONObject jsonObject =
+          new JSONObject(new JSONTokener(inputStream));
+
+      return unmarshal(jsonObject, resourceDescriptor, resourceFactory);
     }
-    finally
+    catch(JSONException e)
     {
-      fileInputStream.close();
+      throw new MarshalException("Error while reading JSON: " +
+          e.getMessage(), e);
     }
   }
 
-
-
   /**
-   * {@inheritDoc}
+   * Read an SCIM resource from the specified JSON object.
+   *
+   * @param <R> The type of resource instance.
+   * @param jsonObject  The JSON object to be read.
+   * @param resourceDescriptor The descriptor of the SCIM resource to be read.
+   * @param resourceFactory The resource factory to use to create the resource
+   *                        instance.
+   *
+   * @return  The SCIM resource that was read.
+   *
+   * @throws JSONException If an error occurred.
    */
-  public SCIMObject unmarshal(final InputStream inputStream,
-                              final String resourceName)
-      throws Exception
+  private <R extends BaseResource> R unmarshal(final JSONObject jsonObject,
+                               final ResourceDescriptor resourceDescriptor,
+                               final ResourceFactory<R> resourceFactory)
+      throws JSONException
   {
     final SCIMObject scimObject = new SCIMObject();
-    final JSONObject jsonObject = new JSONObject(new JSONTokener(inputStream));
 
     // The first keyed object ought to be a schemas array, but it may not be
     // present if 1) the attrs are all core and 2) the client decided to omit
     // the schema declaration.
     //Object schemas = jsonObject.get(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
-
-    final ResourceDescriptor resourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(resourceName);
-    if (resourceDescriptor == null)
-    {
-      throw new RuntimeException("No resource descriptor found for " +
-                                 resourceName);
-    }
-
-    scimObject.setResourceName(resourceDescriptor.getName());
 
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor
         .getAttributeDescriptors())
@@ -89,7 +95,8 @@ public class JsonUnmarshaller implements Unmarshaller
           attr = createPluralAttribute((JSONArray) jsonAttribute,
                                        attributeDescriptor);
         }
-        else if (attributeDescriptor.isComplex())
+        else if (attributeDescriptor.getDataType() ==
+            AttributeDescriptor.DataType.COMPLEX)
         {
           attr = createComplexAttribute((JSONObject) jsonAttribute,
                                         attributeDescriptor);
@@ -101,7 +108,96 @@ public class JsonUnmarshaller implements Unmarshaller
         scimObject.addAttribute(attr);
       }
     }
-    return scimObject;
+    return resourceFactory.createResource(resourceDescriptor, scimObject);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public <R extends BaseResource> Resources<R> unmarshalResources(
+      final InputStream inputStream,
+      final ResourceDescriptor resourceDescriptor,
+      final ResourceFactory<R> resourceFactory) throws MarshalException
+  {
+    try
+    {
+      final JSONObject jsonObject =
+          new JSONObject(new JSONTokener(inputStream));
+
+      int totalResults = 0;
+      if(jsonObject.has("totalResults"))
+      {
+        totalResults = jsonObject.getInt("totalResults");
+      }
+
+      int startIndex = 1;
+      if(jsonObject.has("startIndex"))
+      {
+        startIndex = jsonObject.getInt("startIndex");
+      }
+
+      List<R> resources = Collections.emptyList();
+      if(jsonObject.has("Resources"))
+      {
+        JSONArray resourcesArray = jsonObject.getJSONArray("Resources");
+        resources = new ArrayList<R>(resourcesArray.length());
+        for(int i = 0; i < resourcesArray.length(); i++)
+        {
+          R resource =
+              unmarshal(resourcesArray.getJSONObject(i), resourceDescriptor,
+                  resourceFactory);
+          resources.add(resource);
+        }
+      }
+
+      return new Resources<R>(resources, totalResults, startIndex);
+    }
+    catch(JSONException e)
+    {
+      throw new MarshalException("Error while reading JSON: " +
+          e.getMessage(), e);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public SCIMException unmarshalError(final InputStream inputStream)
+      throws MarshalException
+  {
+    try
+    {
+      final JSONObject jsonObject =
+          new JSONObject(new JSONTokener(inputStream));
+
+      if(jsonObject.has("Errors"))
+      {
+        JSONArray errors = jsonObject.getJSONArray("Errors");
+        if(errors.length() >= 1)
+        {
+          JSONObject error = errors.getJSONObject(0);
+          String code = error.getString("statusCode");
+          String description = null;
+          if(error.has("description"))
+          {
+            description = error.getString("description");
+          }
+          String uri = null;
+          if(error.has("uri"))
+          {
+            uri = error.getString("uri");
+          }
+          return SCIMException.createException(Integer.valueOf(code),
+              description);
+        }
+      }
+      return null;
+    }
+    catch (JSONException e)
+    {
+      throw new MarshalException("Error while reading JSON: " +
+          e.getMessage(), e);
+    }
   }
 
 

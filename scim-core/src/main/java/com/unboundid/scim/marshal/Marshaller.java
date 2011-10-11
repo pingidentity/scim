@@ -6,13 +6,11 @@
 package com.unboundid.scim.marshal;
 
 
-import com.unboundid.scim.schema.Response;
-import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMException;
 
-import java.io.File;
 import java.io.OutputStream;
-import java.io.Writer;
-
 
 
 /**
@@ -21,44 +19,20 @@ import java.io.Writer;
  * for XML and JSON. Marshaller implementations are required to be thread-safe.
  */
 public interface Marshaller {
-
-  /**
-   * Write a SCIM object to a file.
-   *
-   * @param object  The SCIM object to be written.
-   * @param file    The file to which the SCIM object should be written.
-   *
-   * @throws Exception  If the object could not be written.
-   */
-  void marshal(SCIMObject object, File file) throws Exception;
-
   /**
    * Write a SCIM object to an output stream.
    *
-   * @param object        The SCIM object to be written.
+   * @param resource      The SCIM resource to be written.
    * @param outputStream  The output stream to which the SCIM object should
    *                      be written.
    *
    * @throws Exception  If the object could not be written.
    */
-  void marshal(SCIMObject object, OutputStream outputStream)
+  void marshal(BaseResource resource, OutputStream outputStream)
     throws Exception;
 
   /**
-   * Write a SCIM object to a character stream writer.
-   *
-   * @param object  The SCIM object to be written.
-   * @param writer  The character stream writer to which the SCIM object should
-   *                be written.
-   *
-   * @throws Exception  If the object could not be written.
-   */
-  void marshal(SCIMObject object, Writer writer) throws Exception;
-
-  /**
-   * Write a SCIM resource to an output stream. The resources contained
-   * in the response must be instances of
-   * {@link com.unboundid.scim.ldap.GenericResource}.
+   * Write a SCIM listing response to an output stream.
    *
    * @param response      The SCIM response to be written.
    * @param outputStream  The output stream to which the SCIM response should
@@ -66,20 +40,20 @@ public interface Marshaller {
    *
    * @throws Exception  If the response could not be written.
    */
-  void marshal(Response response, OutputStream outputStream)
+  void marshal(Resources<? extends BaseResource> response,
+               OutputStream outputStream)
     throws Exception;
 
   /**
-   * Write a SCIM response to a character stream writer. The resources contained
-   * in the response must be instances of
-   * {@link com.unboundid.scim.ldap.GenericResource}.
+   * Write a SCIM error response to an output stream.
    *
-   * @param response  The SCIM response to be written.
-   * @param writer    The character stream writer to which the SCIM response
-   *                  should be written.
+   * @param response      The SCIM response to be written.
+   * @param outputStream  The output stream to which the SCIM response should
+   *                      be written.
    *
    * @throws Exception  If the response could not be written.
    */
-  void marshal(Response response, Writer writer) throws Exception;
+  void marshal(SCIMException response, OutputStream outputStream)
+    throws Exception;
 
 }

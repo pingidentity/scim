@@ -6,7 +6,7 @@
 package com.unboundid.scim.sdk;
 
 
-import com.unboundid.scim.config.AttributeDescriptor;
+import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.config.Schema;
 import com.unboundid.scim.config.SchemaManager;
 
