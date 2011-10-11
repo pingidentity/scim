@@ -77,6 +77,11 @@ public class SCIMServer
    */
   private volatile Map<String, ResourceMapper> queryResourceMappers;
 
+  /**
+   * Monitor data.
+   */
+  private SCIMMonitorData monitorData;
+
 
 
   /**
@@ -113,6 +118,7 @@ public class SCIMServer
     this.backends = new HashMap<String, SCIMBackend>();
     this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
     this.queryResourceMappers = new HashMap<String, ResourceMapper>();
+    this.monitorData = new SCIMMonitorData();
 
     if (serverConfig.getResourcesFile() != null)
     {
@@ -339,6 +345,17 @@ public class SCIMServer
   public ResourceMapper getQueryResourceMapper(final String resourceEndPoint)
   {
     return queryResourceMappers.get(resourceEndPoint);
+  }
+
+
+
+  /**
+   * Retrieve the current monitoring data.
+   * @return  The current monitoring data.
+   */
+  public SCIMMonitorData getMonitorData()
+  {
+    return monitorData;
   }
 
 

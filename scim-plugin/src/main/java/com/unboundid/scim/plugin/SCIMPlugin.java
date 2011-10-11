@@ -14,6 +14,7 @@ import com.unboundid.directory.sdk.ds.types.DirectoryServerContext;
 import com.unboundid.directory.sdk.ds.types.StartupPluginResult;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldif.LDIFException;
 import com.unboundid.scim.ri.SCIMServer;
 import com.unboundid.scim.ri.SCIMServerConfig;
 import com.unboundid.scim.sdk.Debug;
@@ -36,6 +37,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
+
+import static com.unboundid.scim.sdk.Debug.debugException;
 
 
 
@@ -301,7 +304,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
       throw new LDAPException(
           ResultCode.OTHER,
           "An error occurred while initializing the SCIM plugin.", e);
@@ -328,12 +331,14 @@ public final class SCIMPlugin
       }
       catch (final Exception e)
       {
-        Debug.debugException(e);
+        debugException(e);
         throw new LDAPException(
             ResultCode.OTHER,
             "An error occurred while attempting to start listening for " +
             "SCIM requests:" + StaticUtils.getExceptionMessage(e), e);
       }
+
+      addMonitorProvider();
     }
 
     Debug.debug(Level.INFO, DebugType.OTHER,
@@ -376,7 +381,7 @@ public final class SCIMPlugin
       }
       catch (IllegalArgumentException e)
       {
-        Debug.debugException(e);
+        debugException(e);
         unacceptableReasons.add("Invalid value '" + debugLevelArg.getValue() +
                                 "' for the SCIM plugin debug level");
         acceptable = false;
@@ -504,7 +509,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
     }
 
     final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
@@ -515,7 +520,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
       messages.add("An error occurred while initializing the SCIM plugin:" +
                    StaticUtils.getExceptionMessage(e));
       return ResultCode.OTHER;
@@ -538,7 +543,7 @@ public final class SCIMPlugin
     }
     catch (final Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
       messages.add("An error occurred while attempting to start listening " +
                    "for SCIM requests:" + StaticUtils.getExceptionMessage(e));
       return ResultCode.OTHER;
@@ -568,12 +573,14 @@ public final class SCIMPlugin
     }
     catch (final Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
       return new StartupPluginResult(
           false, true,
           "An error occurred while attempting to start listening for " +
           "SCIM requests:" + StaticUtils.getExceptionMessage(e));
     }
+
+    addMonitorProvider();
 
     return StartupPluginResult.SUCCESS;
   }
@@ -595,7 +602,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
     }
   }
 
@@ -614,7 +621,7 @@ public final class SCIMPlugin
     }
     catch (Exception e)
     {
-      Debug.debugException(e);
+      debugException(e);
     }
   }
 
@@ -704,5 +711,41 @@ public final class SCIMPlugin
     }
 
     return scimServerConfig;
+  }
+
+
+
+  /**
+   * Add a configuration entry for the SCIM monitor provider if there is not
+   * one already.
+   */
+  private void addMonitorProvider()
+  {
+    try
+    {
+      serverContext.getInternalRootConnection().add(
+          "dn: cn=SCIM Monitor Provider,cn=Monitor Providers,cn=config",
+          "objectClass: top",
+          "objectClass: ds-cfg-monitor-provider",
+          "objectClass: ds-cfg-third-party-monitor-provider",
+          "cn: SCIM Monitor Provider",
+          "ds-cfg-java-class: " +
+          "com.unboundid.directory.sdk.extensions.ThirdPartyMonitorProvider",
+          "ds-cfg-extension-class: " +
+          "com.unboundid.scim.plugin.SCIMMonitorProvider",
+          "ds-cfg-enabled: true"
+      );
+    }
+    catch (LDIFException e)
+    {
+      debugException(e);
+    }
+    catch (LDAPException e)
+    {
+      if (!e.getResultCode().equals(ResultCode.ENTRY_ALREADY_EXISTS))
+      {
+        debugException(e);
+      }
+    }
   }
 }

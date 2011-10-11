@@ -8,6 +8,8 @@ package com.unboundid.scim.plugin;
 import com.unboundid.directory.tests.standalone.BaseTestCase;
 import com.unboundid.directory.tests.standalone.ExternalInstance;
 import com.unboundid.directory.tests.standalone.util.ZipExtractor;
+import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.LDAPException;
 
 import java.io.File;
 
@@ -64,5 +66,24 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set",
         "extension-argument:useResourcesFile=config/scim/resources.xml",
         "--set", "extension-argument:debugEnabled");
+  }
+
+
+
+  /**
+   * Get a SCIM monitor attribute as a string.
+   *
+   * @param instance   The external instance containing the monitor data.
+   * @param attribute  The desired monitor attribute.
+   * @return  The value of the SCIM monitor attribute as a string.
+   * @throws LDAPException  If the SCIM monitor entry could not be read.
+   */
+  protected String getMonitorAsString(final ExternalInstance instance,
+                                      final String attribute)
+      throws LDAPException
+  {
+    final Entry entry =
+        instance.readEntry("cn=SCIM,cn=monitor");
+    return entry.getAttributeValue(attribute);
   }
 }

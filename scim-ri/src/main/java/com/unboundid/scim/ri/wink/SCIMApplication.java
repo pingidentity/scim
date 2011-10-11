@@ -20,6 +20,17 @@ import java.util.Set;
 public class SCIMApplication extends WinkApplication
 {
   @Override
+  public Set<Class<?>> getClasses()
+  {
+    final Set<Class<?>> classes = new HashSet<Class<?>>();
+    classes.add(MonitorResource.class);
+
+    return classes;
+  }
+
+
+
+  @Override
   public Set<Object> getInstances()
   {
     final Set<Object> instances = new HashSet<Object>();

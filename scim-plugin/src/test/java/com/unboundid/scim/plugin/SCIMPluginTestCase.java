@@ -8,6 +8,7 @@ package com.unboundid.scim.plugin;
 import com.unboundid.directory.tests.standalone.ExternalInstance;
 import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
+import com.unboundid.scim.sdk.Version;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -59,6 +60,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     instance.startInstance();
     configurePlugin(instance, "scim-plugin", 8181);
+
+    assertEquals(getMonitorAsString(instance, "Version"), Version.VERSION);
     instance.stopInstance();
   }
 }
