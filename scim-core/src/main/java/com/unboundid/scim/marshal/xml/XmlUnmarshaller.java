@@ -257,7 +257,7 @@ public class XmlUnmarshaller implements Unmarshaller
         for(int j = 0; j < nodes.getLength(); j++)
         {
           Node attr = nodes.item(j);
-          if(attr.getLocalName().equals("statusCode"))
+          if(attr.getLocalName().equals("code"))
           {
             code = attr.getTextContent();
           }

@@ -17,6 +17,7 @@ import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
+import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SortParameters;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.RestClient;
@@ -98,6 +99,21 @@ public class SCIMEndpoint<R extends BaseResource>
       this.unmarshaller = marshalContext.unmarshaller(
           com.unboundid.scim.marshal.Context.Format.Xml);
     }
+  }
+
+
+
+  /**
+   * Constructs a new instance of a resource object which is empty. This
+   * method does not interact with the SCIM service. It creates a local object
+   * that may be provided to the {@link SCIMEndpoint#insert} method after the
+   * attributes have been specified.
+   *
+   * @return  A new instance of a resource object.
+   */
+  public R newResource()
+  {
+    return resourceFactory.createResource(resourceDescriptor, new SCIMObject());
   }
 
   /**
@@ -255,7 +271,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * Insert the specified resource instance.
    *
    * @param resource The resource to insert.
-   * @return The newly inserted resource returned by the service provider.\
+   * @return The newly inserted resource returned by the service provider.
    * @throws SCIMException If an error occurs.
    */
   public R insert(final R resource) throws SCIMException
@@ -299,7 +315,7 @@ public class SCIMEndpoint<R extends BaseResource>
 
     ClientResponse response = clientResource.post(output);
 
-    if(response.getStatusType() == Response.Status.OK)
+    if(response.getStatusType() == Response.Status.CREATED)
     {
       R postedResource = unmarshaller.unmarshal(
           response.getEntity(InputStream.class), resourceDescriptor,

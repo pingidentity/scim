@@ -176,7 +176,7 @@ public class JsonUnmarshaller implements Unmarshaller
         if(errors.length() >= 1)
         {
           JSONObject error = errors.getJSONObject(0);
-          String code = error.getString("statusCode");
+          String code = error.getString("code"); // TODO: code is optional!
           String description = null;
           if(error.has("description"))
           {

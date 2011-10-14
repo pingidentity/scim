@@ -194,7 +194,7 @@ public class JsonMarshaller implements Marshaller
       jsonWriter.object();
 
       jsonWriter.key("code");
-      jsonWriter.value(response.getStatusCode());
+      jsonWriter.value(String.valueOf(response.getStatusCode()));
 
       final String description = response.getMessage();
       if (description != null)
