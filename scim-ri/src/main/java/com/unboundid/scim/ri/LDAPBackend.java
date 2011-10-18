@@ -140,9 +140,11 @@ public abstract class LDAPBackend
                             filter, requestAttributes);
       addCommonControls(request, searchRequest);
 
+      final LDAPInterface ldapInterface =
+          getLDAPInterface(request.getAuthenticatedUserID());
+
       final SearchResultEntry searchResultEntry =
-          getLDAPInterface(request.getAuthenticatedUserID()).searchForEntry(
-              searchRequest);
+          ldapInterface.searchForEntry(searchRequest);
       if (searchResultEntry == null)
       {
         throw new ResourceNotFoundException(
@@ -160,7 +162,8 @@ public abstract class LDAPBackend
           final List<SCIMAttribute> attributes =
               m.toSCIMAttributes(request.getResourceDescriptor().getName(),
                                  searchResultEntry,
-                                 request.getAttributes());
+                                 request.getAttributes(),
+                                 ldapInterface);
           for (final SCIMAttribute a : attributes)
           {
             resource.getScimObject().addAttribute(a);
@@ -204,8 +207,10 @@ public abstract class LDAPBackend
       requestAttributeSet.add("modifyTimestamp");
       requestAttributeSet.add("objectClass");
 
+      final LDAPInterface ldapInterface =
+          getLDAPInterface(request.getAuthenticatedUserID());
       final ResourceSearchResultListener resultListener =
-          new ResourceSearchResultListener(request);
+          new ResourceSearchResultListener(request, ldapInterface);
       SearchRequest searchRequest = null;
       if (scimFilter != null)
       {
@@ -277,9 +282,7 @@ public abstract class LDAPBackend
 
       // Invoke a search operation.
       addCommonControls(request, searchRequest);
-      final SearchResult searchResult =
-          getLDAPInterface(request.getAuthenticatedUserID()).search(
-              searchRequest);
+      final SearchResult searchResult = ldapInterface.search(searchRequest);
 
       // Prepare the response.
       final List<BaseResource> scimObjects = resultListener.getResources();
@@ -369,38 +372,40 @@ public abstract class LDAPBackend
       addRequest.addControl(
           new PostReadRequestControl(requestAttributes));
       addCommonControls(request, addRequest);
-      final LDAPResult addResult =
-          getLDAPInterface(request.getAuthenticatedUserID()).add(addRequest);
+
+      final LDAPInterface ldapInterface =
+          getLDAPInterface(request.getAuthenticatedUserID());
+      final LDAPResult addResult = ldapInterface.add(addRequest);
 
       final PostReadResponseControl c = getPostReadResponseControl(addResult);
       if (c != null)
       {
         addedEntry = c.getEntry();
       }
+
+      final BaseResource resource =
+          new BaseResource(request.getResourceDescriptor());
+
+      setIdAndMetaAttributes(resource, request, addedEntry);
+
+      for (final ResourceMapper m : mappers)
+      {
+        final List<SCIMAttribute> scimAttributes =
+            m.toSCIMAttributes(request.getResourceDescriptor().getName(),
+                addedEntry, request.getAttributes(), ldapInterface);
+        for (final SCIMAttribute a : scimAttributes)
+        {
+          resource.getScimObject().addAttribute(a);
+        }
+      }
+
+      return resource;
     }
     catch (LDAPException e)
     {
       Debug.debugException(e);
       throw new ServerErrorException(e.getMessage());
     }
-
-    final BaseResource resource =
-        new BaseResource(request.getResourceDescriptor());
-
-    setIdAndMetaAttributes(resource, request, addedEntry);
-
-    for (final ResourceMapper m : mappers)
-    {
-      final List<SCIMAttribute> scimAttributes =
-          m.toSCIMAttributes(request.getResourceDescriptor().getName(),
-              addedEntry, request.getAttributes());
-      for (final SCIMAttribute a : scimAttributes)
-      {
-        resource.getScimObject().addAttribute(a);
-      }
-    }
-
-    return resource;
   }
 
 
@@ -503,30 +508,30 @@ public abstract class LDAPBackend
       {
         modifiedEntry = c.getEntry();
       }
+
+      final BaseResource resource =
+          new BaseResource(request.getResourceDescriptor());
+
+      setIdAndMetaAttributes(resource, request, modifiedEntry);
+
+      for (final ResourceMapper m : mappers)
+      {
+        final List<SCIMAttribute> scimAttributes =
+            m.toSCIMAttributes(request.getResourceDescriptor().getName(),
+                modifiedEntry, request.getAttributes(), ldapInterface);
+        for (final SCIMAttribute a : scimAttributes)
+        {
+          resource.getScimObject().addAttribute(a);
+        }
+      }
+
+      return resource;
     }
     catch (LDAPException e)
     {
       Debug.debugException(e);
       throw new ServerErrorException(e.getMessage());
     }
-
-    final BaseResource resource =
-        new BaseResource(request.getResourceDescriptor());
-
-    setIdAndMetaAttributes(resource, request, modifiedEntry);
-
-    for (final ResourceMapper m : mappers)
-    {
-      final List<SCIMAttribute> scimAttributes =
-          m.toSCIMAttributes(request.getResourceDescriptor().getName(),
-              modifiedEntry, request.getAttributes());
-      for (final SCIMAttribute a : scimAttributes)
-      {
-        resource.getScimObject().addAttribute(a);
-      }
-    }
-
-    return resource;
   }
 
 
@@ -546,7 +551,15 @@ public abstract class LDAPBackend
       final SCIMRequest request,
       final Entry entry)
   {
-    resource.setId(entry.getDN());
+    try
+    {
+      resource.setId(entry.getParsedDN().toNormalizedString());
+    }
+    catch (LDAPException e)
+    {
+      Debug.debugException(e);
+      resource.setId(entry.getDN());
+    }
 
     final String createTimestamp =
         entry.getAttributeValue("createTimestamp");
@@ -585,7 +598,7 @@ public abstract class LDAPBackend
     uriBuilder.path(entry.getDN());
 
     resource.setMeta(new Meta(createDate, modifyDate,
-        uriBuilder.build(), null));
+                              uriBuilder.build(), null));
   }
 
 

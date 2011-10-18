@@ -10,6 +10,7 @@ import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
@@ -17,10 +18,12 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
+import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.AttributePath;
 import org.xml.sax.SAXException;
@@ -91,26 +94,34 @@ public class ConfigurableResourceMapper extends ResourceMapper
    */
   private Set<String> ldapAttributeTypes;
 
+  /**
+   * The derived attributes for this resource mapper.
+   */
+  private Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
+
 
 
   /**
    * Create a new instance of the resource mapper.
    *
-   * @param resourceName   The name of the SCIM resource handled by this
-   *                       resource mapper.
-   * @param queryEndpoint  The  query endpoint for resources handled by this
-   *                       resource mapper.
-   * @param searchBaseDN   The LDAP Search base DN.
-   * @param searchFilter   The LDAP Search filter.
-   * @param addParameters  The LDAP Add parameters.
-   * @param mappers        The attribute mappers for this resource mapper.
+   * @param resourceName       The name of the SCIM resource handled by this
+   *                           resource mapper.
+   * @param queryEndpoint      The  query endpoint for resources handled by this
+   *                           resource mapper.
+   * @param searchBaseDN       The LDAP Search base DN.
+   * @param searchFilter       The LDAP Search filter.
+   * @param addParameters      The LDAP Add parameters.
+   * @param mappers            The attribute mappers for this resource mapper.
+   * @param derivedAttributes  The derived attributes for this resource mapper.
    */
-  public ConfigurableResourceMapper(final String resourceName,
-                                    final String queryEndpoint,
-                                    final String searchBaseDN,
-                                    final String searchFilter,
-                                    final LDAPAddParameters addParameters,
-                                    final Collection<AttributeMapper> mappers)
+  public ConfigurableResourceMapper(
+      final String resourceName,
+      final String queryEndpoint,
+      final String searchBaseDN,
+      final String searchFilter,
+      final LDAPAddParameters addParameters,
+      final Collection<AttributeMapper> mappers,
+      final Collection<DerivedAttribute> derivedAttributes)
   {
     this.resourceName      = resourceName;
     this.queryEndpoint     = queryEndpoint;
@@ -142,6 +153,15 @@ public class ConfigurableResourceMapper extends ResourceMapper
       attributeMappers.put(m.getAttributeDescriptor(), m);
       ldapAttributeTypes.addAll(m.getLDAPAttributeTypes());
     }
+
+    this.derivedAttributes =
+        new HashMap<AttributeDescriptor, DerivedAttribute>(
+            derivedAttributes.size());
+    for (final DerivedAttribute derivedAttribute : derivedAttributes)
+    {
+      this.derivedAttributes.put(derivedAttribute.getAttributeDescriptor(),
+                                 derivedAttribute);
+    }
   }
 
 
@@ -155,9 +175,10 @@ public class ConfigurableResourceMapper extends ResourceMapper
    *
    * @throws JAXBException  If an error occurs during the parsing.
    * @throws SAXException   If the XML schema cannot be instantiated.
+   * @throws SCIMException  If some other error occurs.
    */
   public static List<ResourceMapper> parse(final File file)
-      throws JAXBException, SAXException
+      throws JAXBException, SAXException, SCIMException
   {
     final ObjectFactory factory = new ObjectFactory();
     final String packageName = factory.getClass().getPackage().getName();
@@ -186,14 +207,29 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
       final List<AttributeMapper> attributeMappers =
           new ArrayList<AttributeMapper>();
+      final List<DerivedAttribute> derivedAttributes =
+          new ArrayList<DerivedAttribute>();
       for (final AttributeDefinition attributeDefinition :
           resource.getAttribute())
       {
+        final AttributeDescriptor attributeDescriptor =
+            createAttributeDescriptor(attributeDefinition,
+                                      resource.getSchema());
+
         final AttributeMapper m =
-            AttributeMapper.create(attributeDefinition, resource.getSchema());
+            AttributeMapper.create(attributeDefinition, attributeDescriptor);
         if (m != null)
         {
           attributeMappers.add(m);
+        }
+
+        if (attributeDefinition.getDerivation() != null)
+        {
+          final DerivedAttribute derivedAttribute =
+              DerivedAttribute.create(
+                  attributeDefinition.getDerivation().getJavaClass());
+          derivedAttribute.initialize(attributeDescriptor);
+          derivedAttributes.add(derivedAttribute);
         }
       }
 
@@ -211,7 +247,8 @@ public class ConfigurableResourceMapper extends ResourceMapper
                                          searchBaseDN,
                                          searchFilter,
                                          resource.getLDAPAdd(),
-                                         attributeMappers));
+                                         attributeMappers,
+                                         derivedAttributes));
     }
 
     return resourceMappers;
@@ -277,6 +314,16 @@ public class ConfigurableResourceMapper extends ResourceMapper
       if (queryAttributes.isAttributeRequested(m.getAttributeDescriptor()))
       {
         ldapAttributes.addAll(m.getLDAPAttributeTypes());
+      }
+    }
+
+    for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
+        derivedAttributes.entrySet())
+    {
+      if (queryAttributes.isAttributeRequested(e.getKey()))
+      {
+        final DerivedAttribute derivedAttribute = e.getValue();
+        ldapAttributes.addAll(derivedAttribute.getLDAPAttributeTypes());
       }
     }
 
@@ -501,7 +548,8 @@ public class ConfigurableResourceMapper extends ResourceMapper
   public List<SCIMAttribute> toSCIMAttributes(
       final String resourceName,
       final Entry entry,
-      final SCIMQueryAttributes queryAttributes)
+      final SCIMQueryAttributes queryAttributes,
+      final LDAPInterface ldapInterface)
   {
     final List<SCIMAttribute> attributes =
         new ArrayList<SCIMAttribute>();
@@ -519,6 +567,25 @@ public class ConfigurableResourceMapper extends ResourceMapper
       }
     }
 
+    if (ldapInterface != null)
+    {
+      for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
+          derivedAttributes.entrySet())
+      {
+        if (queryAttributes.isAttributeRequested(e.getKey()))
+        {
+          final DerivedAttribute derivedAttribute = e.getValue();
+          final SCIMAttribute attribute =
+              derivedAttribute.toSCIMAttribute(entry, ldapInterface,
+                                               searchBaseDN);
+          if (attribute != null)
+          {
+            attributes.add(attribute);
+          }
+        }
+      }
+    }
+
     return attributes;
   }
 
@@ -526,7 +593,8 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
   @Override
   public SCIMObject toSCIMObject(final Entry entry,
-                                 final SCIMQueryAttributes queryAttributes)
+                                 final SCIMQueryAttributes queryAttributes,
+                                 final LDAPInterface ldapInterface)
   {
     if (searchFilter != null)
     {
@@ -546,7 +614,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
     final List<SCIMAttribute> attributes =
         toSCIMAttributes(resourceName, entry,
-                         queryAttributes);
+                         queryAttributes, ldapInterface);
 
     final SCIMObject scimObject = new SCIMObject();
     for (final SCIMAttribute a : attributes)
@@ -555,5 +623,156 @@ public class ConfigurableResourceMapper extends ResourceMapper
     }
 
     return scimObject;
+  }
+
+
+
+  /**
+   * Create an attribute descriptor from an attribute definition.
+   *
+   * @param attributeDefinition  The attribute definition.
+   * @param resourceSchema       The resource schema URN.
+   *
+   * @return  A new attribute descriptor.
+   *
+   * @throws SCIMException  If an error occurs.
+   */
+  private static AttributeDescriptor createAttributeDescriptor(
+      final AttributeDefinition attributeDefinition,
+      final String resourceSchema)
+      throws SCIMException
+  {
+    final String schema;
+    if (attributeDefinition.getSchema() == null)
+    {
+      schema = resourceSchema;
+    }
+    else
+    {
+      schema = attributeDefinition.getSchema();
+    }
+
+    if (attributeDefinition.getSimple() != null)
+    {
+      final SimpleAttributeDefinition simpleDefinition =
+          attributeDefinition.getSimple();
+
+      return AttributeDescriptor.singularSimple(
+          attributeDefinition.getName(),
+          AttributeDescriptor.DataType.parse(
+              simpleDefinition.getDataType().value()),
+          attributeDefinition.getDescription(),
+          schema,
+          attributeDefinition.isReadOnly(),
+          attributeDefinition.isRequired(),
+          simpleDefinition.isCaseExact());
+    }
+    else if (attributeDefinition.getComplex() != null)
+    {
+      final ComplexAttributeDefinition complexDefinition =
+          attributeDefinition.getComplex();
+
+      final AttributeDescriptor[] subAttributes =
+          new AttributeDescriptor[complexDefinition.getSubAttribute().size()];
+
+      int i = 0;
+      for (final SubAttributeDefinition subAttributeDefinition :
+          complexDefinition.getSubAttribute())
+      {
+          subAttributes[i++] = AttributeDescriptor.singularSimple(
+                  subAttributeDefinition.getName(),
+                  AttributeDescriptor.DataType.parse(
+                      subAttributeDefinition.getDataType().value()),
+                  subAttributeDefinition.getDescription(),
+                  schema,
+                  subAttributeDefinition.isReadOnly(),
+                  subAttributeDefinition.isRequired(),
+                  subAttributeDefinition.isCaseExact());
+      }
+
+      return AttributeDescriptor.singularComplex(
+          attributeDefinition.getName(),
+          attributeDefinition.getDescription(),
+          schema,
+          attributeDefinition.isReadOnly(),
+          attributeDefinition.isRequired(),
+          subAttributes);
+    }
+    else if (attributeDefinition.getSimplePlural() != null)
+    {
+      final SimplePluralAttributeDefinition simplePluralDefinition =
+          attributeDefinition.getSimplePlural();
+
+      final String[] pluralTypes =
+          new String[simplePluralDefinition.getPluralType().size()];
+
+      int i = 0;
+      for (final PluralType pluralType : simplePluralDefinition.getPluralType())
+      {
+        pluralTypes[i++] = pluralType.getName();
+      }
+
+      return AttributeDescriptor.pluralSimple(
+          attributeDefinition.getName(),
+          AttributeDescriptor.DataType.parse(
+              simplePluralDefinition.getDataType().value()),
+          attributeDefinition.getDescription(),
+          schema,
+          attributeDefinition.isReadOnly(),
+          attributeDefinition.isRequired(),
+          simplePluralDefinition.isCaseExact(),
+          pluralTypes);
+    }
+    else if (attributeDefinition.getComplexPlural() != null)
+    {
+      final ComplexPluralAttributeDefinition complexPluralDefinition =
+          attributeDefinition.getComplexPlural();
+
+      final String[] pluralTypes =
+          new String[complexPluralDefinition.getPluralType().size()];
+
+      int i = 0;
+      for (final PluralType pluralType :
+          complexPluralDefinition.getPluralType())
+      {
+        pluralTypes[i++] = pluralType.getName();
+      }
+
+      final AttributeDescriptor[] subAttributes =
+          new AttributeDescriptor[
+              complexPluralDefinition.getSubAttribute().size()];
+
+      i = 0;
+      for (final SubAttributeDefinition subAttributeDefinition :
+          complexPluralDefinition.getSubAttribute())
+      {
+          subAttributes[i++] = AttributeDescriptor.singularSimple(
+                  subAttributeDefinition.getName(),
+                  AttributeDescriptor.DataType.parse(
+                      subAttributeDefinition.getDataType().value()),
+                  subAttributeDefinition.getDescription(),
+                  schema,
+                  subAttributeDefinition.isReadOnly(),
+                  subAttributeDefinition.isRequired(),
+                  subAttributeDefinition.isCaseExact());
+      }
+      return AttributeDescriptor.pluralComplex(
+          attributeDefinition.getName(),
+          attributeDefinition.getDescription(),
+          schema,
+          attributeDefinition.isReadOnly(),
+          attributeDefinition.isRequired(),
+          pluralTypes, subAttributes);
+    }
+    else
+    {
+      final SCIMException e =
+          new ServerErrorException(
+              "Attribute definition '" + attributeDefinition.getName() +
+              "' does not have a simple, complex, simplePlural or " +
+              "complexPlural element");
+      Debug.debugCodingError(e);
+      throw e;
+    }
   }
 }

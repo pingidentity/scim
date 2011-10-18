@@ -125,25 +125,15 @@ public abstract class AttributeMapper
    * Create an attribute mapper from an attribute definition.
    *
    * @param attributeDefinition  The attribute definition.
-   * @param resourceSchema       The resource schema URN.
+   * @param attributeDescriptor  The attribute descriptor.
    *
    * @return  An attribute mapper, or {@code null} if the attribute definition
    *          contains no mappings.
    */
   public static AttributeMapper create(
       final AttributeDefinition attributeDefinition,
-      final String resourceSchema)
+      final AttributeDescriptor attributeDescriptor)
   {
-    final String schema;
-    if (attributeDefinition.getSchema() == null)
-    {
-      schema = resourceSchema;
-    }
-    else
-    {
-      schema = attributeDefinition.getSchema();
-    }
-
     if (attributeDefinition.getSimple() != null)
     {
       final SimpleAttributeDefinition simpleDefinition =
@@ -154,15 +144,6 @@ public abstract class AttributeMapper
         return null;
       }
 
-      final AttributeDescriptor attributeDescriptor =
-          AttributeDescriptor.singularSimple(attributeDefinition.getName(),
-              AttributeDescriptor.DataType.parse(
-                  simpleDefinition.getDataType().value()),
-              attributeDefinition.getDescription(),
-              schema,
-              attributeDefinition.isReadOnly(),
-              attributeDefinition.isRequired(),
-              simpleDefinition.isCaseExact());
       final AttributeTransformation t =
           AttributeTransformation.create(simpleDefinition.getMapping());
 
@@ -175,22 +156,10 @@ public abstract class AttributeMapper
 
       final List<SubAttributeTransformation> transformations =
           new ArrayList<SubAttributeTransformation>();
-      final AttributeDescriptor[] subAttributes =
-          new AttributeDescriptor[complexDefinition.getSubAttribute().size()];
 
-      int i = 0;
       for (final SubAttributeDefinition subAttributeDefinition :
           complexDefinition.getSubAttribute())
       {
-          subAttributes[i++] = AttributeDescriptor.singularSimple(
-                  subAttributeDefinition.getName(),
-                  AttributeDescriptor.DataType.parse(
-                      subAttributeDefinition.getDataType().value()),
-                  subAttributeDefinition.getDescription(),
-                  schema,
-                  subAttributeDefinition.isReadOnly(),
-                  subAttributeDefinition.isRequired(),
-                  subAttributeDefinition.isCaseExact());
         if (subAttributeDefinition.getMapping() != null)
         {
           transformations.add(
@@ -203,13 +172,6 @@ public abstract class AttributeMapper
         return null;
       }
 
-      final AttributeDescriptor attributeDescriptor =
-          AttributeDescriptor.singularComplex(attributeDefinition.getName(),
-              attributeDefinition.getDescription(),
-              schema,
-              attributeDefinition.isReadOnly(),
-              attributeDefinition.isRequired(),
-              subAttributes);
       return new ComplexSingularAttributeMapper(attributeDescriptor,
                                                 transformations);
     }
@@ -220,13 +182,8 @@ public abstract class AttributeMapper
 
       final List<PluralValueMapper> pluralMappers =
           new ArrayList<PluralValueMapper>();
-      final String[] pluralTypes =
-          new String[simplePluralDefinition.getPluralType().size()];
-
-      int i = 0;
       for (final PluralType pluralType : simplePluralDefinition.getPluralType())
       {
-        pluralTypes[i++] = pluralType.getName();
         final PluralValueMapper m = PluralValueMapper.create(pluralType);
         if (m != null)
         {
@@ -245,16 +202,6 @@ public abstract class AttributeMapper
         return null;
       }
 
-      final AttributeDescriptor attributeDescriptor =
-          AttributeDescriptor.pluralSimple(attributeDefinition.getName(),
-              AttributeDescriptor.DataType.parse(
-                  simplePluralDefinition.getDataType().value()),
-              attributeDefinition.getDescription(),
-              schema,
-              attributeDefinition.isReadOnly(),
-              attributeDefinition.isRequired(),
-              simplePluralDefinition.isCaseExact(),
-              pluralTypes);
       return new PluralAttributeMapper(attributeDescriptor, pluralMappers);
     }
     else if (attributeDefinition.getComplexPlural() != null)
@@ -264,14 +211,10 @@ public abstract class AttributeMapper
 
       final List<PluralValueMapper> pluralMappers =
           new ArrayList<PluralValueMapper>();
-      final String[] pluralTypes =
-          new String[complexPluralDefinition.getPluralType().size()];
 
-      int i = 0;
       for (final PluralType pluralType :
           complexPluralDefinition.getPluralType())
       {
-        pluralTypes[i++] = pluralType.getName();
         final PluralValueMapper m = PluralValueMapper.create(pluralType);
         if (m != null)
         {
@@ -279,37 +222,11 @@ public abstract class AttributeMapper
         }
       }
 
-      final AttributeDescriptor[] subAttributes =
-          new AttributeDescriptor[
-              complexPluralDefinition.getSubAttribute().size()];
-
-      i = 0;
-      for (final SubAttributeDefinition subAttributeDefinition :
-          complexPluralDefinition.getSubAttribute())
-      {
-          subAttributes[i++] = AttributeDescriptor.singularSimple(
-                  subAttributeDefinition.getName(),
-                  AttributeDescriptor.DataType.parse(
-                      subAttributeDefinition.getDataType().value()),
-                  subAttributeDefinition.getDescription(),
-                  schema,
-                  subAttributeDefinition.isReadOnly(),
-                  subAttributeDefinition.isRequired(),
-                  subAttributeDefinition.isCaseExact());
-      }
-
       if (pluralMappers.isEmpty())
       {
         return null;
       }
 
-      final AttributeDescriptor attributeDescriptor =
-          AttributeDescriptor.pluralComplex(attributeDefinition.getName(),
-              attributeDefinition.getDescription(),
-              schema,
-              attributeDefinition.isReadOnly(),
-              attributeDefinition.isRequired(),
-              pluralTypes, subAttributes);
       return new PluralAttributeMapper(attributeDescriptor, pluralMappers);
     }
     else

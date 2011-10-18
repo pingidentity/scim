@@ -344,6 +344,13 @@ public class SCIMServerTestCase
     assertNotNull(group1.getMeta().getCreated());
     assertNotNull(group1.getMeta().getLastModified());
     assertNotNull(group1.getMeta().getLocation());
+
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    final UserResource user = userEndpoint.get("uid=bjensen,dc=example,dc=com");
+    assertNotNull(user.getGroups());
+    assertEquals(user.getGroups().size(), 1);
+    assertEquals(user.getGroups().iterator().next().getValue(),
+                 "cn=group1,dc=example,dc=com");
   }
 
 

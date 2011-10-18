@@ -227,6 +227,7 @@
 
     <attribute name="groups" readOnly="true" required="false">
       <description>TBD</description>
+      <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute"/>
       <simplePlural tag="group" dataType="string"/>
     </attribute>
 
@@ -298,7 +299,8 @@
 
 
   <!--
-   ! SCIM Group with a mapping to the groupOfUniqueNames static group.
+   ! SCIM Group with a mapping to the groupOfUniqueNames static group for
+   ! writes and any static or dynamic group for reads.
    !-->
   <resource name="Group"
             schema="urn:scim:schemas:core:1.0">
@@ -307,7 +309,7 @@
 
     <LDAPSearch>
       <baseDN>dc=example,dc=com</baseDN>
-      <filter>(objectClass=groupOfUniqueNames)</filter>
+      <filter>(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
     </LDAPSearch>
 
     <LDAPAdd>
@@ -328,6 +330,7 @@
 
     <attribute name="members" readOnly="false" required="true">
       <description>TBD</description>
+      <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute"/>
       <simplePlural tag="member" dataType="string">
         <pluralType name="User"/>
         <pluralType name="Group"/>

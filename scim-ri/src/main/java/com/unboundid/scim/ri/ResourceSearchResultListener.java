@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.ri;
 
+import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
@@ -41,11 +42,15 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   private final GetResourcesRequest request;
 
-
   /**
    * The SCIM objects to be returned.
    */
   private final List<BaseResource> resources;
+
+  /**
+   * An LDAP interface that can be used to derive attributes from other entries.
+   */
+  private final LDAPInterface ldapInterface;
 
 
 
@@ -53,8 +58,11 @@ public class ResourceSearchResultListener implements SearchResultListener
    * Create a new search result listener to retrieve SCIM objects.
    *
    * @param request  The request that is being processed.
+   * @param ldapInterface  An LDAP interface that can be used to
+   *                       derive attributes from other entries.
    */
-  public ResourceSearchResultListener(final GetResourcesRequest request)
+  public ResourceSearchResultListener(final GetResourcesRequest request,
+                                      final LDAPInterface ldapInterface)
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
 
@@ -63,6 +71,7 @@ public class ResourceSearchResultListener implements SearchResultListener
             request.getResourceDescriptor().getQueryEndpoint());
     this.request        = request;
     this.resources      = new ArrayList<BaseResource>();
+    this.ldapInterface  = ldapInterface;
   }
 
 
@@ -77,9 +86,10 @@ public class ResourceSearchResultListener implements SearchResultListener
   public void searchEntryReturned(final SearchResultEntry searchEntry)
   {
     // Get all the attributes so we can filter on them.
+    // TODO could be too expensive for derived attributes
     final SCIMQueryAttributes allAttributes = new SCIMQueryAttributes();
     final SCIMObject scimObject =
-        resourceMapper.toSCIMObject(searchEntry, allAttributes);
+        resourceMapper.toSCIMObject(searchEntry, allAttributes, ldapInterface);
     final BaseResource resource =
         new BaseResource(request.getResourceDescriptor(),
         scimObject);

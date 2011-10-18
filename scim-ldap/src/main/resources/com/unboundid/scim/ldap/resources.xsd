@@ -52,6 +52,8 @@
   <xs:complexType name="AttributeDefinition">
     <xs:sequence>
       <xs:element name="description" type="xs:string"/>
+      <xs:element name="derivation" type="DerivedAttributeDefinition"
+                  minOccurs="0" />
       <xs:choice>
         <xs:element name="simple" type="SimpleAttributeDefinition"/>
         <xs:element name="complex" type="ComplexAttributeDefinition"/>
@@ -63,6 +65,10 @@
     <xs:attribute name="schema" type="xs:string"/>
     <xs:attribute name="readOnly" type="xs:boolean" default="false"/>
     <xs:attribute name="required" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="DerivedAttributeDefinition">
+    <xs:attribute name="javaClass" type="xs:string" use="required"/>
   </xs:complexType>
 
   <xs:complexType name="SimpleAttributeDefinition">

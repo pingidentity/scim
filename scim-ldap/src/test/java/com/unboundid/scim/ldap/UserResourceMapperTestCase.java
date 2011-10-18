@@ -114,7 +114,7 @@ public class UserResourceMapperTestCase
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
         mapper.toSCIMAttributes(RESOURCE_NAME_USER,
-                                entry, new SCIMQueryAttributes()))
+                                entry, new SCIMQueryAttributes(), null))
     {
       user2.addAttribute(a);
     }
@@ -197,7 +197,7 @@ public class UserResourceMapperTestCase
 
     List<SCIMAttribute> attributes =
         mapper.toSCIMAttributes(RESOURCE_NAME_USER, entry,
-                                new SCIMQueryAttributes());
+                                new SCIMQueryAttributes(), null);
 
     final SCIMObject object = new SCIMObject();
     for (final SCIMAttribute a : attributes)

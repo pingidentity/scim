@@ -10,6 +10,7 @@ import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -191,13 +192,16 @@ public abstract class ResourceMapper
    *                         mapped.
    * @param queryAttributes  The set of SCIM attributes that are requested
    *                         to be returned.
+   * @param ldapInterface    An optional LDAP interface that can be used to
+   *                         derive attributes from other entries.
    *
    * @return  A list of SCIM attributes mapped from the LDAP entry. This should
    *          never be {@code null} but may be empty.
    */
   public abstract List<SCIMAttribute> toSCIMAttributes(
       final String resourceName,
-      final Entry entry, final SCIMQueryAttributes queryAttributes);
+      final Entry entry, final SCIMQueryAttributes queryAttributes,
+      final LDAPInterface ldapInterface);
 
 
 
@@ -208,10 +212,13 @@ public abstract class ResourceMapper
    *                         mapped.
    * @param queryAttributes  The set of SCIM attributes that are requested
    *                         to be returned.
+   * @param ldapInterface    An optional LDAP interface that can be used to
+   *                         derive attributes from other entries.
    *
    * @return  A SCIM object mapped from the LDAP entry, or {@code null} if this
    *          entry cannot be mapped to a SCIM object.
    */
   public abstract SCIMObject toSCIMObject(
-      final Entry entry, final SCIMQueryAttributes queryAttributes);
+      final Entry entry, final SCIMQueryAttributes queryAttributes,
+      final LDAPInterface ldapInterface);
 }
