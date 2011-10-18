@@ -14,9 +14,7 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.MarshalException;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.Resources;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMException;
-import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SortParameters;
 import org.apache.wink.client.ClientResponse;
@@ -144,7 +142,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @throws SCIMException If an error occurs.
    */
   public R get(final String id, final String etag,
-               final SCIMAttributeType... requestedAttributes)
+               final String... requestedAttributes)
       throws SCIMException
   {
     URI uri =
@@ -196,8 +194,7 @@ public class SCIMEndpoint<R extends BaseResource>
   public Resources<R> query(final String filter)
       throws SCIMException
   {
-    return query(filter == null ? null:
-        SCIMFilter.parse(filter), null, null, null);
+    return query(filter, null, null, null);
   }
 
   /**
@@ -213,10 +210,10 @@ public class SCIMEndpoint<R extends BaseResource>
    * @return The resource instances that match the provided filter.
    * @throws SCIMException If an error occurs.
    */
-  public Resources<R> query(final SCIMFilter filter,
+  public Resources<R> query(final String filter,
                             final SortParameters sortParameters,
                             final PageParameters pageParameters,
-                            final SCIMAttributeType... requestedAttributes)
+                            final String... requestedAttributes)
       throws SCIMException
   {
     URI uri =
@@ -228,7 +225,7 @@ public class SCIMEndpoint<R extends BaseResource>
     addAttributesQuery(clientResource, requestedAttributes);
     if(filter != null)
     {
-      clientResource.queryParam("filter", filter.toString());
+      clientResource.queryParam("filter", filter);
     }
     if(sortParameters != null)
     {
@@ -291,7 +288,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @throws SCIMException If an error occurs.
    */
   public R insert(final R resource,
-                  final SCIMAttributeType... requestedAttributes)
+                  final String... requestedAttributes)
       throws SCIMException
   {
 
@@ -367,7 +364,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @throws SCIMException If an error occurs.
    */
   public R update(final R resource, final String etag,
-               final SCIMAttributeType... requestedAttributes)
+                  final String... requestedAttributes)
       throws SCIMException
   {
     String id = resource.getId();
@@ -502,14 +499,14 @@ public class SCIMEndpoint<R extends BaseResource>
    */
   private void addAttributesQuery(
       final org.apache.wink.client.Resource clientResource,
-      final SCIMAttributeType... requestedAttributes)
+      final String... requestedAttributes)
   {
     if(requestedAttributes != null && requestedAttributes.length > 0)
     {
       StringBuilder stringBuilder = new StringBuilder();
       for(int i = 0; i < requestedAttributes.length; i++)
       {
-        stringBuilder.append(requestedAttributes[i].toQualifiedName());
+        stringBuilder.append(requestedAttributes[i]);
         if(i < requestedAttributes.length - 1)
         {
           stringBuilder.append(",");

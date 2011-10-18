@@ -6,7 +6,12 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.scim.client.SCIMEndpoint;
+import com.unboundid.scim.client.SCIMService;
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.util.ColumnFormatter;
 import com.unboundid.util.CommandLineTool;
 import com.unboundid.util.FixedRateBarrier;
@@ -23,6 +28,7 @@ import com.unboundid.util.args.StringArgument;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -564,7 +570,8 @@ public class SCIMQueryRate
 
 
     // Create the SCIM client to use for the queries.
-    SCIMClient client = new SCIMClient(host.getValue(), port.getValue(), "");
+    SCIMService service = new SCIMService(URI.create(
+        "http://"+ host.getValue() + ":" + port.getValue()));
     if (authID.isPresent())
     {
       try
@@ -582,8 +589,7 @@ public class SCIMQueryRate
         {
           password = null;
         }
-
-        client.setBasicAuth(authID.getValue(), password);
+        service.setUserCredentials(authID.getValue(), password);
       }
       catch (IOException e)
       {
@@ -593,31 +599,22 @@ public class SCIMQueryRate
       }
     }
 
+    // Retrieve the resource schema.
+    ResourceDescriptor resourceDescriptor;
     try
     {
-      client.startClient();
+      resourceDescriptor = service.getResourceSchema(resourceName.getValue());
     }
-    catch (Exception e)
+    catch (SCIMException e)
     {
       Debug.debugException(e);
-      err("Unable to start the SCIM client:  ", e.getMessage());
-      return ResultCode.LOCAL_ERROR;
+      err("Error retrieving resource schema:  ", e.getMessage());
+      return ResultCode.OTHER;
     }
 
-    // Check that a connection can be established.
-    try
-    {
-      client.getResources(resourceName.getValue(),
-                          endpointURI.getValue(),
-                          "userName eq 'no-user'",
-                          null, null, attrs);
-    }
-    catch (IOException e)
-    {
-      Debug.debugException(e);
-      err("Unable to connect to the server:  ", e.getMessage());
-      return ResultCode.CONNECT_ERROR;
-    }
+    SCIMEndpoint<? extends BaseResource> endpoint =
+        service.getEndpoint(resourceDescriptor,
+            BaseResource.BASE_RESOURCE_FACTORY);
 
     // Create the threads to use for the searches.
     final CyclicBarrier barrier = new CyclicBarrier(numThreads.getValue() + 1);
@@ -626,11 +623,9 @@ public class SCIMQueryRate
     for (int i=0; i < threads.length; i++)
     {
       threads[i] =
-          new QueryRateThread(i, client,
-                              resourceName.getValue(), endpointURI.getValue(),
-                              filterPattern, attrs, barrier, queryCounter,
-                              resourceCounter, queryDurations, errorCounter,
-                              fixedRateBarrier);
+          new QueryRateThread(i, endpoint, filterPattern, attrs, barrier,
+              queryCounter, resourceCounter, queryDurations, errorCounter,
+              fixedRateBarrier);
       threads[i].start();
     }
 
@@ -785,15 +780,6 @@ public class SCIMQueryRate
       {
         resultCode = r;
       }
-    }
-
-    try
-    {
-      client.stopClient();
-    }
-    catch (Exception e)
-    {
-      Debug.debugException(e);
     }
 
     return resultCode;

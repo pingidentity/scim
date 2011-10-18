@@ -51,8 +51,8 @@ public class SCIMServerTestCase
   public void setup()
   {
     // Start a client for the SCIM operations.
-    service = new SCIMService("cn=Manager", "password"
-        , URI.create("http://localhost:"+getSSTestPort()));
+    service = new SCIMService(URI.create("http://localhost:"+getSSTestPort()));
+    service.setUserCredentials("cn=Manager", "password");
   }
   /**
    * Provides test coverage for the GET operation on a user resource.
@@ -537,8 +537,7 @@ public class SCIMServerTestCase
 
     // Post the user via SCIM, returning selected attributes.
     SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-    final UserResource user1 = endpoint.insert(user,
-        new SCIMAttributeType("id"), new SCIMAttributeType("meta"));
+    final UserResource user1 = endpoint.insert(user, "id","meta");
 
     // Check the returned user.
     assertNotNull(user1);

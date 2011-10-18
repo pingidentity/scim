@@ -85,8 +85,8 @@ public class ClientExample {
   public static void main(final String[] args) throws Exception
   {
     URI uri = URI.create("http://localhost:52959");
-    SCIMService scimService = new SCIMService("uid=bjensen,dc=example,dc=com",
-        "password", uri);
+    SCIMService scimService = new SCIMService(uri);
+    scimService.setUserCredentials("uid=bjensen,dc=example,dc=com", "password");
     scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
 
     // Core user resource CRUD operation example

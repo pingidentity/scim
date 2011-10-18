@@ -10,6 +10,9 @@ import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
+import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.SCIMException;
 import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.RestClient;
 
@@ -24,7 +27,7 @@ import java.util.Collection;
  */
 public class SCIMService
 {
-  private final RestClient client;
+  private RestClient client;
   private final URI baseURL;
 
   private MediaType acceptType = MediaType.APPLICATION_JSON_TYPE;
@@ -33,29 +36,20 @@ public class SCIMService
 
   /**
    * Constructs a SCIM client service.
-   * @param username The SCIM Consumer username.
-   * @param password The SCIM Consumer password.
    * @param baseUrl The SCIM Service Provider URL.
    */
-  public SCIMService(final String username, final String password,
-                     final URI baseUrl)
+  public SCIMService(final URI baseUrl)
   {
     this.baseURL = baseUrl;
 
     ClientConfig config = new ClientConfig();
-    // setup BASIC Auth
-//    BasicAuthSecurityHandler basicAuth = new BasicAuthSecurityHandler();
-//    basicAuth.setUserName(username);
-//    basicAuth.setPassword(password);
-    HttpBasicAuthSecurityHandler basicAuth = new HttpBasicAuthSecurityHandler
-      (username,password);
-    config.handlers(basicAuth);
     this.client = new RestClient(config);
   }
 
   /**
    * Returns a SCIMEndpoint with the current settings that can be used to
-   * invoke CRUD operations.
+   * invoke CRUD operations. Any changes to the SCIMService configuration will
+   * not be reflected in the returned SCIMEndpoint.
    *
    * @param resourceDescriptor The ResourceDescriptor of the endpoint.
    * @param resourceFactory The ResourceFactory that should be used to
@@ -110,10 +104,24 @@ public class SCIMService
    * @param resourceName The name of the resource endpoint.
    * @return The ResourceDescriptor for the endpoint or <code>null</code> if
    *         it is not available.
+   * @throws SCIMException if an error occurs.
    */
   public ResourceDescriptor getResourceSchema(final String resourceName)
+    throws SCIMException
   {
-    return null;
+    if(resourceName.equals(SCIMConstants.RESOURCE_NAME_USER))
+    {
+      return CoreSchema.USER_DESCRIPTOR;
+    }
+    else if(resourceName.equals(SCIMConstants.RESOURCE_NAME_GROUP))
+    {
+      return CoreSchema.GROUP_DESCRIPTOR;
+    }
+    else
+    {
+      throw new ResourceNotFoundException("Resource " + resourceName +
+          " not defined by the service provider");
+    }
   }
 
   /**
@@ -227,5 +235,20 @@ public class SCIMService
    */
   public void setOverridePut(final boolean overridePut) {
     this.overrides[0] = overridePut;
+  }
+
+  /**
+   * Sets the basic authentication credentials that should be used.
+   *
+   * @param username The username;
+   * @param password The password.
+   */
+  public void setUserCredentials(final String username, final String password)
+  {
+    ClientConfig config = new ClientConfig();
+    HttpBasicAuthSecurityHandler basicAuth = new HttpBasicAuthSecurityHandler
+      (username,password);
+    config.handlers(basicAuth);
+    this.client = new RestClient(config);
   }
 }

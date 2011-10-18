@@ -6,8 +6,11 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.schema.Response;
+import com.unboundid.scim.client.SCIMEndpoint;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.util.FixedRateBarrier;
 import com.unboundid.util.ValuePattern;
 
@@ -43,7 +46,7 @@ public class QueryRateThread
   private final AtomicReference<Thread> queryThread;
 
   // The client to use for the queries.
-  private SCIMClient client;
+  private SCIMEndpoint<? extends BaseResource> client;
 
   // The result code for this thread.
   private final AtomicReference<ResultCode> resultCode;
@@ -53,12 +56,6 @@ public class QueryRateThread
 
   // The set of requested attributes for query requests.
   private final String[] attributes;
-
-  // The name of resources to be queried.
-  private final String resourceName;
-
-  // The endpoint URI to use for queries.
-  private final String endpointURI;
 
   // The value pattern to use for the filters.
   private final ValuePattern filterPattern;
@@ -74,8 +71,6 @@ public class QueryRateThread
    *
    * @param  threadNumber     The thread number for this thread.
    * @param  client           The client to use for the queries.
-   * @param  resourceName     The name of resources to be queried.
-   * @param  endpointURI      The endpointURI to use for the queries.
    * @param  filterPattern    The value pattern for the filters.
    * @param  attributes       The set of attributes to return.
    * @param  startBarrier     A barrier used to coordinate starting between all
@@ -93,9 +88,7 @@ public class QueryRateThread
    *                          should be used.
    */
   QueryRateThread(final int threadNumber,
-                  final SCIMClient client,
-                  final String resourceName,
-                  final String endpointURI,
+                  final SCIMEndpoint<? extends BaseResource> client,
                   final ValuePattern filterPattern,
                   final String[] attributes,
                   final CyclicBarrier startBarrier,
@@ -109,8 +102,6 @@ public class QueryRateThread
     setDaemon(true);
 
     this.client          = client;
-    this.resourceName    = resourceName;
-    this.endpointURI     = endpointURI;
     this.filterPattern   = filterPattern;
     this.attributes      = attributes;
     this.queryCounter    = queryCounter;
@@ -158,22 +149,14 @@ public class QueryRateThread
 
       try
       {
-        final Response response =
-            client.getResources(resourceName, endpointURI, filterValue,
-                                null, null, attributes);
-        final Response.Resources resources = response.getResources();
+        final Resources<? extends BaseResource> resources =
+            client.query(filterValue, null, null, attributes);
         if (resources != null)
         {
-          resourceCounter.addAndGet(resources.getResource().size());
-        }
-
-        final Response.Errors errors = response.getErrors();
-        if (errors != null)
-        {
-          errorCounter.incrementAndGet();
+          resourceCounter.addAndGet(resources.getItemsPerPage());
         }
       }
-      catch (Exception e)
+      catch (SCIMException e)
       {
         Debug.debugException(e);
         errorCounter.incrementAndGet();
