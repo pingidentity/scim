@@ -24,5 +24,5 @@ public interface ResourceFactory<R extends BaseResource>
    * @return                   A new SCIM resource instance.
    */
   R createResource(ResourceDescriptor resourceDescriptor,
-                   SCIMObject scimObject);
+                          SCIMObject scimObject);
 }

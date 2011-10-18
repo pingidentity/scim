@@ -5,19 +5,19 @@
 
 package com.unboundid.scim.marshal.xml;
 
-import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.data.Address;
+import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.Entry;
+import com.unboundid.scim.data.Name;
+import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
-import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
 import org.testng.annotations.Test;
-import static com.unboundid.scim.SCIMTestUtils.generateAddress;
-import static com.unboundid.scim.SCIMTestUtils.generateName;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -25,7 +25,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 
@@ -51,84 +53,67 @@ public class MarshallerTestCase
     final File testXML = File.createTempFile("test-", ".xml");
     testXML.deleteOnExit();
 
-    final SCIMObject user1 = new SCIMObject();
+    final UserResource user1 = new UserResource(CoreSchema.USER_DESCRIPTOR);
 
-    user1.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            SCHEMA_URI_CORE, "id", "uid=bjensen,dc=example,dc=com"));
+    user1.setId("uid=bjensen,dc=example,dc=com");
 
-    user1.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            SCHEMA_URI_CORE, "userName", "bjensen"));
+    user1.setUserName("bjensen");
 
-    user1.addAttribute(generateName("Ms. Barbara J Jensen III",
-                                    "Jensen", "Barbara", "J", "Ms.", "III"));
-    final SCIMAttribute emails =
-        SCIMAttribute.createPluralAttribute(
-            SCHEMA_URI_CORE,"emails",
-            SCIMAttributeValue.createPluralStringValue(
-                SCHEMA_URI_CORE, "bjensen@example.com", "work", true),
-            SCIMAttributeValue.createPluralStringValue(
-                SCHEMA_URI_CORE, "babs@jensen.org", "home", false));
-    user1.addAttribute(emails);
+    user1.setName(new Name("Ms. Barbara J Jensen III",
+        "Jensen", "Barbara", "J", "Ms.", "III"));
+    Collection<Entry<String>> emails = new ArrayList<Entry<String>>(2);
+    emails.add(new Entry<String>("bjensen@example.com", "work", true));
+    emails.add(new Entry<String>("babs@jensen.org", "home", false));
+    user1.setEmails(emails);
 
-    user1.addAttribute(
-        SCIMAttribute.createPluralAttribute(
-            SCHEMA_URI_CORE, "addresses",
-            generateAddress("work",
-                            "100 Universal City Plaza\nHollywood, CA 91608 USA",
-                            "100 Universal City Plaza",
-                            "Hollywood",
-                            "CA",
-                            "91608",
-                            "USA",
-                            true),
-            generateAddress("home",
-                            "456 Hollywood Blvd\nHollywood, CA 91608 USA",
-                            "456 Hollywood Blvd",
-                            "Hollywood",
-                            "CA",
-                            "91608",
-                            "USA",
-                            true)));
+    Collection<Address> addresses = new ArrayList<Address>(2);
+    addresses.add(
+        new Address("100 Universal City Plaza\nHollywood, CA 91608 USA",
+            "100 Universal City Plaza",
+            "Hollywood",
+            "CA",
+            "91608",
+            "USA",
+            "work",
+            true));
+    addresses.add(
+        new Address("456 Hollywood Blvd\nHollywood, CA 91608 USA",
+            "456 Hollywood Blvd",
+            "Hollywood",
+            "CA",
+            "91608",
+            "USA",
+            "home",
+            false));
+    user1.setAddresses(addresses);
 
-    user1.addAttribute(
-        SCIMAttribute.createPluralAttribute(
-            SCHEMA_URI_CORE, "phoneNumbers",
-            SCIMAttributeValue.createPluralStringValue(
-                SCHEMA_URI_CORE, "800-864-8377", "work", false),
-            SCIMAttributeValue.createPluralStringValue(
-                SCHEMA_URI_CORE, "818-123-4567", "mobile", false)));
+    Collection<Entry<String>> phoneNumbers = new ArrayList<Entry<String>>(2);
+    phoneNumbers.add(new Entry<String>("800-864-8377", "work", false));
+    phoneNumbers.add(new Entry<String>("818-123-4567", "mobile", false));
+    user1.setPhoneNumbers(phoneNumbers);
 
-    user1.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber", "1001"));
-    user1.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            SCHEMA_URI_ENTERPRISE_EXTENSION, "organization", "Example"));
-    user1.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            SCHEMA_URI_ENTERPRISE_EXTENSION, "division", "People"));
-    user1.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            SCHEMA_URI_ENTERPRISE_EXTENSION, "department", "Sales"));
+    user1.setSingularAttributeValue(SCHEMA_URI_ENTERPRISE_EXTENSION,
+        "employeeNumber", AttributeValueResolver.STRING_RESOLVER,"1001");
+    user1.setSingularAttributeValue(SCHEMA_URI_ENTERPRISE_EXTENSION,
+        "organization", AttributeValueResolver.STRING_RESOLVER,"Example");
+    user1.setSingularAttributeValue(SCHEMA_URI_ENTERPRISE_EXTENSION,
+        "division", AttributeValueResolver.STRING_RESOLVER,"People");
+    user1.setSingularAttributeValue(SCHEMA_URI_ENTERPRISE_EXTENSION,
+        "department", AttributeValueResolver.STRING_RESOLVER,"Sales");
 
-    final ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     final Marshaller marshaller = context.marshaller();
-    marshaller.marshal(BaseResource.BASE_RESOURCE_FACTORY.createResource(
-        userResourceDescriptor, user1), outputStream);
+    marshaller.marshal(user1, outputStream);
     outputStream.close();
     InputStream inputStream =
         new ByteArrayInputStream(outputStream.toByteArray());
     final Unmarshaller unmarshaller = context.unmarshaller();
     final BaseResource resource = unmarshaller.unmarshal(inputStream,
-        userResourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
+        CoreSchema.USER_DESCRIPTOR, BaseResource.BASE_RESOURCE_FACTORY);
     final SCIMObject user2 = resource.getScimObject();
     inputStream.close();
 
-    assertEquals(resource.getResourceDescriptor(), userResourceDescriptor);
+    assertEquals(resource.getResourceDescriptor(), CoreSchema.USER_DESCRIPTOR);
     for (final String attribute : Arrays.asList("id",
                                                 "addresses",
                                                 "phoneNumbers",

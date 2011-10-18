@@ -14,6 +14,11 @@ package com.unboundid.scim.sdk;
 public final class SCIMConstants
 {
   /**
+   * The SCIM name for the schemas attribute.
+   */
+  public static final String SCHEMAS_ATTRIBUTE_NAME = "schemas";
+
+  /**
    * Prevent this class from being instantiated.
    */
   private SCIMConstants()

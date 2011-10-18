@@ -5,9 +5,7 @@
 
 package com.unboundid.scim;
 
-import com.unboundid.scim.config.SchemaManager;
 import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -19,19 +17,6 @@ import java.io.InputStream;
 @Test(sequential=true)
 public class SCIMTestCase
 {
-  /**
-   * Setup the SchemaManager instance so it can be used for
-   * testing.
-   *
-   * @throws  Exception  If an unexpected problem occurs.
-   */
-  @BeforeSuite()
-  public static synchronized void setUpTestSuite()
-      throws Exception
-  {
-    SchemaManager.init();
-  }
-
   /**
    * Obtain a reference to a file in the test resources.
    *

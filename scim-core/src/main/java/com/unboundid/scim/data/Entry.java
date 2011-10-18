@@ -30,19 +30,23 @@ public final class Entry<T>
          * {@inheritDoc}
          */
         @Override
-        Entry<String> toInstance(final SCIMAttributeValue value) {
-          return new Entry<String>(
-              getSingularSubAttributeValue(value, "value", STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "type", STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "primary",
-                  BOOLEAN_RESOLVER));
+        public Entry<String> toInstance(final SCIMAttributeValue value) {
+          String v =
+              value.getSingularSubAttributeValue("value", STRING_RESOLVER);
+          String t =
+              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+          Boolean p =
+              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+
+
+          return new Entry<String>(v, t, p == null ? false : p);
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        SCIMAttributeValue fromInstance(
+        public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor,
             final Entry<String> value) {
           final List<SCIMAttribute> subAttributes =
@@ -52,7 +56,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("value"),
+                    attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createStringValue(value.value)));
           }
 
@@ -60,7 +64,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("primary"),
+                    attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
 
@@ -68,7 +72,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("type"),
+                    attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 
@@ -87,20 +91,18 @@ public final class Entry<T>
          * {@inheritDoc}
          */
         @Override
-        Entry<Boolean> toInstance(final SCIMAttributeValue value) {
+        public Entry<Boolean> toInstance(final SCIMAttributeValue value) {
           return new Entry<Boolean>(
-              getSingularSubAttributeValue(value, "value",
-                  BOOLEAN_RESOLVER),
-              getSingularSubAttributeValue(value, "type", STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "primary",
-                  BOOLEAN_RESOLVER));
+              value.getSingularSubAttributeValue("value", BOOLEAN_RESOLVER),
+              value.getSingularSubAttributeValue("type", STRING_RESOLVER),
+              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER));
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        SCIMAttributeValue fromInstance(
+        public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor,
             final Entry<Boolean> value) {
           final List<SCIMAttribute> subAttributes =
@@ -110,7 +112,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("value"),
+                    attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createBooleanValue(value.value)));
           }
 
@@ -118,7 +120,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("primary"),
+                    attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
 
@@ -126,7 +128,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("type"),
+                    attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 
@@ -145,11 +147,11 @@ public final class Entry<T>
          * {@inheritDoc}
          */
         @Override
-        Entry<Date> toInstance(final SCIMAttributeValue value) {
+        public Entry<Date> toInstance(final SCIMAttributeValue value) {
           return new Entry<Date>(
-              getSingularSubAttributeValue(value, "value", DATE_RESOLVER),
-              getSingularSubAttributeValue(value, "type", STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "primary",
+              value.getSingularSubAttributeValue("value", DATE_RESOLVER),
+              value.getSingularSubAttributeValue("type", STRING_RESOLVER),
+              value.getSingularSubAttributeValue("primary",
                   BOOLEAN_RESOLVER));
         }
 
@@ -157,7 +159,7 @@ public final class Entry<T>
          * {@inheritDoc}
          */
         @Override
-        SCIMAttributeValue fromInstance(
+        public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor,
             final Entry<Date> value) {
           final List<SCIMAttribute> subAttributes =
@@ -167,7 +169,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("value"),
+                    attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createDateValue(value.value)));
           }
 
@@ -175,7 +177,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("primary"),
+                    attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
 
@@ -183,7 +185,7 @@ public final class Entry<T>
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("type"),
+                    attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 

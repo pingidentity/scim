@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 
@@ -83,7 +82,7 @@ public class JsonUnmarshaller implements Unmarshaller
     //Object schemas = jsonObject.get(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
 
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor
-        .getAttributeDescriptors())
+        .getAttributes())
     {
       final String externalAttributeName = attributeDescriptor.getName();
       final Object jsonAttribute = jsonObject.opt(externalAttributeName);
@@ -98,8 +97,9 @@ public class JsonUnmarshaller implements Unmarshaller
         else if (attributeDescriptor.getDataType() ==
             AttributeDescriptor.DataType.COMPLEX)
         {
-          attr = createComplexAttribute((JSONObject) jsonAttribute,
-                                        attributeDescriptor);
+          attr = SCIMAttribute.createSingularAttribute(attributeDescriptor,
+              createComplexAttribute((JSONObject) jsonAttribute,
+                  attributeDescriptor));
         }
         else
         {
@@ -176,19 +176,13 @@ public class JsonUnmarshaller implements Unmarshaller
         if(errors.length() >= 1)
         {
           JSONObject error = errors.getJSONObject(0);
-          String code = error.getString("code"); // TODO: code is optional!
+          int code = error.getInt("code"); // TODO: code is optional!
           String description = null;
           if(error.has("description"))
           {
             description = error.getString("description");
           }
-          String uri = null;
-          if(error.has("uri"))
-          {
-            uri = error.getString("uri");
-          }
-          return SCIMException.createException(Integer.valueOf(code),
-              description);
+          return SCIMException.createException(code, description);
         }
       }
       return null;
@@ -214,8 +208,8 @@ public class JsonUnmarshaller implements Unmarshaller
       final Object jsonAttribute,
       final AttributeDescriptor attributeDescriptor)
   {
-    return SCIMAttribute.createSimpleAttribute(attributeDescriptor,
-                                               jsonAttribute.toString());
+    return SCIMAttribute.createSingularAttribute(attributeDescriptor,
+        SCIMAttributeValue.createStringValue(jsonAttribute.toString()));
   }
 
 
@@ -236,23 +230,13 @@ public class JsonUnmarshaller implements Unmarshaller
       throws JSONException
   {
     final List<SCIMAttributeValue> pluralScimAttributes =
-        new LinkedList<SCIMAttributeValue>();
-
-    final List<AttributeDescriptor> complexAttributeDescriptors =
-        attributeDescriptor.getComplexAttributeDescriptors();
-    // for a plural there should only be a single child. For example,
-    // in the case of the plural attribute 'emails' we should find 'email'
-    final String pluralsChildAttributeName =
-        complexAttributeDescriptors.get(0).getName();
+        new ArrayList<SCIMAttributeValue>(jsonAttribute.length());
 
     for (int i = 0; i < jsonAttribute.length(); i++)
     {
       final JSONObject jsonObject = jsonAttribute.getJSONObject(i);
-      final AttributeDescriptor pluralAttributeDescriptorInstance =
-          attributeDescriptor.getAttribute(pluralsChildAttributeName);
-      pluralScimAttributes.add(SCIMAttributeValue.createComplexValue(
-          createComplexAttribute(jsonObject,
-                                 pluralAttributeDescriptorInstance)));
+      pluralScimAttributes.add(
+          createComplexAttribute(jsonObject, attributeDescriptor));
     }
     SCIMAttributeValue[] vals =
         new SCIMAttributeValue[pluralScimAttributes.size()];
@@ -272,19 +256,19 @@ public class JsonUnmarshaller implements Unmarshaller
    *
    * @throws org.json.JSONException Thrown if error creating complex attribute.
    */
-  private SCIMAttribute createComplexAttribute(
+  private SCIMAttributeValue createComplexAttribute(
       final JSONObject jsonAttribute,
       final AttributeDescriptor attributeDescriptor) throws JSONException
   {
-    final SCIMAttribute complexScimAttr;
     final Iterator keys = jsonAttribute.keys();
-    final List<SCIMAttribute> complexAttrs = new LinkedList<SCIMAttribute>();
+    final List<SCIMAttribute> complexAttrs =
+        new ArrayList<SCIMAttribute>(jsonAttribute.length());
     while (keys.hasNext())
     {
       final String key = (String) keys.next();
       final Object o = jsonAttribute.get(key);
       final AttributeDescriptor complexAttr =
-          attributeDescriptor.getAttribute(key);
+          attributeDescriptor.getSubAttribute(key);
       if (complexAttr != null)
       {
         SCIMAttribute childAttr = createSimpleAttribute(o, complexAttr);
@@ -292,9 +276,6 @@ public class JsonUnmarshaller implements Unmarshaller
       }
     }
 
-    complexScimAttr = SCIMAttribute.createSingularAttribute(
-        attributeDescriptor,
-        SCIMAttributeValue.createComplexValue(complexAttrs));
-    return complexScimAttr;
+    return SCIMAttributeValue.createComplexValue(complexAttrs);
   }
 }

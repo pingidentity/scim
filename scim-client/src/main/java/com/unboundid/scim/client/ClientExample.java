@@ -4,7 +4,6 @@
  */
 package com.unboundid.scim.client;
 
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Entry;
@@ -85,10 +84,10 @@ public class ClientExample {
    */
   public static void main(final String[] args) throws Exception
   {
-    URI uri = URI.create("http://localhost:8080");
-    SCIMService scimService = new SCIMService("cn=directory manager",
+    URI uri = URI.create("http://localhost:52959");
+    SCIMService scimService = new SCIMService("uid=bjensen,dc=example,dc=com",
         "password", uri);
-    scimService.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
 
     // Core user resource CRUD operation example
     SCIMEndpoint<UserResource> endpoint = scimService.getUserEndpoint();
@@ -110,6 +109,10 @@ public class ClientExample {
     Manager manager = user.getSingularAttributeValue(
         "urn:scim:schemas:extension:enterprise:1.0",  "manager",
         Manager.MANAGER_RESOLVER);
+    if(manager == null)
+    {
+      manager = new Manager("uid=jsmith,dc=example,dc=com", "Manager John");
+    }
     manager.setDisplayName("Best in the world");
     user.setSingularAttributeValue("urn:scim:schemas:extension:enterprise:1.0",
         "manager", Manager.MANAGER_RESOLVER, manager);
@@ -127,10 +130,9 @@ public class ClientExample {
     endpoint.update(user);
 
     // Resource type extension example
-    SchemaManager schemaManager = scimService.retrieveResources();
-    ResourceDescriptor resourceDescriptor =
-        schemaManager.getResourceDescriptor("Devices");
+    ResourceDescriptor deviceDescriptor =
+        scimService.getResourceSchema("Device");
     SCIMEndpoint<DeviceResource> deviceEndpoint =
-        scimService.getEndpoint(resourceDescriptor, DEVICE_RESOURCE_FACTORY);
+        scimService.getEndpoint(deviceDescriptor, DEVICE_RESOURCE_FACTORY);
   }
 }

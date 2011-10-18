@@ -23,11 +23,6 @@ public class SCIMObject
 {
 
   /**
-   * The SCIM name for the schemas attribute.
-   */
-  public static final String SCHEMAS_ATTRIBUTE_NAME = "schemas";
-
-  /**
    * The set of attributes in this object grouped by the URI of the schema to
    * which they belong.
    * TODO: Do schema URIs have to be normalized?

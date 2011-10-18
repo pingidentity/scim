@@ -13,6 +13,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
+import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
@@ -83,7 +84,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
   /**
    * The attribute mappers for this resource mapper.
    */
-  private Map<SCIMAttributeType,AttributeMapper> attributeMappers;
+  private Map<AttributeDescriptor, AttributeMapper> attributeMappers;
 
   /**
    * The set of LDAP attributes used by this resource mapper.
@@ -133,12 +134,12 @@ public class ConfigurableResourceMapper extends ResourceMapper
     }
 
     attributeMappers =
-        new HashMap<SCIMAttributeType, AttributeMapper>(mappers.size());
+        new HashMap<AttributeDescriptor, AttributeMapper>(mappers.size());
     ldapAttributeTypes = new HashSet<String>();
 
     for (final AttributeMapper m : mappers)
     {
-      attributeMappers.put(m.getSCIMAttributeType(), m);
+      attributeMappers.put(m.getAttributeDescriptor(), m);
       ldapAttributeTypes.addAll(m.getLDAPAttributeTypes());
     }
   }
@@ -273,7 +274,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
     final Set<String> ldapAttributes = new HashSet<String>();
     for (final AttributeMapper m : attributeMappers.values())
     {
-      if (queryAttributes.isAttributeRequested(m.getSCIMAttributeType()))
+      if (queryAttributes.isAttributeRequested(m.getAttributeDescriptor()))
       {
         ldapAttributes.addAll(m.getLDAPAttributeTypes());
       }
@@ -442,11 +443,18 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
       default:
         final AttributePath filterAttribute = filter.getFilterAttribute();
-        final SCIMAttributeType filterAttributeType =
-            new SCIMAttributeType(filterAttribute.getAttributeSchema(),
-                                  filterAttribute.getAttributeName());
-        final AttributeMapper attributeMapper =
-            attributeMappers.get(filterAttributeType);
+        // TODO: This should have a reference to the resource descriptor
+        AttributeMapper attributeMapper = null;
+        for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
+        {
+          if(attributeDescriptor.getSchema().equals(
+              filterAttribute.getAttributeSchema()) &&
+              attributeDescriptor.getName().equalsIgnoreCase(
+                  filterAttribute.getAttributeName()))
+          {
+            attributeMapper = attributeMappers.get(attributeDescriptor);
+          }
+        }
         if (attributeMapper != null)
         {
           return attributeMapper.toLDAPFilter(filter);
@@ -463,9 +471,17 @@ public class ConfigurableResourceMapper extends ResourceMapper
   public Control toLDAPSortControl(final SortParameters sortParameters)
   {
     final SCIMAttributeType scimAttributeType = sortParameters.getSortBy();
-
-    final AttributeMapper attributeMapper =
-        attributeMappers.get(scimAttributeType);
+    AttributeMapper attributeMapper = null;
+    for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
+    {
+      if(attributeDescriptor.getSchema().equals(
+          scimAttributeType.getSchema()) &&
+          attributeDescriptor.getName().equalsIgnoreCase(
+              scimAttributeType.getName()))
+      {
+        attributeMapper = attributeMappers.get(attributeDescriptor);
+      }
+    }
     if (attributeMapper == null)
     {
       throw new RuntimeException("Cannot sort by attribute " +
@@ -493,7 +509,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
     for (final AttributeMapper attributeMapper : attributeMappers.values())
     {
       if (queryAttributes.isAttributeRequested(
-          attributeMapper.getSCIMAttributeType()))
+          attributeMapper.getAttributeDescriptor()))
       {
         final SCIMAttribute attribute = attributeMapper.toSCIMAttribute(entry);
         if (attribute != null)

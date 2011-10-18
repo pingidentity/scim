@@ -29,17 +29,17 @@ public class Name
         @Override
         public Name toInstance(final SCIMAttributeValue value) {
           return new Name(
-              getSingularSubAttributeValue(value, "formatted",
+              value.getSingularSubAttributeValue("formatted",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "familyName",
+              value.getSingularSubAttributeValue("familyName",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "middleName",
+              value.getSingularSubAttributeValue("middleName",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "givenName",
+              value.getSingularSubAttributeValue("givenName",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "honorificPrefix",
+              value.getSingularSubAttributeValue("honorificPrefix",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "honorificSuffix",
+              value.getSingularSubAttributeValue("honorificSuffix",
                   STRING_RESOLVER));
         }
 
@@ -47,7 +47,7 @@ public class Name
          * {@inheritDoc}
          */
         @Override
-        SCIMAttributeValue fromInstance(
+        public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor, final Name value) {
           final List<SCIMAttribute> subAttributes =
               new ArrayList<SCIMAttribute>(6);
@@ -56,7 +56,7 @@ public class Name
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("formatted"),
+                    attributeDescriptor.getSubAttribute("formatted"),
                     SCIMAttributeValue.createStringValue(value.formatted)));
           }
 
@@ -64,7 +64,7 @@ public class Name
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("givenName"),
+                    attributeDescriptor.getSubAttribute("givenName"),
                     SCIMAttributeValue.createStringValue(value.givenName)));
           }
 
@@ -72,7 +72,7 @@ public class Name
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("familyName"),
+                    attributeDescriptor.getSubAttribute("familyName"),
                     SCIMAttributeValue.createStringValue(value.familyName)));
           }
 
@@ -80,7 +80,7 @@ public class Name
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("middleName"),
+                    attributeDescriptor.getSubAttribute("middleName"),
                     SCIMAttributeValue.createStringValue(value.middleName)));
           }
 
@@ -88,7 +88,7 @@ public class Name
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("honorificPrefix"),
+                    attributeDescriptor.getSubAttribute("honorificPrefix"),
                     SCIMAttributeValue.createStringValue(
                         value.honorificPrefix)));
           }
@@ -97,7 +97,7 @@ public class Name
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    attributeDescriptor.getAttribute("honorificSuffix"),
+                    attributeDescriptor.getSubAttribute("honorificSuffix"),
                     SCIMAttributeValue.createStringValue(
                         value.honorificSuffix)));
           }

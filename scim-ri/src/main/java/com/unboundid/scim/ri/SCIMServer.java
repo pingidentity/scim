@@ -8,7 +8,6 @@ import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
-import com.unboundid.scim.config.SchemaManager;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.eclipse.jetty.http.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
@@ -97,16 +96,6 @@ public class SCIMServer
   public void initializeServer(final SCIMServerConfig serverConfig)
       throws Exception
   {
-    if(serverConfig.getSchemaFiles() == null ||
-       serverConfig.getSchemaFiles().length == 0)
-    {
-      SchemaManager.init();
-    }
-    else
-    {
-      SchemaManager.init(serverConfig.getSchemaFiles());
-    }
-
     final Server s = new Server(serverConfig.getListenPort());
     s.setThreadPool(new QueuedThreadPool(serverConfig.getMaxThreads()));
 

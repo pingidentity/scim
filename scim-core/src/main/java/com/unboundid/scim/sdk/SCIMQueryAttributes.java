@@ -5,6 +5,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.schema.AttributeDescriptor;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,19 +78,18 @@ public class SCIMQueryAttributes
    * Determine whether the specified attribute is requested by these query
    * attributes.
    *
-   * @param type  The attribute type for which to make the determination.
+   * @param attributeDescriptor  The attribute type for which to make the
+   *                             determination.
    *
    * @return  {@code true} if the specified attribute is requested, or false
    *          otherwise.
    */
-  public boolean isAttributeRequested(final SCIMAttributeType type)
+  public boolean isAttributeRequested(
+      final AttributeDescriptor attributeDescriptor)
   {
-    if (allAttributesRequested())
-    {
-      return true;
-    }
+    return allAttributesRequested() || types.contains(new SCIMAttributeType(
+        attributeDescriptor.getSchema(), attributeDescriptor.getName()));
 
-    return types.contains(type);
   }
 
 

@@ -114,6 +114,33 @@ public class BaseResource implements SCIMResponse
   }
 
   /**
+   * Retrieves the unique identifier for the Resource as defined by the
+   * Service Consumer.
+   *
+   * @return The unique identifier for the Resource as defined by the Service
+   * Consumer.
+   */
+  public String getExternalId()
+  {
+    return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+        "externalId", AttributeValueResolver.STRING_RESOLVER);
+  }
+
+  /**
+   * Sets the unique identifier for the Resource as defined by the Service
+   * Consumer.
+   *
+   * @param externalId The unique identifier for the Resource as defined by the
+   * Service Consumer.
+   */
+  public void setExternalId(final String externalId)
+  {
+    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "externalId",
+        AttributeValueResolver.STRING_RESOLVER, externalId);
+  }
+
+
+  /**
    * Retrieves the metadata about the resource.
    *
    * @return The metadata about the resource.
@@ -177,8 +204,19 @@ public class BaseResource implements SCIMResponse
       final String schema, final String name,
       final AttributeValueResolver<T> resolver, final T value)
   {
+    if(value == null)
+    {
+      scimObject.removeAttribute(schema, name);
+      return;
+    }
+
     AttributeDescriptor attributeDescriptor =
-        resourceDescriptor.getAttribute(schema, name);
+        getResourceDescriptor().getAttribute(schema, name);
+
+    if(attributeDescriptor == null)
+    {
+      // TODO throw exception
+    }
 
     scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
         attributeDescriptor, resolver.fromInstance(attributeDescriptor,
@@ -233,15 +271,26 @@ public class BaseResource implements SCIMResponse
       final String schema, final String name,
       final AttributeValueResolver<T> resolver, final Collection<T> values)
   {
+    if(values == null)
+    {
+      scimObject.removeAttribute(schema, name);
+      return;
+    }
+
     AttributeDescriptor attributeDescriptor =
-        resourceDescriptor.getAttribute(schema, name);
+        getResourceDescriptor().getAttribute(schema, name);
+
+    if(attributeDescriptor == null)
+    {
+      // TODO: throw exception
+    }
 
     SCIMAttributeValue[] entries = new SCIMAttributeValue[values.size()];
 
     int i = 0;
     for(T value : values)
     {
-      entries[i] = resolver.fromInstance(attributeDescriptor, value);
+      entries[i++] = resolver.fromInstance(attributeDescriptor, value);
     }
 
     scimObject.setAttribute(

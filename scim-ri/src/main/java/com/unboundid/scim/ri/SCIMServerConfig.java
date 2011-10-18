@@ -102,30 +102,6 @@ public class SCIMServerConfig
 
 
   /**
-   * Retrieve the XML schema files to be used by the server.
-   *
-   * @return  The XML schema files to be used by the server.
-   */
-  public File[] getSchemaFiles()
-  {
-    return schemaFiles;
-  }
-
-
-
-  /**
-   * Specifies the XML schema files to be used by the server.
-   *
-   * @param schemaFiles  The XML schema files to be used by the server.
-   */
-  public void setSchemaFiles(final File[] schemaFiles)
-  {
-    this.schemaFiles = schemaFiles;
-  }
-
-
-
-  /**
    * Retrieve the XML file defining the SCIM resources.
    *
    * @return  The XML file defining the SCIM resources.

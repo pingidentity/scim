@@ -7,6 +7,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.SCIMTestCase;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.CoreSchema;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -43,9 +44,7 @@ public class SCIMAttributeTestCase
 
     final SCIMAttribute userID =
         SCIMAttribute.createSingularAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(coreSchema,"id",
-                    "description")),
+            CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "id"),
             SCIMAttributeValue.createStringValue(uuid.toString()));
     assertEquals(userID.getSchema(), coreSchema);
     assertEquals(userID.getName(), "id");
@@ -56,59 +55,29 @@ public class SCIMAttributeTestCase
     assertNull(userID.getSingularValue().getAttribute("wrong"));
     assertEquals(userID.getSingularValue().getStringValue(), uuid.toString());
 
-    final SCIMAttribute schemas =
-        SCIMAttribute.createPluralAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(
-                    coreSchema, "schemas", "description").plural(true)),
-            SCIMAttributeValue.createStringValue(coreSchema),
-            SCIMAttributeValue.createStringValue(customSchema));
-    assertEquals(schemas.getName(), "schemas");
-    assertTrue(schemas.isPlural());
-    assertNotNull(schemas.getPluralValues());
-    assertNull(schemas.getSingularValue());
-    assertEquals(schemas.getPluralValues().length, 2);
-    assertEquals(schemas.getPluralValues()[0].getStringValue(),
-                 coreSchema);
-    assertEquals(schemas.getPluralValues()[1].getStringValue(),
-                 customSchema);
-
+    AttributeDescriptor nameDescriptor =
+        CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "name");
     final SCIMAttribute name =
-        SCIMAttribute.createSingularAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(coreSchema,"name",
-                    "description")),
+        SCIMAttribute.createSingularAttribute(nameDescriptor,
             SCIMAttributeValue.createComplexValue(
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"formatted", "description")),
+                    nameDescriptor.getSubAttribute("formatted"),
                     SCIMAttributeValue.createStringValue(
                         "Ms. Barbara J Jensen III")),
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"familyName", "description")),
+                    nameDescriptor.getSubAttribute("familyName"),
                     SCIMAttributeValue.createStringValue("Jensen")),
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"givenName", "description")),
+                    nameDescriptor.getSubAttribute("givenName"),
                     SCIMAttributeValue.createStringValue("Barbara")),
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"middleName", "description")),
+                    nameDescriptor.getSubAttribute("middleName"),
                     SCIMAttributeValue.createStringValue("Jane")),
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"honorificPrefix", "description")),
+                    nameDescriptor.getSubAttribute("honorificPrefix"),
                     SCIMAttributeValue.createStringValue("Ms.")),
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"honorificSuffix", "description")),
+                    nameDescriptor.getSubAttribute("honorificSuffix"),
                     SCIMAttributeValue.createStringValue("III"))));
     assertEquals(name.getSchema(), coreSchema);
     assertEquals(name.getName(), "name");
@@ -131,26 +100,22 @@ public class SCIMAttributeTestCase
     assertEquals(name.getSingularValue().getAttribute("honorificSuffix").
         getSingularValue().getStringValue(), "III");
 
+    AttributeDescriptor emailsDescriptor =
+        CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "emails");
     final List<SCIMAttribute> emailAttrs = new ArrayList<SCIMAttribute>();
     emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(coreSchema,"value", "description")),
+        emailsDescriptor.getSubAttribute("value"),
         SCIMAttributeValue.createStringValue(
             "bjensen@example.com")));
     emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(coreSchema,"type", "description")),
+        emailsDescriptor.getSubAttribute("type"),
         SCIMAttributeValue.createStringValue("work")));
     emailAttrs.add(SCIMAttribute.createSingularAttribute(
-        new AttributeDescriptor(
-            new AttributeDescriptor.Builder(coreSchema,"primary",
-                "description")),
+        emailsDescriptor.getSubAttribute("primary"),
         SCIMAttributeValue.createBooleanValue(true)));
     final SCIMAttribute emails =
         SCIMAttribute.createPluralAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(
-                    coreSchema,"emails", "description").plural(true)),
+            emailsDescriptor,
             SCIMAttributeValue.createComplexValue(emailAttrs));
     assertEquals(emails.getName(), "emails");
     assertTrue(emails.isPlural());
@@ -170,23 +135,18 @@ public class SCIMAttributeTestCase
             getBooleanValue(),
         Boolean.TRUE);
 
+    AttributeDescriptor metaDescriptor =
+        CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "meta");
     final Date date = new Date(System.currentTimeMillis());
     final SCIMAttribute meta =
         SCIMAttribute.createSingularAttribute(
-            new AttributeDescriptor(
-                new AttributeDescriptor.Builder(
-                    coreSchema,"meta", "description")
-                    .dataType(AttributeDescriptor.DataType.COMPLEX)),
+            metaDescriptor,
             SCIMAttributeValue.createComplexValue(
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"created", "description")),
+                    metaDescriptor.getSubAttribute("created"),
                     SCIMAttributeValue.createDateValue(date)),
                 SCIMAttribute.createSingularAttribute(
-                    new AttributeDescriptor(
-                        new AttributeDescriptor.Builder(
-                            coreSchema,"lastModified", "description")),
+                    metaDescriptor.getSubAttribute("lastModified"),
                     SCIMAttributeValue.createDateValue(date))));
     assertEquals(meta.getName(), "meta");
     assertFalse(meta.isPlural());
@@ -211,10 +171,10 @@ public class SCIMAttributeTestCase
     final String customSchema =
         "http://myextension";
 
-    final AttributeDescriptor descriptor = new AttributeDescriptor(
-        new AttributeDescriptor.Builder(
-            customSchema,"a", "description")
-            .dataType(AttributeDescriptor.DataType.COMPLEX));
+    final AttributeDescriptor descriptor =
+        AttributeDescriptor.singularSimple("a",
+            AttributeDescriptor.DataType.COMPLEX, "description", customSchema,
+            false, false, false);
 
     try
     {

@@ -7,22 +7,21 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.scim.config.SchemaManager;
+import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.Name;
+import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.SCIMTestCase;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
-import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import org.testng.annotations.Test;
-import static com.unboundid.scim.SCIMTestUtils.generateName;
-import static com.unboundid.scim.SCIMTestUtils.generateAddress;
 import static com.unboundid.util.LDAPTestUtils.generateUserEntry;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -30,6 +29,8 @@ import static org.testng.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -49,56 +50,53 @@ public class UserResourceMapperTestCase
   public void testUserMapper()
       throws Exception
   {
-    final String coreSchema = SCHEMA_URI_CORE;
+    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
 
-    final SCIMObject user = new SCIMObject();
+    user.setUserName("bjensen");
 
-    user.addAttribute(
-        SCIMAttribute.createSingularStringAttribute(
-            coreSchema, "userName", "bjensen"));
+    user.setName(new Name("Ms. Barbara J Jensen III",
+        "Jensen", "J", "Barbara", "Ms.", "III"));
+    Collection<com.unboundid.scim.data.Entry<String>> emails =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>(2);
+    emails.add(new com.unboundid.scim.data.Entry<String>(
+        "bjensen@example.com", "work", true));
+    emails.add(new com.unboundid.scim.data.Entry<String>(
+        "babs@jensen.org", "home", false));
+    user.setEmails(emails);
 
-    user.addAttribute(generateName("Ms. Barbara J Jensen III",
-                                   "Jensen", "Barbara", "J", "Ms.", "III"));
-    final SCIMAttribute emails =
-        SCIMAttribute.createPluralAttribute(
-            coreSchema,"emails",
-            SCIMAttributeValue.createPluralStringValue(
-                coreSchema, "bjensen@example.com", "work", true),
-            SCIMAttributeValue.createPluralStringValue(
-                coreSchema, "babs@jensen.org", "home", false));
-    user.addAttribute(emails);
+    Collection<Address> addresses = new ArrayList<Address>(2);
+    addresses.add(
+        new Address("100 Universal City Plaza\nHollywood, CA 91608 USA",
+            "100 Universal City Plaza",
+            "Hollywood",
+            "CA",
+            "91608",
+            "USA",
+            "work",
+            true));
+    addresses.add(
+        new Address("456 Hollywood Blvd\nHollywood, CA 91608 USA",
+            "456 Hollywood Blvd",
+            "Hollywood",
+            "CA",
+            "91608",
+            "USA",
+            "home",
+            false));
+    user.setAddresses(addresses);
 
-    user.addAttribute(
-        SCIMAttribute.createPluralAttribute(
-            coreSchema, "addresses",
-            generateAddress("work",
-                            "100 Universal City Plaza\nHollywood, CA 91608 USA",
-                            "100 Universal City Plaza",
-                            "Hollywood",
-                            "CA",
-                            "91608",
-                            "USA",
-                            true),
-            generateAddress("home",
-                            "456 Hollywood Blvd\nHollywood, CA 91608 USA",
-                            "456 Hollywood Blvd",
-                            "Hollywood",
-                            "CA",
-                            "91608",
-                            "USA",
-                            true)));
-
-    user.addAttribute(
-        SCIMAttribute.createPluralAttribute(
-            coreSchema, "phoneNumbers",
-            SCIMAttributeValue.createPluralStringValue(
-                coreSchema, "800-864-8377", "work", false),
-            SCIMAttributeValue.createPluralStringValue(
-                coreSchema, "818-123-4567", "mobile", false)));
+    Collection<com.unboundid.scim.data.Entry<String>> phoneNumbers =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>(2);
+    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
+        "800-864-8377", "work", false));
+    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
+        "818-123-4567", "mobile", false));
+    user.setPhoneNumbers(phoneNumbers);
 
     final ResourceMapper mapper = getUserResourceMapper();
 
-    final Entry entry = new Entry("cn=test", mapper.toLDAPAttributes(user));
+    final Entry entry = new Entry("cn=test",
+        mapper.toLDAPAttributes(user.getScimObject()));
     assertTrue(entry.hasAttributeValue("uid", "bjensen"));
     assertTrue(entry.hasAttributeValue("mail", "bjensen@example.com"));
     assertTrue(entry.hasAttributeValue("cn", "Ms. Barbara J Jensen III"));
@@ -144,7 +142,7 @@ public class UserResourceMapperTestCase
         getResource("/com/unboundid/scim/marshal/core-user.xml");
 
     final ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
+        CoreSchema.USER_DESCRIPTOR;
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
     final SCIMObject user = unmarshaller.unmarshal(testXML,
@@ -208,7 +206,7 @@ public class UserResourceMapperTestCase
     }
 
     final ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
+        CoreSchema.USER_DESCRIPTOR;
     final Context context = Context.instance();
     final Marshaller marshaller = context.marshaller();
     final OutputStream outputStream = new ByteArrayOutputStream();

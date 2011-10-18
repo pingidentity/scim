@@ -5,9 +5,11 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
 
 import javax.xml.bind.DatatypeConverter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -131,6 +133,62 @@ public final class SCIMAttributeValue
     }
   }
 
+  /**
+   * Retrieves the value of a singular sub-attribute.
+   *
+   * @param <T>          The type of the resolved instance representing the
+   *                     value of sub-attribute.
+   * @param name         The name of the sub-attribute.
+   * @param resolver     The <code>AttributeValueResolver</code> that should
+   *                     be used to resolve the value into an instance.
+   * @return             The resolved instance representing the value of
+   *                     sub-attribute.
+   */
+  public <T> T getSingularSubAttributeValue(final String name,
+      final AttributeValueResolver<T> resolver)
+  {
+    SCIMAttribute attribute = getAttribute(name);
+    if(attribute != null)
+    {
+      SCIMAttributeValue v = attribute.getSingularValue();
+      if(v != null)
+      {
+        return resolver.toInstance(v);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Retrieves the value of a plural sub-attribute value.
+   *
+   * @param <T>    The type of the resolved instance representing the value of
+   *               sub-attribute.
+   * @param name The name of the attribute value to retrieve.
+   * @param resolver The <code>AttributeValueResolver</code> the should be used
+   *                 to resolve the value to an instance.
+   * @return The collection of resolved value instances or <code>null</code> if
+   *         the specified attribute does not exist.
+   */
+  public <T> Collection<T> getPluralAttributeValue(final String name,
+      final AttributeValueResolver<T> resolver)
+  {
+    SCIMAttribute attribute = getAttribute(name);
+    if(attribute != null)
+    {
+      SCIMAttributeValue[] values = attribute.getPluralValues();
+      if(values != null)
+      {
+        Collection<T> entries = new ArrayList<T>(values.length);
+        for(SCIMAttributeValue v : values)
+        {
+          entries.add(resolver.toInstance(v));
+        }
+        return entries;
+      }
+    }
+    return null;
+  }
 
 
   @Override
@@ -189,41 +247,6 @@ public final class SCIMAttributeValue
       }
       map.put(a.getName(), a);
     }
-    return new SCIMAttributeValue(Collections.unmodifiableMap(map));
-  }
-
-
-
-  /**
-   * Create a new plural attribute value from a string.
-   *
-   * @param schema   The URI for the schema that defines the attribute.
-   * @param value    The string value of the attribute.
-   * @param type     The value of the "type" sub-attribute.
-   * @param primary  Specifies whether this value is the primary value.
-   *
-   * @return  The new plural attribute value.
-   */
-  public static SCIMAttributeValue createPluralStringValue(
-      final String schema, final String value,
-      final String type, final boolean primary)
-  {
-    final Map<String,SCIMAttribute> map =
-        new LinkedHashMap<String, SCIMAttribute>();
-
-    map.put("value",
-            SCIMAttribute.createSingularStringAttribute(
-                schema, "value", value));
-    map.put("type",
-            SCIMAttribute.createSingularStringAttribute(schema, "type", type));
-
-    if (primary)
-    {
-      map.put("primary",
-              SCIMAttribute.createSingularBooleanAttribute(
-                  schema, "primary", primary));
-    }
-
     return new SCIMAttributeValue(Collections.unmodifiableMap(map));
   }
 

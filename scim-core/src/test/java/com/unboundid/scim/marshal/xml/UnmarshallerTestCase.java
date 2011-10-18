@@ -5,10 +5,10 @@
 
 package com.unboundid.scim.marshal.xml;
 
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
@@ -42,7 +42,7 @@ public class UnmarshallerTestCase
         getResource("/com/unboundid/scim/marshal/core-user.xml");
 
     final ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
+        CoreSchema.USER_DESCRIPTOR;
     final Context context = Context.instance();
     final Unmarshaller unmarshaller = context.unmarshaller();
     final BaseResource resource = unmarshaller.unmarshal(testXML,

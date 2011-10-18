@@ -9,22 +9,28 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
-import com.unboundid.scim.schema.Address;
-import com.unboundid.scim.schema.Group;
-import com.unboundid.scim.schema.Name;
-import com.unboundid.scim.schema.PluralAttribute;
-import com.unboundid.scim.schema.Resource;
-import com.unboundid.scim.schema.Response;
-import com.unboundid.scim.schema.User;
-import com.unboundid.scim.sdk.PostResourceResponse;
+import com.unboundid.scim.client.SCIMEndpoint;
+import com.unboundid.scim.client.SCIMService;
+import com.unboundid.scim.data.Address;
+import com.unboundid.scim.data.GroupResource;
+import com.unboundid.scim.data.Name;
+import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.PageParameters;
 import org.testng.annotations.Test;
+import org.testng.annotations.BeforeClass;
 
+import javax.ws.rs.core.MediaType;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -36,6 +42,18 @@ import java.util.Set;
 public class SCIMServerTestCase
     extends SCIMRITestCase
 {
+  private SCIMService service;
+
+  /**
+   * Sets up the SCIMService.
+   */
+  @BeforeClass
+  public void setup()
+  {
+    // Start a client for the SCIM operations.
+    service = new SCIMService("cn=Manager", "password"
+        , URI.create("http://localhost:"+getSSTestPort()));
+  }
   /**
    * Provides test coverage for the GET operation on a user resource.
    *
@@ -45,27 +63,13 @@ public class SCIMServerTestCase
   public void testGetUser()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test receiving XML content.
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testGetUser(service);
 
-    try
-    {
-      // Test receiving XML content.
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testGetUser(client);
-
-      // Test receiving JSON content.
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testGetUser(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test receiving JSON content.
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testGetUser(service);
   }
 
 
@@ -79,27 +83,13 @@ public class SCIMServerTestCase
   public void testGetGroup()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test receiving XML content.
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testGetGroup(service);
 
-    try
-    {
-      // Test receiving XML content.
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testGetGroup(client);
-
-      // Test receiving JSON content.
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testGetGroup(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test receiving JSON content.
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testGetGroup(service);
   }
 
 
@@ -113,27 +103,13 @@ public class SCIMServerTestCase
   public void testGetUsers()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test receiving XML content.
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testGetUsers(service);
 
-    try
-    {
-      // Test receiving XML content.
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testGetUsers(client);
-
-      // Test receiving JSON content.
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testGetUsers(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test receiving JSON content.
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testGetUsers(service);
   }
 
 
@@ -147,27 +123,13 @@ public class SCIMServerTestCase
   public void testGetSortedUsers()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test receiving XML content.
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testGetSortedUsers(service);
 
-    try
-    {
-      // Test receiving XML content.
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testGetSortedUsers(client);
-
-      // Test receiving JSON content.
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testGetSortedUsers(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test receiving JSON content.
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testGetSortedUsers(service);
   }
 
 
@@ -181,27 +143,13 @@ public class SCIMServerTestCase
   public void testGetPaginatedUsers()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test receiving XML content.
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testGetPaginatedUsers(service);
 
-    try
-    {
-      // Test receiving XML content.
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testGetPaginatedUsers(client);
-
-      // Test receiving JSON content.
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testGetPaginatedUsers(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test receiving JSON content.
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testGetPaginatedUsers(service);
   }
 
 
@@ -215,41 +163,25 @@ public class SCIMServerTestCase
   public void testPostUser()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test sending and receiving XML content.
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testPostUser(service);
 
-    try
-    {
-      // Test sending and receiving XML content.
-      client.setSendJSON(false);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testPostUser(client);
+    // Test sending and receiving JSON content.
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testPostUser(service);
 
-      // Test sending and receiving JSON content.
-      client.setSendJSON(true);
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testPostUser(client);
+    // Test sending XML and receiving JSON content.
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testPostUser(service);
 
-      // Test sending XML and receiving JSON content.
-      client.setSendJSON(false);
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testPostUser(client);
-
-      // Test sending JSON and receiving XML content.
-      client.setSendJSON(true);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testPostUser(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test sending JSON and receiving XML content.
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testPostUser(service);
   }
 
 
@@ -263,41 +195,25 @@ public class SCIMServerTestCase
   public void testPutUser()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test sending and receiving XML content.
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testPutUser(service);
 
-    try
-    {
-      // Test sending and receiving XML content.
-      client.setSendJSON(false);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testPutUser(client);
+    // Test sending and receiving JSON content.
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testPutUser(service);
 
-      // Test sending and receiving JSON content.
-      client.setSendJSON(true);
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testPutUser(client);
+    // Test sending XML and receiving JSON content.
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testPutUser(service);
 
-      // Test sending XML and receiving JSON content.
-      client.setSendJSON(false);
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testPutUser(client);
-
-      // Test sending JSON and receiving XML content.
-      client.setSendJSON(true);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testPutUser(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test sending JSON and receiving XML content.
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testPutUser(service);
   }
 
 
@@ -311,41 +227,25 @@ public class SCIMServerTestCase
   public void testWriteGroup()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
+    // Test sending and receiving XML content.
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testWriteGroup(service);
 
-    try
-    {
-      // Test sending and receiving XML content.
-      client.setSendJSON(false);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testWriteGroup(client);
+    // Test sending and receiving JSON content.
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testWriteGroup(service);
 
-      // Test sending and receiving JSON content.
-      client.setSendJSON(true);
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testWriteGroup(client);
+    // Test sending XML and receiving JSON content.
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    testWriteGroup(service);
 
-      // Test sending XML and receiving JSON content.
-      client.setSendJSON(false);
-      client.setAcceptXML(false);
-      client.setAcceptJSON(true);
-      testWriteGroup(client);
-
-      // Test sending JSON and receiving XML content.
-      client.setSendJSON(true);
-      client.setAcceptXML(true);
-      client.setAcceptJSON(false);
-      testWriteGroup(client);
-    }
-    finally
-    {
-      client.stopClient();
-    }
+    // Test sending JSON and receiving XML content.
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    testWriteGroup(service);
   }
 
 
@@ -353,26 +253,35 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the GET operation on a user resource.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM service to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testGetUser(final SCIMClient client)
+  private void testGetUser(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
 
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // A user ID that does not exist should not return anything.
-    assertNull(client.getUser("cn=does-not-exist"));
+    try
+    {
+      endpoint.get("cn=does-not-exist");
+      assertTrue(false, "Should have thrown ResourceNotFoundException");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      // expected
+    }
 
     // Create a user directly on the test DS.
     testDS.add(generateUserEntry("b jensen", "dc=example,dc=com",
-                                 "Barbara", "Jensen", "password"));
+        "Barbara", "Jensen", "password"));
 
     // Fetch the user through the SCIM client.
-    final User user1 = client.getUser("uid=b jensen,dc=example,dc=com");
+    final UserResource user1 = endpoint.get("uid=b jensen,dc=example,dc=com");
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=b jensen,dc=example,dc=com");
     assertEquals(user1.getName().getFamilyName(), "Jensen");
@@ -384,6 +293,7 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta().getLocation());
 
     // Ensure that we can retrieve the user again using meta.location
+    /*
     assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
 
     // Fetch selected attributes only. (id and meta should always be returned)
@@ -395,6 +305,7 @@ public class SCIMServerTestCase
     assertNotNull(partialUser1.getMeta());
     assertNull(partialUser1.getName());
     assertEquals(partialUser1.getUserName(), "b jensen");
+    */
   }
 
 
@@ -402,11 +313,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the GET operation on a Group resource.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM service to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testGetGroup(final SCIMClient client)
+  private void testGetGroup(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -415,19 +326,20 @@ public class SCIMServerTestCase
 
     // Create a static group directly on the test DS.
     testDS.add(generateUserEntry("bjensen", "dc=example,dc=com",
-                                 "Barbara", "Jensen", "password"));
+        "Barbara", "Jensen", "password"));
     testDS.add(generateGroupOfUniqueNamesEntry(
         "group1", "dc=example,dc=com",
         "uid=bjensen,dc=example,dc=com"));
 
     // Fetch the Group through the SCIM client.
-    final Group group1 = client.getGroup("cn=group1,dc=example,dc=com");
+    SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
+    final GroupResource group1 = endpoint.get("cn=group1,dc=example,dc=com");
     assertNotNull(group1);
     assertEquals(group1.getId(), "cn=group1,dc=example,dc=com");
     assertEquals(group1.getDisplayName(), "group1");
     assertNotNull(group1.getMembers());
-    assertEquals(group1.getMembers().getMember().get(0).getValue(),
-                 "uid=bjensen,dc=example,dc=com");
+    assertEquals(group1.getMembers().iterator().next().getValue(),
+        "uid=bjensen,dc=example,dc=com");
     assertNotNull(group1.getMeta());
     assertNotNull(group1.getMeta().getCreated());
     assertNotNull(group1.getMeta().getLastModified());
@@ -439,11 +351,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the GET operation to fetch selected users.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM client to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testGetUsers(final SCIMClient client)
+  private void testGetUsers(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -452,20 +364,19 @@ public class SCIMServerTestCase
 
     // Create some users directly on the test DS.
     testDS.add(generateUserEntry("user.1", "dc=example,dc=com",
-                                 "User", "One", "password",
-                                 new Attribute("mail", "user.1@example.com"),
-                                 new Attribute("l", "Austin")));
+        "User", "One", "password",
+        new Attribute("mail", "user.1@example.com"),
+        new Attribute("l", "Austin")));
     testDS.add(generateUserEntry("user.2", "dc=example,dc=com",
-                                 "User", "Two", "password"));
+        "User", "Two", "password"));
 
     // Fetch all the users through the SCIM client.
-    List<Resource> resources = client.getResources("User", "Users", null);
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+    Resources<UserResource> resources = endpoint.query(null);
 
-    assertEquals(resources.size(), 2);
-    for (final Resource r : resources)
+    assertEquals(resources.getTotalResults(), 2);
+    for (final UserResource u : resources)
     {
-      assertTrue(r instanceof User);
-      final User u = (User)r;
       assertNotNull(u.getId());
       assertNotNull(u.getMeta());
       assertNotNull(u.getMeta().getCreated());
@@ -476,39 +387,35 @@ public class SCIMServerTestCase
       assertNotNull(u.getName().getGivenName());
 
       // Ensure that we can retrieve the user again using meta.location
-      assertNotNull(client.getUserByURI(u.getMeta().getLocation()));
+      // assertNotNull(endpoint.get(u.getMeta().getLocation().toString()));
     }
 
-    resources = client.getResources("User", "Users",
-                                    "id eq 'uid=user.1,dc=example,dc=com'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("id eq 'uid=user.1,dc=example,dc=com'");
+    assertEquals(resources.getTotalResults(), 1);
 
-    resources = client.getResources("User", "Users", "userName eq 'user.1'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("userName eq 'user.1'");
+    assertEquals(resources.getTotalResults(), 1);
 
-    resources = client.getResources("User", "Users", "userName eq 'User.1'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("userName eq 'User.1'");
+    assertEquals(resources.getTotalResults(), 1);
 
-    resources = client.getResources("User", "Users", "userName sw 'user'");
-    assertEquals(resources.size(), 2);
+    resources = endpoint.query("userName sw 'user'");
+    assertEquals(resources.getTotalResults(), 2);
 
-    resources = client.getResources("User", "Users", "userName co '1'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("userName co '1'");
+    assertEquals(resources.getTotalResults(), 1);
 
-    resources = client.getResources("User", "Users", "userName pr");
-    assertEquals(resources.size(), 2);
+    resources = endpoint.query("userName pr");
+    assertEquals(resources.getTotalResults(), 2);
 
-    resources = client.getResources("User", "Users",
-                                    "name.formatted eq 'User One'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("name.formatted eq 'User One'");
+    assertEquals(resources.getTotalResults(), 1);
 
-    resources = client.getResources("User", "Users",
-                                    "emails eq 'user.1@example.com'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("emails eq 'user.1@example.com'");
+    assertEquals(resources.getTotalResults(), 1);
 
-    resources = client.getResources("User", "Users",
-                                    "addresses.locality eq 'Austin'");
-    assertEquals(resources.size(), 1);
+    resources = endpoint.query("addresses.locality eq 'Austin'");
+    assertEquals(resources.getTotalResults(), 1);
   }
 
 
@@ -516,11 +423,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the GET operation to fetch sorted users.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM client to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testGetSortedUsers(final SCIMClient client)
+  private void testGetSortedUsers(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -531,7 +438,7 @@ public class SCIMServerTestCase
     for (final String sortValue : Arrays.asList("B", "C", "A"))
     {
       testDS.add(generateUserEntry(sortValue, "dc=example,dc=com",
-                                   "User", sortValue, "password"));
+          "User", sortValue, "password"));
     }
 
     final SCIMAttributeType sortBy =
@@ -539,27 +446,22 @@ public class SCIMServerTestCase
     final String sortAscending = "ascending";
     final String sortDescending = "descending";
 
-    Response response =
-        client.getResources("User", "Users", null,
-                            new SortParameters(sortBy, sortAscending),
-                            null);
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+    Resources<UserResource> resources = endpoint.query(null,
+        new SortParameters(sortBy, sortAscending), null);
     List<String> sortValues = new ArrayList<String>();
-    for (final Resource resource : response.getResources().getResource())
+    for (final UserResource resource : resources)
     {
-      final User user = (User)resource;
-      sortValues.add(user.getUserName());
+      sortValues.add(resource.getUserName());
     }
     assertEquals(sortValues, Arrays.asList("A", "B", "C"));
 
-    response =
-        client.getResources("User", "Users", null,
-                            new SortParameters(sortBy, sortDescending),
-                            null);
+    resources = endpoint.query(null,
+        new SortParameters(sortBy, sortDescending), null);
     sortValues = new ArrayList<String>();
-    for (final Resource resource : response.getResources().getResource())
+    for (final UserResource resource : resources)
     {
-      final User user = (User)resource;
-      sortValues.add(user.getUserName());
+      sortValues.add(resource.getUserName());
     }
     assertEquals(sortValues, Arrays.asList("C", "B", "A"));
   }
@@ -569,11 +471,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the GET operation to fetch pages of users.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM client to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testGetPaginatedUsers(final SCIMClient client)
+  private void testGetPaginatedUsers(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -586,7 +488,7 @@ public class SCIMServerTestCase
     {
       final String uid = "user." + i;
       testDS.add(generateUserEntry(uid, "dc=example,dc=com",
-                                   "Test", "User", "password"));
+          "Test", "User", "password"));
     }
 
     // Fetch the users one page at a time with page size equal to 1.
@@ -594,17 +496,15 @@ public class SCIMServerTestCase
     final Set<String> userIDs = new HashSet<String>();
     for (long startIndex = 0; startIndex < NUM_USERS; startIndex += pageSize)
     {
-      final Response response =
-          client.getResources("User", "Users", null, null,
-                              new PageParameters(startIndex, pageSize));
-      assertEquals(response.getTotalResults().longValue(), NUM_USERS);
-      assertEquals(response.getStartIndex().longValue(), startIndex);
-      assertEquals(response.getItemsPerPage().intValue(), pageSize);
-      assertEquals(response.getResources().getResource().size(), pageSize);
-      for (final Resource resource : response.getResources().getResource())
+      SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+      Resources<UserResource> resources = endpoint.query(null, null,
+          new PageParameters(startIndex, pageSize));
+      assertEquals(resources.getTotalResults(), NUM_USERS);
+      assertEquals(resources.getStartIndex(), startIndex);
+      assertEquals(resources.getItemsPerPage(), pageSize);
+      for (final UserResource resource : resources)
       {
-        final User user = (User)resource;
-        final String userID = user.getId();
+        final String userID = resource.getId();
         userIDs.add(userID);
       }
     }
@@ -617,11 +517,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the POST operation on a user resource.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM client to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testPostUser(final SCIMClient client)
+  private void testPostUser(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -629,19 +529,18 @@ public class SCIMServerTestCase
     testDS.add(generateDomainEntry("example", "dc=com"));
 
     // Create the contents for a new user.
-    final User user = new User();
-    final Name name = new Name();
-    name.setFamilyName("Jensen");
-    name.setFormatted("Ms. Barbara J Jensen III");
-    name.setGivenName("Barbara");
+    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
+        "Barbara", "Ms", "III");
     user.setUserName("bjensen");
     user.setName(name);
 
     // Post the user via SCIM, returning selected attributes.
-    final PostResourceResponse response = client.postUser(user, "id", "meta");
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+    final UserResource user1 = endpoint.insert(user,
+        new SCIMAttributeType("id"), new SCIMAttributeType("meta"));
 
     // Check the returned user.
-    final User user1 = (User)response.getResource();
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=bjensen,dc=example,dc=com");
     assertNull(user1.getName());
@@ -659,8 +558,8 @@ public class SCIMServerTestCase
     assertTrue(entry.hasAttributeValue("givenName", "Barbara"));
 
     // Verify that we can fetch the user using the returned resource URI.
-    assertNotNull(client.getUserByURI(response.getResourceURI()));
-    assertEquals(response.getResourceURI(), user1.getMeta().getLocation());
+    //assertNotNull(client.getUserByURI(response.getResourceURI()));
+    //assertEquals(response.getResourceURI(), user1.getMeta().getLocation());
   }
 
 
@@ -674,11 +573,6 @@ public class SCIMServerTestCase
   public void testDeleteUser()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
-
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
@@ -686,39 +580,46 @@ public class SCIMServerTestCase
     // Create a user directly on the test DS.
     final String userDN = "uid=bjensen,dc=example,dc=com";
     testDS.add(generateUserEntry("bjensen", "dc=example,dc=com",
-                                 "Barbara", "Jensen", "password"));
+        "Barbara", "Jensen", "password"));
 
 
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // Delete the user through SCIM.
-    assertTrue(client.deleteUser(userDN));
+    endpoint.delete(userDN);
 
     // Attempt to delete the user again.
-    assertFalse(client.deleteUser(userDN));
+    try
+    {
+      endpoint.delete(userDN);
+      assertTrue(false, "Should throw ResourceNotFoundException");
+    }
+    catch (ResourceNotFoundException e)
+    {
+      //expected
+    }
 
     // Verify that the entry was actually deleted.
     final Entry entry = testDS.getEntry(userDN);
     assertNull(entry);
 
     // Create the contents for a user to be created via SCIM.
-    final User user = new User();
-    final Name name = new Name();
-    name.setFamilyName("Jensen");
-    name.setFormatted("Ms. Barbara J Jensen III");
-    name.setGivenName("Barbara");
+    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
+        "Barbara", "Ms", "III");
     user.setUserName("bjensen");
     user.setName(name);
 
     // Create the user via SCIM.
-    final PostResourceResponse response = client.postUser(user, "id");
+    //final UserResource response = endpoint.insert(user);
 
     // Delete the user by providing the returned resource URI.
-    assertTrue(client.deleteResourceByURI(response.getResourceURI()));
+    //assertTrue(client.deleteResourceByURI(response.getResourceURI()));
 
     // Verify that the entry was actually deleted.
-    assertNull(testDS.getEntry(userDN));
+    //assertNull(testDS.getEntry(userDN));
 
     // Tidy up.
-    client.stopClient();
+    //client.stopClient();
   }
 
 
@@ -726,11 +627,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the PUT operation on a user resource.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM client to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testPutUser(final SCIMClient client)
+  private void testPutUser(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -741,66 +642,63 @@ public class SCIMServerTestCase
     final String userDN = "uid=bjensen,dc=example,dc=com";
 
     // Create the contents for a new user.
-    final User user = new User();
-    final Name name = new Name();
-    name.setFormatted("Ms. Barbara J Jensen III");
-    name.setFamilyName("Jensen");
+    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
+        "Barbara", "Ms", "III");
     user.setUserName("bjensen");
     user.setName(name);
+    user.setId(userDN);
 
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // Attempt to replace a user that does not exist.
-    assertNull(client.putUser(userDN, user));
+    try
+    {
+      endpoint.update(user);
+      assertTrue(false, "Should've thrown a ResourceNotFoundException");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      // expected
+    }
 
     // Post a new user.
-    final PostResourceResponse response = client.postUser(user);
-    final User user1 = (User)response.getResource();
-    assertNotNull(user1);
+    final UserResource user1 = endpoint.insert(user);
 
     // Add a value that should be preserved during SCIM updates.
     testDS.modify(userDN, new Modification(ModificationType.ADD, "description",
-                                           "This value should be preserved"));
+        "This value should be preserved"));
 
     // Add some values to the user.
 
     user1.getName().setGivenName("Barbara");
 
-    final User.Emails emails = new User.Emails();
-    final PluralAttribute email = new PluralAttribute();
-    email.setType("work");
-    email.setValue("bjensen@example.com");
-    emails.getEmail().add(email);
+    final Collection<com.unboundid.scim.data.Entry<String>> emails =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
+    emails.add(new com.unboundid.scim.data.Entry<String>(
+        "bjensen@example.com", "work", false));
     user1.setEmails(emails);
 
-    final User.PhoneNumbers phoneNumbers = new User.PhoneNumbers();
-    final PluralAttribute workPhoneNumber = new PluralAttribute();
-    workPhoneNumber.setType("work");
-    workPhoneNumber.setValue("800-864-8377");
-    final PluralAttribute homePhoneNumber = new PluralAttribute();
-    homePhoneNumber.setType("home");
-    homePhoneNumber.setValue("818-123-4567");
-    phoneNumbers.getPhoneNumber().add(workPhoneNumber);
-    phoneNumbers.getPhoneNumber().add(homePhoneNumber);
+    final Collection<com.unboundid.scim.data.Entry<String>> phoneNumbers =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>(2);
+    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
+        "800-864-8377", "work", false));
+    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
+        "818-123-4567", "home", false));
     user1.setPhoneNumbers(phoneNumbers);
 
-    final User.Addresses addresses = new User.Addresses();
-    final Address workAddress = new Address();
-    workAddress.setType("work");
-    workAddress.setFormatted("100 Universal City Plaza\n" +
-                             "Hollywood, CA 91608 USA");
-    workAddress.setStreetAddress("100 Universal City Plaza");
-    workAddress.setLocality("Hollywood");
-    workAddress.setRegion("CA");
-    workAddress.setPostalCode("91608");
-    workAddress.setCountry("USA");
-    final Address homeAddress = new Address();
-    homeAddress.setFormatted("456 Hollywood Blvd\nHollywood, CA 91608 USA");
-    homeAddress.setType("home");
-    addresses.getAddress().add(workAddress);
-    addresses.getAddress().add(homeAddress);
+    final Collection<Address> addresses =
+        new ArrayList<Address>(2);
+    final Address workAddress = new Address("100 Universal City Plaza\n" +
+        "Hollywood, CA 91608 USA", "100 Universal City Plaza", "Hollywood",
+        "CA", "91608", "USA", "work", false);
+    final Address homeAddress = new Address("456 Hollywood Blvd\nHollywood, " +
+        "CA 91608 USA", null, null, null, null, null, "home", false);
+    addresses.add(workAddress);
+    addresses.add(homeAddress);
     user1.setAddresses(addresses);
 
     // Put the updated user.
-    final User user2 = client.putUser(user1.getId(), user1);
+    final UserResource user2 = endpoint.update(user1);
 
     // Verify that the LDAP entry was updated correctly.
     final Entry entry2 = testDS.getEntry(userDN);
@@ -821,34 +719,39 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta().getLocation());
 
     // Ensure that we can retrieve the user again using meta.location
-    assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
+    // assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
 
     // Remove some values from the user.
 
-    user2.getName().setGivenName(null);
+    Name newName = user2.getName();
+    newName.setGivenName(null);
+    user2.setName(newName);
 
-    final User.PhoneNumbers newPhoneNumbers = new User.PhoneNumbers();
-    for (final PluralAttribute a : user2.getPhoneNumbers().getPhoneNumber())
+    final Collection<com.unboundid.scim.data.Entry<String>> newPhoneNumbers =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
+    for (final com.unboundid.scim.data.Entry<String> a :
+        user2.getPhoneNumbers())
     {
       if (a.getType().equalsIgnoreCase("work"))
       {
-        newPhoneNumbers.getPhoneNumber().add(a);
+        newPhoneNumbers.add(a);
       }
     }
     user2.setPhoneNumbers(newPhoneNumbers);
 
-    final User.Addresses newAddresses = new User.Addresses();
-    for (final Address a : user2.getAddresses().getAddress())
+    final Collection<Address> newAddresses =
+        new ArrayList<Address>(1);
+    for (final Address a : user2.getAddresses())
     {
       if (a.getType().equalsIgnoreCase("work"))
       {
-        newAddresses.getAddress().add(a);
+        newAddresses.add(a);
       }
     }
     user2.setAddresses(newAddresses);
 
     // Put the updated user.
-    final User user3 = client.putUser(user2.getId(), user2);
+    final UserResource user3 = endpoint.update(user2);
 
     final Entry entry3 = testDS.getEntry(userDN);
     assertFalse(entry3.hasAttribute("givenName"));
@@ -870,7 +773,7 @@ public class SCIMServerTestCase
     user3.setPhoneNumbers(null);
 
     // Put the updated user.
-    client.putUser(user3.getId(), user3);
+    endpoint.update(user3);
 
     final Entry entry4 = testDS.getEntry(userDN);
     assertFalse(entry4.hasAttribute("givenName"));
@@ -891,11 +794,11 @@ public class SCIMServerTestCase
   /**
    * Provides test coverage for the write operations on a group resource.
    *
-   * @param client  The SCIM client to use during the test.
+   * @param service  The SCIM client to use during the test.
    *
    * @throws Exception  If the test failed.
    */
-  private void testWriteGroup(final SCIMClient client)
+  private void testWriteGroup(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -911,64 +814,68 @@ public class SCIMServerTestCase
     final String idGroupB = "cn=group B,dc=example,dc=com";
 
     // Create the contents for the groups.
-    Group groupA = new Group();
+    GroupResource groupA = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
     groupA.setDisplayName("group A");
-    final Group.Members membersA = new Group.Members();
-    final PluralAttribute member1 = new PluralAttribute();
-    member1.setType("User");
-    member1.setValue("uid=user.1,dc=example,dc=com");
-    membersA.getMember().add(member1);
+    final Collection<com.unboundid.scim.data.Entry<String>> membersA =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
+    final com.unboundid.scim.data.Entry<String> member1 =
+        new com.unboundid.scim.data.Entry<String>(
+            "uid=user.1,dc=example,dc=com", "User", false);
+    membersA.add(member1);
     groupA.setMembers(membersA);
 
-    Group groupB = new Group();
+    GroupResource groupB = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
     groupB.setDisplayName("group B");
 
+    SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
     // Post the new groups.
-    PostResourceResponse response = client.postResource("Group", groupA);
-    groupA = (Group)response.getResource();
+    groupA = endpoint.insert(groupA);
     assertNotNull(groupA);
     Entry entry = testDS.getEntry(idGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
-                                       "uid=user.1,dc=example,dc=com"));
+        "uid=user.1,dc=example,dc=com"));
 
-    response = client.postResource("Group", groupB);
-    groupB = (Group)response.getResource();
+    groupB = endpoint.insert(groupB);
     assertNotNull(groupB);
 
     // Add a value that should be preserved during SCIM updates.
     testDS.modify(idGroupA,
-                  new Modification(ModificationType.ADD, "description",
-                                   "This value should be preserved"));
+        new Modification(ModificationType.ADD, "description",
+            "This value should be preserved"));
     testDS.modify(idGroupB,
-                  new Modification(ModificationType.ADD, "description",
-                                   "This value should be preserved"));
+        new Modification(ModificationType.ADD, "description",
+            "This value should be preserved"));
 
     // Add some members to each group.
-    final PluralAttribute member2 = new PluralAttribute();
-    member2.setType("User");
-    member2.setValue("uid=user.2,dc=example,dc=com");
-    groupA.getMembers().getMember().add(member2);
+    final com.unboundid.scim.data.Entry<String> member2 =
+        new com.unboundid.scim.data.Entry<String>(
+            "uid=user.2,dc=example,dc=com", "User", false);
+    Collection<com.unboundid.scim.data.Entry<String>> newMembers =
+        groupA.getMembers();
+    newMembers.add(member2);
+    groupA.setMembers(newMembers);
 
-    final Group.Members membersB = new Group.Members();
-    final PluralAttribute memberA = new PluralAttribute();
+    final com.unboundid.scim.data.Entry<String> memberA =
+        new com.unboundid.scim.data.Entry<String>(
+            idGroupA, "Group", false);
     memberA.setType("Group");
     memberA.setValue(idGroupA);
-    membersB.getMember().add(memberA);
-    groupB.setMembers(membersB);
+    newMembers = new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
+    newMembers.add(memberA);
+    groupB.setMembers(newMembers);
 
     // Put the updated groups.
-    groupA = (Group)client.putResource("Group", idGroupA, groupA);
-    groupB = (Group)client.putResource("Group", idGroupB, groupB);
+    groupA = endpoint.update(groupA);
+    groupB = endpoint.update(groupB);
 
-    assertEquals(groupA.getMembers().getMember().size(), 2);
-    assertEquals(groupA.getMembers().getMember().get(0).getValue(),
-                 "uid=user.1,dc=example,dc=com");
-    assertEquals(groupA.getMembers().getMember().get(1).getValue(),
-                 "uid=user.2,dc=example,dc=com");
+    assertEquals(groupA.getMembers().size(), 2);
+    Iterator<com.unboundid.scim.data.Entry<String>> i =
+        groupA.getMembers().iterator();
+    assertEquals(i.next().getValue(), "uid=user.1,dc=example,dc=com");
+    assertEquals(i.next().getValue(), "uid=user.2,dc=example,dc=com");
 
-    assertEquals(groupB.getMembers().getMember().size(), 1);
-    assertEquals(groupB.getMembers().getMember().get(0).getValue(),
-                 idGroupA);
+    assertEquals(groupB.getMembers().size(), 1);
+    assertEquals(groupB.getMembers().iterator().next().getValue(), idGroupA);
 
     assertNotNull(groupA.getMeta().getLastModified());
     assertNotNull(groupA.getMeta().getLocation());
@@ -978,9 +885,9 @@ public class SCIMServerTestCase
     // Verify that the LDAP entries were updated correctly.
     entry = testDS.getEntry(idGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
-                                       "uid=user.1,dc=example,dc=com"));
+        "uid=user.1,dc=example,dc=com"));
     assertTrue(entry.hasAttributeValue("uniqueMember",
-                                       "uid=user.2,dc=example,dc=com"));
+        "uid=user.2,dc=example,dc=com"));
     assertTrue(entry.hasAttribute("description"));
 
     entry = testDS.getEntry(idGroupB);
@@ -988,8 +895,8 @@ public class SCIMServerTestCase
     assertTrue(entry.hasAttribute("description"));
 
     // Delete the groups.
-    assertTrue(client.deleteResource("Group", idGroupB));
-    assertTrue(client.deleteResource("Group", idGroupA));
+    endpoint.delete(idGroupB);
+    endpoint.delete(idGroupA);
 
     assertNull(testDS.getEntry(idGroupA));
     assertNull(testDS.getEntry(idGroupB));
@@ -1007,14 +914,9 @@ public class SCIMServerTestCase
   public void testMethodOverride()
       throws Exception
   {
-    // Start a client for the SCIM operations.
-    final SCIMClient client = new SCIMClient("localhost", getSSTestPort(), "");
-    client.setBasicAuth("cn=Manager", "password");
-    client.startClient();
-
     // Tell the client to use method override.
-    client.setPutUsesMethodOverride(true);
-    client.setDeleteUsesMethodOverride(true);
+    service.setOverridePut(true);
+    service.setOverrideDelete(true);
 
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
@@ -1024,29 +926,27 @@ public class SCIMServerTestCase
     final String userDN = "uid=bjensen,dc=example,dc=com";
 
     // Create the contents for a new user.
-    final User user = new User();
-    final Name name = new Name();
-    name.setFormatted("Ms. Barbara J Jensen III");
-    name.setFamilyName("Jensen");
+    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", null,
+        null, null, null);
     user.setUserName("bjensen");
     user.setName(name);
 
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // Post a new user.
-    final PostResourceResponse response = client.postUser(user);
-    final User user1 = (User)response.getResource();
+    final UserResource user1 = endpoint.insert(user);
     assertNotNull(user1);
 
     // Add some values to the user.
-    user1.getName().setGivenName("Barbara");
+    Name newName = user1.getName();
+    newName.setGivenName("Barbara");
+    user1.setName(newName);
 
     // Put the updated user.
-    client.putUser(user1.getId(), user1);
+    endpoint.update(user1);
 
     // Delete the user.
-    client.deleteUser(userDN);
-
-    // Tidy up.
-    client.stopClient();
+    endpoint.delete(userDN);
   }
 
 

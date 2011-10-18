@@ -30,13 +30,13 @@ public class Meta
         @Override
         public Meta toInstance(final SCIMAttributeValue value) {
           return new Meta(
-              getSingularSubAttributeValue(value, "created",
+              value.getSingularSubAttributeValue("created",
                   DATE_RESOLVER),
-              getSingularSubAttributeValue(value, "lastModified",
+              value.getSingularSubAttributeValue("lastModified",
                   DATE_RESOLVER),
-              URI.create(getSingularSubAttributeValue(value, "location",
+              URI.create(value.getSingularSubAttributeValue("location",
                   STRING_RESOLVER)),
-              getSingularSubAttributeValue(value, "version",
+              value.getSingularSubAttributeValue("version",
                   STRING_RESOLVER));
         }
 
@@ -44,7 +44,7 @@ public class Meta
          * {@inheritDoc}
          */
         @Override
-        SCIMAttributeValue fromInstance(
+        public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor,
             final Meta value) {
           Collection<SCIMAttribute> attributes =
@@ -53,7 +53,7 @@ public class Meta
           if(value.created != null)
           {
             AttributeDescriptor subAttributeDescriptor =
-                attributeDescriptor.getAttribute("created");
+                attributeDescriptor.getSubAttribute("created");
             attributes.add(SCIMAttribute.createSingularAttribute(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createDateValue(value.created)));
@@ -61,7 +61,7 @@ public class Meta
           if(value.lastModified != null)
           {
             AttributeDescriptor subAttributeDescriptor =
-                attributeDescriptor.getAttribute("lastModified");
+                attributeDescriptor.getSubAttribute("lastModified");
             attributes.add(SCIMAttribute.createSingularAttribute(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createDateValue(value.lastModified)));
@@ -69,7 +69,7 @@ public class Meta
           if(value.location != null)
           {
             AttributeDescriptor subAttributeDescriptor =
-                attributeDescriptor.getAttribute("location");
+                attributeDescriptor.getSubAttribute("location");
             attributes.add(SCIMAttribute.createSingularAttribute(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createStringValue(
@@ -78,7 +78,7 @@ public class Meta
           if(value.version != null)
           {
             AttributeDescriptor subAttributeDescriptor =
-                attributeDescriptor.getAttribute("version");
+                attributeDescriptor.getSubAttribute("version");
             attributes.add(SCIMAttribute.createSingularAttribute(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createStringValue(value.version)));

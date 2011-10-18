@@ -12,14 +12,12 @@ import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
-import com.unboundid.scim.sdk.SCIMObject;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 
@@ -70,7 +68,7 @@ public class JsonMarshaller implements Marshaller
     if (includeSchemas)
     {
       // Write out the schemas for this object.
-      jsonWriter.key(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
+      jsonWriter.key(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME);
       jsonWriter.array();
       for (final String schema : schemas)
       {
@@ -150,7 +148,7 @@ public class JsonMarshaller implements Marshaller
       }
 
       // Write the schemas.
-      jsonWriter.key(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
+      jsonWriter.key(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME);
       jsonWriter.array();
       for (final String schemaURI : schemaURIs)
       {
@@ -235,10 +233,12 @@ public class JsonMarshaller implements Marshaller
     jsonWriter.array();
     for (SCIMAttributeValue pluralValue : pluralValues)
     {
+      jsonWriter.object();
       for (SCIMAttribute attribute : pluralValue.getAttributes().values())
       {
-        this.writeComplexAttribute(attribute, jsonWriter);
+        writeSingularAttribute(attribute, jsonWriter);
       }
+      jsonWriter.endObject();
     }
     jsonWriter.endArray();
   }
@@ -295,29 +295,5 @@ public class JsonMarshaller implements Marshaller
         jsonWriter.value(val.getStringValue());
       }
     }
-  }
-
-
-
-  /**
-   * Write a complex attribute to an XML stream.
-   *
-   * @param scimAttribute The attribute to be written.
-   * @param jsonWriter    Output to write the attribute to.
-   *
-   * @throws org.json.JSONException Thrown if error writing to output.
-   */
-  private void writeComplexAttribute(final SCIMAttribute scimAttribute,
-                                     final JSONWriter jsonWriter)
-      throws JSONException
-  {
-    SCIMAttributeValue value = scimAttribute.getSingularValue();
-    Map<String, SCIMAttribute> attributes = value.getAttributes();
-    jsonWriter.object();
-    for (SCIMAttribute attribute : attributes.values())
-    {
-      writeSingularAttribute(attribute, jsonWriter);
-    }
-    jsonWriter.endObject();
   }
 }

@@ -180,7 +180,7 @@ public class SCIMEndpoint<R extends BaseResource>
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
-            "");
+            response.getMessage());
       }
       throw scimException;
     }
@@ -196,7 +196,8 @@ public class SCIMEndpoint<R extends BaseResource>
   public Resources<R> query(final String filter)
       throws SCIMException
   {
-    return query(SCIMFilter.parse(filter), null, null, null);
+    return query(filter == null ? null:
+        SCIMFilter.parse(filter), null, null, null);
   }
 
   /**
@@ -261,7 +262,7 @@ public class SCIMEndpoint<R extends BaseResource>
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
-            "");
+            response.getMessage());
       }
       throw scimException;
     }
@@ -330,7 +331,7 @@ public class SCIMEndpoint<R extends BaseResource>
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
-            "");
+            response.getMessage());
       }
       throw scimException;
     }
@@ -423,7 +424,7 @@ public class SCIMEndpoint<R extends BaseResource>
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
-            "");
+            response.getMessage());
       }
       throw scimException;
     }
@@ -487,7 +488,7 @@ public class SCIMEndpoint<R extends BaseResource>
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
-            "");
+            response.getMessage());
       }
       throw scimException;
     }

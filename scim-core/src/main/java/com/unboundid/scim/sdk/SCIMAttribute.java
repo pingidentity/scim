@@ -7,12 +7,9 @@ package com.unboundid.scim.sdk;
 
 
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.config.Schema;
-import com.unboundid.scim.config.SchemaManager;
 
 import java.util.Arrays;
-import java.util.List;
-
+import java.util.Collection;
 
 
 /**
@@ -86,46 +83,6 @@ public final class SCIMAttribute
 
 
   /**
-   * Create a simple singular attribute from a string value.
-   *
-   * @param schemaURI  The URI for the schema that defines the attribute.
-   * @param name       The name of the attribute.
-   * @param value      The value of the attribute.
-   *
-   * @return  A new simple singular attribute containing a string value.
-   */
-  public static SCIMAttribute createSingularStringAttribute(
-      final String schemaURI, final String name, final String value)
-  {
-    final SchemaManager schemaManager = SchemaManager.instance();
-    final Schema schema = schemaManager.getSchema(schemaURI);
-    return new SCIMAttribute(schema.getAttribute(name),
-                             SCIMAttributeValue.createStringValue(value));
-  }
-
-
-
-  /**
-   * Create a simple singular attribute from a boolean value.
-   *
-   * @param schemaURI  The URI for the schema that defines the attribute.
-   * @param name       The name of the attribute.
-   * @param value      The value of the attribute.
-   *
-   * @return  A new simple singular attribute containing a string value.
-   */
-  public static SCIMAttribute createSingularBooleanAttribute(
-      final String schemaURI, final String name, final boolean value)
-  {
-    final SchemaManager schemaManager = SchemaManager.instance();
-    final Schema schema = schemaManager.getSchema(schemaURI);
-    return new SCIMAttribute(schema.getAttribute(name),
-                             SCIMAttributeValue.createBooleanValue(value));
-  }
-
-
-
-  /**
    * Create a singular attribute.
    *
    * @param descriptor The mapping descriptor of this attribute.
@@ -137,43 +94,6 @@ public final class SCIMAttribute
      final AttributeDescriptor descriptor, final SCIMAttributeValue value)
   {
     return new SCIMAttribute(descriptor, value);
-  }
-
-
-
-  /**
-   * Create a simple attribute from its string representation.
-   *
-   * @param descriptor The mapping descriptor of this attribute.
-   * @param value      The string value of this attribute.
-   *
-   * @return  A new singular attribute.
-   */
-  public static SCIMAttribute createSimpleAttribute(
-     final AttributeDescriptor descriptor, final String value)
-  {
-    return new SCIMAttribute(descriptor,
-                             SCIMAttributeValue.createSimpleValue(
-                                 descriptor.getDataType(), value));
-  }
-
-
-
-  /**
-   * Create a singular attribute.
-   *
-   * @param schemaURI  The URI for the schema that defines the attribute.
-   * @param name    The name of the attribute.
-   * @param value   The value of the attribute.
-   *
-   * @return  A new singular attribute.
-   */
-  public static SCIMAttribute createSingularAttribute(
-     final String schemaURI, final String name, final SCIMAttributeValue value)
-  {
-    final SchemaManager schemaManager = SchemaManager.instance();
-    final Schema schema = schemaManager.getSchema(schemaURI);
-    return new SCIMAttribute(schema.getAttribute(name), value);
   }
 
 
@@ -191,26 +111,6 @@ public final class SCIMAttribute
       final SCIMAttributeValue ... values)
   {
     return new SCIMAttribute(descriptor, null, values);
-  }
-
-
-
-  /**
-   * Create a plural attribute.
-   *
-   * @param schemaURI  The URI for the schema that defines the attribute.
-   * @param name       The name of the attribute.
-   * @param values     The values of this attribute.
-   *
-   * @return  A new plural attribute.
-   */
-  public static SCIMAttribute createPluralAttribute(
-      final String schemaURI, final String name,
-      final SCIMAttributeValue ... values)
-  {
-    final SchemaManager schemaManager = SchemaManager.instance();
-    final Schema schema = schemaManager.getSchema(schemaURI);
-    return new SCIMAttribute(schema.getAttribute(name), null, values);
   }
 
 
@@ -327,8 +227,8 @@ public final class SCIMAttribute
       {
         if (v.isComplex())
         {
-          final List<AttributeDescriptor> descriptors =
-              attributeDescriptor.getComplexAttributeDescriptors();
+          final Collection<AttributeDescriptor> descriptors =
+              attributeDescriptor.getSubAttributes();
           for (AttributeDescriptor descriptor : descriptors)
           {
             final SCIMAttribute a = v.getAttribute(descriptor.getName());

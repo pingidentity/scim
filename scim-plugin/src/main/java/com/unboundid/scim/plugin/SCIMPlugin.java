@@ -670,9 +670,6 @@ public final class SCIMPlugin
     final FileArgument useResourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
 
-    final FileArgument useSchemaFileArg =
-         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_SCHEMA_FILE);
-
     final IntegerArgument portArg =
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_PORT);
 
@@ -680,35 +677,6 @@ public final class SCIMPlugin
 
     scimServerConfig.setListenPort(portArg.getValue());
     scimServerConfig.setResourcesFile(useResourcesFileArg.getValue());
-
-    if (useSchemaFileArg.isPresent())
-    {
-      final File f = useSchemaFileArg.getValue();
-      if (f.exists())
-      {
-        final ArrayList<File> schemaFiles = new ArrayList<File>(1);
-        if (f.isFile())
-        {
-          schemaFiles.add(f);
-        }
-        else
-        {
-          for (final File subFile : f.listFiles())
-          {
-            if (subFile.isFile())
-            {
-              schemaFiles.add(subFile);
-            }
-          }
-        }
-
-        if (! schemaFiles.isEmpty())
-        {
-          final File[] files = new File[schemaFiles.size()];
-          scimServerConfig.setSchemaFiles(schemaFiles.toArray(files));
-        }
-      }
-    }
 
     return scimServerConfig;
   }

@@ -536,7 +536,7 @@ public class CRUDResource extends AbstractDynamicResource
    */
   @DELETE
   @Path("{userID}")
-  @Produces(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_JSON)
   public Response doJsonDelete(@PathParam("userID") final String userID,
                                @Context final ServletContext servletContext,
                                @Context final SecurityContext securityContext,

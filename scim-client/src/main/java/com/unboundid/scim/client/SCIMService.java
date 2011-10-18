@@ -4,18 +4,18 @@
  */
 package com.unboundid.scim.client;
 
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.SCIMConstants;
 import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.RestClient;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
+import java.util.Collection;
 
 /**
  * The SCIMService class represents a client connection to a SCIM service
@@ -78,11 +78,8 @@ public class SCIMService
    */
   public SCIMEndpoint<UserResource> getUserEndpoint()
   {
-    ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(
-            SCIMConstants.RESOURCE_NAME_USER);
     return new SCIMEndpoint<UserResource>(this, client,
-        userResourceDescriptor, UserResource.USER_RESOURCE_FACTORY);
+        CoreSchema.USER_DESCRIPTOR, UserResource.USER_RESOURCE_FACTORY);
   }
 
   /**
@@ -93,11 +90,8 @@ public class SCIMService
    */
   public SCIMEndpoint<GroupResource> getGroupEndpoint()
   {
-    ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(
-            SCIMConstants.RESOURCE_NAME_GROUP);
     return new SCIMEndpoint<GroupResource>(this, client,
-        userResourceDescriptor, GroupResource.GROUP_RESOURCE_FACTORY);
+        CoreSchema.GROUP_DESCRIPTOR, GroupResource.GROUP_RESOURCE_FACTORY);
   }
 
   /**
@@ -105,7 +99,19 @@ public class SCIMService
    *
    * @return All service provider supported resources.
    */
-  public SchemaManager retrieveResources()
+  public Collection<ResourceDescriptor> retrieveResources()
+  {
+    return null;
+  }
+
+  /**
+   * Retrieve the resource schema for provided resource endpoint.
+   *
+   * @param resourceName The name of the resource endpoint.
+   * @return The ResourceDescriptor for the endpoint or <code>null</code> if
+   *         it is not available.
+   */
+  public ResourceDescriptor getResourceSchema(final String resourceName)
   {
     return null;
   }

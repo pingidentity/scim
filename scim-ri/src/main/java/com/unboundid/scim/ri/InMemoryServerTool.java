@@ -111,10 +111,6 @@ public class InMemoryServerTool
   // resource definitions.
   private FileArgument useResourcesFileArgument;
 
-  // The argument used to specify the path to a directory containing XML
-  // schema definitions.
-  private FileArgument useSchemaFileArgument;
-
   // The argument used to specify the port on which the server should listen.
   private IntegerArgument portArgument;
 
@@ -196,7 +192,6 @@ public class InMemoryServerTool
     ldapAccessLogFileArgument      = null;
     ldifFileArgument               = null;
     useResourcesFileArgument       = null;
-    useSchemaFileArgument          = null;
     useLdapSchemaFileArgument      = null;
     portArgument                   = null;
   }
@@ -249,12 +244,6 @@ public class InMemoryServerTool
         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_RESOURCES_FILE.get(), true, true,
         false, false);
     parser.addArgument(useResourcesFileArgument);
-
-    useSchemaFileArgument = new FileArgument('S', "useSchemaFile", false, 1,
-         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
-         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_SCHEMA_FILE.get(), true, true, false,
-         false);
-    parser.addArgument(useSchemaFileArgument);
 
     portArgument = new IntegerArgument('p', "port", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PORT.get(),
@@ -424,35 +413,6 @@ public class InMemoryServerTool
     serverConfig.setListenPort(listenPort);
 
     serverConfig.setResourcesFile(useResourcesFileArgument.getValue());
-
-    if (useSchemaFileArgument.isPresent())
-    {
-      final File f = useSchemaFileArgument.getValue();
-      if (f.exists())
-      {
-        final ArrayList<File> schemaFiles = new ArrayList<File>(1);
-        if (f.isFile())
-        {
-          schemaFiles.add(f);
-        }
-        else
-        {
-          for (final File subFile : f.listFiles())
-          {
-            if (subFile.isFile())
-            {
-              schemaFiles.add(subFile);
-            }
-          }
-        }
-
-        if (! schemaFiles.isEmpty())
-        {
-          final File[] files = new File[schemaFiles.size()];
-          serverConfig.setSchemaFiles(schemaFiles.toArray(files));
-        }
-      }
-    }
 
     return serverConfig;
   }

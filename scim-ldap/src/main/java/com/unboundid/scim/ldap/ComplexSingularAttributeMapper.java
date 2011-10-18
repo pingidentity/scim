@@ -11,7 +11,6 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
@@ -51,16 +50,16 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
   /**
    * Create a new instance of a complex singular attribute mapper.
    *
-   * @param scimAttributeType  The SCIM attribute type that is mapped by this
-   *                           attribute mapper.
+   * @param attributeDescriptor  The SCIM attribute type that is mapped by this
+   *                             attribute mapper.
    * @param transformations    The set of sub-attribute transformations for
    *                           this attribute mapper.
    */
   public ComplexSingularAttributeMapper(
-      final SCIMAttributeType scimAttributeType,
+      final AttributeDescriptor attributeDescriptor,
       final List<SubAttributeTransformation> transformations)
   {
-    super(scimAttributeType);
+    super(attributeDescriptor);
 
     map = new HashMap<String, SubAttributeTransformation>();
     ldapAttributeTypes = new HashSet<String>();
@@ -177,12 +176,9 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
   public void toLDAPAttributes(final SCIMObject scimObject,
                                final Collection<Attribute> attributes)
   {
-    final AttributeDescriptor descriptor =
-        getSchema().getAttribute(getSCIMAttributeType().getName());
-
     final SCIMAttribute scimAttribute =
-        scimObject.getAttribute(getSCIMAttributeType().getSchema(),
-                                getSCIMAttributeType().getName());
+        scimObject.getAttribute(getAttributeDescriptor().getSchema(),
+                                getAttributeDescriptor().getName());
     if (scimAttribute != null)
     {
       final SCIMAttributeValue value = scimAttribute.getSingularValue();
@@ -197,7 +193,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
         if (subAttribute != null)
         {
           final AttributeDescriptor subDescriptor =
-              descriptor.getAttribute(scimType);
+              getAttributeDescriptor().getSubAttribute(scimType);
           final ASN1OctetString v = at.getTransformation().toLDAPValue(
               subDescriptor, subAttribute.getSingularValue().getValue());
           attributes.add(new Attribute(ldapType, v));
@@ -211,9 +207,6 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
   @Override
   public SCIMAttribute toSCIMAttribute(final Entry entry)
   {
-    final AttributeDescriptor descriptor =
-        getSchema().getAttribute(getSCIMAttributeType().getName());
-
     final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
 
     for (final SubAttributeTransformation sat : map.values())
@@ -222,7 +215,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
       final AttributeTransformation at = sat.getAttributeTransformation();
 
       final AttributeDescriptor subDescriptor =
-          descriptor.getAttribute(subAttributeName);
+          getAttributeDescriptor().getSubAttribute(subAttributeName);
       final Attribute a = entry.getAttribute(at.getLdapAttribute());
       if (a != null)
       {
@@ -245,6 +238,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
 
     final SCIMAttributeValue complexValue =
         SCIMAttributeValue.createComplexValue(subAttributes);
-    return SCIMAttribute.createSingularAttribute(descriptor, complexValue);
+    return SCIMAttribute.createSingularAttribute(getAttributeDescriptor(),
+        complexValue);
   }
 }

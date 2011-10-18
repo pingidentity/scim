@@ -5,7 +5,6 @@
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 
 import java.util.Date;
@@ -23,7 +22,7 @@ public abstract class AttributeValueResolver<T>
    * @param value The value to create an instance from.
    * @return The instance created from the attribute value.
    */
-  abstract T toInstance(final SCIMAttributeValue value);
+  public abstract T toInstance(final SCIMAttributeValue value);
 
   /**
    * Create a SCIM attribute value from the given instance.
@@ -32,7 +31,7 @@ public abstract class AttributeValueResolver<T>
    * @param value The instance.
    * @return The SCIM attribute value created from the instance.
    */
-  abstract SCIMAttributeValue fromInstance(
+  public abstract SCIMAttributeValue fromInstance(
       final AttributeDescriptor attributeDescriptor, final T value);
 
   /**
@@ -105,33 +104,4 @@ public abstract class AttributeValueResolver<T>
       };
 
 
-  /**
-   * Retrieves the value of a sub-attribute from the specified SCIM complex
-   * attribute value.
-   *
-   * @param <T>          The type of the resolved instance representing the
-   *                     value of sub-attribute.
-   * @param complexValue The SCIM complex attribute value to retrieve the
-   *                     sub-attribute value from.
-   * @param name         The name of the sub-attribute.
-   * @param resolver     The <code>AttributeValueResolver</code> that should
-   *                     be used to resolve the value into an instance.
-   * @return             The resolved instance representing the value of
-   *                     sub-attribute.
-   */
-  protected <T> T getSingularSubAttributeValue(
-      final SCIMAttributeValue complexValue, final String name,
-      final AttributeValueResolver<T> resolver)
-  {
-    SCIMAttribute attribute = complexValue.getAttribute(name);
-    if(attribute != null)
-    {
-      SCIMAttributeValue v = attribute.getSingularValue();
-      if(v != null)
-      {
-        return resolver.toInstance(v);
-      }
-    }
-    return null;
-  }
 }

@@ -24,27 +24,28 @@ public class Address
       new AttributeValueResolver<Address>()
       {
         public Address toInstance(final SCIMAttributeValue value) {
+          Boolean p = value.getSingularSubAttributeValue("primary",
+                  BOOLEAN_RESOLVER);
           return new Address(
-              getSingularSubAttributeValue(value, "formatted",
+              value.getSingularSubAttributeValue("formatted",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "type",
+              value.getSingularSubAttributeValue("streetAddress",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "primary",
-                  BOOLEAN_RESOLVER),
-              getSingularSubAttributeValue(value, "locality",
+              value.getSingularSubAttributeValue("locality",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "streetAddress",
+              value.getSingularSubAttributeValue("region",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "postalCode",
+              value.getSingularSubAttributeValue("postalCode",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "region",
+              value.getSingularSubAttributeValue("country",
                   STRING_RESOLVER),
-              getSingularSubAttributeValue(value, "country",
-                  STRING_RESOLVER));
+              value.getSingularSubAttributeValue("type",
+                  STRING_RESOLVER),
+              p == null ? false : p);
         }
 
         @Override
-        SCIMAttributeValue fromInstance(
+        public SCIMAttributeValue fromInstance(
             final AttributeDescriptor addressDescriptor, final Address value) {
           final List<SCIMAttribute> subAttributes =
               new ArrayList<SCIMAttribute>(8);
@@ -53,7 +54,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("type"),
+                    addressDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 
@@ -61,7 +62,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("formatted"),
+                    addressDescriptor.getSubAttribute("formatted"),
                     SCIMAttributeValue.createStringValue(value.formatted)));
           }
 
@@ -69,7 +70,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("streetAddress"),
+                    addressDescriptor.getSubAttribute("streetAddress"),
                     SCIMAttributeValue.createStringValue(value.streetAddress)));
           }
 
@@ -77,7 +78,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("locality"),
+                    addressDescriptor.getSubAttribute("locality"),
                     SCIMAttributeValue.createStringValue(value.locality)));
           }
 
@@ -85,7 +86,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("region"),
+                    addressDescriptor.getSubAttribute("region"),
                     SCIMAttributeValue.createStringValue(value.region)));
           }
 
@@ -93,7 +94,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("postalCode"),
+                    addressDescriptor.getSubAttribute("postalCode"),
                     SCIMAttributeValue.createStringValue(value.postalCode)));
           }
 
@@ -101,7 +102,7 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("country"),
+                    addressDescriptor.getSubAttribute("country"),
                     SCIMAttributeValue.createStringValue(value.country)));
           }
 
@@ -109,13 +110,15 @@ public class Address
           {
             subAttributes.add(
                 SCIMAttribute.createSingularAttribute(
-                    addressDescriptor.getAttribute("primary"),
+                    addressDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
 
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
+
+
 
   private String country;
   private String formatted;
@@ -129,9 +132,7 @@ public class Address
   /**
    * Create an instance of the SCIM addresses attribute.
    *
-   * @param type           The type of address, "work", "home" or "other".
-   * @param formatted      The full mailing address, formatted for display or
-   *                       use with a mailing label.
+   * @param primary        Specifies whether this value is the primary value.
    * @param streetAddress  The full street address component, which may include
    *                       house number, street name, PO BOX, and multi-line
    *                       extended street address information.
@@ -139,12 +140,14 @@ public class Address
    * @param region         The state or region component.
    * @param postalCode     The zip code or postal code component.
    * @param country        The country name component.
-   * @param primary        Specifies whether this value is the primary value.
+   * @param formatted      The full mailing address, formatted for display or
+   *                       use with a mailing label.
+   * @param type           The type of address, "work", "home" or "other".
    */
-  public Address(final String formatted, final String type,
-                 final boolean primary, final String locality,
-                 final String streetAddress,  final String postalCode,
-                 final String region, final String country) {
+  public Address(final String formatted, final String streetAddress,
+                 final String locality, final String region,
+                 final String postalCode, final String country,
+                 final String type, final boolean primary) {
     this.country = country;
     this.formatted = formatted;
     this.locality = locality;

@@ -6,8 +6,6 @@ package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.sdk.Resources;
@@ -20,8 +18,6 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 
 
@@ -40,7 +36,31 @@ public class XmlMarshaller implements Marshaller
     final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
     final XMLStreamWriter xmlStreamWriter =
       outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
-    marshal(resource, xmlStreamWriter);
+
+    xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
+
+    xmlStreamWriter.setDefaultNamespace(SCIMConstants.SCHEMA_URI_CORE);
+
+    final String resourceSchemaURI =
+        resource.getResourceDescriptor().getSchema();
+
+    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
+        resource.getResourceDescriptor().getName(), resourceSchemaURI);
+
+    int i = 1;
+    for (String schemaURI :
+        resource.getResourceDescriptor().getAttributeSchemas())
+    {
+      final String prefix = schemaURI.equals(resourceSchemaURI) ?
+          Context.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
+      xmlStreamWriter.setPrefix(prefix, schemaURI);
+      xmlStreamWriter.writeNamespace(prefix, schemaURI);
+    }
+
+    marshal(resourceSchemaURI, resource, xmlStreamWriter);
+
+    xmlStreamWriter.writeEndDocument();
+    xmlStreamWriter.flush();
   }
 
   /**
@@ -101,8 +121,6 @@ public class XmlMarshaller implements Marshaller
     final XMLStreamWriter xmlStreamWriter =
         outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
     final String xsiURI = "http://www.w3.org/2001/XMLSchema-instance";
-    final SchemaManager descriptorManager =
-        SchemaManager.instance();
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
 
@@ -135,37 +153,27 @@ public class XmlMarshaller implements Marshaller
     for (final BaseResource resource : response)
     {
       xmlStreamWriter.writeStartElement("Resource");
+      final String resourceSchemaURI =
+          resource.getResourceDescriptor().getSchema();
 
-      final ResourceDescriptor resourceDescriptor =
-          resource.getResourceDescriptor();
-      final String resourceSchemaURI = resourceDescriptor.getSchema();
-
-      // Make a list of schemas referenced by extension attributes.
-      final List<String> extensionSchemas = new ArrayList<String>();
-      for (final String schemaURI : resource.getScimObject().getSchemas())
+      int i = 1;
+      for (final String schemaURI :
+          resource.getResourceDescriptor().getAttributeSchemas())
       {
-        if (!schemaURI.equals(resourceSchemaURI))
-        {
-          extensionSchemas.add(schemaURI);
-        }
-      }
-
-      for (int i = 0; i < extensionSchemas.size(); i++)
-      {
-        final String schemaURI = extensionSchemas.get(i);
-        final String prefix = "ns" + String.valueOf(i + 1);
+        final String prefix = schemaURI.equals(resourceSchemaURI) ?
+          Context.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
         xmlStreamWriter.setPrefix(prefix, schemaURI);
         xmlStreamWriter.writeNamespace(prefix, schemaURI);
       }
 
       xmlStreamWriter.writeAttribute(xsiURI, "type",
           Context.DEFAULT_SCHEMA_PREFIX + ':' +
-              resourceDescriptor.getName());
+              resource.getResourceDescriptor().getName());
 
       // Write the resource attributes first in the order defined by the
       // resource descriptor.
         for (final AttributeDescriptor attributeDescriptor :
-            resourceDescriptor.getAttributeDescriptors())
+            resource.getResourceDescriptor().getAttributes())
         {
           final SCIMAttribute a =
               resource.getScimObject().
@@ -186,7 +194,8 @@ public class XmlMarshaller implements Marshaller
 
       // Now write any extension attributes, grouped by the schema
       // extension they belong to.
-      for (final String schemaURI : resource.getScimObject().getSchemas())
+      for (final String schemaURI :
+          resource.getResourceDescriptor().getAttributeSchemas())
       {
         // Skip the resource schema.
         if (!schemaURI.equals(resourceSchemaURI))
@@ -222,50 +231,21 @@ public class XmlMarshaller implements Marshaller
   /**
    * Write a SCIM object to an XML stream.
    *
-   * @param resource      The SCIM resource to be written.
+   * @param resourceSchemaURI  The schema URI of the resource.
+   * @param resource           The SCIM resource to be written.
    * @param xmlStreamWriter The stream to which the SCIM object should be
    *                        written.
    * @throws XMLStreamException If the object could not be written.
    */
-  private void marshal(final BaseResource resource,
+  private void marshal(final String resourceSchemaURI,
+                       final BaseResource resource,
                        final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException {
-    xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
-
-    xmlStreamWriter.setDefaultNamespace(SCIMConstants.SCHEMA_URI_CORE);
-
-    final String resourceSchemaURI =
-        resource.getResourceDescriptor().getSchema();
-
-    // Make a list of schemas referenced by extension attributes.
-    final List<String> extensionSchemas = new ArrayList<String>();
-    for (final String schemaURI : resource.getScimObject().getSchemas())
-    {
-      if (!schemaURI.equals(resourceSchemaURI))
-      {
-        extensionSchemas.add(schemaURI);
-      }
-    }
-
-    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
-      resource.getResourceDescriptor().getName(), resourceSchemaURI);
-    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
-      resourceSchemaURI);
-    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
-                                   resourceSchemaURI);
-
-    for (int i = 0; i < extensionSchemas.size(); i++)
-    {
-      final String schemaURI = extensionSchemas.get(i);
-      final String prefix = "ns" + String.valueOf(i + 1);
-      xmlStreamWriter.setPrefix(prefix, schemaURI);
-      xmlStreamWriter.writeNamespace(prefix, schemaURI);
-    }
 
     // Write the resource attributes first in the order defined by the
     // resource descriptor.
     for (final AttributeDescriptor attributeDescriptor :
-        resource.getResourceDescriptor().getAttributeDescriptors())
+        resource.getResourceDescriptor().getAttributes())
     {
       final SCIMAttribute a =
           resource.getScimObject().getAttribute(
@@ -285,7 +265,8 @@ public class XmlMarshaller implements Marshaller
 
     // Now write any extension attributes, grouped by the schema
     // extension they belong to.
-    for (final String schemaURI : extensionSchemas)
+    for (final String schemaURI :
+        resource.getResourceDescriptor().getAttributeSchemas())
     {
       // Skip the resource schema.
       if (!schemaURI.equals(resourceSchemaURI))
@@ -306,8 +287,6 @@ public class XmlMarshaller implements Marshaller
     }
 
     xmlStreamWriter.writeEndElement();
-    xmlStreamWriter.writeEndDocument();
-    xmlStreamWriter.flush();
   }
 
 
@@ -328,20 +307,22 @@ public class XmlMarshaller implements Marshaller
 
     writeStartElement(scimAttribute, xmlStreamWriter);
 
-    final List<AttributeDescriptor> mappedAttributeDescriptors =
-      scimAttribute.getAttributeDescriptor().getComplexAttributeDescriptors();
     for (final SCIMAttributeValue pluralValue : pluralValues)
     {
-      for (AttributeDescriptor attributeDescriptor : mappedAttributeDescriptors)
-      {
-        final SCIMAttribute attribute =
-            pluralValue.getAttribute(attributeDescriptor.getName());
+      writeSingularStartElement(scimAttribute, xmlStreamWriter);
 
-        if (attribute != null)
+      // Write the subordinate attributes in the order defined by the schema.
+      for (final AttributeDescriptor descriptor :
+          scimAttribute.getAttributeDescriptor().getSubAttributes())
+      {
+        final SCIMAttribute a = pluralValue.getAttribute(descriptor.getName());
+        if (a != null)
         {
-          writeComplexAttribute(attribute, xmlStreamWriter);
+          writeSingularAttribute(a, xmlStreamWriter);
         }
       }
+
+      xmlStreamWriter.writeEndElement();
     }
 
     xmlStreamWriter.writeEndElement();
@@ -372,7 +353,7 @@ public class XmlMarshaller implements Marshaller
     {
       // Write the subordinate attributes in the order defined by the schema.
       for (final AttributeDescriptor ad :
-          attributeDescriptor.getComplexAttributeDescriptors())
+          attributeDescriptor.getSubAttributes())
       {
         final SCIMAttribute a = val.getAttribute(ad.getName());
         if (a != null)
@@ -386,40 +367,6 @@ public class XmlMarshaller implements Marshaller
       final String stringValue =
           scimAttribute.getSingularValue().getStringValue();
       xmlStreamWriter.writeCharacters(stringValue);
-    }
-
-    xmlStreamWriter.writeEndElement();
-  }
-
-
-
-  /**
-   * Write a complex attribute to an XML stream.
-   *
-   * @param scimAttribute   The attribute to be written.
-   * @param xmlStreamWriter The stream to which the attribute should be
-   *                        written.
-   * @throws XMLStreamException If the attribute could not be written.
-   */
-  private void writeComplexAttribute(final SCIMAttribute scimAttribute,
-                                     final XMLStreamWriter xmlStreamWriter)
-    throws XMLStreamException
-  {
-    final AttributeDescriptor attributeDescriptor =
-        scimAttribute.getAttributeDescriptor();
-    final SCIMAttributeValue value = scimAttribute.getSingularValue();
-
-    writeStartElement(scimAttribute, xmlStreamWriter);
-
-    // Write the subordinate attributes in the order defined by the schema.
-    for (final AttributeDescriptor descriptor :
-        attributeDescriptor.getComplexAttributeDescriptors())
-    {
-      final SCIMAttribute a = value.getAttribute(descriptor.getName());
-      if (a != null)
-      {
-        writeSingularAttribute(a, xmlStreamWriter);
-      }
     }
 
     xmlStreamWriter.writeEndElement();
@@ -445,6 +392,33 @@ public class XmlMarshaller implements Marshaller
     {
       xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),
         scimAttribute.getName());
+    }
+  }
+
+
+
+
+
+  /**
+   * Helper that writes namespace when needed.
+   * @param scimAttribute Attribute tag to write.
+   * @param xmlStreamWriter Writer to write with.
+   * @throws XMLStreamException thrown if error writing the tag element.
+   */
+  private void writeSingularStartElement(final SCIMAttribute scimAttribute,
+                                 final XMLStreamWriter xmlStreamWriter)
+    throws XMLStreamException
+  {
+    if (scimAttribute.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE))
+    {
+      xmlStreamWriter.writeStartElement(scimAttribute.getName().substring(0,
+          scimAttribute.getName().length()-1));
+    }
+    else
+    {
+      xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),
+        scimAttribute.getName().substring(0,
+            scimAttribute.getName().length() - 1));
     }
   }
 }

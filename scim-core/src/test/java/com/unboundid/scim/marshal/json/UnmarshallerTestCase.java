@@ -5,10 +5,10 @@
 
 package com.unboundid.scim.marshal.json;
 
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
@@ -16,9 +16,6 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.assertNotNull;
 
 import java.io.InputStream;
-
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
-
 
 
 @Test
@@ -31,7 +28,7 @@ public class UnmarshallerTestCase extends SCIMTestCase {
   @Test(enabled = true)
   public void testUnmarshal() throws Exception {
     final ResourceDescriptor userResourceDescriptor =
-        SchemaManager.instance().getResourceDescriptor(RESOURCE_NAME_USER);
+        CoreSchema.USER_DESCRIPTOR;
     final InputStream testJson =
         getResource("/com/unboundid/scim/marshal/spec/core-user.json");
     final Context context = Context.instance();

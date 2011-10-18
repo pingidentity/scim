@@ -8,8 +8,6 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.config.Schema;
-import com.unboundid.scim.config.SchemaManager;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.sdk.MarshalException;
 import com.unboundid.scim.sdk.Resources;
@@ -27,7 +25,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 
@@ -49,7 +46,6 @@ public class XmlUnmarshaller implements Unmarshaller
   {
     try
     {
-      final SCIMObject scimObject = new SCIMObject();
       final DocumentBuilderFactory dbFactory =
           DocumentBuilderFactory.newInstance();
       dbFactory.setNamespaceAware(true);
@@ -59,7 +55,6 @@ public class XmlUnmarshaller implements Unmarshaller
       final Document doc = dBuilder.parse(inputStream);
       doc.getDocumentElement().normalize();
 
-      final SchemaManager schemaManager = SchemaManager.instance();
       final Element documentElement = doc.getDocumentElement();
 
       // TODO: Should we check to make sure the doc name matches the
@@ -72,48 +67,9 @@ public class XmlUnmarshaller implements Unmarshaller
       }
 
       final String documentNamespaceURI = documentElement.getNamespaceURI();
-
       final NodeList nodeList = doc.getElementsByTagName("*");
-      for (int i = 0; i < nodeList.getLength(); i++)
-      {
-        final Node element = nodeList.item(i);
-
-        String namespaceURI = element.getNamespaceURI();
-        if (namespaceURI == null)
-        {
-          namespaceURI = documentNamespaceURI; // TODO: not sure about this
-        }
-
-        final Schema schema = schemaManager.getSchema(namespaceURI);
-
-        if (schema != null)
-        {
-          final AttributeDescriptor attributeDescriptor =
-              schema.getAttribute(element.getLocalName());
-
-          if (attributeDescriptor != null)
-          {
-            final SCIMAttribute attr;
-            if (attributeDescriptor.isPlural())
-            {
-              attr = createPluralAttribute(element, attributeDescriptor);
-            }
-            else if (attributeDescriptor.getDataType() ==
-                AttributeDescriptor.DataType.COMPLEX)
-            {
-              attr = createComplexAttribute(element, attributeDescriptor);
-            }
-            else
-            {
-              attr = this.createSimpleAttribute(element, attributeDescriptor);
-            }
-
-            scimObject.addAttribute(attr);
-          }
-        }
-      }
-
-      return resourceFactory.createResource(resourceDescriptor, scimObject);
+      return unmarshal(documentNamespaceURI, nodeList, resourceDescriptor,
+          resourceFactory);
     }
     catch (Exception e)
     {
@@ -124,8 +80,9 @@ public class XmlUnmarshaller implements Unmarshaller
   /**
    * Read an SCIM resource from the specified node.
    *
+   * @param documentNamespaceURI The namespace URI of XML document.
    * @param <R> The type of resource instance.
-   * @param node  The node to be read.
+   * @param nodeList  The attribute nodes to be read.
    * @param resourceDescriptor The descriptor of the SCIM resource to be read.
    * @param resourceFactory The resource factory to use to create the resource
    *                        instance.
@@ -133,16 +90,20 @@ public class XmlUnmarshaller implements Unmarshaller
    * @return  The SCIM resource that was read.
    */
   private <R extends BaseResource> R unmarshal(
-      final Node node, final ResourceDescriptor resourceDescriptor,
+      final String documentNamespaceURI,
+      final NodeList nodeList, final ResourceDescriptor resourceDescriptor,
       final ResourceFactory<R> resourceFactory)
   {
     SCIMObject scimObject = new SCIMObject();
-    final NodeList nodeList = node.getChildNodes();
     for (int i = 0; i < nodeList.getLength(); i++)
     {
       final Node element = nodeList.item(i);
 
       String namespaceURI = element.getNamespaceURI();
+        if (namespaceURI == null)
+        {
+          namespaceURI = documentNamespaceURI; // TODO: not sure about this
+        }
 
       final AttributeDescriptor attributeDescriptor =
           resourceDescriptor.getAttribute(namespaceURI, element.getLocalName());
@@ -157,11 +118,12 @@ public class XmlUnmarshaller implements Unmarshaller
         else if (attributeDescriptor.getDataType() ==
             AttributeDescriptor.DataType.COMPLEX)
         {
-          attr = createComplexAttribute(element, attributeDescriptor);
+          attr = SCIMAttribute.createSingularAttribute(attributeDescriptor,
+              createComplexAttribute(element, attributeDescriptor));
         }
         else
         {
-          attr = this.createSimpleAttribute(element, attributeDescriptor);
+          attr = createSimpleAttribute(element, attributeDescriptor);
         }
 
         scimObject.addAttribute(attr);
@@ -187,8 +149,10 @@ public class XmlUnmarshaller implements Unmarshaller
       dbFactory.setValidating(false);
       final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
       final Document doc = dBuilder.parse(inputStream);
-      doc.getDocumentElement().normalize();
+      final Element documentElement = doc.getDocumentElement();
+      documentElement.normalize();
 
+      final String documentNamespaceURI = documentElement.getNamespaceURI();
       final NodeList nodeList = doc.getElementsByTagName("*");
 
       int totalResults = 0;
@@ -215,7 +179,8 @@ public class XmlUnmarshaller implements Unmarshaller
             if(resource.getLocalName().equals("Resource"))
             {
               objects.add(
-                  unmarshal(resource, resourceDescriptor, resourceFactory));
+                  unmarshal(documentNamespaceURI, resource.getChildNodes(),
+                      resourceDescriptor, resourceFactory));
             }
           }
         }
@@ -252,7 +217,6 @@ public class XmlUnmarshaller implements Unmarshaller
       {
         String code = null;
         String description = null;
-        String uri = null;
         NodeList nodes = nodeList.item(0).getChildNodes();
         for(int j = 0; j < nodes.getLength(); j++)
         {
@@ -264,10 +228,6 @@ public class XmlUnmarshaller implements Unmarshaller
           else if(attr.getLocalName().equals("description"))
           {
             description = attr.getTextContent();
-          }
-          else if(attr.getLocalName().equals("uri"))
-          {
-            uri = attr.getTextContent();
           }
         }
         return SCIMException.createException(Integer.valueOf(code),
@@ -294,8 +254,8 @@ public class XmlUnmarshaller implements Unmarshaller
       final Node node,
       final AttributeDescriptor attributeDescriptor)
   {
-    return SCIMAttribute.createSimpleAttribute(attributeDescriptor,
-                                               node.getTextContent());
+    return SCIMAttribute.createSingularAttribute(attributeDescriptor,
+        SCIMAttributeValue.createStringValue(node.getTextContent()));
   }
 
 
@@ -314,7 +274,7 @@ public class XmlUnmarshaller implements Unmarshaller
   {
     final NodeList pluralAttributes = node.getChildNodes();
     final List<SCIMAttributeValue> pluralScimAttributes =
-        new LinkedList<SCIMAttributeValue>();
+        new ArrayList<SCIMAttributeValue>(pluralAttributes.getLength());
     for (int i = 0; i < pluralAttributes.getLength(); i++)
     {
       final Node pluralAttribute = pluralAttributes.item(i);
@@ -322,11 +282,8 @@ public class XmlUnmarshaller implements Unmarshaller
       {
         continue;
       }
-      final AttributeDescriptor pluralAttributeDescriptorInstance =
-          attributeDescriptor.getAttribute(pluralAttribute.getNodeName());
-      pluralScimAttributes.add(SCIMAttributeValue.createComplexValue(
-          createComplexAttribute(pluralAttributes.item(i),
-                                 pluralAttributeDescriptorInstance)));
+      pluralScimAttributes.add(
+          createComplexAttribute(pluralAttribute, attributeDescriptor));
     }
     SCIMAttributeValue[] vals =
         new SCIMAttributeValue[pluralScimAttributes.size()];
@@ -344,26 +301,25 @@ public class XmlUnmarshaller implements Unmarshaller
    *
    * @return The parsed attribute.
    */
-  private SCIMAttribute createComplexAttribute(
+  private SCIMAttributeValue createComplexAttribute(
       final Node node,
       final AttributeDescriptor attributeDescriptor)
   {
     NodeList childNodes = node.getChildNodes();
-    List<SCIMAttribute> complexAttrs = new LinkedList<SCIMAttribute>();
+    List<SCIMAttribute> complexAttrs =
+        new ArrayList<SCIMAttribute>(childNodes.getLength());
     for (int i = 0; i < childNodes.getLength(); i++)
     {
       Node item1 = childNodes.item(i);
       if (item1.getNodeType() == Node.ELEMENT_NODE)
       {
         AttributeDescriptor complexAttr =
-            attributeDescriptor.getAttribute(item1.getNodeName());
+            attributeDescriptor.getSubAttribute(item1.getNodeName());
         SCIMAttribute childAttr = createSimpleAttribute(item1, complexAttr);
         complexAttrs.add(childAttr);
       }
     }
 
-    return SCIMAttribute.createSingularAttribute(
-        attributeDescriptor,
-        SCIMAttributeValue.createComplexValue(complexAttrs));
+    return SCIMAttributeValue.createComplexValue(complexAttrs);
   }
 }
