@@ -10,6 +10,7 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPSearchException;
+import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -80,19 +81,38 @@ public class GroupsDerivedAttribute extends DerivedAttribute
 
     if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
     {
-      for (final String groupDN : entry.getAttributeValues(ATTR_IS_MEMBER_OF))
+      for (final String dnString : entry.getAttributeValues(ATTR_IS_MEMBER_OF))
       {
         try
         {
           final List<SCIMAttribute> subAttributes =
               new ArrayList<SCIMAttribute>();
 
-          final String groupID = new DN(groupDN).toNormalizedString();
+          final DN groupDN = new DN(dnString);
+          final String groupID = groupDN.toNormalizedString();
 
           subAttributes.add(
               SCIMAttribute.createSingularAttribute(
                   getAttributeDescriptor().getSubAttribute("value"),
                   SCIMAttributeValue.createStringValue(groupID)));
+
+          final RDN rdn = groupDN.getRDN();
+          String groupDisplayName = null;
+          for (int i = 0; i < rdn.getAttributeNames().length; i++)
+          {
+            if (rdn.getAttributeNames()[i].equalsIgnoreCase(ATTR_CN))
+            {
+              groupDisplayName = rdn.getAttributeValues()[i];
+            }
+          }
+
+          if (groupDisplayName != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    getAttributeDescriptor().getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue(groupDisplayName)));
+          }
 
           values.add(SCIMAttributeValue.createComplexValue(subAttributes));
         }
@@ -126,16 +146,15 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                   getAttributeDescriptor().getSubAttribute("value"),
                   SCIMAttributeValue.createStringValue(groupID)));
 
-          // TODO when the core schema includes the display sub-attribute
-//          final String groupDisplayName =
-//              resultEntry.getAttributeValue(ATTR_CN);
-//          if (groupDisplayName != null)
-//          {
-//            subAttributes.add(
-//                SCIMAttribute.createSingularAttribute(
-//                    getAttributeDescriptor().getSubAttribute("display"),
-//                    SCIMAttributeValue.createStringValue(groupDisplayName)));
-//          }
+          final String groupDisplayName =
+              resultEntry.getAttributeValue(ATTR_CN);
+          if (groupDisplayName != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    getAttributeDescriptor().getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue(groupDisplayName)));
+          }
 
           values.add(SCIMAttributeValue.createComplexValue(subAttributes));
         }

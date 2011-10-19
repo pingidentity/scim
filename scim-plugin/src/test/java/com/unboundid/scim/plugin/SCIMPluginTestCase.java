@@ -185,13 +185,19 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(user1.getGroups().size(), 3,
                  "User has the wrong number of groups");
     final ArrayList<String> groups = new ArrayList<String>();
+    // TODO cannot access display name in plurals
+//    final ArrayList<String> displayNames = new ArrayList<String>();
     for (final Entry<String> groupEntry : user1.getGroups())
     {
       groups.add(groupEntry.getValue());
+//      displayNames.add(groupEntry.getDisplay());
     }
     assertTrue(groups.contains(groupOfNames.getId()));
     assertTrue(groups.contains(groupOfUniqueNames.getId()));
     assertTrue(groups.contains(groupOfURLs.getId()));
+//    assertTrue(displayNames.contains("groupOfNames"));
+//    assertTrue(displayNames.contains("groupOfUniqueNames"));
+//    assertTrue(displayNames.contains("groupOfURLs"));
 
     // Verify that the members attribute is set correctly.
     assertNotNull(groupOfNames.getMembers());

@@ -82,7 +82,7 @@ public final class Entry<T>
 
     /**
    * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
-   * to/from <code>String</code> valued <code>Entry</code> instances.
+   * to/from <code>Boolean</code> valued <code>Entry</code> instances.
    */
   public static final AttributeValueResolver<Entry<Boolean>>
       BOOLEANS_RESOLVER =
@@ -138,7 +138,7 @@ public final class Entry<T>
 
     /**
    * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
-   * to/from <code>String</code> valued <code>Entry</code> instances.
+   * to/from <code>Date</code> valued <code>Entry</code> instances.
    */
   public static final AttributeValueResolver<Entry<Date>>
       DATES_RESOLVER =
