@@ -40,11 +40,6 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   private ExternalInstance instance = null;
 
   /**
-   * The SCIM service port.
-   */
-  private int scimPort;
-
-  /**
    * The SCIM service client.
    */
   private SCIMService service;
@@ -85,7 +80,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     instance.startInstance();
     instance.addBaseEntry();
 
-    scimPort = TestCaseUtils.getFreePort();
+    int scimPort = TestCaseUtils.getFreePort();
     configurePlugin(instance, "scim-plugin", scimPort);
 
     final URI uri = new URI("http", null, instance.getLdapHost(), scimPort,
@@ -104,6 +99,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @AfterMethod
   public void tearDown()
   {
+    if (instance == null)
+    {
+      return;
+    }
+
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
     instance.stopInstance();
     m.destroyInstance(instance.getInstanceId());
@@ -120,6 +120,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   public void enablePlugin()
       throws Exception
   {
+    if (instance == null)
+    {
+      return;
+    }
+
     assertEquals(getMonitorAsString(instance, "Version"), Version.VERSION);
   }
 
@@ -134,6 +139,12 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   public void testGroups()
       throws Exception
   {
+    if (instance == null)
+    {
+      return;
+    }
+
+    final String BASE_DN = instance.getPrimaryBaseDN();
     final SCIMEndpoint<GroupResource> groupEndpoint =
         service.getGroupEndpoint();
     final SCIMEndpoint<UserResource> userEndpoint =
@@ -153,10 +164,49 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     groupOfUniqueNames.setMembers(members);
     groupOfUniqueNames = groupEndpoint.insert(groupOfUniqueNames);
 
+    instance.getConnectionPool().add(
+        generateGroupOfNamesEntry("groupOfNames", BASE_DN,
+                                  user1.getId()));
+    GroupResource groupOfNames =
+        groupEndpoint.get("cn=groupOfNames," + BASE_DN);
+
+    instance.addEntry(
+        "dn: cn=groupOfURLs," + BASE_DN,
+        "objectClass: groupOfURLs",
+        "cn: groupOfURLs",
+        "memberURL: ldap:///" + BASE_DN + "??sub?(sn=User)"
+    );
+    GroupResource groupOfURLs =
+        groupEndpoint.get("cn=groupOfURLs," + BASE_DN);
+
     // Verify that the groups attribute is set correctly.
     user1 = userEndpoint.get(user1.getId());
     assertNotNull(user1.getGroups(), "User does not have the groups attribute");
-    assertEquals(user1.getGroups().iterator().next().getValue(),
-                 groupOfUniqueNames.getId());
+    assertEquals(user1.getGroups().size(), 3,
+                 "User has the wrong number of groups");
+    final ArrayList<String> groups = new ArrayList<String>();
+    for (final Entry<String> groupEntry : user1.getGroups())
+    {
+      groups.add(groupEntry.getValue());
+    }
+    assertTrue(groups.contains(groupOfNames.getId()));
+    assertTrue(groups.contains(groupOfUniqueNames.getId()));
+    assertTrue(groups.contains(groupOfURLs.getId()));
+
+    // Verify that the members attribute is set correctly.
+    assertNotNull(groupOfNames.getMembers());
+    assertEquals(groupOfNames.getMembers().size(), 1);
+    assertEquals(groupOfNames.getMembers().iterator().next().getValue(),
+                 user1.getId());
+
+    assertNotNull(groupOfUniqueNames.getMembers());
+    assertEquals(groupOfUniqueNames.getMembers().size(), 1);
+    assertEquals(groupOfUniqueNames.getMembers().iterator().next().getValue(),
+                 user1.getId());
+
+    assertNotNull(groupOfURLs.getMembers());
+    assertEquals(groupOfURLs.getMembers().size(), 1);
+    assertEquals(groupOfURLs.getMembers().iterator().next().getValue(),
+                 user1.getId());
   }
 }

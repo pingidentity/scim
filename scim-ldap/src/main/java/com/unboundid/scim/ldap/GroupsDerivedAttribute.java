@@ -4,8 +4,10 @@
  */
 package com.unboundid.scim.ldap;
 
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.SearchResult;
@@ -78,17 +80,26 @@ public class GroupsDerivedAttribute extends DerivedAttribute
 
     if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
     {
-      for (final String groupID : entry.getAttributeValues(ATTR_IS_MEMBER_OF))
+      for (final String groupDN : entry.getAttributeValues(ATTR_IS_MEMBER_OF))
       {
-        final List<SCIMAttribute> subAttributes =
-            new ArrayList<SCIMAttribute>();
+        try
+        {
+          final List<SCIMAttribute> subAttributes =
+              new ArrayList<SCIMAttribute>();
 
-        subAttributes.add(
-            SCIMAttribute.createSingularAttribute(
-                getAttributeDescriptor().getSubAttribute("value"),
-                SCIMAttributeValue.createStringValue(groupID)));
+          final String groupID = new DN(groupDN).toNormalizedString();
 
-        values.add(SCIMAttributeValue.createComplexValue(subAttributes));
+          subAttributes.add(
+              SCIMAttribute.createSingularAttribute(
+                  getAttributeDescriptor().getSubAttribute("value"),
+                  SCIMAttributeValue.createStringValue(groupID)));
+
+          values.add(SCIMAttributeValue.createComplexValue(subAttributes));
+        }
+        catch (LDAPException e)
+        {
+          Debug.debugException(e);
+        }
       }
     }
     else
