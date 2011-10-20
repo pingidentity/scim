@@ -11,8 +11,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
         <project.build.genSourceDirectory>${basedir}/target/generated/src/main/java</project.build.genSourceDirectory>
-
-        <unboundid.ldapsdk.version>2.2.1-se-SNAPSHOT</unboundid.ldapsdk.version>
+        <unboundid.ldapsdk.version>2.2.1-ce-SNAPSHOT</unboundid.ldapsdk.version>
     </properties>
 
     <distributionManagement>
