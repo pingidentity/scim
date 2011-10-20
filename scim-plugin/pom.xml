@@ -12,9 +12,6 @@
 
     <build>
         <plugins>
-          <!-- Run the tests like this, setting the dsZipPath environment variable:
-               dsZipPath=ds-3.2.0.0-GA-image.zip mvn install
-            -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -32,9 +29,7 @@
                 <TERM>xterm</TERM>
               </environmentVariables>
               <systemPropertyVariables>
-                <!-- Eventually, this is how we will pass in the desired server version for the tests.
                 <serverInstanceVersion>3.2.0.0-GA</serverInstanceVersion>
-                -->
                 <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                 <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
                 <pluginZipFile>${project.build.directory}/${project.build.finalName}.zip</pluginZipFile>
@@ -113,7 +108,14 @@
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.5-SNAPSHOT</version>
+            <version>0.6</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.directory.testtools</groupId>
+            <artifactId>standalone-ds-test-harness</artifactId>
+            <version>0.6</version>
+            <classifier>sources</classifier>
             <scope>test</scope>
       </dependency>
     </dependencies>

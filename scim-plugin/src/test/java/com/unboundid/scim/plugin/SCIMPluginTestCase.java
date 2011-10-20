@@ -5,14 +5,17 @@
 
 package com.unboundid.scim.plugin;
 
-import com.unboundid.directory.tests.standalone.ExternalInstance;
+import com.unboundid.directory.tests.standalone.DirectoryInstance;
 import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
 import com.unboundid.directory.tests.standalone.TestCaseUtils;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.client.SCIMEndpoint;
 import com.unboundid.scim.client.SCIMService;
 import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.GroupResource;
+import com.unboundid.scim.data.Manager;
+import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.sdk.PageParameters;
@@ -25,12 +28,15 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
 
 
 
@@ -42,12 +48,23 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   /**
    * The Directory Server external instance.
    */
-  private ExternalInstance instance = null;
+  private DirectoryInstance instance = null;
 
   /**
    * The SCIM service client.
    */
   private SCIMService service;
+
+  /**
+   * Base DN of the Directory Server.
+   */
+  private String baseDN;
+
+  /**
+   * The enterprise schema URN.
+   */
+  private static final String ENTERPRISE_SCHEMA_URN =
+                  "urn:scim:schemas:extension:enterprise:1.0";
 
 
   /**
@@ -58,26 +75,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   public void setup() throws Exception
   {
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
-    try
-    {
-      instance = m.getExternalInstance(ExternalInstanceId.BasicServer);
-    }
-    catch(RuntimeException e)
-    {
-      // This could occur if there are no external instance ZIPs found. In which
-      // case, we can just let the tests pass as this was warned before.
-      if(e.getMessage().equals("ExternalInstance must be provided with the " +
-          "path to a DS zip file. This can be done by setting the dsZipPath " +
-          "environment variable to the full path of the zip.  Or by setting " +
-          "the JVM property dsZipPath to the full path of the zip."))
-      {
-        return;
-      }
-      else
-      {
-        throw e;
-      }
-    }
+
+    instance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
 
     final File pluginZipFile = new File(System.getProperty("pluginZipFile"));
     installExtension(instance, pluginZipFile);
@@ -89,6 +88,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
         "--set", "suppress-internal-operations:false"
     );
     instance.addBaseEntry();
+
+    baseDN = instance.getPrimaryBaseDN();
 
     int scimPort = TestCaseUtils.getFreePort();
     configurePlugin(instance, "scim-plugin", scimPort);
@@ -109,11 +110,6 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @AfterMethod
   public void tearDown()
   {
-    if (instance == null)
-    {
-      return;
-    }
-
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
     instance.stopInstance();
     m.destroyInstance(instance.getInstanceId());
@@ -130,12 +126,68 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   public void enablePlugin()
       throws Exception
   {
-    if (instance == null)
-    {
-      return;
-    }
-
     assertEquals(getMonitorAsString(instance, "Version"), Version.VERSION);
+  }
+
+
+
+  /**
+   * Tests basic resource creation through SCIM.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test(enabled = false)
+  public void testCreate() throws Exception
+  {
+    //Create a new user
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+    UserResource user = endpoint.newResource();
+    user.setUserName("uid=John Doe," + baseDN);
+    user.setName(
+            new Name("John C. Doe", "Doe", "Charles", "John", null, "Sr."));
+    user.setTitle("Vice President");
+    user.setUserType("Employee");
+    Collection<Entry<String>> emails = new HashSet<Entry<String>>(1);
+    emails.add(new Entry<String>("j.doe@example.com", "home", true));
+    user.setEmails(emails);
+    user.setLocale(Locale.ENGLISH.toString());
+    user.setTimeZone(TimeZone.getDefault().getDisplayName());
+    user.setMeta(new Meta(new Date(), null, null, "1.0"));
+    user.setSingularAttributeValue(
+                  ENTERPRISE_SCHEMA_URN, "manager", Manager.MANAGER_RESOLVER,
+                  new Manager("uid=manager," + baseDN, "Mr. Manager"));
+
+    //Verify what is returned from the SDK
+    UserResource returnedUser = endpoint.insert(user);
+    assertNotNull(returnedUser);
+    //Currently does an instance identity check. Change this to assertEquals()
+    //if .equals() gets implemented on UserResource.
+    assertNotEquals(user, returnedUser);
+    assertEquals(user.getId(), returnedUser.getId());
+    assertEquals(user.getUserName(), returnedUser.getUserName());
+    assertEquals(user.getName(), returnedUser.getName());
+    assertEquals(user.getTitle(), returnedUser.getTitle());
+    assertEquals(user.getUserType(), returnedUser.getUserType());
+    assertEquals(user.getEmails().iterator().next(),
+                 returnedUser.getEmails().iterator().next());
+    assertEquals(user.getLocale(), returnedUser.getLocale());
+    assertEquals(user.getTimeZone(), returnedUser.getTimeZone());
+    assertEquals(user.getMeta().getCreated(),
+                 returnedUser.getMeta().getCreated());
+    assertEquals(user.getMeta().getVersion(),
+                 returnedUser.getMeta().getVersion());
+    assertEquals(user.getSingularAttributeValue(ENTERPRISE_SCHEMA_URN,
+                        "manager", Manager.MANAGER_RESOLVER),
+                 returnedUser.getSingularAttributeValue(ENTERPRISE_SCHEMA_URN,
+                        "manager", Manager.MANAGER_RESOLVER));
+
+    //Verify what is actually in the Directory
+    SearchResultEntry entry =
+      instance.getConnectionPool().getEntry("uid=John Doe," + baseDN, "*", "+");
+    assertNotNull(entry);
+
+    //TODO: test not finished yet
+
   }
 
 
@@ -145,16 +197,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test()
   public void testGroups()
       throws Exception
   {
-    if (instance == null)
-    {
-      return;
-    }
-
-    final String BASE_DN = instance.getPrimaryBaseDN();
     final SCIMEndpoint<GroupResource> groupEndpoint =
         service.getGroupEndpoint();
     final SCIMEndpoint<UserResource> userEndpoint =
@@ -175,19 +221,19 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     groupOfUniqueNames = groupEndpoint.insert(groupOfUniqueNames);
 
     instance.getConnectionPool().add(
-        generateGroupOfNamesEntry("groupOfNames", BASE_DN,
+        generateGroupOfNamesEntry("groupOfNames", baseDN,
                                   user1.getId()));
     GroupResource groupOfNames =
-        groupEndpoint.get("cn=groupOfNames," + BASE_DN);
+        groupEndpoint.get("cn=groupOfNames," + baseDN);
 
     instance.addEntry(
-        "dn: cn=groupOfURLs," + BASE_DN,
+        "dn: cn=groupOfURLs," + baseDN,
         "objectClass: groupOfURLs",
         "cn: groupOfURLs",
-        "memberURL: ldap:///" + BASE_DN + "??sub?(sn=User)"
+        "memberURL: ldap:///" + baseDN + "??sub?(sn=User)"
     );
     GroupResource groupOfURLs =
-        groupEndpoint.get("cn=groupOfURLs," + BASE_DN);
+        groupEndpoint.get("cn=groupOfURLs," + baseDN);
 
     // Verify that the groups attribute is set correctly.
     user1 = userEndpoint.get(user1.getId());
@@ -237,11 +283,6 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   public void testPagination()
       throws Exception
   {
-    if (instance == null)
-    {
-      return;
-    }
-
     final String BASE_DN = instance.getPrimaryBaseDN();
 
     // Create some users.

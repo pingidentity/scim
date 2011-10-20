@@ -67,7 +67,7 @@
                             </tasks>
                         </configuration>
                         <goals>
-                            <goal>run</goal>
+                          <goal>run</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -191,13 +191,5 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>maven2-repository.java.net</id>
-            <name>Engineering Snapshots Repository</name>
-            <url>http://hudson:8081/nexus/content/repositories/snapshots</url>
-            <layout>default</layout>
-        </repository>
-    </repositories>
 </project>
 
