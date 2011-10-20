@@ -64,8 +64,6 @@ import java.util.Set;
 import java.util.logging.Level;
 
 
-// TODO Throw checked exceptions instead of runtime exceptions
-
 /**
  * This abstract class is a base class for implementations of the SCIM server
  * backend API that use an LDAP-based resource storage repository.
@@ -262,15 +260,20 @@ public abstract class LDAPBackend
       final PageParameters pageParameters = request.getPageParameters();
       if (pageParameters != null)
       {
-        int count = pageParameters.getCount();
-        if (count <= 0)
+        final int count;
+        if (pageParameters.getCount() <= 0)
         {
-          count = 100; // TODO
+          count = getConfig().getMaxResults();
+        }
+        else
+        {
+          count = Math.min(pageParameters.getCount(),
+                           getConfig().getMaxResults());
         }
         searchRequest.addControl(
             new VirtualListViewRequestControl(
-                (int) pageParameters.getStartIndex()+1,
-                0, count-1, 0, null));
+                (int) pageParameters.getStartIndex(),
+                0, count-1, 0, null, true));
 
         // VLV requires a sort control.
         if (sortParameters == null)

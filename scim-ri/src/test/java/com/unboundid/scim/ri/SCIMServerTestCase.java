@@ -501,7 +501,7 @@ public class SCIMServerTestCase
     // Fetch the users one page at a time with page size equal to 1.
     int pageSize = 1;
     final Set<String> userIDs = new HashSet<String>();
-    for (long startIndex = 0; startIndex < NUM_USERS; startIndex += pageSize)
+    for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
     {
       SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
       Resources<UserResource> resources = endpoint.query(null, null,

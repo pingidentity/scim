@@ -37,6 +37,7 @@ public class SCIMApplication extends WinkApplication
     instances.add(new CRUDResource(CoreSchema.USER_DESCRIPTOR));
     instances.add(new CRUDResource(CoreSchema.GROUP_DESCRIPTOR));
     instances.add(new QueryResource(CoreSchema.USER_DESCRIPTOR));
+    instances.add(new QueryResource(CoreSchema.GROUP_DESCRIPTOR));
     instances.add(new XMLQueryResource(CoreSchema.USER_DESCRIPTOR));
     instances.add(new JSONQueryResource(CoreSchema.USER_DESCRIPTOR));
 

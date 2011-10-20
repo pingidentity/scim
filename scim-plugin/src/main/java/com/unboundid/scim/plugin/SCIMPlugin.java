@@ -99,9 +99,20 @@ public final class SCIMPlugin
   private static final String ARG_NAME_DEBUG_TYPE = "debugType";
 
   /**
+   * The name of the argument that will be used to specify the maximum number
+   * of resources returned in a response.
+   */
+  private static final String ARG_NAME_MAX_RESULTS = "maxResults";
+
+  /**
    * The server context for the server in which this extension is running.
    */
   private DirectoryServerContext serverContext;
+
+  /**
+   * The backend that will handle the SCIM requests.
+   */
+  private SCIMBackend scimBackend;
 
 
 
@@ -216,6 +227,15 @@ public final class SCIMPlugin
                            "{debug-type,...}",
                            "Specifies the types of debug logging in the SCIM" +
                            " plugin"));
+
+    // This argument has a default.
+    parser.addArgument(
+        new IntegerArgument(null, ARG_NAME_MAX_RESULTS,
+                            true, 1, "{integer}",
+                            "The maximum number of resources that are " +
+                            "returned in a response. The default value is 100",
+                            1, Integer.MAX_VALUE, 100));
+
   }
 
 
@@ -312,9 +332,12 @@ public final class SCIMPlugin
 
     final StringArgument baseUriArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_BASE_URI);
+    final IntegerArgument maxResultsArg =
+         (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
+
     final String baseUri = baseUriArg.getValue();
-    final SCIMBackend scimBackend =
-        new ServerContextBackend(serverContext);
+    scimBackend = new ServerContextBackend(serverContext);
+    scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
     scimServer.registerBackend(baseUri, scimBackend);
 
     if (serverContext.isRunning())
@@ -528,9 +551,12 @@ public final class SCIMPlugin
 
     final StringArgument baseUriArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_BASE_URI);
+    final IntegerArgument maxResultsArg =
+         (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
+
     final String baseUri = baseUriArg.getValue();
-    final SCIMBackend scimBackend =
-        new ServerContextBackend(serverContext);
+    scimBackend = new ServerContextBackend(serverContext);
+    scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
     scimServer.registerBackend(baseUri, scimBackend);
 
     try

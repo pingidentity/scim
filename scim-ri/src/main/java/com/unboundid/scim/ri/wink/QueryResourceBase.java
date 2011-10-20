@@ -115,76 +115,110 @@ public class QueryResourceBase extends AbstractDynamicResource
                               final String pageStartIndex,
                               final String pageSize)
   {
-    // Get the SCIM backend to process the request.
-    final SCIMBackend backend = lookupBackend(requestContext);
-
-    // Parse the filter parameters.
-    final SCIMFilter filter;
-    if (filterString != null && !filterString.isEmpty())
-    {
-      filter = SCIMFilter.parse(filterString);
-    }
-    else
-    {
-      filter = null;
-    }
-
-    // Parse the sort parameters.
-    final SortParameters sortParameters;
-    if (sortBy != null && !sortBy.isEmpty())
-    {
-      sortParameters =
-          new SortParameters(
-              SCIMAttributeType.fromQualifiedName(sortBy),
-              sortOrder);
-    }
-    else
-    {
-      sortParameters = null;
-    }
-
-    // Parse the pagination parameters.
-    long startIndex = -1;
-    int count = -1;
-    if (pageStartIndex != null && !pageStartIndex.isEmpty())
-    {
-      startIndex = Long.parseLong(pageStartIndex);
-    }
-    if (pageSize != null && !pageSize.isEmpty())
-    {
-      count = Integer.parseInt(pageSize);
-    }
-
-    final PageParameters pageParameters;
-    if (startIndex >= 0 && count >= 0)
-    {
-      pageParameters = new PageParameters(startIndex, count);
-    }
-    else if (startIndex >= 0)
-    {
-      pageParameters = new PageParameters(startIndex, 0);
-    }
-    else if (count >= 0)
-    {
-      pageParameters = new PageParameters(0, count);
-    }
-    else
-    {
-      pageParameters = null;
-    }
-
-    // Process the request.
-    final GetResourcesRequest getResourcesRequest =
-        new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
-                                requestContext.getAuthID(),
-                                resourceDescriptor,
-                                filter,
-                                sortParameters,
-                                pageParameters,
-                                requestContext.getQueryAttributes());
     Response.ResponseBuilder responseBuilder;
     try
     {
+      // Get the SCIM backend to process the request.
+      final SCIMBackend backend = lookupBackend(requestContext);
+
+      // Parse the filter parameters.
+      final SCIMFilter filter;
+      if (filterString != null && !filterString.isEmpty())
+      {
+        filter = SCIMFilter.parse(filterString);
+      }
+      else
+      {
+        filter = null;
+      }
+
+      // Parse the sort parameters.
+      final SortParameters sortParameters;
+      if (sortBy != null && !sortBy.isEmpty())
+      {
+        sortParameters =
+            new SortParameters(
+                SCIMAttributeType.fromQualifiedName(sortBy),
+                sortOrder);
+      }
+      else
+      {
+        sortParameters = null;
+      }
+
+      // Parse the pagination parameters.
+      long startIndex = -1;
+      int count = -1;
+      if (pageStartIndex != null && !pageStartIndex.isEmpty())
+      {
+        try
+        {
+          startIndex = Long.parseLong(pageStartIndex);
+        }
+        catch (NumberFormatException e)
+        {
+          Debug.debugException(e);
+          throw SCIMException.createException(
+              400, "The pagination startIndex value '" + pageStartIndex +
+                   "' is not parsable");
+        }
+
+        if (startIndex <= 0)
+        {
+          throw SCIMException.createException(
+              400, "The pagination startIndex value '" + pageStartIndex +
+                   "' is invalid because it is not greater than zero");
+        }
+      }
+      if (pageSize != null && !pageSize.isEmpty())
+      {
+        try
+        {
+          count = Integer.parseInt(pageSize);
+        }
+        catch (NumberFormatException e)
+        {
+          Debug.debugException(e);
+          throw SCIMException.createException(
+              400, "The pagination count value '" + pageSize +
+                   "' is not parsable");
+        }
+
+        if (startIndex <= 0)
+        {
+          throw SCIMException.createException(
+              400, "The pagination count value '" + pageSize +
+                   "' is invalid because it is not greater than zero");
+        }
+      }
+
+      final PageParameters pageParameters;
+      if (startIndex >= 0 && count >= 0)
+      {
+        pageParameters = new PageParameters(startIndex, count);
+      }
+      else if (startIndex >= 0)
+      {
+        pageParameters = new PageParameters(startIndex, 0);
+      }
+      else if (count >= 0)
+      {
+        pageParameters = new PageParameters(1, count);
+      }
+      else
+      {
+        pageParameters = null;
+      }
+
+      // Process the request.
+      final GetResourcesRequest getResourcesRequest =
+          new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
+                                  requestContext.getAuthID(),
+                                  resourceDescriptor,
+                                  filter,
+                                  sortParameters,
+                                  pageParameters,
+                                  requestContext.getQueryAttributes());
       final Resources resources = backend.getResources(getResourcesRequest);
 
       // Build the response.

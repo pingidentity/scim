@@ -79,6 +79,9 @@ import static com.unboundid.scim.ri.RIMessages.*;
  *       an LDIF file containing a valid LDAP subschema subentry.  If the path
  *       is a directory, then its files will be processed in lexicographic
  *       order by name.</LI>
+ *   <LI>"--maxResults {integer}" -- specifies the maximum number of resources
+ *       that are returned in a response.  If no value is specified, then the
+ *       server will use a default value of 100.</LI>
  * </UL>
  */
 public class InMemoryServerTool
@@ -110,6 +113,10 @@ public class InMemoryServerTool
   // The argument used to specify the path to a directory containing XML
   // resource definitions.
   private FileArgument useResourcesFileArgument;
+
+  // The argument used to specify the maximum number of resources returned in
+  // a response.
+  private IntegerArgument maxResultsArgument;
 
   // The argument used to specify the port on which the server should listen.
   private IntegerArgument portArgument;
@@ -194,6 +201,7 @@ public class InMemoryServerTool
     useResourcesFileArgument       = null;
     useLdapSchemaFileArgument      = null;
     portArgument                   = null;
+    maxResultsArgument             = null;
   }
 
 
@@ -249,6 +257,14 @@ public class InMemoryServerTool
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PORT.get(),
          INFO_MEM_SERVER_TOOL_ARG_DESC_PORT.get(), 0, 65535);
     parser.addArgument(portArgument);
+
+    maxResultsArgument =
+        new IntegerArgument(
+            null, "maxResults",
+            true, 1,
+            INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_MAX_RESULTS.get(),
+            INFO_MEM_SERVER_TOOL_ARG_DESC_MAX_RESULTS.get(),
+            1, Integer.MAX_VALUE, 100);
 
     baseURIArgument = new StringArgument('u', "baseURI", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_BASE_URI.get(),
@@ -358,6 +374,7 @@ public class InMemoryServerTool
     final String baseURI = baseURIArgument.getValue();
     final SCIMBackend backend =
         new InMemoryLDAPBackend(directoryServer);
+    backend.getConfig().setMaxResults(maxResultsArgument.getValue());
 
     scimServer = SCIMServer.getInstance();
     try

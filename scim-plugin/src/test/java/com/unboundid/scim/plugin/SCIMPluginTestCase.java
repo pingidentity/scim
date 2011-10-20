@@ -15,6 +15,8 @@ import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.sdk.PageParameters;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.Version;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -23,9 +25,12 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 
 
@@ -78,6 +83,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     installExtension(instance, pluginZipFile);
 
     instance.startInstance();
+    instance.dsconfig(
+        "set-log-publisher-prop",
+        "--publisher-name", "File-Based Access Logger",
+        "--set", "suppress-internal-operations:false"
+    );
     instance.addBaseEntry();
 
     int scimPort = TestCaseUtils.getFreePort();
@@ -214,5 +224,93 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(groupOfURLs.getMembers().size(), 1);
     assertEquals(groupOfURLs.getMembers().iterator().next().getValue(),
                  user1.getId());
+  }
+
+
+
+  /**
+   * Provides test coverage for pagination.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPagination()
+      throws Exception
+  {
+    if (instance == null)
+    {
+      return;
+    }
+
+    final String BASE_DN = instance.getPrimaryBaseDN();
+
+    // Create some users.
+    final long NUM_USERS = 10;
+    for (int i = 0; i < NUM_USERS; i++)
+    {
+      final String uid = "user." + i;
+      instance.getConnectionPool().add(
+          generateUserEntry(uid, BASE_DN,
+                            "Test", "User", "password"));
+    }
+
+    // Fetch the users one page at a time with page size equal to 1.
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    int pageSize = 1;
+    final Set<String> userIDs = new HashSet<String>();
+    for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
+    {
+      final Resources<UserResource> resources =
+          userEndpoint.query(null, null,
+                             new PageParameters(startIndex, pageSize));
+      assertEquals(resources.getTotalResults(), NUM_USERS);
+      assertEquals(resources.getStartIndex(), startIndex);
+      assertEquals(resources.getItemsPerPage(), pageSize);
+      for (final UserResource resource : resources)
+      {
+        userIDs.add(resource.getId());
+      }
+    }
+    assertEquals(userIDs.size(), NUM_USERS);
+
+    // Create some groups.
+    final long NUM_GROUPS = 10;
+    for (int i = 0; i < NUM_GROUPS; i++)
+    {
+      final String cn = "group." + i;
+      instance.getConnectionPool().add(
+          generateGroupOfNamesEntry(cn, BASE_DN, userIDs));
+    }
+
+    // Fetch the groups one page at a time with page size equal to 3.
+    final SCIMEndpoint<GroupResource> groupEndpoint =
+        service.getGroupEndpoint();
+    pageSize = 3;
+    final Set<String> groupIDs = new HashSet<String>();
+    for (long startIndex = 1; startIndex <= NUM_GROUPS; startIndex += pageSize)
+    {
+      final Resources<GroupResource> resources =
+          groupEndpoint.query("displayName sw 'group'", null,
+                             new PageParameters(startIndex, pageSize));
+      assertEquals(resources.getTotalResults(), NUM_GROUPS);
+      assertEquals(resources.getStartIndex(), startIndex);
+      int numResources = 0;
+      for (final GroupResource resource : resources)
+      {
+        numResources++;
+        groupIDs.add(resource.getId());
+      }
+      assertEquals(resources.getItemsPerPage(), numResources);
+    }
+    assertEquals(groupIDs.size(), NUM_GROUPS);
+
+    // Attempt to fetch resources from a non-existent page.
+    final long startIndex = NUM_GROUPS + 1;
+    final Resources<GroupResource> resources =
+        groupEndpoint.query(null, null,
+                            new PageParameters(startIndex, pageSize));
+    assertEquals(resources.getTotalResults(), NUM_GROUPS);
+    assertEquals(resources.getItemsPerPage(), 0);
+    assertEquals(resources.getStartIndex(), startIndex);
   }
 }

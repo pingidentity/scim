@@ -240,8 +240,11 @@ public class SCIMEndpoint<R extends BaseResource>
     {
       clientResource.queryParam("startIndex",
           String.valueOf(pageParameters.getStartIndex()));
-      clientResource.queryParam("count",
-          String.valueOf(pageParameters.getCount()));
+      if (pageParameters.getCount() > 0)
+      {
+        clientResource.queryParam("count",
+                                  String.valueOf(pageParameters.getCount()));
+      }
     }
 
     ClientResponse response = clientResource.get();

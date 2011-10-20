@@ -307,6 +307,8 @@
 
     <description>TBD</description>
 
+    <queryEndpoint>Groups</queryEndpoint>
+
     <LDAPSearch>
       <baseDN>dc=example,dc=com</baseDN>
       <filter>(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
