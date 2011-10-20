@@ -6,6 +6,34 @@ package com.unboundid.scim.ri;
 
 
 
+import com.unboundid.ldap.listener.InMemoryDirectoryServer;
+import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
+import com.unboundid.ldap.listener.InMemoryListenerConfig;
+import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Control;
+import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.LDAPConnection;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPInterface;
+import com.unboundid.ldap.sdk.LDAPRequest;
+import com.unboundid.ldap.sdk.LDAPResult;
+import com.unboundid.ldap.sdk.LDAPSearchException;
+import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.sdk.SearchResultReference;
+import com.unboundid.ldap.sdk.schema.Schema;
+import com.unboundid.scim.SCIMTestCase;
+import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.util.LDAPTestUtils;
+import com.unboundid.util.ssl.KeyStoreKeyManager;
+import com.unboundid.util.ssl.SSLUtil;
+import com.unboundid.util.ssl.TrustAllTrustManager;
+import org.testng.Assert;
+import org.testng.annotations.AfterSuite;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,282 +42,25 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.security.MessageDigest;
-import java.security.GeneralSecurityException;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.LinkedList;
-
-import com.unboundid.ldap.sdk.Attribute;
-import com.unboundid.ldap.sdk.BindResult;
-import com.unboundid.ldap.sdk.Control;
-import com.unboundid.ldap.sdk.DN;
-import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.ldap.sdk.ExtendedResult;
-import com.unboundid.ldap.sdk.LDAPConnection;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPInterface;
-import com.unboundid.ldap.sdk.LDAPRequest;
-import com.unboundid.ldap.sdk.LDAPResult;
-import com.unboundid.ldap.sdk.LDAPSearchException;
-import com.unboundid.ldap.sdk.RDN;
-import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.SearchResult;
-import com.unboundid.ldap.sdk.SearchResultEntry;
-import com.unboundid.ldap.sdk.SearchResultReference;
-import com.unboundid.scim.SCIMTestCase;
-import com.unboundid.scim.sdk.SCIMBackend;
-import org.testng.Assert;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Test;
-
-import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
-import com.unboundid.ldap.listener.InMemoryDirectoryServer;
-import com.unboundid.ldap.listener.InMemoryListenerConfig;
-import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
-import com.unboundid.ldap.sdk.schema.Schema;
-import com.unboundid.util.LDAPTestUtils;
-import com.unboundid.util.ssl.KeyStoreKeyManager;
-import com.unboundid.util.ssl.SSLUtil;
-import com.unboundid.util.ssl.TrustAllTrustManager;
-
-
-import static com.unboundid.util.StaticUtils.getExceptionMessage;
 
 
 
 /**
- * This class provides the superclass for all SCIM test cases.
+ * This class provides the superclass for all SCIM RI test cases.
  */
 @Test(sequential=true)
 public abstract class SCIMRITestCase extends SCIMTestCase
 {
-  // The set of attributes that may be used to construct the entry specified as
-  // the base DN.
-  private static Attribute[] baseEntryAttributes;
-
-  // Indicates whether an UnboundID Directory Server instance is available for
-  // use.
-  private static boolean dsAvailable = false;
-
-  // Indicates whether an SSL-enabled UnboundID Directory Server instance is
-  // available for use.
-  private static boolean sslDSAvailable = false;
-
   // An in-memory directory server instance that can be used for testing.
   private static volatile InMemoryDirectoryServer testDS = null;
-
-  // The port number of the UnboundID Directory Server instance.
-  private static int dsPort = -1;
-
-  // The port number on which the UnboundID Directory Server instance listens
-  // for SSL-based connections.
-  private static int dsSSLPort = -1;
-
-  // The list of connections created by this class.
-  private static LinkedHashMap<LDAPConnection,StackTraceElement[]> connMap =
-       new LinkedHashMap<LDAPConnection,StackTraceElement[]>();
-
-  // The base DN for the UnboundID Directory Server.
-  private static String dsBaseDN = null;
-
-  // The bind DN for the UnboundID Directory Server.
-  private static String dsBindDN = null;
-
-  // The bind password for the UnboundID Directory Server.
-  private static String dsBindPassword = null;
-
-  // The address of the UnboundID Directory Server instance.
-  private static String dsHost = null;
 
   // A SCIM server that can be used for testing.
   private static volatile SCIMServer testSS;
 
   // The port number of the SCIM server instance.
   private static int ssPort = -1;
-
-
-  /**
-   * Processes JVM properties to get information about an UnboundID Directory
-   * Server that can be used for testing, if one is available.
-   */
-  static
-  {
-    dsAvailable   = true;
-
-    dsHost = System.getProperty("ds.host");
-    if ((dsHost == null) || (dsHost.length() == 0))
-    {
-      dsAvailable = false;
-    }
-
-    String portStr = System.getProperty("ds.port");
-    if ((portStr == null) || (portStr.length() == 0))
-    {
-      dsAvailable = false;
-    }
-    else
-    {
-      try
-      {
-        dsPort = Integer.parseInt(portStr);
-        if ((dsPort < 1) || (dsPort > 65535))
-        {
-          dsAvailable = false;
-          if (dsPort != -1)
-          {
-            err("WARNING:  The ds.port property value must be between 1 and ",
-                "65535.  Test cases that rely on LDAP communication with an ",
-                "UnboundID Directory Server instance will only be able to ",
-                "perform limited processing.");
-          }
-        }
-      }
-      catch (Exception e)
-      {
-        err("WARNING:  The ds.port property value cannot be parsed as an ",
-            "integer.  Test cases that rely on LDAP communication with an",
-            "UnboundID Directory Server instance will only be able to ",
-            "perform limited processing.");
-        dsAvailable = false;
-      }
-    }
-
-    portStr = System.getProperty("ds.ssl.port");
-    if ((portStr != null) && (portStr.length() > 0))
-    {
-      try
-      {
-        dsSSLPort = Integer.parseInt(portStr);
-        if ((dsSSLPort < 1) || (dsSSLPort > 65535))
-        {
-          if (dsSSLPort != -1)
-          {
-            err("WARNING:  The ds.ssl.port property value must be between 1 ",
-                "and 65535.  Test cases that rely on SSL-based LDAP ",
-                "communication with an UnboundID Directory Server instance ",
-                "will only be able to perform limited processing.");
-            dsSSLPort = -1;
-          }
-        }
-      }
-      catch (Exception e)
-      {
-        err("WARNING:  The ds.ssl.port property value cannot be parsed as an ",
-            "integer.  Test cases that rely on SSL-based LDAP communication ",
-            "with an UnboundID Directory Server instance will only be able ",
-            "to perform limited processing.");
-        dsSSLPort = -1;
-      }
-    }
-
-    dsBaseDN = System.getProperty("ds.basedn");
-    if ((dsBaseDN == null) || (dsBaseDN.length() == 0))
-    {
-      dsAvailable   = false;
-    }
-    else
-    {
-      try
-      {
-        DN baseDN = new DN(dsBaseDN);
-        RDN rdn = baseDN.getRDN();
-        if (rdn.isMultiValued())
-        {
-          err("WARNING:  The ds.basedn property value contains a DN with a ",
-              "multivalued RDN.  This is not supported for use in ",
-              "LDAP-enabled test cases.  Test cases that rely on LDAP ",
-              "communication with an UnboundID Directory Server ",
-              "instance will only be able to perform limited processing.");
-          dsAvailable   = false;
-        }
-
-        String attrName = rdn.getAttributeNames()[0];
-        if (attrName.equalsIgnoreCase("dc"))
-        {
-          baseEntryAttributes = new Attribute[]
-          {
-            new Attribute("objectClass", "top", "domain"),
-            new Attribute("dc", rdn.getAttributeValues()[0])
-          };
-        }
-        else if (attrName.equalsIgnoreCase("o"))
-        {
-          baseEntryAttributes = new Attribute[]
-          {
-            new Attribute("objectClass", "top", "organization"),
-            new Attribute("o", rdn.getAttributeValues()[0])
-          };
-        }
-        else if (attrName.equalsIgnoreCase("ou"))
-        {
-          baseEntryAttributes = new Attribute[]
-          {
-            new Attribute("objectClass", "top", "organizationalUnit"),
-            new Attribute("ou", rdn.getAttributeValues()[0])
-          };
-        }
-        else
-        {
-          err("WARNING:  The ds.basedn property value contains a DN whose ",
-              "RDN attribute (", attrName, ") is not supported for use in ",
-              "LDAP-enabled test cases.  Only the dc, o, and ou attributes ",
-              "are currently supported.  Test cases that rely on LDAP ",
-              "communication with an UnboundID Directory Server ",
-              "instance will only be able to perform limited processing.");
-          dsAvailable   = false;
-        }
-      }
-      catch (LDAPException le)
-      {
-        err("Unable to determine the test base DN and/or create the base ",
-            "entry attributes:");
-        le.printStackTrace();
-        dsAvailable   = false;
-      }
-    }
-
-    dsBindDN = System.getProperty("ds.binddn");
-    if ((dsBindDN == null) || (dsBindDN.length() == 0))
-    {
-      dsAvailable   = false;
-    }
-
-    dsBindPassword = System.getProperty("ds.bindpw");
-    if ((dsBindPassword == null) || (dsBindPassword.length() == 0))
-    {
-      dsAvailable   = false;
-    }
-
-    sslDSAvailable   = (dsAvailable && (dsSSLPort > 0));
-
-//    if (! dsAvailable)
-    if (false)
-    {
-      err();
-      err();
-      err("WARNING:  No UnboundID Directory Server is");
-      err("          available for use by tests that rely on LDAP");
-      err("          communication.  An instance may be made available by");
-      err("          defining the following system properties:");
-      err("ds.host       -- The address of the UnboundID DS instance");
-      err("ds.port       -- The port of the UnboundID DS instance");
-      err("ds.ssl.port   -- The SSL-enabled port of the UnboundID DS instance");
-      err("ds.basedn     -- The base DN for the UnboundID or DSEE instance");
-      err("ds.binddn     -- The DN of a server admin user");
-      err("ds.bindpw     -- The password for the admin user");
-      err();
-      err("At least the ds.port property must be specified to be able to");
-      err("run tests which require communication with an UnboundID Directory");
-      err("Server instance.  If an SSL port is provided");
-      err("then that server instance should also be configured to allow");
-      err("StartTLS communication on the non-SSL port.");
-      err();
-      err();
-    }
-  }
-
 
 
   /**
@@ -383,24 +154,6 @@ public abstract class SCIMRITestCase extends SCIMTestCase
       testDS.shutDown(true);
       testDS = null;
     }
-
-    List<StackTraceElement[]> unclosedTraces =
-        SCIMRITestCase.getUnclosedConnectionTraces();
-    if (! unclosedTraces.isEmpty())
-    {
-      System.err.println();
-      System.err.println("***** WARNING:  Unclosed connection(s) detected:");
-      for (StackTraceElement[] e : unclosedTraces)
-      {
-        System.err.println("Creation stack trace:");
-        for (int i=1; i < e.length; i++)
-        {
-          System.err.println("     " + e[i].toString());
-        }
-
-        System.err.println();
-      }
-    }
   }
 
 
@@ -487,131 +240,6 @@ public abstract class SCIMRITestCase extends SCIMTestCase
 
 
   /**
-   * Indicates whether an UnboundID Directory Server instance is available for
-   * use in testing.
-   *
-   * @return  {@code true} if an UnboundID Directory Server instance is
-   *          available for use in testing, or {@code false} if not.
-   */
-  protected static boolean isDirectoryInstanceAvailable()
-  {
-    return dsAvailable;
-  }
-
-
-
-  /**
-   * Indicates whether an SSL-enabled UnboundID Directory Server instance is
-   * available for use in testing.
-   *
-   * @return  {@code true} if an SSL-enabled UnboundID Directory Server
-   *          instance is available for use in testing, or {@code false} if not.
-   */
-  protected static boolean isSSLEnabledDirectoryInstanceAvailable()
-  {
-    return sslDSAvailable;
-  }
-
-
-
-  /**
-   * Retrieves the address of the UnboundID Directory Server instance that can
-   * be used for testing.  Note that the {@code isDirectoryInstanceAvailable}
-   * method should first be called to ensure that an UnboundID Directory Server
-   * instance is available for testing.
-   *
-   * @return  The address of the UnboundID Directory Server instance that can be
-   *          used for testing.
-   */
-  protected static String getTestHost()
-  {
-    return dsHost;
-  }
-
-
-
-  /**
-   * Retrieves the port of the UnboundID Directory Server instance that can be
-   * used for testing.  Note that the {@code isDirectoryInstanceAvailable}
-   * method should first be called to ensure that an UnboundID Directory Server
-   * instance is available for testing.
-   *
-   * @return  The port of the UnboundID Directory Server instance that can be
-   *          used for testing.
-   */
-  protected static int getTestPort()
-  {
-    return dsPort;
-  }
-
-
-
-  /**
-   * Retrieves the SSL-enabled port of the UnboundID Directory Server instance
-   * that can be used for testing.  Note that the
-   * {@code isSSLEnabledDirectoryInstanceAvailable} method should first be
-   * called to ensure that an UnboundID Directory Server instance is available
-   * for testing.
-   *
-   * @return  The SSL-enabled port of the UnboundID Directory Server instance
-   *          that can be used for testing.
-   */
-  protected static int getTestSSLPort()
-  {
-    return dsSSLPort;
-  }
-
-
-
-  /**
-   * Retrieves the base DN of the Directory Server instance that can be used for
-   * testing.  Note that the {@code isDirectoryInstanceAvailable} method should
-   * first be called to ensure that a Directory Server instance is available for
-   * testing.
-   *
-   * @return  The base DN of the Directory Server instance that can be used for
-   *          testing.
-   */
-  protected static String getTestBaseDN()
-  {
-    return dsBaseDN;
-  }
-
-
-
-  /**
-   * Retrieves the DN of an administrative user in the Directory Server instance
-   * that can be used for testing.  Note that the
-   * {@code isDirectoryInstanceAvailable} method should first be called to
-   * ensure that a Directory Server instance is available for testing.
-   *
-   * @return  The DN of an administrative user in the Directory Server instance
-   *          that can be used for testing.
-   */
-  protected static String getTestBindDN()
-  {
-    return dsBindDN;
-  }
-
-
-
-  /**
-   * Retrieves the password for the administrative user in the Directory Server
-   * instance.  Note that the {@code isDirectoryInstanceAvailable} method should
-   * first be called to ensure that a Directory Server instance is available for
-   * testing.
-   *
-   * @return  The password for the administrative user in the Directory Server
-   *          instance.
-   */
-  protected static String getTestBindPassword()
-  {
-    return dsBindPassword;
-  }
-
-
-
-  /**
    * Retrieves the port of the SCIM server instance that can be
    * used for testing.
    *
@@ -621,277 +249,6 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   protected static int getSSTestPort()
   {
     return ssPort;
-  }
-
-
-
-  /**
-   * Retrieves a connection that is established to the UnboundID Directory
-   * Server instance without having performed any authentication on that
-   * connection.  Note that the {@code isDirectoryInstanceAvailable} method
-   * should first be called to ensure that an UnboundID Directory Server
-   * instance is available for testing.
-   *
-   * @return  An unauthenticated connection established to the UnboundID
-   *          Directory Server instance.
-   *
-   * @throws  LDAPException  If an error occurs while attempting to obtain the
-   *                         connection to the UnboundID Directory Server
-   *                         instance.
-   */
-  protected static LDAPConnection getUnauthenticatedConnection()
-            throws LDAPException
-  {
-    LDAPConnection conn = new LDAPConnection(dsHost, dsPort);
-    connMap.put(conn, Thread.currentThread().getStackTrace());
-    return conn;
-  }
-
-
-
-  /**
-   * Retrieves a connection that is established to the UnboundID Directory
-   * Server instance and bound as the administrative user.  Note that the
-   * {@code isDirectoryInstanceAvailable} method should first be called to
-   * ensure that an UnboundID Directory Server instance is available for
-   * testing.
-   *
-   * @return  A connection established to the UnboundID Directory Server
-   *          instance and bound as the administrative user.
-   *
-   * @throws  LDAPException  If an error occurs while attempting to obtain the
-   *                         connection to the UnboundID Directory Server
-   *                         instance.
-   */
-  protected static LDAPConnection getAdminConnection()
-            throws LDAPException
-  {
-    LDAPConnection conn = new LDAPConnection(dsHost, dsPort, dsBindDN,
-                                             dsBindPassword);
-    connMap.put(conn, Thread.currentThread().getStackTrace());
-    return conn;
-  }
-
-
-
-  /**
-   * Retrieves an SSL-based connection that is established to the
-   * UnboundID Directory Server instance without having performed any
-   * authentication on that connection.  Note that the
-   * {@code isSSLEnabledDirectoryInstanceAvailable} method should first be
-   * called to ensure that an SSL-enabled UnboundID Directory Server instance is
-   * available for testing.
-   *
-   * @return  An unauthenticated SSL-based connection established to the
-   *          UnboundID Directory Server instance.
-   *
-   * @throws  LDAPException  If an error occurs while attempting to obtain the
-   *                         SSL-based connection to the UnboundID Directory
-   *                         Server instance.
-   */
-  protected static LDAPConnection getSSLUnauthenticatedConnection()
-            throws LDAPException
-  {
-    try
-    {
-      SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
-      LDAPConnection conn = new LDAPConnection(sslUtil.createSSLSocketFactory(),
-                                               dsHost, dsSSLPort);
-
-      connMap.put(conn, Thread.currentThread().getStackTrace());
-      return conn;
-    }
-    catch (GeneralSecurityException gse)
-    {
-      throw new LDAPException(ResultCode.LOCAL_ERROR,
-           "Unable to initialize the SSL socket factory:  " +
-                getExceptionMessage(gse),
-           gse);
-    }
-  }
-
-
-
-  /**
-   * Retrieves an SSL-based connection that is established to the UnboundID
-   * Directory Server instance and bound as the administrative user.  Note that
-   * the {@code isSSLEnabledDirectoryInstanceAvailable} method should first be
-   * called to ensure that an SSL-enabled UnboundID Directory Server instance is
-   * available for testing.
-   *
-   * @return  A SSL-based connection established to the UnboundID Directory
-   *          Server instance and bound as the administrative user.
-   *
-   * @throws  LDAPException  If an error occurs while attempting to obtain the
-   *                         SSL-based connection to the UnboundID Directory
-   *                         Server instance.
-   */
-  protected static LDAPConnection getSSLAdminConnection()
-            throws LDAPException
-  {
-    try
-    {
-      SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
-      LDAPConnection conn = new LDAPConnection(sslUtil.createSSLSocketFactory(),
-           dsHost, dsSSLPort, dsBindDN, dsBindPassword);
-
-      connMap.put(conn, Thread.currentThread().getStackTrace());
-      return conn;
-    }
-    catch (GeneralSecurityException gse)
-    {
-      throw new LDAPException(ResultCode.LOCAL_ERROR,
-           "Unable to initialize the SSL socket factory:  " +
-                getExceptionMessage(gse),
-           gse);
-    }
-  }
-
-
-
-  /**
-   * Retrieves a StartTLS-based connection that is established to the
-   * UnboundID Directory Server instance without having performed any
-   * authentication on that connection.  Note that the
-   * {@code isSSLEnabledDirectoryInstanceAvailable} method should first be
-   * called to ensure that an SSL-enabled UnboundID Directory Server instance is
-   * available for testing.
-   *
-   * @return  An unauthenticated StartTLS-based connection established to the
-   *          UnboundID Directory Server instance.
-   *
-   * @throws  LDAPException  If an error occurs while attempting to obtain the
-   *                         StartTLS-based connection to the UnboundID
-   *                         Directory Server instance.
-   */
-  protected static LDAPConnection getStartTLSUnauthenticatedConnection()
-            throws LDAPException
-  {
-    LDAPConnection conn = new LDAPConnection(dsHost, dsPort);
-
-    try
-    {
-      SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
-      ExtendedResult r = conn.processExtendedOperation(
-          new StartTLSExtendedRequest(sslUtil.createSSLContext()));
-      if (! r.getResultCode().equals(ResultCode.SUCCESS))
-      {
-        throw new LDAPException(r);
-      }
-    }
-    catch (LDAPException le)
-    {
-      conn.close();
-      throw le;
-    }
-    catch (GeneralSecurityException gse)
-    {
-      conn.close();
-      throw new LDAPException(ResultCode.LOCAL_ERROR,
-           "Unable to initialize the SSL socket factory:  " +
-                getExceptionMessage(gse),
-           gse);
-    }
-
-    connMap.put(conn, Thread.currentThread().getStackTrace());
-    return conn;
-  }
-
-
-
-  /**
-   * Retrieves a StartTLS-based connection that is established to the UnboundID
-   * Directory Server instance and bound as the administrative user.  Note that
-   * the {@code isSSLEnabledDirectoryInstanceAvailable} method should first be
-   * called to ensure that an SSL-enabled UnboundID Directory Server instance is
-   * available for testing.
-   *
-   * @return  A StartTLS-based connection established to the UnboundID Directory
-   *          Server instance and bound as the administrative user.
-   *
-   * @throws  LDAPException  If an error occurs while attempting to obtain the
-   *                         StartTLS-based connection to the UnboundID
-   *                         Directory Server instance.
-   */
-  protected static LDAPConnection getStartTLSAdminConnection()
-            throws LDAPException
-  {
-    LDAPConnection conn = new LDAPConnection(dsHost, dsPort);
-
-    try
-    {
-      SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
-      ExtendedResult startTLSResult = conn.processExtendedOperation(
-           new StartTLSExtendedRequest(sslUtil.createSSLContext()));
-      if (! startTLSResult.getResultCode().equals(ResultCode.SUCCESS))
-      {
-        throw new LDAPException(startTLSResult);
-      }
-
-      BindResult bindResult = conn.bind(getTestBindDN(), getTestBindPassword());
-      if (! bindResult.getResultCode().equals(ResultCode.SUCCESS))
-      {
-        throw new LDAPException(bindResult);
-      }
-    }
-    catch (LDAPException le)
-    {
-      conn.close();
-      throw le;
-    }
-    catch (GeneralSecurityException gse)
-    {
-      conn.close();
-      throw new LDAPException(ResultCode.LOCAL_ERROR,
-           "Unable to initialize the SSL socket factory:  " +
-                getExceptionMessage(gse),
-           gse);
-    }
-
-    connMap.put(conn, Thread.currentThread().getStackTrace());
-    return conn;
-  }
-
-
-
-  /**
-   * Indicates whether there were any connections created by this class that
-   * have not been closed.  Those connections will be closed, and the list of
-   * created connections will be cleared.
-   *
-   * @return  {@code true} if any connections were created by this class that
-   *          had not been closed, or {@code false} if not.
-   */
-  private static List<StackTraceElement[]> getUnclosedConnectionTraces()
-  {
-    LinkedList<StackTraceElement[]> connList =
-         new LinkedList<StackTraceElement[]>();
-
-    for (LDAPConnection conn : connMap.keySet())
-    {
-      if (conn.isConnected())
-      {
-        connList.add(connMap.get(conn));
-        conn.close();
-      }
-    }
-
-    connMap.clear();
-    return connList;
-  }
-
-
-
-  /**
-   * Retrieves a set of attributes that may be used to create the base entry in
-   * the Directory Server instance.
-   *
-   * @return  A set of attributes that may be used to create the base entry in
-   *          the DirectoryServer instance.
-   */
-  protected static Attribute[] getBaseEntryAttributes()
-  {
-    return baseEntryAttributes;
   }
 
 
@@ -907,7 +264,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   protected static File createTempFile()
             throws Exception
   {
-    File f = File.createTempFile("ldapsdk-", ".tmp");
+    File f = File.createTempFile("scimri-", ".tmp");
     f.deleteOnExit();
     return f;
   }
@@ -927,7 +284,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   protected static File createTempFile(String... lines)
             throws Exception
   {
-    File f = File.createTempFile("ldapsdk-", ".tmp");
+    File f = File.createTempFile("scimri-", ".tmp");
     f.deleteOnExit();
 
     if (lines.length > 0)
@@ -964,7 +321,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   protected static File createTempDir()
             throws Exception
   {
-    final File f = File.createTempFile("ldapsdk-", ".tmp");
+    final File f = File.createTempFile("scimri-", ".tmp");
     assertTrue(f.delete());
     assertTrue(f.mkdir());
     return f;
