@@ -14,10 +14,28 @@ import com.unboundid.scim.data.BaseResource;
 public abstract class SCIMBackend
 {
   /**
+   * The mutable configuration settings for the backend.
+   */
+  private final SCIMBackendConfig config = new SCIMBackendConfig();
+
+
+
+  /**
    * Performs any cleanup which may be necessary when this backend is to be
    * taken out of service.
    */
   public abstract void finalizeBackend();
+
+
+
+  /**
+   * Retrieve the mutable configuration settings for the backend.
+   * @return  The mutable configuration settings for the backend.
+   */
+  public SCIMBackendConfig getConfig()
+  {
+    return config;
+  }
 
 
 
