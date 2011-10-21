@@ -29,6 +29,7 @@ import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttributeType;
@@ -46,6 +47,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
+import static com.unboundid.scim.sdk.SCIMConstants.
+    SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE;
 
 
 
@@ -67,6 +72,75 @@ public class SCIMServerTestCase
     service = new SCIMService(URI.create("http://localhost:"+getSSTestPort()));
     service.setUserCredentials("cn=Manager", "password");
   }
+
+
+
+  /**
+   * Provides test coverage for accessing a specific API version.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testAPIVersion()
+      throws Exception
+  {
+    SCIMService v1Service =
+        new SCIMService(URI.create("http://localhost:"+getSSTestPort()+"/v1"));
+    v1Service.setUserCredentials("cn=Manager", "password");
+
+    SCIMEndpoint<UserResource> userEndpoint =
+        v1Service.getUserEndpoint();
+    userEndpoint.query(null);
+  }
+
+
+
+  /**
+   * Provides test coverage for the resource schema endpoint.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testResourceSchema()
+      throws Exception
+  {
+    final SCIMEndpoint<ResourceDescriptor> schemaEndpoint =
+        service.getResourceSchemaEndpoint();
+    final ResourceDescriptor userDescriptor =
+        schemaEndpoint.get(SCHEMA_URI_CORE +
+                           SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
+                           "User");
+    assertEquals(userDescriptor.getName(), "User");
+    assertNotNull(userDescriptor.getDescription());
+    assertEquals(userDescriptor.getSchema(), SCHEMA_URI_CORE);
+    assertEquals(userDescriptor.getQueryEndpoint(), "Users");
+    assertTrue(userDescriptor.getAttributes().size() > 0);
+
+    final ResourceDescriptor groupDescriptor =
+        schemaEndpoint.get(SCHEMA_URI_CORE +
+                           SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
+                           "Group");
+    assertEquals(groupDescriptor.getName(), "Group");
+    assertNotNull(groupDescriptor.getDescription());
+    assertEquals(groupDescriptor.getSchema(), SCHEMA_URI_CORE);
+    assertEquals(groupDescriptor.getQueryEndpoint(), "Groups");
+    assertTrue(groupDescriptor.getAttributes().size() > 0);
+
+    Iterator<ResourceDescriptor> iterator =
+        schemaEndpoint.query("name eq 'User'").iterator();
+    assertTrue(iterator.hasNext());
+    assertEquals(iterator.next().getName(), "User");
+    assertFalse(iterator.hasNext());
+
+    final Resources<ResourceDescriptor> resources =
+        schemaEndpoint.query(null, null, new PageParameters(1, 1));
+    assertTrue(resources.getTotalResults() >= 2);
+    assertEquals(resources.getItemsPerPage(), 1);
+    assertEquals(resources.getStartIndex(), 1);
+  }
+
+
+
   /**
    * Provides test coverage for the GET operation on a user resource.
    *

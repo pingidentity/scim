@@ -143,7 +143,6 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     testSS = SCIMServer.getInstance();
     testSS.initializeServer(ssConfig);
     testSS.registerBackend("/", ldapBackend);
-    testSS.registerBackend("/scim", ldapBackend);
     testSS.startListening();
   }
 

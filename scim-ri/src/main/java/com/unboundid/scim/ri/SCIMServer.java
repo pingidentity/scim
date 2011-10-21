@@ -37,6 +37,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
+import javax.ws.rs.core.UriBuilder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -145,13 +146,35 @@ public class SCIMServer
 
 
   /**
-   * Register a backend with this server under the specified base URI.
+   * Register a backend with this server under the specified base URI. Each
+   * supported version of the REST API will be accessible by appending the
+   * version to the base URI (e.g. baseURI/v1/). The most recent version of
+   * the API will be accessible at the base URI itself.
    *
    * @param baseURI The base URI with which the backend is associated.
    * @param backend The backend to be registered. It must not be {@code null}.
    */
   public void registerBackend(final String baseURI,
                               final SCIMBackend backend)
+  {
+    // For now, v1 is the only supported API version.
+    final String v1BaseURI =
+        UriBuilder.fromPath(baseURI).path("v1").build().getPath();
+
+    registerBackendPrivate(baseURI, backend);
+    registerBackendPrivate(v1BaseURI, backend);
+  }
+
+
+
+  /**
+   * Register a backend with this server under the specified base URI.
+   *
+   * @param baseURI The base URI with which the backend is associated.
+   * @param backend The backend to be registered. It must not be {@code null}.
+   */
+  private void registerBackendPrivate(final String baseURI,
+                                      final SCIMBackend backend)
   {
     synchronized (this)
     {

@@ -170,10 +170,10 @@ public class SCIMService
   }
 
   /**
-   * Retrieves the accept media type that should be used when reader data from
+   * Retrieves the accept media type that should be used when reading data from
    * the SCIM service provider.
    *
-   * @return The accept media type that should be used when reader data from
+   * @return The accept media type that should be used when reading data from
    * the SCIM service provider.
    */
   public MediaType getAcceptType() {
@@ -181,10 +181,10 @@ public class SCIMService
   }
 
   /**
-   * Sets the accept media type that should be used when reader data from
+   * Sets the accept media type that should be used when reading data from
    * the SCIM service provider.
    *
-   * @param acceptType The accept media type that should be used when reader
+   * @param acceptType The accept media type that should be used when reading
    * data from the SCIM service provider.
    */
   public void setAcceptType(final MediaType acceptType) {
