@@ -10,6 +10,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -225,7 +226,7 @@ public class PluralAttributeMapper extends AttributeMapper
   @Override
   public void toLDAPAttributes(final SCIMObject scimObject,
                                final Collection<Attribute> attributes)
-  {
+      throws InvalidResourceException {
     final SCIMAttribute scimAttribute =
         scimObject.getAttribute(getAttributeDescriptor().getSchema(),
                                 getAttributeDescriptor().getName());
@@ -277,7 +278,7 @@ public class PluralAttributeMapper extends AttributeMapper
 
   @Override
   public SCIMAttribute toSCIMAttribute(final Entry entry)
-  {
+      throws InvalidResourceException {
     final List<SCIMAttributeValue> values = new ArrayList<SCIMAttributeValue>();
     for (final PluralValueMapper pluralValueMapper : valueMappers.values())
     {

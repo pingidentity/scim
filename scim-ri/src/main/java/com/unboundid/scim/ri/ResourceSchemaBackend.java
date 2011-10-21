@@ -1,0 +1,182 @@
+/*
+ * Copyright 2011 UnboundID Corp.
+ * All Rights Reserved.
+ */
+package com.unboundid.scim.ri;
+
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.Meta;
+import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.DeleteResourceRequest;
+import com.unboundid.scim.sdk.GetResourceRequest;
+import com.unboundid.scim.sdk.GetResourcesRequest;
+import com.unboundid.scim.sdk.PostResourceRequest;
+import com.unboundid.scim.sdk.PutResourceRequest;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
+import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SCIMRequest;
+import com.unboundid.scim.sdk.UnsupportedOperationException;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * This class provides an implementation of the SCIM server backend API that
+ * serves up the resource schema from a collection of ResourceDescriptors.
+ */
+public class ResourceSchemaBackend extends SCIMBackend
+{
+  private final Collection<ResourceDescriptor> resourceDescriptors;
+
+  /**
+   * Create a new ResourceSchemaBackend that serves up the schema provided
+   * from the ResourceDescriptors.
+   *
+   * @param resourceDescriptors The ResourceDescriptors to serve.
+   */
+  public ResourceSchemaBackend(
+      final Collection<ResourceDescriptor> resourceDescriptors) {
+    this.resourceDescriptors = resourceDescriptors;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean authenticate(final String userID, final String password) {
+    return false;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void finalizeBackend() {
+    resourceDescriptors.clear();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public ResourceDescriptor getResource(final GetResourceRequest request)
+      throws SCIMException {
+    ResourceDescriptor resourceDescriptor = null;
+    for(ResourceDescriptor rd : resourceDescriptors)
+    {
+      String id = rd.getSchema() +
+          SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + rd.getName();
+      if(id.equals(request.getResourceID()))
+      {
+        resourceDescriptor = rd;
+        break;
+      }
+    }
+    if(resourceDescriptor == null)
+    {
+      throw new ResourceNotFoundException("No Resource Schema with ID " +
+          request.getResourceID() + " exists");
+    }
+    // All attributes in the Resource Schema are required so we don't need
+    // to worry about the attributes query parameter.
+    return copyAndSetIdAndMetaAttributes(resourceDescriptor, request);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Resources getResources(final GetResourcesRequest request)
+      throws SCIMException {
+    List<BaseResource> rds =
+        new ArrayList<BaseResource>(this.resourceDescriptors.size());
+
+    for(ResourceDescriptor resourceDescriptor : this.resourceDescriptors)
+    {
+      ResourceDescriptor copy =
+          copyAndSetIdAndMetaAttributes(resourceDescriptor, request);
+      if(request.getFilter() == null ||
+          copy.getScimObject().matchesFilter(request.getFilter()))
+      {
+        rds.add(copy);
+      }
+    }
+
+    int fromIndex = 0;
+    int total = rds.size();
+    if(request.getPageParameters() != null)
+    {
+      fromIndex = (int)request.getPageParameters().getStartIndex() - 1;
+      int endIndex = request.getPageParameters().getCount() + fromIndex;
+      rds = rds.subList(fromIndex, endIndex);
+    }
+
+    return new Resources<BaseResource>(rds, total, fromIndex + 1);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public BaseResource postResource(final PostResourceRequest request)
+      throws SCIMException {
+    throw new UnsupportedOperationException("POST operations are not allowed " +
+        "on the Resource Schema");
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void deleteResource(final DeleteResourceRequest request)
+      throws SCIMException {
+    throw new UnsupportedOperationException("DELETE operations are not " +
+        "allowed on the Resource Schema");
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public BaseResource putResource(final PutResourceRequest request)
+      throws SCIMException {
+    throw new UnsupportedOperationException("PUT operations are not allowed " +
+        "on the Resource Schema");
+  }
+
+
+  /**
+   * Make a copy of the ResourceDescriptor and set the id and meta attributes
+   * from the provided information.
+   *
+   * @param resource  The SCIM object whose id and meta attributes are to be
+   *                    set.
+   * @param request   The SCIM request.
+   * @return          The copy of the ResourceDescriptor.
+   */
+  public static ResourceDescriptor copyAndSetIdAndMetaAttributes(
+      final ResourceDescriptor resource,
+      final SCIMRequest request)
+  {
+    ResourceDescriptor copy =
+        ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY.createResource(
+            resource.getResourceDescriptor(),
+            new SCIMObject(resource.getScimObject()));
+
+    String id = resource.getSchema() +
+        SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + resource.getName();
+    copy.setId(id);
+
+    URI location = UriBuilder.fromUri(request.getBaseURL()).path(
+        resource.getResourceDescriptor().getName()).path(id).build();
+    copy.setMeta(new Meta(null, null,location, null));
+    return copy;
+  }
+}

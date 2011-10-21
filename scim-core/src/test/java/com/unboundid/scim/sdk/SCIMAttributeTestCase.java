@@ -31,9 +31,10 @@ public class SCIMAttributeTestCase
 {
   /**
    * Test that valid examples can be created and inspected.
+   * @throws Exception if an error occurs.
    */
   @Test
-  public void testExampleAttributes()
+  public void testExampleAttributes() throws Exception
   {
     final String coreSchema =
         SCIMConstants.SCHEMA_URI_CORE;

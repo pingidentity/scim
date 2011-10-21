@@ -31,9 +31,10 @@ public class SCIMObjectTestCase
 {
   /**
    * Test that valid examples can be created and manipulated.
+   * @throws Exception if an error occurs.
    */
   @Test
-  public void testExampleAttributes()
+  public void testExampleAttributes() throws Exception
   {
     final UUID uuid = UUID.randomUUID();
 

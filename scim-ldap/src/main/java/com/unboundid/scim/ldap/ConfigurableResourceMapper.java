@@ -15,7 +15,9 @@ import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMException;
@@ -52,61 +54,56 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
  * This class provides a resource mapper whose behavior can be specified in
  * configuration.
  */
-public class ConfigurableResourceMapper extends ResourceMapper
+public final class ConfigurableResourceMapper extends ResourceMapper
 {
   /**
-   * The name of the SCIM resource handled by this resource mapper.
+   * The ResourceDescriptor of the SCIM resource handled by this resource
+   * mapper.
    */
-  private String resourceName;
-
-  /**
-   * The query endpoint for resources handled by this resource mapper.
-   */
-  private String queryEndpoint;
+  private final ResourceDescriptor resourceDescriptor;
 
   /**
    * The LDAP Search base DN to be used for querying.
    */
-  private String searchBaseDN;
+  private final String searchBaseDN;
 
   /**
    * The LDAP filter to match all resources handled by this resource manager.
    */
-  private Filter searchFilter;
+  private final Filter searchFilter;
 
   /**
    * The LDAP Add parameters.
    */
-  private LDAPAddParameters addParameters;
+  private final LDAPAddParameters addParameters;
 
   /**
    * A DN constructed value for the DN template.
    */
-  private ConstructedValue dnConstructor;
+  private final ConstructedValue dnConstructor;
 
   /**
    * The attribute mappers for this resource mapper.
    */
-  private Map<AttributeDescriptor, AttributeMapper> attributeMappers;
+  private final Map<AttributeDescriptor, AttributeMapper> attributeMappers;
 
   /**
    * The set of LDAP attributes used by this resource mapper.
    */
-  private Set<String> ldapAttributeTypes;
+  private final Set<String> ldapAttributeTypes;
 
   /**
    * The derived attributes for this resource mapper.
    */
-  private Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
+  private final Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
 
 
 
   /**
    * Create a new instance of the resource mapper.
    *
-   * @param resourceName       The name of the SCIM resource handled by this
-   *                           resource mapper.
-   * @param queryEndpoint      The  query endpoint for resources handled by this
+   * @param resourceDescriptor The ResourceDescriptor of the SCIM resource
+   *                           handled by this resource mapper.
    *                           resource mapper.
    * @param searchBaseDN       The LDAP Search base DN.
    * @param searchFilter       The LDAP Search filter.
@@ -114,17 +111,15 @@ public class ConfigurableResourceMapper extends ResourceMapper
    * @param mappers            The attribute mappers for this resource mapper.
    * @param derivedAttributes  The derived attributes for this resource mapper.
    */
-  public ConfigurableResourceMapper(
-      final String resourceName,
-      final String queryEndpoint,
+  private ConfigurableResourceMapper(
+      final ResourceDescriptor resourceDescriptor,
       final String searchBaseDN,
       final String searchFilter,
       final LDAPAddParameters addParameters,
       final Collection<AttributeMapper> mappers,
       final Collection<DerivedAttribute> derivedAttributes)
   {
-    this.resourceName      = resourceName;
-    this.queryEndpoint     = queryEndpoint;
+    this.resourceDescriptor = resourceDescriptor;
     this.addParameters     = addParameters;
     this.searchBaseDN      = searchBaseDN;
 
@@ -142,6 +137,10 @@ public class ConfigurableResourceMapper extends ResourceMapper
     {
       this.dnConstructor =
           new ConstructedValue(addParameters.getDNTemplate().trim());
+    }
+    else
+    {
+      this.dnConstructor = null;
     }
 
     attributeMappers =
@@ -209,13 +208,16 @@ public class ConfigurableResourceMapper extends ResourceMapper
           new ArrayList<AttributeMapper>();
       final List<DerivedAttribute> derivedAttributes =
           new ArrayList<DerivedAttribute>();
+      final AttributeDescriptor[] attributeDescriptors =
+          new AttributeDescriptor[resource.getAttribute().size()];
+      int i = 0;
       for (final AttributeDefinition attributeDefinition :
           resource.getAttribute())
       {
         final AttributeDescriptor attributeDescriptor =
             createAttributeDescriptor(attributeDefinition,
                                       resource.getSchema());
-
+        attributeDescriptors[i++] = attributeDescriptor;
         final AttributeMapper m =
             AttributeMapper.create(attributeDefinition, attributeDescriptor);
         if (m != null)
@@ -241,9 +243,12 @@ public class ConfigurableResourceMapper extends ResourceMapper
         searchFilter = resource.getLDAPSearch().getFilter().trim();
       }
 
+      ResourceDescriptor resourceDescriptor =
+          ResourceDescriptor.create(resource.getName(),
+              resource.getDescription(), resource.getSchema(),
+              resource.getQueryEndpoint(), attributeDescriptors);
       resourceMappers.add(
-          new ConfigurableResourceMapper(resource.getName(),
-                                         resource.getQueryEndpoint(),
+          new ConfigurableResourceMapper(resourceDescriptor,
                                          searchBaseDN,
                                          searchFilter,
                                          resource.getLDAPAdd(),
@@ -273,17 +278,9 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
 
   @Override
-  public String getResourceName()
+  public ResourceDescriptor getResourceDescriptor()
   {
-    return resourceName;
-  }
-
-
-
-  @Override
-  public String getQueryEndpoint()
-  {
-    return queryEndpoint;
+    return resourceDescriptor;
   }
 
 
@@ -334,15 +331,14 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
   @Override
   public Entry toLDAPEntry(final SCIMObject scimObject)
-      throws LDAPException
-  {
+      throws LDAPException, InvalidResourceException {
     final Entry entry = new Entry("");
 
     if (addParameters == null)
     {
       throw new RuntimeException(
-          "No LDAP Add Parameters were specified for the " + resourceName +
-          " Resource Mapper");
+          "No LDAP Add Parameters were specified for the " +
+              resourceDescriptor.getName() + " Resource Mapper");
     }
 
     for (final FixedAttribute fixedAttribute :
@@ -387,7 +383,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
   @Override
   public List<Attribute> toLDAPAttributes(final SCIMObject scimObject)
-  {
+      throws InvalidResourceException {
     final List<Attribute> attributes = new ArrayList<Attribute>();
 
     for (final AttributeMapper attributeMapper : attributeMappers.values())
@@ -403,7 +399,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
   @Override
   public List<Modification> toLDAPModifications(final Entry currentEntry,
                                                 final SCIMObject scimObject)
-  {
+      throws InvalidResourceException {
     final List<Attribute> attributes = toLDAPAttributes(scimObject);
     final Entry entry = new Entry(currentEntry.getDN(), attributes);
 
@@ -546,11 +542,9 @@ public class ConfigurableResourceMapper extends ResourceMapper
 
   @Override
   public List<SCIMAttribute> toSCIMAttributes(
-      final String resourceName,
       final Entry entry,
       final SCIMQueryAttributes queryAttributes,
-      final LDAPInterface ldapInterface)
-  {
+      final LDAPInterface ldapInterface) throws InvalidResourceException {
     final List<SCIMAttribute> attributes =
         new ArrayList<SCIMAttribute>();
 
@@ -595,7 +589,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
   public SCIMObject toSCIMObject(final Entry entry,
                                  final SCIMQueryAttributes queryAttributes,
                                  final LDAPInterface ldapInterface)
-  {
+      throws InvalidResourceException {
     if (searchFilter != null)
     {
       try
@@ -613,8 +607,7 @@ public class ConfigurableResourceMapper extends ResourceMapper
     }
 
     final List<SCIMAttribute> attributes =
-        toSCIMAttributes(resourceName, entry,
-                         queryAttributes, ldapInterface);
+        toSCIMAttributes(entry, queryAttributes, ldapInterface);
 
     final SCIMObject scimObject = new SCIMObject();
     for (final SCIMAttribute a : attributes)

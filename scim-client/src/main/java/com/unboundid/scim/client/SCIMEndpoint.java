@@ -11,7 +11,7 @@ import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.MarshalException;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
@@ -173,8 +173,12 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     else
     {
-      SCIMException scimException =
-          unmarshaller.unmarshalError(response.getEntity(InputStream.class));
+      SCIMException scimException = null;
+      InputStream entity = response.getEntity(InputStream.class);
+      if(entity != null)
+      {
+        scimException = unmarshaller.unmarshalError(entity);
+      }
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
@@ -257,8 +261,12 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     else
     {
-      SCIMException scimException =
-          unmarshaller.unmarshalError(response.getEntity(InputStream.class));
+      SCIMException scimException = null;
+      InputStream entity = response.getEntity(InputStream.class);
+      if(entity != null)
+      {
+        scimException = unmarshaller.unmarshalError(entity);
+      }
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
@@ -326,8 +334,12 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     else
     {
-      SCIMException scimException =
-          unmarshaller.unmarshalError(response.getEntity(InputStream.class));
+      SCIMException scimException = null;
+      InputStream entity = response.getEntity(InputStream.class);
+      if(entity != null)
+      {
+        scimException = unmarshaller.unmarshalError(entity);
+      }
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
@@ -373,7 +385,7 @@ public class SCIMEndpoint<R extends BaseResource>
     String id = resource.getId();
     if(id == null)
     {
-      throw new MarshalException("Resource must have a valid ID");
+      throw new InvalidResourceException("Resource must have a valid ID");
     }
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
@@ -419,8 +431,12 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     else
     {
-      SCIMException scimException =
-          unmarshaller.unmarshalError(response.getEntity(InputStream.class));
+      SCIMException scimException = null;
+      InputStream entity = response.getEntity(InputStream.class);
+      if(entity != null)
+      {
+        scimException = unmarshaller.unmarshalError(entity);
+      }
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),
@@ -483,8 +499,12 @@ public class SCIMEndpoint<R extends BaseResource>
 
     if(response.getStatusType() != Response.Status.OK)
     {
-      SCIMException scimException =
-          unmarshaller.unmarshalError(response.getEntity(InputStream.class));
+      SCIMException scimException = null;
+      InputStream entity = response.getEntity(InputStream.class);
+      if(entity != null)
+      {
+        scimException = unmarshaller.unmarshalError(entity);
+      }
       if(scimException == null)
       {
         scimException = SCIMException.createException(response.getStatusCode(),

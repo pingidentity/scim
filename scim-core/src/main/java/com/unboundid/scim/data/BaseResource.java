@@ -7,6 +7,7 @@ package com.unboundid.scim.data;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -109,8 +110,13 @@ public class BaseResource implements SCIMResponse
    */
   public void setId(final String id)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "id",
-        AttributeValueResolver.STRING_RESOLVER, id);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "id",
+          AttributeValueResolver.STRING_RESOLVER, id);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -135,8 +141,13 @@ public class BaseResource implements SCIMResponse
    */
   public void setExternalId(final String externalId)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "externalId",
-        AttributeValueResolver.STRING_RESOLVER, externalId);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "externalId",
+          AttributeValueResolver.STRING_RESOLVER, externalId);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
   }
 
 
@@ -157,8 +168,13 @@ public class BaseResource implements SCIMResponse
    */
   public void setMeta(final Meta meta)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "meta",
-        Meta.META_RESOLVER, meta);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "meta",
+          Meta.META_RESOLVER, meta);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -199,10 +215,13 @@ public class BaseResource implements SCIMResponse
    * @param resolver The <code>AttributeValueResolver</code> the should be used
    *                 to resolve the instance to attribute value.
    * @param value The value instance.
+   * @throws InvalidResourceException if the attribute is not defined by the
+   *                                  resource.
    */
   public <T> void setSingularAttributeValue(
       final String schema, final String name,
       final AttributeValueResolver<T> resolver, final T value)
+      throws InvalidResourceException
   {
     if(value == null)
     {
@@ -212,11 +231,6 @@ public class BaseResource implements SCIMResponse
 
     AttributeDescriptor attributeDescriptor =
         getResourceDescriptor().getAttribute(schema, name);
-
-    if(attributeDescriptor == null)
-    {
-      // TODO throw exception
-    }
 
     scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
         attributeDescriptor, resolver.fromInstance(attributeDescriptor,
@@ -266,10 +280,13 @@ public class BaseResource implements SCIMResponse
    * @param resolver The <code>AttributeValueResolver</code> the should be used
    *                 to resolve the instance to attribute value.
    * @param values The value instances.
+   * @throws InvalidResourceException if the attribute is not defined by the
+   *                                  resource.
    */
   public <T> void setPluralAttributeValue(
       final String schema, final String name,
       final AttributeValueResolver<T> resolver, final Collection<T> values)
+      throws InvalidResourceException
   {
     if(values == null)
     {
@@ -279,11 +296,6 @@ public class BaseResource implements SCIMResponse
 
     AttributeDescriptor attributeDescriptor =
         getResourceDescriptor().getAttribute(schema, name);
-
-    if(attributeDescriptor == null)
-    {
-      // TODO: throw exception
-    }
 
     SCIMAttributeValue[] entries = new SCIMAttributeValue[values.size()];
 

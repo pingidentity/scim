@@ -5,6 +5,7 @@
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 
@@ -46,7 +47,7 @@ public class Meta
         @Override
         public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor,
-            final Meta value) {
+            final Meta value) throws InvalidResourceException {
           Collection<SCIMAttribute> attributes =
               new ArrayList<SCIMAttribute>(3);
 

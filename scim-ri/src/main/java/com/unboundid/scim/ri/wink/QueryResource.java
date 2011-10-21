@@ -6,6 +6,7 @@
 package com.unboundid.scim.ri.wink;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.SCIMBackend;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -33,17 +34,18 @@ import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
  * are not known until run-time hence it must be implemented as a dynamic
  * resource.
  */
-public class QueryResource extends QueryResourceBase
+public class QueryResource extends AbstractSCIMResource
 {
   /**
-   * Create a new dynamic resource for query operations on a SCIM resource.
+   * Create a new SCIM wink resource for query operations on a SCIM endpoint.
    *
-   * @param resourceDescriptor   The ResourceDescriptor associated with this
-   *                             resource.
+   * @param resourceDescriptor  The resource descriptor to use.
+   * @param backend             The SCIMBackend to use to process requests.
    */
-  public QueryResource(final ResourceDescriptor resourceDescriptor)
+  public QueryResource(final ResourceDescriptor resourceDescriptor,
+                       final SCIMBackend backend)
   {
-    super(resourceDescriptor);
+    super(resourceDescriptor.getQueryEndpoint(), resourceDescriptor, backend);
   }
 
 

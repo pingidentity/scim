@@ -113,8 +113,7 @@ public class UserResourceMapperTestCase
 
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
-        mapper.toSCIMAttributes(RESOURCE_NAME_USER,
-                                entry, new SCIMQueryAttributes(), null))
+        mapper.toSCIMAttributes(entry, new SCIMQueryAttributes(), null))
     {
       user2.addAttribute(a);
     }
@@ -196,8 +195,7 @@ public class UserResourceMapperTestCase
     final ResourceMapper mapper = getUserResourceMapper();
 
     List<SCIMAttribute> attributes =
-        mapper.toSCIMAttributes(RESOURCE_NAME_USER, entry,
-                                new SCIMQueryAttributes(), null);
+        mapper.toSCIMAttributes(entry, new SCIMQueryAttributes(), null);
 
     final SCIMObject object = new SCIMObject();
     for (final SCIMAttribute a : attributes)
@@ -229,7 +227,7 @@ public class UserResourceMapperTestCase
         getResourceFile("/com/unboundid/scim/ldap/resources.xml"));
     for (final ResourceMapper m : mappers)
     {
-      if (m.getResourceName().equals(RESOURCE_NAME_USER))
+      if (m.getResourceDescriptor().getName().equals(RESOURCE_NAME_USER))
       {
         return m;
       }

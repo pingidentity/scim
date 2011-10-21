@@ -5,6 +5,7 @@
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 
@@ -48,7 +49,8 @@ public class Name
          */
         @Override
         public SCIMAttributeValue fromInstance(
-            final AttributeDescriptor attributeDescriptor, final Name value) {
+            final AttributeDescriptor attributeDescriptor, final Name value)
+            throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
               new ArrayList<SCIMAttribute>(6);
 

@@ -6,8 +6,10 @@ package com.unboundid.scim.schema;
 
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.Entry;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +91,7 @@ public final class AttributeDescriptor {
     @Override
     public SCIMAttributeValue fromInstance(
         final AttributeDescriptor attributeDescriptor,
-        final AttributeDescriptor value) {
+        final AttributeDescriptor value) throws InvalidResourceException {
       final List<SCIMAttribute> attributes =
           new ArrayList<SCIMAttribute>(6);
 
@@ -204,7 +206,7 @@ public final class AttributeDescriptor {
     @Override
     public SCIMAttributeValue fromInstance(
         final AttributeDescriptor attributeDescriptor,
-        final AttributeDescriptor value) {
+        final AttributeDescriptor value) throws InvalidResourceException {
 
       final List<SCIMAttribute> attributes =
           new ArrayList<SCIMAttribute>(10);
@@ -399,12 +401,22 @@ public final class AttributeDescriptor {
    *
    * @param externalName The external name of the subordinate attribute for
    *                     which a descriptor is required.
-   * @return The attribute descriptor for the specified subordinate attribute,
-   *         or {@code null} if there is no such subordinate attribute.
+   * @return The attribute descriptor for the specified subordinate attribute.
+   * @throws InvalidResourceException if there is no such attribute.
    */
   public AttributeDescriptor getSubAttribute(final String externalName)
+      throws InvalidResourceException
   {
-    return subAttributes == null ? null : subAttributes.get(externalName);
+    // TODO: Should we have a strict and non strict mode?
+    AttributeDescriptor subAttribute =
+        subAttributes == null ? null : subAttributes.get(externalName);
+    if(subAttribute == null)
+    {
+      throw new InvalidResourceException("Sub-attribute " + externalName +
+          " is not defined for attribute " + schema +
+        SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + name);
+    }
+    return subAttribute;
   }
 
 
@@ -693,7 +705,7 @@ public final class AttributeDescriptor {
     }
     return new AttributeDescriptor(name, dataType, true, description, schema,
         readOnly, required, caseExact, pluralTypeEntries,
-        CoreSchema.createPluralSimpleSubAttributeList(dataType));
+        CoreSchema.createCommonPluralSubAttributes(dataType));
   }
 
   /**
@@ -730,6 +742,6 @@ public final class AttributeDescriptor {
     }
     return new AttributeDescriptor(name, DataType.COMPLEX, true, description,
         schema, readOnly, required, false, pluralTypeEntries,
-        CoreSchema.createPluralComplexSubAttributeList(subAttributes));
+        CoreSchema.addCommonPluralSubAttributes(subAttributes));
   }
 }

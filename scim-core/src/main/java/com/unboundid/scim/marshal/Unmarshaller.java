@@ -7,7 +7,7 @@ package com.unboundid.scim.marshal;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.MarshalException;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
 
@@ -34,13 +34,13 @@ public interface Unmarshaller {
    *
    * @return  The SCIM resource that was read.
    *
-   * @throws MarshalException If an error occurred.
+   * @throws InvalidResourceException If an error occurred.
    */
   <R extends BaseResource> R unmarshal(
       final InputStream inputStream,
       final ResourceDescriptor resourceDescriptor,
       final ResourceFactory<R> resourceFactory)
-      throws MarshalException;
+      throws InvalidResourceException;
 
   /**
    * Reads a SCIM query response from an input stream.
@@ -53,13 +53,13 @@ public interface Unmarshaller {
    *
    * @return The SCIM query response that was read.
    *
-   * @throws MarshalException If an error occurred.
+   * @throws InvalidResourceException If an error occurred.
    */
   <R extends BaseResource> Resources<R> unmarshalResources(
       final InputStream inputStream,
       final ResourceDescriptor resourceDescriptor,
       final ResourceFactory<R> resourceFactory)
-      throws MarshalException;
+      throws InvalidResourceException;
 
   /**
    * Reads a SCIM error response from an input stream.
@@ -67,8 +67,8 @@ public interface Unmarshaller {
    * @param inputStream  The input stream containing the SCIM object to be read.
    * @return The SCIM error response that was read.
    *
-   * @throws MarshalException If an error occurred.
+   * @throws InvalidResourceException If an error occurred.
    */
   SCIMException unmarshalError(final InputStream inputStream)
-      throws MarshalException;
+      throws InvalidResourceException;
 }

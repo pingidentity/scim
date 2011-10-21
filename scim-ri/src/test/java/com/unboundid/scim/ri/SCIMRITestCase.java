@@ -62,6 +62,9 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   // The port number of the SCIM server instance.
   private static int ssPort = -1;
 
+  // The LDAP SCIM backend.
+  private static SCIMBackend ldapBackend;
+
 
   /**
    * Creates the in-memory directory server instance that can be used for
@@ -123,7 +126,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     ldapConfig.setDsBindPassword("password");
     ldapConfig.setNumConnections(16);
 
-    final SCIMBackend ldapBackend = new ExternalLDAPBackend(ldapConfig);
+    ldapBackend = new ExternalLDAPBackend(ldapConfig);
     testSS = SCIMServer.getInstance();
     testSS.initializeServer(ssConfig);
     testSS.registerBackend("/", ldapBackend);
@@ -148,6 +151,8 @@ public abstract class SCIMRITestCase extends SCIMTestCase
       testSS.shutdown();
       testSS = null;
     }
+
+    ldapBackend.finalizeBackend();
 
     if (testDS != null)
     {

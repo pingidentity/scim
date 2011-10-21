@@ -72,9 +72,18 @@
           <description>TBD</description>
           <mapping ldapAttribute="sn"/>
         </subAttribute>
+        <subAttribute name="middleName" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
         <subAttribute name="givenName" dataType="string">
           <description>TBD</description>
           <mapping ldapAttribute="givenName"/>
+        </subAttribute>
+        <subAttribute name="honorificPrefix" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="honorificSuffix" dataType="string">
+          <description>TBD</description>
         </subAttribute>
       </complex>
     </attribute>

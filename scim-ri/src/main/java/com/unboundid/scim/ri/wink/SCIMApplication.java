@@ -5,9 +5,13 @@
 
 package com.unboundid.scim.ri.wink;
 
+import com.unboundid.scim.ri.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.SCIMBackend;
 import org.apache.wink.common.WinkApplication;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,13 +23,51 @@ import java.util.Set;
  */
 public class SCIMApplication extends WinkApplication
 {
+  private static final Set<Class<?>> CLASSES = new HashSet<Class<?>>();
+  static
+  {
+    CLASSES.add(MonitorResource.class);
+  }
+
+  private final Set<Object> instances;
+
+  /**
+   * Create a new SCIMApplication that defines the endpoints provided by the
+   * ResourceDescriptors and uses the provided backend to process the request.
+   *
+   * @param resourceDescriptors The ResourceDescriptors to serve.
+   * @param backend The backend that should be used to process the requests.
+   */
+  public SCIMApplication(
+      final Collection<ResourceDescriptor> resourceDescriptors,
+      final SCIMBackend backend) {
+    instances = new HashSet<Object>(resourceDescriptors.size() * 4 + 4);
+
+    // The resources for the /Schema and /Schemas endpoints.
+    ResourceSchemaBackend resourceSchemaBackend =
+        new ResourceSchemaBackend(resourceDescriptors);
+    instances.add(new CRUDResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
+        resourceSchemaBackend));
+    instances.add(new QueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
+        resourceSchemaBackend));
+    instances.add(new XMLQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
+        resourceSchemaBackend));
+    instances.add(new JSONQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
+        resourceSchemaBackend));
+
+    for(ResourceDescriptor resourceDescriptor : resourceDescriptors)
+    {
+      instances.add(new CRUDResource(resourceDescriptor, backend));
+      instances.add(new QueryResource(resourceDescriptor, backend));
+      instances.add(new XMLQueryResource(resourceDescriptor, backend));
+      instances.add(new JSONQueryResource(resourceDescriptor, backend));
+    }
+  }
+
   @Override
   public Set<Class<?>> getClasses()
   {
-    final Set<Class<?>> classes = new HashSet<Class<?>>();
-    classes.add(MonitorResource.class);
-
-    return classes;
+    return CLASSES;
   }
 
 
@@ -33,14 +75,6 @@ public class SCIMApplication extends WinkApplication
   @Override
   public Set<Object> getInstances()
   {
-    final Set<Object> instances = new HashSet<Object>();
-    instances.add(new CRUDResource(CoreSchema.USER_DESCRIPTOR));
-    instances.add(new CRUDResource(CoreSchema.GROUP_DESCRIPTOR));
-    instances.add(new QueryResource(CoreSchema.USER_DESCRIPTOR));
-    instances.add(new QueryResource(CoreSchema.GROUP_DESCRIPTOR));
-    instances.add(new XMLQueryResource(CoreSchema.USER_DESCRIPTOR));
-    instances.add(new JSONQueryResource(CoreSchema.USER_DESCRIPTOR));
-
     return instances;
   }
 }

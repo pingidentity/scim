@@ -9,7 +9,7 @@ import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.marshal.Unmarshaller;
-import com.unboundid.scim.sdk.MarshalException;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -40,7 +40,7 @@ public class JsonUnmarshaller implements Unmarshaller
   public <R extends BaseResource> R unmarshal(
       final InputStream inputStream,
       final ResourceDescriptor resourceDescriptor,
-      final ResourceFactory<R> resourceFactory) throws MarshalException
+      final ResourceFactory<R> resourceFactory) throws InvalidResourceException
   {
     try
     {
@@ -51,7 +51,7 @@ public class JsonUnmarshaller implements Unmarshaller
     }
     catch(JSONException e)
     {
-      throw new MarshalException("Error while reading JSON: " +
+      throw new InvalidResourceException("Error while reading JSON: " +
           e.getMessage(), e);
     }
   }
@@ -68,11 +68,12 @@ public class JsonUnmarshaller implements Unmarshaller
    * @return  The SCIM resource that was read.
    *
    * @throws JSONException If an error occurred.
+   * @throws InvalidResourceException if a schema error occurs.
    */
   private <R extends BaseResource> R unmarshal(final JSONObject jsonObject,
                                final ResourceDescriptor resourceDescriptor,
                                final ResourceFactory<R> resourceFactory)
-      throws JSONException
+      throws JSONException, InvalidResourceException
   {
     final SCIMObject scimObject = new SCIMObject();
 
@@ -117,7 +118,7 @@ public class JsonUnmarshaller implements Unmarshaller
   public <R extends BaseResource> Resources<R> unmarshalResources(
       final InputStream inputStream,
       final ResourceDescriptor resourceDescriptor,
-      final ResourceFactory<R> resourceFactory) throws MarshalException
+      final ResourceFactory<R> resourceFactory) throws InvalidResourceException
   {
     try
     {
@@ -154,7 +155,7 @@ public class JsonUnmarshaller implements Unmarshaller
     }
     catch(JSONException e)
     {
-      throw new MarshalException("Error while reading JSON: " +
+      throw new InvalidResourceException("Error while reading JSON: " +
           e.getMessage(), e);
     }
   }
@@ -163,7 +164,7 @@ public class JsonUnmarshaller implements Unmarshaller
    * {@inheritDoc}
    */
   public SCIMException unmarshalError(final InputStream inputStream)
-      throws MarshalException
+      throws InvalidResourceException
   {
     try
     {
@@ -189,7 +190,7 @@ public class JsonUnmarshaller implements Unmarshaller
     }
     catch (JSONException e)
     {
-      throw new MarshalException("Error while reading JSON: " +
+      throw new InvalidResourceException("Error while reading JSON: " +
           e.getMessage(), e);
     }
   }
@@ -223,11 +224,12 @@ public class JsonUnmarshaller implements Unmarshaller
    * @return The parsed attribute.
    *
    * @throws org.json.JSONException Thrown if error creating plural attribute.
+   * @throws InvalidResourceException if a schema error occurs.
    */
   private SCIMAttribute createPluralAttribute(
       final JSONArray jsonAttribute,
       final AttributeDescriptor attributeDescriptor)
-      throws JSONException
+      throws JSONException, InvalidResourceException
   {
     final List<SCIMAttributeValue> pluralScimAttributes =
         new ArrayList<SCIMAttributeValue>(jsonAttribute.length());
@@ -255,10 +257,12 @@ public class JsonUnmarshaller implements Unmarshaller
    * @return The parsed attribute.
    *
    * @throws org.json.JSONException Thrown if error creating complex attribute.
+   * @throws InvalidResourceException if a schema error occurs.
    */
   private SCIMAttributeValue createComplexAttribute(
       final JSONObject jsonAttribute,
-      final AttributeDescriptor attributeDescriptor) throws JSONException
+      final AttributeDescriptor attributeDescriptor)
+      throws JSONException, InvalidResourceException
   {
     final Iterator keys = jsonAttribute.keys();
     final List<SCIMAttribute> complexAttrs =

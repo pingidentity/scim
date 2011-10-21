@@ -41,19 +41,6 @@ public final class SCIMConstants
       "urn:scim:schemas:extension:enterprise:1.0";
 
   /**
-   * The resource name of the SCIM Core schema file.
-   */
-  public static final String SCHEMA_FILE_URI_CORE =
-      "/com/unboundid/scim/schema/scim-core.xsd";
-
-
-  /**
-   * The resource name of the SCIM Enterprise schema extension file.
-   */
-  public static final String SCHEMA_FILE_URI_ENTERPRISE_EXTENSION =
-      "/com/unboundid/scim/schema/scim-enterprise.xsd";
-
-  /**
    * The resource name for the Group resource in the core schema.
    */
   public static final String RESOURCE_NAME_GROUP = "Group";
@@ -64,6 +51,11 @@ public final class SCIMConstants
   public static final String RESOURCE_NAME_USER = "User";
 
   /**
+   * The resource name for the Schema resource in the core schema.
+   */
+  public static final String RESOURCE_NAME_SCHEMA = "Schema";
+
+  /**
    * The end point for Groups in the REST protocol.
    */
   public static final String RESOURCE_ENDPOINT_GROUPS = "Groups";
@@ -72,6 +64,11 @@ public final class SCIMConstants
    * The end point for Users in the REST protocol.
    */
   public static final String RESOURCE_ENDPOINT_USERS = "Users";
+
+  /**
+   * The end point for Schemas in the REST protocol.
+   */
+  public static final String RESOURCE_ENDPOINT_SCHEMAS = "Schemas";
 
   /**
    * The HTTP query parameter used in a URI to select specific SCIM attributes.
@@ -104,32 +101,6 @@ public final class SCIMConstants
    * a page of results.
    */
   public static final String QUERY_PARAMETER_PAGE_SIZE = "count";
-
-  /**
-   * The name of the JSON media type for HTTP.
-   */
-  public static final String MEDIA_TYPE_JSON = "application/json";
-
-  /**
-   * The name of the XML media type for HTTP.
-   */
-  public static final String MEDIA_TYPE_XML = "application/xml";
-
-  /**
-   * The name of the HTTP Accept header field.
-   */
-  public static final String HEADER_NAME_ACCEPT = "Accept";
-
-  /**
-   * The name of the HTTP Location header field.
-   */
-  public static final String HEADER_NAME_LOCATION = "Location";
-
-  /**
-   * The name of the HTTP Method Override field.
-   */
-  public static final String HEADER_NAME_METHOD_OVERRIDE =
-      "X-HTTP-Method-Override";
 
   /**
    * The name of the HTTP Origin field.

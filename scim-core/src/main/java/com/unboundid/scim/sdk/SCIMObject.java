@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -42,26 +43,22 @@ public class SCIMObject
   }
 
 
-
   /**
-   * Retrieve the resource ID for this object.
+   * Create a new copy of the provided SCIM object.
    *
-   * @return  The resource ID for this object, or {@code null} if the object
-   *          does not have an 'id' attribute.
+   * @param scimObject The SCIMObject to copy.
    */
-  public String getResourceID()
+  public SCIMObject(final SCIMObject scimObject)
   {
-    final SCIMAttribute a = getAttribute(SCIMConstants.SCHEMA_URI_CORE, "id");
-    if (a != null)
+    // Since SCIMAttribute is immutable, just copy the maps.
+    this.attributes =
+        new HashMap<String, LinkedHashMap<String, SCIMAttribute>>();
+    for(Map.Entry<String, LinkedHashMap<String, SCIMAttribute>> entry :
+        scimObject.attributes.entrySet())
     {
-      final SCIMAttributeValue v = a.getSingularValue();
-      if (v != null)
-      {
-        return v.getStringValue();
-      }
+      this.attributes.put(entry.getKey(),
+          new LinkedHashMap<String, SCIMAttribute>(entry.getValue()));
     }
-
-    return null;
   }
 
 

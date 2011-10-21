@@ -14,6 +14,7 @@ import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 
@@ -94,7 +95,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
   public SCIMAttribute toSCIMAttribute(final Entry entry,
                                        final LDAPInterface ldapInterface,
                                        final String searchBaseDN)
-  {
+      throws InvalidResourceException {
     List<String> members = null;
     if (entry.hasObjectClass(OC_GROUP_OF_NAMES))
     {

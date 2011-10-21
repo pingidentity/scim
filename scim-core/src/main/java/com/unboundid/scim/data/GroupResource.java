@@ -5,6 +5,7 @@
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
@@ -71,8 +72,13 @@ public class GroupResource extends BaseResource
    */
   public GroupResource setDisplayName(final String displayName)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "displayName",
-        AttributeValueResolver.STRING_RESOLVER, displayName);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "displayName",
+          AttributeValueResolver.STRING_RESOLVER, displayName);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -95,8 +101,13 @@ public class GroupResource extends BaseResource
    */
   public GroupResource setMembers(final Collection<Entry<String>> members)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "members",
-        Entry.STRINGS_RESOLVER, members);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "members",
+          Entry.STRINGS_RESOLVER, members);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 }

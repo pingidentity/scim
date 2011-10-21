@@ -5,6 +5,7 @@
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
@@ -78,8 +79,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setUserName(final String userName)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "userName", AttributeValueResolver.STRING_RESOLVER, userName);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "userName", AttributeValueResolver.STRING_RESOLVER, userName);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -103,8 +109,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setName(final Name name)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "name", Name.NAME_RESOLVER, name);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "name", Name.NAME_RESOLVER, name);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -128,8 +139,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setDisplayName(final String displayName)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "displayName", AttributeValueResolver.STRING_RESOLVER, displayName);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "displayName", AttributeValueResolver.STRING_RESOLVER, displayName);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -154,8 +170,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setNickName(final String nickName)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "nickName", AttributeValueResolver.STRING_RESOLVER, nickName);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "nickName", AttributeValueResolver.STRING_RESOLVER, nickName);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -179,8 +200,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setProfileUrl(final String url)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "profileUrl", AttributeValueResolver.STRING_RESOLVER, url);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "profileUrl", AttributeValueResolver.STRING_RESOLVER, url);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -203,8 +229,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setTitle(final String title)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "title", AttributeValueResolver.STRING_RESOLVER, title);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "title", AttributeValueResolver.STRING_RESOLVER, title);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -230,8 +261,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setUserType(final String userType)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "userType", AttributeValueResolver.STRING_RESOLVER, userType);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "userType", AttributeValueResolver.STRING_RESOLVER, userType);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -256,8 +292,14 @@ public class UserResource extends BaseResource
    */
   public UserResource setPreferredLanguage(final String language)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "preferredLanguage", AttributeValueResolver.STRING_RESOLVER, language);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "preferredLanguage", AttributeValueResolver.STRING_RESOLVER,
+          language);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -282,8 +324,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setLocale(final String locale)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "displayName", AttributeValueResolver.STRING_RESOLVER, locale);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "displayName", AttributeValueResolver.STRING_RESOLVER, locale);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -308,8 +355,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setTimeZone(final String timeZone)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "timezone", AttributeValueResolver.STRING_RESOLVER, timeZone);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "timezone", AttributeValueResolver.STRING_RESOLVER, timeZone);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -333,8 +385,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setEmails(final Collection<Entry<String>> emails)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "emails", Entry.STRINGS_RESOLVER, emails);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "emails", Entry.STRINGS_RESOLVER, emails);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -359,8 +416,13 @@ public class UserResource extends BaseResource
   public UserResource setPhoneNumbers(
       final Collection<Entry<String>> phoneNumbers)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "phoneNumbers", Entry.STRINGS_RESOLVER, phoneNumbers);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "phoneNumbers", Entry.STRINGS_RESOLVER, phoneNumbers);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -384,8 +446,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setIms(final Collection<Entry<String>> ims)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "ims", Entry.STRINGS_RESOLVER, ims);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "ims", Entry.STRINGS_RESOLVER, ims);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -409,8 +476,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setPhotos(final Collection<Entry<String>> photos)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "photos", Entry.STRINGS_RESOLVER, photos);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "photos", Entry.STRINGS_RESOLVER, photos);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -434,8 +506,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setAddresses(final Collection<Address> addresses)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "addresses", Address.ADDRESS_RESOLVER, addresses);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "addresses", Address.ADDRESS_RESOLVER, addresses);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -459,8 +536,13 @@ public class UserResource extends BaseResource
    */
   public UserResource setGroups(final Collection<Entry<String>> groups)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "groups", Entry.STRINGS_RESOLVER, groups);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "groups", Entry.STRINGS_RESOLVER, groups);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -487,8 +569,13 @@ public class UserResource extends BaseResource
   public UserResource setEntitlements(
       final Collection<Entry<String>> entitlements)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "entitlements", Entry.STRINGS_RESOLVER, entitlements);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "entitlements", Entry.STRINGS_RESOLVER, entitlements);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -509,12 +596,17 @@ public class UserResource extends BaseResource
    * Sets the list of roles for the User.
    *
    * @param roles The list of roles for the User.
-   * @return this resource instance.
+   * @return this resource instance.                 ÷
    */
   public UserResource setRoles(final Collection<Entry<String>> roles)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "roles", Entry.STRINGS_RESOLVER, roles);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "roles", Entry.STRINGS_RESOLVER, roles);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 }

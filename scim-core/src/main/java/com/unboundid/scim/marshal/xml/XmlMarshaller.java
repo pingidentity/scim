@@ -318,7 +318,14 @@ public class XmlMarshaller implements Marshaller
         final SCIMAttribute a = pluralValue.getAttribute(descriptor.getName());
         if (a != null)
         {
-          writeSingularAttribute(a, xmlStreamWriter);
+          if (a.isPlural())
+          {
+            writePluralAttribute(a, xmlStreamWriter);
+          }
+          else
+          {
+            writeSingularAttribute(a, xmlStreamWriter);
+          }
         }
       }
 

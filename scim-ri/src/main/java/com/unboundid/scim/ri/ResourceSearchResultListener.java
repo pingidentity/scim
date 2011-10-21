@@ -11,7 +11,9 @@ import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -67,8 +69,7 @@ public class ResourceSearchResultListener implements SearchResultListener
     final SCIMServer scimServer = SCIMServer.getInstance();
 
     this.resourceMapper =
-        scimServer.getQueryResourceMapper(
-            request.getResourceDescriptor().getQueryEndpoint());
+        scimServer.getResourceMapper(request.getResourceDescriptor());
     this.request        = request;
     this.resources      = new ArrayList<BaseResource>();
     this.ldapInterface  = ldapInterface;
@@ -88,14 +89,13 @@ public class ResourceSearchResultListener implements SearchResultListener
     // Get all the attributes so we can filter on them.
     // TODO could be too expensive for derived attributes
     final SCIMQueryAttributes allAttributes = new SCIMQueryAttributes();
-    final SCIMObject scimObject =
-        resourceMapper.toSCIMObject(searchEntry, allAttributes, ldapInterface);
-    final BaseResource resource =
-        new BaseResource(request.getResourceDescriptor(),
-        scimObject);
+    final SCIMObject scimObject;
+    try {
+      scimObject = resourceMapper.toSCIMObject(searchEntry, allAttributes,
+          ldapInterface);
+      final BaseResource resource =
+          new BaseResource(request.getResourceDescriptor(), scimObject);
 
-    if (scimObject != null)
-    {
       LDAPBackend.setIdAndMetaAttributes(resource, request, searchEntry);
 
       if (request.getFilter() == null ||
@@ -115,7 +115,7 @@ public class ResourceSearchResultListener implements SearchResultListener
           {
             final SCIMAttribute a =
                 scimObject.getAttribute(attributeType.getSchema(),
-                                        attributeType.getName());
+                    attributeType.getName());
             if (a != null)
             {
               returnedResource.getScimObject().addAttribute(a);
@@ -125,6 +125,9 @@ public class ResourceSearchResultListener implements SearchResultListener
           resources.add(returnedResource);
         }
       }
+    } catch (InvalidResourceException e) {
+      Debug.debugException(e);
+      // TODO: We should find a way to get this exception back to LDAPBackend.
     }
   }
 

@@ -5,6 +5,7 @@
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 
 import java.util.Date;
@@ -30,9 +31,11 @@ public abstract class AttributeValueResolver<T>
    * @param attributeDescriptor The descriptor for the attribute to create.
    * @param value The instance.
    * @return The SCIM attribute value created from the instance.
+   * @throws InvalidResourceException if the value violates the schema.
    */
   public abstract SCIMAttributeValue fromInstance(
-      final AttributeDescriptor attributeDescriptor, final T value);
+      final AttributeDescriptor attributeDescriptor, final T value)
+      throws InvalidResourceException;
 
   /**
    * The <code>AttributeValueResolver</code> that resolves SCIM attribute values

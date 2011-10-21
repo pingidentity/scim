@@ -6,6 +6,7 @@
 package com.unboundid.scim.ri.wink;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.SCIMBackend;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -32,25 +33,21 @@ import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
  * on a SCIM resource where the client requests JSON response format in the URL
  * by appending ".json" on to the endpoint.
  */
-public class JSONQueryResource extends QueryResourceBase
+public class JSONQueryResource extends AbstractSCIMResource
 {
   /**
-   * Create a new dynamic resource for XML query operations on a SCIM resource.
+   * Create a new SCIM wink resource for XML query operations on a SCIM
+   * endpoint.
    *
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             resource.
+   * @param backend             The SCIMBackend to use to process requests.
    */
-  public JSONQueryResource(final ResourceDescriptor resourceDescriptor)
+  public JSONQueryResource(final ResourceDescriptor resourceDescriptor,
+                           final SCIMBackend backend)
   {
-    super(resourceDescriptor);
-  }
-
-
-
-  @Override
-  public String getPath()
-  {
-    return super.getPath() + ".json";
+    super(resourceDescriptor.getQueryEndpoint() + ".json",
+        resourceDescriptor, backend);
   }
 
 

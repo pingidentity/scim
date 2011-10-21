@@ -69,7 +69,7 @@ import java.util.logging.Level;
  * backend API that use an LDAP-based resource storage repository.
  */
 public abstract class LDAPBackend
-  extends SCIMBackend
+    extends SCIMBackend
 {
   /**
    * Create a new instance of an LDAP backend.
@@ -116,16 +116,13 @@ public abstract class LDAPBackend
     try
     {
       final SCIMServer scimServer = SCIMServer.getInstance();
-      final Set<ResourceMapper> mappers =
-          scimServer.getResourceMappers(
-              request.getResourceDescriptor().getName());
+      final ResourceMapper mapper =
+          scimServer.getResourceMapper(
+              request.getResourceDescriptor());
 
       final Set<String> requestAttributeSet = new HashSet<String>();
-      for (final ResourceMapper m : mappers)
-      {
-        requestAttributeSet.addAll(
-            m.toLDAPAttributeTypes(request.getAttributes()));
-      }
+      requestAttributeSet.addAll(
+          mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.add("createTimestamp");
       requestAttributeSet.add("modifyTimestamp");
 
@@ -135,7 +132,7 @@ public abstract class LDAPBackend
       final Filter filter = Filter.createPresenceFilter("objectclass");
       final SearchRequest searchRequest =
           new SearchRequest(request.getResourceID(), SearchScope.BASE,
-                            filter, requestAttributes);
+              filter, requestAttributes);
       addCommonControls(request, searchRequest);
 
       final LDAPInterface ldapInterface =
@@ -155,17 +152,11 @@ public abstract class LDAPBackend
 
         setIdAndMetaAttributes(resource, request, searchResultEntry);
 
-        for (final ResourceMapper m : mappers)
+        final List<SCIMAttribute> attributes = mapper.toSCIMAttributes(
+            searchResultEntry, request.getAttributes(), ldapInterface);
+        for (final SCIMAttribute a : attributes)
         {
-          final List<SCIMAttribute> attributes =
-              m.toSCIMAttributes(request.getResourceDescriptor().getName(),
-                                 searchResultEntry,
-                                 request.getAttributes(),
-                                 ldapInterface);
-          for (final SCIMAttribute a : attributes)
-          {
-            resource.getScimObject().addAttribute(a);
-          }
+          resource.getScimObject().addAttribute(a);
         }
 
         return resource;
@@ -186,13 +177,12 @@ public abstract class LDAPBackend
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper resourceMapper =
-        scimServer.getQueryResourceMapper(
-            request.getResourceDescriptor().getQueryEndpoint());
+        scimServer.getResourceMapper(request.getResourceDescriptor());
     if (resourceMapper == null || !resourceMapper.supportsQuery())
     {
       throw new UnsupportedOperationException(
           "The requested operation is not supported on resource end-point '" +
-          request.getResourceDescriptor().getQueryEndpoint() + "'");
+              request.getResourceDescriptor().getQueryEndpoint() + "'");
     }
 
     try
@@ -224,9 +214,9 @@ public abstract class LDAPBackend
 
             searchRequest =
                 new SearchRequest(resultListener, scimFilter.getFilterValue(),
-                                  SearchScope.BASE,
-                                  Filter.createPresenceFilter("objectclass"),
-                                  requestAttributes);
+                    SearchScope.BASE,
+                    Filter.createPresenceFilter("objectclass"),
+                    requestAttributes);
           }
         }
       }
@@ -246,7 +236,7 @@ public abstract class LDAPBackend
 
         searchRequest =
             new SearchRequest(resultListener, resourceMapper.getSearchBaseDN(),
-                              SearchScope.SUB, filter, requestAttributes);
+                SearchScope.SUB, filter, requestAttributes);
       }
 
       final SortParameters sortParameters = request.getSortParameters();
@@ -326,16 +316,12 @@ public abstract class LDAPBackend
       final PostResourceRequest request) throws SCIMException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
-    final Set<ResourceMapper> mappers =
-        scimServer.getResourceMappers(
-            request.getResourceDescriptor().getName());
+    final ResourceMapper mapper =
+        scimServer.getResourceMapper(request.getResourceDescriptor());
 
     final Set<String> requestAttributeSet = new HashSet<String>();
-    for (final ResourceMapper m : mappers)
-    {
-      requestAttributeSet.addAll(
-          m.toLDAPAttributeTypes(request.getAttributes()));
-    }
+    requestAttributeSet.addAll(
+        mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.add("createTimestamp");
     requestAttributeSet.add("modifyTimestamp");
 
@@ -347,23 +333,20 @@ public abstract class LDAPBackend
     List<Attribute> attributes = new ArrayList<Attribute>();
     try
     {
-      for (final ResourceMapper m : mappers)
+      if (entry == null && mapper.supportsCreate())
       {
-        if (entry == null && m.supportsCreate())
-        {
-          entry = m.toLDAPEntry(request.getResourceObject());
-        }
-        else
-        {
-          attributes.addAll(m.toLDAPAttributes(request.getResourceObject()));
-        }
+        entry = mapper.toLDAPEntry(request.getResourceObject());
+      }
+      else
+      {
+        attributes.addAll(mapper.toLDAPAttributes(request.getResourceObject()));
       }
 
       if (entry == null)
       {
         throw new ServerErrorException(
             "There are no resource mappers that support creation of " +
-            request.getResourceDescriptor().getName() + " resources");
+                request.getResourceDescriptor().getName() + " resources");
       }
 
       for (final Attribute a : attributes)
@@ -391,15 +374,11 @@ public abstract class LDAPBackend
 
       setIdAndMetaAttributes(resource, request, addedEntry);
 
-      for (final ResourceMapper m : mappers)
+      final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
+          addedEntry, request.getAttributes(), ldapInterface);
+      for (final SCIMAttribute a : scimAttributes)
       {
-        final List<SCIMAttribute> scimAttributes =
-            m.toSCIMAttributes(request.getResourceDescriptor().getName(),
-                addedEntry, request.getAttributes(), ldapInterface);
-        for (final SCIMAttribute a : scimAttributes)
-        {
-          resource.getScimObject().addAttribute(a);
-        }
+        resource.getScimObject().addAttribute(a);
       }
 
       return resource;
@@ -464,16 +443,12 @@ public abstract class LDAPBackend
       throws SCIMException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
-    final Set<ResourceMapper> mappers =
-        scimServer.getResourceMappers(
-            request.getResourceDescriptor().getName());
+    final ResourceMapper mapper =
+        scimServer.getResourceMapper(request.getResourceDescriptor());
 
     final Set<String> requestAttributeSet = new HashSet<String>();
-    for (final ResourceMapper m : mappers)
-    {
-      requestAttributeSet.addAll(
-          m.toLDAPAttributeTypes(request.getAttributes()));
-    }
+    requestAttributeSet.addAll(
+        mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.add("createTimestamp");
     requestAttributeSet.add("modifyTimestamp");
 
@@ -494,11 +469,8 @@ public abstract class LDAPBackend
             "Resource " + request.getResourceID() + " not found");
       }
 
-      for (final ResourceMapper m : mappers)
-      {
-        mods.addAll(m.toLDAPModifications(currentEntry,
-                                          request.getResourceObject()));
-      }
+      mods.addAll(mapper.toLDAPModifications(currentEntry,
+          request.getResourceObject()));
 
       final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
       modifyRequest.addControl(
@@ -517,15 +489,11 @@ public abstract class LDAPBackend
 
       setIdAndMetaAttributes(resource, request, modifiedEntry);
 
-      for (final ResourceMapper m : mappers)
+      final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
+          modifiedEntry, request.getAttributes(), ldapInterface);
+      for (final SCIMAttribute a : scimAttributes)
       {
-        final List<SCIMAttribute> scimAttributes =
-            m.toSCIMAttributes(request.getResourceDescriptor().getName(),
-                modifiedEntry, request.getAttributes(), ldapInterface);
-        for (final SCIMAttribute a : scimAttributes)
-        {
-          resource.getScimObject().addAttribute(a);
-        }
+        resource.getScimObject().addAttribute(a);
       }
 
       return resource;
@@ -601,7 +569,7 @@ public abstract class LDAPBackend
     uriBuilder.path(entry.getDN());
 
     resource.setMeta(new Meta(createDate, modifyDate,
-                              uriBuilder.build(), null));
+        uriBuilder.build(), null));
   }
 
 
@@ -672,7 +640,7 @@ public abstract class LDAPBackend
     else
     {
       return new VirtualListViewResponseControl(c.getOID(), c.isCritical(),
-           c.getValue());
+          c.getValue());
     }
   }
 
@@ -694,7 +662,7 @@ public abstract class LDAPBackend
    */
   public static PostReadResponseControl getPostReadResponseControl(
       final LDAPResult result)
-         throws LDAPException
+      throws LDAPException
   {
     final Control c = result.getResponseControl(
         PostReadResponseControl.POST_READ_RESPONSE_OID);
@@ -710,7 +678,7 @@ public abstract class LDAPBackend
     else
     {
       return new PostReadResponseControl(c.getOID(), c.isCritical(),
-           c.getValue());
+          c.getValue());
     }
   }
 

@@ -18,7 +18,6 @@ import org.apache.wink.client.RestClient;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
-import java.util.Collection;
 
 /**
  * The SCIMService class represents a client connection to a SCIM service
@@ -93,9 +92,11 @@ public class SCIMService
    *
    * @return All service provider supported resources.
    */
-  public Collection<ResourceDescriptor> retrieveResources()
+  public SCIMEndpoint<ResourceDescriptor> getResourceSchemaEndpoint()
   {
-    return null;
+    return new SCIMEndpoint<ResourceDescriptor>(this, client,
+        CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
+        ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
   }
 
   /**

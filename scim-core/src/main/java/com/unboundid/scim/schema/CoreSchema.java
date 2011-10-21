@@ -4,6 +4,7 @@
  */
 package com.unboundid.scim.schema;
 
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -49,12 +50,13 @@ public class CoreSchema
 
   /**
    * Creates the default sub-attributes for simple plural attributes
-   * of the given type.
+   * of the given type. This will include the type, primary, display and
+   * operation attributes.
    *
    * @param dataType The type of the plural attribute.
    * @return The default sub-attributes for simple plural attributes.
    */
-  static List<AttributeDescriptor> createPluralSimpleSubAttributeList(
+  static List<AttributeDescriptor> createCommonPluralSubAttributes(
       final AttributeDescriptor.DataType dataType)
   {
      final AttributeDescriptor value =
@@ -72,13 +74,14 @@ public class CoreSchema
   }
 
   /**
-   * Creates the default sub-attributes for complex plural attributes.
+   * Adds the default sub-attributes for complex plural attributes. This
+   * will include the type, primary, display and operation attributes.
    *
    * @param subAttributes  A list specifying the sub attributes of the complex
    *                       attribute.
    * @return The default sub-attributes for complex plural attributes.
    */
-  static List<AttributeDescriptor> createPluralComplexSubAttributeList(
+  static List<AttributeDescriptor> addCommonPluralSubAttributes(
       final AttributeDescriptor... subAttributes)
   {
     List<AttributeDescriptor> subAttributeList =
@@ -89,6 +92,25 @@ public class CoreSchema
     subAttributeList.add(PLURAL_DISPLAY);
     subAttributeList.add(PLURAL_OPERATION);
     return subAttributeList;
+  }
+
+  /**
+   * Adds the common resource attributes. This will include id, externalId,
+   * and meta.
+   *
+   * @param attributes A list specifying the attributes of a resource.
+   * @return The list of attributes including the common attributes.
+   */
+  static List<AttributeDescriptor> addCommonResourceAttributes(
+      final AttributeDescriptor... attributes)
+  {
+    List<AttributeDescriptor> attributeList =
+        new ArrayList<AttributeDescriptor>(attributes.length + 3);
+    attributeList.add(ID);
+    attributeList.add(EXTERNAL_ID);
+    attributeList.addAll(Arrays.asList(attributes));
+    attributeList.add(META);
+    return attributeList;
   }
 
   //// 5.  SCIM Core Schema ////
@@ -482,7 +504,8 @@ public class CoreSchema
   {
     SCIMObject scimObject = new SCIMObject();
     scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
-        RESOURCE_NAME, SCIMAttributeValue.createStringValue("schema")));
+        RESOURCE_NAME, SCIMAttributeValue.createStringValue(
+        SCIMConstants.RESOURCE_NAME_SCHEMA)));
     scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
         RESOURCE_DESCRIPTION, SCIMAttributeValue.createStringValue(
         "The Resource schema specifies the Attribute(s) and meta-data that " +
@@ -492,26 +515,34 @@ public class CoreSchema
         SCIMConstants.SCHEMA_URI_CORE)));
     scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
         RESOURCE_QUERY_ENDPOINT, SCIMAttributeValue.createStringValue(
-        "schemas")));
+        SCIMConstants.RESOURCE_ENDPOINT_SCHEMAS)));
 
     SCIMAttributeValue[] entries = new SCIMAttributeValue[8];
 
-    entries[0] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, ID);
-    entries[1] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, EXTERNAL_ID);
-    entries[2] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_NAME);
-    entries[3] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_DESCRIPTION);
-    entries[4] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_SCHEMA);
-    entries[5] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_QUERY_ENDPOINT);
-    entries[6] = NESTING_ATTRIBUTES_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_ATTRIBUTES);
-    entries[7] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-        fromInstance(RESOURCE_ATTRIBUTES, META);
+    try
+    {
+      entries[0] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, ID);
+      entries[1] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, EXTERNAL_ID);
+      entries[2] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_NAME);
+      entries[3] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_DESCRIPTION);
+      entries[4] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_SCHEMA);
+      entries[5] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_QUERY_ENDPOINT);
+      entries[6] = NESTING_ATTRIBUTES_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_ATTRIBUTES);
+      entries[7] = NESTING_ATTRIBUTES_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, META);
+    }
+    catch(InvalidResourceException e)
+    {
+      // This should not occur as these are all defined here...
+      throw new RuntimeException(e);
+    }
 
     scimObject.setAttribute(
         SCIMAttribute.createPluralAttribute(RESOURCE_ATTRIBUTES, entries));
@@ -541,19 +572,21 @@ public class CoreSchema
    * The SCIM User Schema.
    */
   public static final ResourceDescriptor USER_DESCRIPTOR =
-      ResourceDescriptor.create("User", "SCIM provides a schema for " +
-          "representing Users", "urn:scim:schemas:core:1.0", "Users",
-          ID, EXTERNAL_ID, USER_NAME, NAME, DISPLAY_NAME, NICK_NAME,
-          PROFILE_URL, TITLE, USER_TYPE, PREFERRED_LANGUAGE, LOCALE, TIMEZONE,
-          ACTIVE, EMAILS, PHONE_NUMBERS, IMS, PHOTOS, ADDRESSES, GROUPS,
-          ENTITLEMENTS, ROLES, EMPLOYEE_NUMBER, COST_CENTER, ORGANIZATION,
-          DIVISION, DEPARTMENT, MANAGER, META);
+      ResourceDescriptor.create(SCIMConstants.RESOURCE_NAME_USER,
+          "SCIM provides a schema for representing Users",
+          SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_USERS,
+          USER_NAME, NAME, DISPLAY_NAME, NICK_NAME, PROFILE_URL, TITLE,
+          USER_TYPE, PREFERRED_LANGUAGE, LOCALE, TIMEZONE, ACTIVE, EMAILS,
+          PHONE_NUMBERS, IMS, PHOTOS, ADDRESSES, GROUPS, ENTITLEMENTS, ROLES,
+          EMPLOYEE_NUMBER, COST_CENTER, ORGANIZATION, DIVISION, DEPARTMENT,
+          MANAGER);
 
   /**
    * The SCIM Group Schema.
    */
   public static final ResourceDescriptor GROUP_DESCRIPTOR =
-      ResourceDescriptor.create("Group", "SCIM provides a schema for " +
-          "representing groups", "urn:scim:schemas:core:1.0", "Groups",
-          ID, EXTERNAL_ID, GROUP_DISPLAY_NAME, MEMBERS, META);
+      ResourceDescriptor.create(SCIMConstants.RESOURCE_NAME_GROUP,
+          "SCIM provides a schema for representing groups",
+          SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_GROUPS,
+          GROUP_DISPLAY_NAME, MEMBERS);
 }

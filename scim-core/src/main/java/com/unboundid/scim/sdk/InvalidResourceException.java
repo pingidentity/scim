@@ -10,14 +10,14 @@ package com.unboundid.scim.sdk;
  *
  * This exception corresponds to HTTP response code 400 BAD REQUEST.
  */
-public class MarshalException extends SCIMException
+public class InvalidResourceException extends SCIMException
 {
   /**
    * Create a new <code>MarshalException</code> from the provided information.
    *
    * @param errorMessage  The error message for this SCIM exception.
    */
-  public MarshalException(final String errorMessage) {
+  public InvalidResourceException(final String errorMessage) {
     super(400, errorMessage);
   }
 
@@ -30,7 +30,8 @@ public class MarshalException extends SCIMException
    *                      is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    */
-  public MarshalException(final String errorMessage, final Throwable cause) {
+  public InvalidResourceException(final String errorMessage,
+                                  final Throwable cause) {
     super(400, errorMessage, cause);
   }
 }

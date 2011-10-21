@@ -9,6 +9,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -103,10 +104,11 @@ public abstract class AttributeMapper
    * @param scimObject  The SCIM object containing the attribute to be mapped.
    * @param attributes  A collection of LDAP attributes to hold any attributes
    *                    created by this mapping.
+   * @throws InvalidResourceException if the mapping violates the schema.
    */
   public abstract void toLDAPAttributes(
       final SCIMObject scimObject,
-      final Collection<Attribute> attributes);
+      final Collection<Attribute> attributes) throws InvalidResourceException;
 
 
 
@@ -116,8 +118,10 @@ public abstract class AttributeMapper
    * @param entry  The LDAP entry whose attributes are to be mapped.
    *
    * @return  A SCIM attribute, or {@code null} if no attribute was created.
+   * @throws InvalidResourceException if the mapping violates the schema.
    */
-  public abstract SCIMAttribute toSCIMAttribute(final Entry entry);
+  public abstract SCIMAttribute toSCIMAttribute(final Entry entry)
+      throws InvalidResourceException;
 
 
 

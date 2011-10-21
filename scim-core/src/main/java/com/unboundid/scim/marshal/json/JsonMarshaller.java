@@ -64,7 +64,7 @@ public class JsonMarshaller implements Marshaller
     jsonWriter.object();
 
     final Set<String> schemas = new HashSet<String>(
-        resource.getScimObject().getSchemas());
+        resource.getResourceDescriptor().getAttributeSchemas());
     if (includeSchemas)
     {
       // Write out the schemas for this object.
@@ -144,7 +144,8 @@ public class JsonMarshaller implements Marshaller
       final Set<String> schemaURIs = new HashSet<String>();
       for (final BaseResource resource : response)
       {
-        schemaURIs.addAll(resource.getScimObject().getSchemas());
+        schemaURIs.addAll(
+            resource.getResourceDescriptor().getAttributeSchemas());
       }
 
       // Write the schemas.
@@ -236,7 +237,14 @@ public class JsonMarshaller implements Marshaller
       jsonWriter.object();
       for (SCIMAttribute attribute : pluralValue.getAttributes().values())
       {
-        writeSingularAttribute(attribute, jsonWriter);
+        if (attribute.isPlural())
+        {
+          this.writePluralAttribute(attribute, jsonWriter);
+        }
+        else
+        {
+          this.writeSingularAttribute(attribute, jsonWriter);
+        }
       }
       jsonWriter.endObject();
     }

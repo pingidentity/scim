@@ -7,10 +7,10 @@ package com.unboundid.scim.schema;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,19 +72,28 @@ public class ResourceDescriptor extends BaseResource
    * @param schema The attribute descriptor's associated schema URN.
    * @param name The name of the attribute whose descriptor is to be retrieved.
    *
-   * @return The attribute descriptor for the specified attribute, or {@code
-   *         null} if there is no such attribute.
+   * @return The attribute descriptor for the specified attribute.
+   * @throws InvalidResourceException if there is no such attribute.
    */
   public AttributeDescriptor getAttribute(final String schema,
                                           final String name)
+      throws InvalidResourceException
   {
+    // TODO: Should we implement a strict and non strict mode?
     initAttributesCache();
+    AttributeDescriptor attributeDescriptor = null;
     Map<String, AttributeDescriptor> map = attributesCache.get(schema);
     if(map != null)
     {
-      return map.get(name);
+      attributeDescriptor = map.get(name);
     }
-    return null;
+    if(attributeDescriptor == null)
+    {
+      throw new InvalidResourceException("Attribute " + schema +
+          SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + name +
+          " is not defined for resource " + getName());
+    }
+    return attributeDescriptor;
   }
 
   /**
@@ -144,8 +153,13 @@ public class ResourceDescriptor extends BaseResource
    */
   private ResourceDescriptor setName(final String name)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "name", AttributeValueResolver.STRING_RESOLVER, name);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "name", AttributeValueResolver.STRING_RESOLVER, name);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -174,9 +188,14 @@ public class ResourceDescriptor extends BaseResource
   private ResourceDescriptor setAttributes(
       final Collection<AttributeDescriptor> attributes)
   {
-    setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER,
-        attributes);
+    try {
+      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER,
+          attributes);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -201,8 +220,13 @@ public class ResourceDescriptor extends BaseResource
    */
   private ResourceDescriptor setSchema(final String schema)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "schema", AttributeValueResolver.STRING_RESOLVER, schema);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "schema", AttributeValueResolver.STRING_RESOLVER, schema);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -225,8 +249,13 @@ public class ResourceDescriptor extends BaseResource
    */
   private ResourceDescriptor setDescription(final String description)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "description", AttributeValueResolver.STRING_RESOLVER, description);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "description", AttributeValueResolver.STRING_RESOLVER, description);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -253,8 +282,14 @@ public class ResourceDescriptor extends BaseResource
    */
   private ResourceDescriptor setQueryEndpoint(final String queryEndpoint)
   {
-    setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "queryEndpoint", AttributeValueResolver.STRING_RESOLVER, queryEndpoint);
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "queryEndpoint", AttributeValueResolver.STRING_RESOLVER,
+          queryEndpoint);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
     return this;
   }
 
@@ -297,8 +332,9 @@ public class ResourceDescriptor extends BaseResource
   }
 
   /**
-   * Construct a new resource descriptor with the provided information using
-   * the SDK's built in core schema.
+   * Construct a new resource descriptor with the provided information.
+   * The resource attributes specified here should not include common core
+   * attributes (ie. id, externalId, meta) as these will be added automatically.
    *
    * @param name The addressable Resource endpoint name.
    * @param description The Resource's human readable description.
@@ -318,7 +354,8 @@ public class ResourceDescriptor extends BaseResource
     resourceDescriptor.setDescription(description);
     resourceDescriptor.setSchema(schema);
     resourceDescriptor.setQueryEndpoint(queryEndpoint);
-    resourceDescriptor.setAttributes(Arrays.asList(attributes));
+    resourceDescriptor.setAttributes(
+        CoreSchema.addCommonResourceAttributes(attributes));
 
     return resourceDescriptor;
   }

@@ -8,6 +8,7 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 
 import java.util.Set;
@@ -106,9 +107,10 @@ public abstract class DerivedAttribute
    * @param searchBaseDN   The search base DN for the DIT.
    *
    * @return  A SCIM attribute, or {@code null} if no attribute was created.
+   * @throws InvalidResourceException if the mapping violates the schema.
    */
   public abstract SCIMAttribute toSCIMAttribute(
       final Entry entry,
       final LDAPInterface ldapInterface,
-      final String searchBaseDN);
+      final String searchBaseDN) throws InvalidResourceException;
 }

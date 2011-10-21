@@ -5,10 +5,13 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
+import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import org.apache.wink.server.internal.servlet.RestServlet;
+import org.apache.wink.server.utils.RegistrationUtils;
 import org.eclipse.jetty.http.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -63,18 +66,13 @@ public class SCIMServer
   /**
    * The set of backends registered with the server, keyed by the base URI.
    */
-  private volatile Map<String, SCIMBackend> backends;
+  private volatile Map<ServletContextHandler, SCIMBackend> backends;
 
 
   /**
    * The set of resource mappers registered for SCIM resource end-points.
    */
-  private volatile Map<String, Set<ResourceMapper>> resourceMappers;
-
-  /**
-   * The set of resource mappers registered for SCIM resource query end-points.
-   */
-  private volatile Map<String, ResourceMapper> queryResourceMappers;
+  private volatile Map<ResourceDescriptor, ResourceMapper> resourceMappers;
 
   /**
    * Monitor data.
@@ -104,9 +102,8 @@ public class SCIMServer
 
     this.config = serverConfig;
     this.server = s;
-    this.backends = new HashMap<String, SCIMBackend>();
-    this.resourceMappers = new HashMap<String, Set<ResourceMapper>>();
-    this.queryResourceMappers = new HashMap<String, ResourceMapper>();
+    this.backends = new HashMap<ServletContextHandler, SCIMBackend>();
+    this.resourceMappers = new HashMap<ResourceDescriptor, ResourceMapper>();
     this.monitorData = new SCIMMonitorData();
 
     if (serverConfig.getResourcesFile() != null)
@@ -146,19 +143,22 @@ public class SCIMServer
     synchronized (this)
     {
       final String normalizedBaseURI = normalizeURI(baseURI);
-      if (backends.containsKey(baseURI))
+      for(ServletContextHandler contextHandler : backends.keySet())
       {
-        throw new RuntimeException("There is already a backend registered " +
-                                   "for base URI " + normalizedBaseURI);
+        if(contextHandler.getContextPath().equals(normalizedBaseURI))
+        {
+          throw new RuntimeException("There is already a backend registered " +
+              "for base URI " + normalizedBaseURI);
+        }
       }
-      final Map<String, SCIMBackend> newBackends =
-          new HashMap<String, SCIMBackend>(backends);
-      newBackends.put(normalizedBaseURI, backend);
+      final Map<ServletContextHandler, SCIMBackend> newBackends =
+          new HashMap<ServletContextHandler, SCIMBackend>(backends);
 
       final ServletContextHandler contextHandler =
           new ServletContextHandler(
               (ContextHandlerCollection) server.getHandler(),
               normalizedBaseURI);
+      newBackends.put(contextHandler, backend);
 
       // Configure authentication.
 
@@ -203,28 +203,11 @@ public class SCIMServer
                          "true");
       final ServletHolder winkServletHolder =
           new ServletHolder(RestServlet.class);
-      winkServletHolder.setInitParameter(
-          RestServlet.APPLICATION_INIT_PARAM,
-          "com.unboundid.scim.ri.wink.SCIMApplication");
+      winkServletHolder.setInitOrder(1);
       contextHandler.addServlet(winkServletHolder, "/*");
 
       backends = newBackends;
     }
-  }
-
-
-
-  /**
-   * Retrieve the SCIM backend registered under the provided base URI.
-   *
-   * @param baseURI  The base URI that the backend was registered under.
-   *
-   * @return  The SCIM backend registered under the provided base URI, or
-   *          {@code null} if there is no such backend.
-   */
-  public SCIMBackend getBackend(final String baseURI)
-  {
-    return backends.get(normalizeURI(baseURI));
   }
 
 
@@ -239,58 +222,22 @@ public class SCIMServer
    */
   public void registerResourceMapper(final ResourceMapper resourceMapper)
   {
-    final String resourceName = resourceMapper.getResourceName();
-    final String queryEndpoint = resourceMapper.getQueryEndpoint();
-
     synchronized (this)
     {
-      if (resourceName != null)
-      {
-        final Map<String, Set<ResourceMapper>> newResourceMappers =
-            new HashMap<String, Set<ResourceMapper>>();
-
-        Set<ResourceMapper> mappers = resourceMappers.get(resourceName);
-        if (mappers != null && mappers.contains(resourceMapper))
-        {
-          throw new RuntimeException("The resource mapper was already " +
-                                     "registered for resource end-point " +
-                                     resourceName);
-        }
-
-        for (Map.Entry<String, Set<ResourceMapper>> e :
-            resourceMappers.entrySet())
-        {
-          newResourceMappers.put(e.getKey(),
-                                 new HashSet<ResourceMapper>(e.getValue()));
-        }
-
-        mappers = newResourceMappers.get(resourceName);
-        if (mappers == null)
-        {
-          mappers = new HashSet<ResourceMapper>();
-          newResourceMappers.put(resourceName, mappers);
-        }
-
-        mappers.add(resourceMapper);
-
-        resourceMappers = newResourceMappers;
-      }
-    }
-
-    if (queryEndpoint != null && resourceMapper.supportsQuery())
-    {
-      if (queryResourceMappers.get(queryEndpoint) == resourceMapper)
+      if (resourceMappers.get(
+          resourceMapper.getResourceDescriptor()) == resourceMapper)
       {
         throw new RuntimeException("The resource mapper was already " +
-                                   "registered for resource query end-point " +
-                                   queryEndpoint);
+            "registered for resource " +
+            resourceMapper.getResourceDescriptor().getName());
       }
 
-      final Map<String, ResourceMapper> newQueryResourceMappers =
-          new HashMap<String, ResourceMapper>(queryResourceMappers);
+      final Map<ResourceDescriptor, ResourceMapper> newResourceMappers =
+          new HashMap<ResourceDescriptor, ResourceMapper>(resourceMappers);
 
-      newQueryResourceMappers.put(queryEndpoint, resourceMapper);
-      queryResourceMappers = newQueryResourceMappers;
+      newResourceMappers.put(resourceMapper.getResourceDescriptor(),
+          resourceMapper);
+      resourceMappers = newResourceMappers;
     }
   }
 
@@ -300,40 +247,16 @@ public class SCIMServer
    * Retrieve the set of resource mappers registered for the provided resource
    * end-point.
    *
-   * @param resourceEndPoint The resource end-point for which the registered
-   *                         resource mappers are requested.
+   * @param resourceDescriptor The ResourceDescriptor for which the registered
+   *                           resource mappers are requested.
    *
    * @return The set of resource mappers registered for the provided resource
    *         end-point. This is never {@code null} but it may be empty.
    */
-  public Set<ResourceMapper> getResourceMappers(final String resourceEndPoint)
+  public ResourceMapper getResourceMapper(
+      final ResourceDescriptor resourceDescriptor)
   {
-    final Set<ResourceMapper> mappers = resourceMappers.get(resourceEndPoint);
-    if (mappers == null)
-    {
-      return Collections.emptySet();
-    }
-    else
-    {
-      return Collections.unmodifiableSet(mappers);
-    }
-  }
-
-
-
-  /**
-   * Retrieve the resource mapper registered for the provided resource query
-   * end-point.
-   *
-   * @param resourceEndPoint The query resource end-point for which the
-   *                         registered resource mapper is requested.
-   *
-   * @return The resource mapper registered for the provided resource end
-   *         point, or {@code null} if there is no such resource mapper.
-   */
-  public ResourceMapper getQueryResourceMapper(final String resourceEndPoint)
-  {
-    return queryResourceMappers.get(resourceEndPoint);
+    return resourceMappers.get(resourceDescriptor);
   }
 
 
@@ -357,12 +280,19 @@ public class SCIMServer
   public void startListening()
       throws Exception
   {
-    if (backends.isEmpty())
+    if (resourceMappers.isEmpty())
     {
-      throw new RuntimeException("No backends have been registered with the " +
-                                 "SCIM server");
+      throw new RuntimeException("No resource mappers have been registered " +
+          "with the SCIM server");
     }
     server.start();
+    for(Map.Entry<ServletContextHandler, SCIMBackend> entry :
+        backends.entrySet())
+    {
+      RegistrationUtils.registerApplication(
+          new SCIMApplication(resourceMappers.keySet(), entry.getValue()),
+          entry.getKey().getServletContext());
+    }
   }
 
 
@@ -422,40 +352,10 @@ public class SCIMServer
       server = null;
     }
 
-    if (backends != null)
-    {
-      // Make sure that each backend is finalized just once.
-      // The same backend may be referenced more than once.
-      Set<SCIMBackend> allBackends = new HashSet<SCIMBackend>();
-      for (final SCIMBackend b : backends.values())
-      {
-        if (b != null)
-        {
-          allBackends.add(b);
-        }
-      }
-
-      for (final SCIMBackend b : allBackends)
-      {
-        b.finalizeBackend();
-      }
-
-      backends = null;
-    }
-
     if (resourceMappers != null)
     {
       // Make sure that each resource mapper is finalized exactly once.
-      Set<ResourceMapper> allMappers = new HashSet<ResourceMapper>();
-      for (final Set<ResourceMapper> mappers : resourceMappers.values())
-      {
-        if (mappers != null)
-        {
-          allMappers.addAll(mappers);
-        }
-      }
-
-      for (final ResourceMapper b : allMappers)
+      for (final ResourceMapper b : resourceMappers.values())
       {
         b.finalizeMapper();
       }
