@@ -354,4 +354,40 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(resources.getItemsPerPage(), 0);
     assertEquals(resources.getStartIndex(), startIndex);
   }
+
+
+
+  /**
+   * Tests the maxResults configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testMaxResults()
+      throws Exception
+  {
+    // Lower the maxResults setting.
+    final int maxResults = 1;
+    instance.dsconfig(
+        "set-plugin-prop",
+        "--plugin-name", "scim-plugin",
+        "--add", "extension-argument:maxResults=" + maxResults);
+
+    // Create some users.
+    final long NUM_USERS = 10;
+    for (int i = 0; i < NUM_USERS; i++)
+    {
+      final String uid = "user." + i;
+      instance.getConnectionPool().add(
+          generateUserEntry(uid, baseDN, "Test", "User", "password"));
+    }
+
+    // Try to fetch more users than can be returned.
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    final Resources<UserResource> resources = userEndpoint.query(null);
+    assertEquals(resources.getTotalResults(), maxResults);
+  }
+
+
+
 }

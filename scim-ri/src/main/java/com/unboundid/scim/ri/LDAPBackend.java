@@ -195,10 +195,11 @@ public abstract class LDAPBackend
       requestAttributeSet.add("modifyTimestamp");
       requestAttributeSet.add("objectClass");
 
+      final int maxResults = getConfig().getMaxResults();
       final LDAPInterface ldapInterface =
           getLDAPInterface(request.getAuthenticatedUserID());
       final ResourceSearchResultListener resultListener =
-          new ResourceSearchResultListener(request, ldapInterface);
+          new ResourceSearchResultListener(request, ldapInterface, maxResults);
       SearchRequest searchRequest = null;
       if (scimFilter != null)
       {

@@ -54,6 +54,10 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   private final LDAPInterface ldapInterface;
 
+  /**
+   * The maximum number of resources that may be returned.
+   */
+  private final int maxResults;
 
 
   /**
@@ -62,9 +66,11 @@ public class ResourceSearchResultListener implements SearchResultListener
    * @param request  The request that is being processed.
    * @param ldapInterface  An LDAP interface that can be used to
    *                       derive attributes from other entries.
+   * @param maxResults  The maximum number of resources that may be returned.
    */
   public ResourceSearchResultListener(final GetResourcesRequest request,
-                                      final LDAPInterface ldapInterface)
+                                      final LDAPInterface ldapInterface,
+                                      final int maxResults)
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
 
@@ -73,6 +79,7 @@ public class ResourceSearchResultListener implements SearchResultListener
     this.request        = request;
     this.resources      = new ArrayList<BaseResource>();
     this.ldapInterface  = ldapInterface;
+    this.maxResults     = maxResults;
   }
 
 
@@ -86,6 +93,11 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   public void searchEntryReturned(final SearchResultEntry searchEntry)
   {
+    if (resources.size() >= maxResults)
+    {
+      return;
+    }
+
     // Get all the attributes so we can filter on them.
     // TODO could be too expensive for derived attributes
     final SCIMQueryAttributes allAttributes = new SCIMQueryAttributes();
