@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
 <scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
 
   <!--

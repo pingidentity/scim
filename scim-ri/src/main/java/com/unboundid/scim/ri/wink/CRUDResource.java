@@ -1,6 +1,18 @@
 /*
  * Copyright 2011 UnboundID Corp.
- * All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License (GPLv2 only)
+ * or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
 package com.unboundid.scim.ri.wink;
@@ -276,9 +288,9 @@ public class CRUDResource extends AbstractSCIMResource
     final RequestContext requestContext =
         new RequestContext(servletContext, securityContext, headers, uriInfo);
     return postUser(requestContext,
-                    MediaType.APPLICATION_JSON_TYPE,
-                    MediaType.APPLICATION_XML_TYPE,
-                    inputStream);
+        MediaType.APPLICATION_JSON_TYPE,
+        MediaType.APPLICATION_XML_TYPE,
+        inputStream);
   }
 
 
@@ -481,10 +493,10 @@ public class CRUDResource extends AbstractSCIMResource
     final RequestContext requestContext =
         new RequestContext(servletContext, securityContext, headers, uriInfo);
     return putUser(requestContext,
-                   MediaType.APPLICATION_JSON_TYPE,
-                   MediaType.APPLICATION_XML_TYPE,
-                   userID,
-                   inputStream);
+        MediaType.APPLICATION_JSON_TYPE,
+        MediaType.APPLICATION_XML_TYPE,
+        userID,
+        inputStream);
   }
 
 

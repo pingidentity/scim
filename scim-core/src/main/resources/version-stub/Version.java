@@ -1,9 +1,5 @@
 /*
- * Copyright ${year} UnboundID Corp.
- * All Rights Reserved.
- */
-/*
- * Copyright (C) ${year} UnboundID Corp.
+ * Copyright 2011 UnboundID Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License (GPLv2 only)
@@ -18,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
+
 package ${build.version.package.name};
 
 

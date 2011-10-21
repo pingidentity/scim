@@ -1,7 +1,20 @@
 /*
  * Copyright 2011 UnboundID Corp.
- * All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License (GPLv2 only)
+ * or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
+
 package com.unboundid.scim.data;
 
 import com.unboundid.scim.schema.AttributeDescriptor;
@@ -30,13 +43,14 @@ public class Meta
          */
         @Override
         public Meta toInstance(final SCIMAttributeValue value) {
+          String l = value.getSingularSubAttributeValue("location",
+              STRING_RESOLVER);
           return new Meta(
               value.getSingularSubAttributeValue("created",
                   DATE_RESOLVER),
               value.getSingularSubAttributeValue("lastModified",
                   DATE_RESOLVER),
-              URI.create(value.getSingularSubAttributeValue("location",
-                  STRING_RESOLVER)),
+              l == null ? null : URI.create(l),
               value.getSingularSubAttributeValue("version",
                   STRING_RESOLVER));
         }

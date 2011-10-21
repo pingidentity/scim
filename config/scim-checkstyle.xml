@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
 <!DOCTYPE module PUBLIC
     "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
     "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
-
-<!--
- ! Copyright 2007-2011 UnboundID Corp.
- ! All Rights Reserved.
- -->
 
 <module name="Checker">
 
@@ -17,8 +17,8 @@
 
   <!-- Ensure that all source files have the appropriate header. -->
   <module name="RegexpHeader">
-    <property name="header"
-              value="/*\n * Copyright (\d\d\d\d-)?2011 UnboundID Corp.\n * All Rights Reserved.\n */" />
+    <property name="headerFile"
+              value="${checkstyle.header.file}" />
   </module>
 
 

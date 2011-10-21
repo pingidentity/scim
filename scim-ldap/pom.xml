@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -11,26 +16,34 @@
     <name>UnboundID SCIM SDK LDAP</name>
 
     <build>
-      <plugins>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>jaxb2-maven-plugin</artifactId>
-          <version>1.3.1</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>xjc</goal>
-              </goals>
-            </execution>
-          </executions>
-          <configuration>
-            <packageName>com.unboundid.scim.ldap</packageName>
-            <clearOutputDir>true</clearOutputDir>
-            <schemaDirectory>src/main/resources/com/unboundid/scim/ldap</schemaDirectory>
-            <outputDirectory>${project.build.genSourceDirectory}</outputDirectory>
-          </configuration>
-        </plugin>
-      </plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <headerLocation>config/gpl.sourceheader</headerLocation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jaxb2-maven-plugin</artifactId>
+                <version>1.3.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>xjc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <packageName>com.unboundid.scim.ldap</packageName>
+                    <clearOutputDir>true</clearOutputDir>
+                    <schemaDirectory>src/main/resources/com/unboundid/scim/ldap</schemaDirectory>
+                    <outputDirectory>${project.build.genSourceDirectory}</outputDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <dependencies>

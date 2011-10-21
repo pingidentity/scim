@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -61,11 +66,8 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <configLocation>config/scimri-checkstyle.xml</configLocation>
-                            <failOnViolation>true</failOnViolation>
+                            <configLocation>config/scim-checkstyle.xml</configLocation>
                             <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                            <propertyExpansion>cacheFile=${project.build.directory}/checkstyle-cachefile</propertyExpansion>
-                            <logViolationsToConsole>true</logViolationsToConsole>
                         </configuration>
                     </execution>
                     <execution>
@@ -75,14 +77,17 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <configLocation>config/scimri-unit-checkstyle.xml</configLocation>
-                            <failOnViolation>true</failOnViolation>
+                            <configLocation>config/scim-unit-checkstyle.xml</configLocation>
                             <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
-                            <propertyExpansion>cacheFile=${project.build.directory}/checkstyle-cachefile</propertyExpansion>
-                            <logViolationsToConsole>true</logViolationsToConsole>
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                   <headerLocation>config/ubid.sourceheader</headerLocation>
+                    <failOnViolation>true</failOnViolation>
+                    <propertyExpansion>cacheFile=${project.build.directory}/checkstyle-cachefile</propertyExpansion>
+                    <logViolationsToConsole>true</logViolationsToConsole>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
