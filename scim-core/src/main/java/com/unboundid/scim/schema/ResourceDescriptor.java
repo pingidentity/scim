@@ -332,6 +332,53 @@ public class ResourceDescriptor extends BaseResource
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode()
+  {
+    int hashCode = 0;
+
+    hashCode += getSchema().hashCode();
+    hashCode += getName().toLowerCase().hashCode();
+
+    return hashCode;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object obj)
+  {
+    if (this == obj)
+    {
+      return true;
+    }
+
+    if (!(obj instanceof AttributeDescriptor))
+    {
+      return false;
+    }
+
+    final AttributeDescriptor that = (AttributeDescriptor)obj;
+    final String thisSchema = getSchema();
+    final String thisName = getName();
+    final String thatSchema = that.getSchema();
+    final String thatName = that.getName();
+    if (thisSchema == null && thatSchema == null)
+    {
+      return thisName.equalsIgnoreCase(thatName);
+    }
+    else
+    {
+      return thisSchema != null && thatSchema != null &&
+          thisSchema.equals(thatSchema) &&
+          thisName.equalsIgnoreCase(thatName);
+    }
+  }
+
   @Override
   public String toString()
   {

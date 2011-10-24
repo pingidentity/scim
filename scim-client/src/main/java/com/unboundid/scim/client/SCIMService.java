@@ -23,9 +23,6 @@ import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.ResourceNotFoundException;
-import com.unboundid.scim.sdk.SCIMConstants;
-import com.unboundid.scim.sdk.SCIMException;
 import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.RestClient;
 
@@ -110,32 +107,6 @@ public class SCIMService
     return new SCIMEndpoint<ResourceDescriptor>(this, client,
         CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
         ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
-  }
-
-  /**
-   * Retrieve the resource schema for provided resource endpoint.
-   *
-   * @param resourceName The name of the resource endpoint.
-   * @return The ResourceDescriptor for the endpoint or <code>null</code> if
-   *         it is not available.
-   * @throws SCIMException if an error occurs.
-   */
-  public ResourceDescriptor getResourceSchema(final String resourceName)
-    throws SCIMException
-  {
-    if(resourceName.equals(SCIMConstants.RESOURCE_NAME_USER))
-    {
-      return CoreSchema.USER_DESCRIPTOR;
-    }
-    else if(resourceName.equals(SCIMConstants.RESOURCE_NAME_GROUP))
-    {
-      return CoreSchema.GROUP_DESCRIPTOR;
-    }
-    else
-    {
-      throw new ResourceNotFoundException("Resource " + resourceName +
-          " not defined by the service provider");
-    }
   }
 
   /**

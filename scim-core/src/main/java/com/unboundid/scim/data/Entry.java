@@ -291,4 +291,54 @@ public final class Entry<T>
   public void setValue(final T value) {
     this.value = value;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    Entry entry = (Entry) o;
+
+    if (primary != entry.primary) {
+      return false;
+    }
+    if (type != null ? !type.equals(entry.type) : entry.type != null) {
+      return false;
+    }
+    if (value != null ? !value.equals(entry.value) : entry.value != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode() {
+    int result = value != null ? value.hashCode() : 0;
+    result = 31 * result + (primary ? 1 : 0);
+    result = 31 * result + (type != null ? type.hashCode() : 0);
+    return result;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString() {
+    return "Entry{" +
+        "value=" + value +
+        ", type='" + type + '\'' +
+        ", primary=" + primary +
+        '}';
+  }
 }

@@ -615,7 +615,8 @@ public class SCIMQueryRate
     ResourceDescriptor resourceDescriptor;
     try
     {
-      resourceDescriptor = service.getResourceSchema(resourceName.getValue());
+      resourceDescriptor =
+          service.getResourceSchemaEndpoint().get(resourceName.getValue());
     }
     catch (SCIMException e)
     {

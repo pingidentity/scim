@@ -317,4 +317,86 @@ public class Address
   public void setType(final String type) {
     this.type = type;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    Address address = (Address) o;
+
+    if (primary != address.primary) {
+      return false;
+    }
+    if (country != null ? !country.equals(address.country) :
+        address.country != null) {
+      return false;
+    }
+    if (formatted != null ? !formatted.equals(address.formatted) :
+        address.formatted != null) {
+      return false;
+    }
+    if (locality != null ? !locality.equals(address.locality) :
+        address.locality != null) {
+      return false;
+    }
+    if (postalCode != null ? !postalCode.equals(address.postalCode) :
+        address.postalCode != null) {
+      return false;
+    }
+    if (region != null ? !region.equals(address.region) :
+        address.region != null) {
+      return false;
+    }
+    if (streetAddress != null ? !streetAddress.equals(address.streetAddress) :
+        address.streetAddress != null) {
+      return false;
+    }
+    if (type != null ? !type.equals(address.type) : address.type != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode() {
+    int result = country != null ? country.hashCode() : 0;
+    result = 31 * result + (formatted != null ? formatted.hashCode() : 0);
+    result = 31 * result + (locality != null ? locality.hashCode() : 0);
+    result = 31 * result + (postalCode != null ? postalCode.hashCode() : 0);
+    result = 31 * result + (region != null ? region.hashCode() : 0);
+    result = 31 * result + (streetAddress != null ?
+        streetAddress.hashCode() : 0);
+    result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (primary ? 1 : 0);
+    return result;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString() {
+    return "Address{" +
+        "formatted='" + formatted + '\'' +
+        ", streetAddress='" + streetAddress + '\'' +
+        ", locality='" + locality + '\'' +
+        ", region='" + region + '\'' +
+        ", postalCode='" + postalCode + '\'' +
+        ", country='" + country + '\'' +
+        ", type='" + type + '\'' +
+        ", primary=" + primary +
+        '}';
+  }
 }

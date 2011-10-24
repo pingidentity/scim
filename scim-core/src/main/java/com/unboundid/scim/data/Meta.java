@@ -201,4 +201,63 @@ public class Meta
   public void setVersion(final String version) {
     this.version = version;
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    Meta meta = (Meta) o;
+
+    if (created != null ? !created.equals(meta.created) :
+        meta.created != null) {
+      return false;
+    }
+    if (lastModified != null ? !lastModified.equals(meta.lastModified) :
+        meta.lastModified != null) {
+      return false;
+    }
+    if (location != null ? !location.equals(meta.location) :
+        meta.location != null) {
+      return false;
+    }
+    if (version != null ? !version.equals(meta.version) :
+        meta.version != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode() {
+    int result = created != null ? created.hashCode() : 0;
+    result = 31 * result + (lastModified != null ? lastModified.hashCode() : 0);
+    result = 31 * result + (location != null ? location.hashCode() : 0);
+    result = 31 * result + (version != null ? version.hashCode() : 0);
+    return result;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString() {
+    return "Meta{" +
+        "created=" + created +
+        ", lastModified=" + lastModified +
+        ", location=" + location +
+        ", version='" + version + '\'' +
+        '}';
+  }
 }

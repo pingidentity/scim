@@ -143,7 +143,7 @@ public class ClientExample {
 
     // Resource type extension example
     ResourceDescriptor deviceDescriptor =
-        scimService.getResourceSchema("Device");
+        scimService.getResourceSchemaEndpoint().get("Device");
     SCIMEndpoint<DeviceResource> deviceEndpoint =
         scimService.getEndpoint(deviceDescriptor, DEVICE_RESOURCE_FACTORY);
   }

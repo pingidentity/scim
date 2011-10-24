@@ -330,4 +330,38 @@ public class BaseResource implements SCIMResponse
       throws Exception {
     marshaller.marshal(this, outputStream);
   }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BaseResource)) {
+      return false;
+    }
+
+    BaseResource that = (BaseResource) o;
+
+    if (!resourceDescriptor.equals(that.resourceDescriptor)) {
+      return false;
+    }
+    if (!scimObject.equals(that.scimObject)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode() {
+    int result = resourceDescriptor.hashCode();
+    result = 31 * result + scimObject.hashCode();
+    return result;
+  }
 }

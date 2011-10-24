@@ -317,7 +317,39 @@ public final class SCIMAttribute
     return false;
   }
 
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
+    SCIMAttribute that = (SCIMAttribute) o;
+
+    if (!attributeDescriptor.equals(that.attributeDescriptor)) {
+      return false;
+    }
+    if (!Arrays.equals(pluralValues, that.pluralValues)) {
+      return false;
+    }
+    if (singleValue != null ? !singleValue.equals(that.singleValue) :
+        that.singleValue != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = attributeDescriptor.hashCode();
+    result = 31 * result + (singleValue != null ? singleValue.hashCode() : 0);
+    result = 31 * result + (pluralValues != null ?
+        Arrays.hashCode(pluralValues) : 0);
+    return result;
+  }
 
   @Override
   public String toString()

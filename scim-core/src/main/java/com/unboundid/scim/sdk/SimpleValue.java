@@ -159,7 +159,9 @@ public class SimpleValue
   }
 
 
-
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString()
   {
@@ -168,5 +170,36 @@ public class SimpleValue
     sb.append("{value=").append(value);
     sb.append('}');
     return sb.toString();
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    SimpleValue that = (SimpleValue) o;
+
+    if (!value.equals(that.value)) {
+      return false;
+    }
+
+    return true;
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode() {
+    return value.hashCode();
   }
 }

@@ -125,6 +125,7 @@ public class MarshallerTestCase
     final SCIMObject user2 = resource.getScimObject();
     inputStream.close();
 
+    assertEquals(user1, resource);
     assertEquals(resource.getResourceDescriptor(), CoreSchema.USER_DESCRIPTOR);
     for (final String attribute : Arrays.asList("id",
                                                 "addresses",

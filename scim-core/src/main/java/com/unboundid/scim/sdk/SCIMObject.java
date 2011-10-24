@@ -300,7 +300,40 @@ public class SCIMObject
   }
 
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
+    SCIMObject that = (SCIMObject) o;
+
+    if (!attributes.equals(that.attributes)) {
+      return false;
+    }
+
+    return true;
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int hashCode() {
+    return attributes.hashCode();
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "SCIMObject{" +
