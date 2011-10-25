@@ -80,7 +80,7 @@ public class SCIMServerTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(dependsOnMethods = "testPostUser")
   public void testAPIVersion()
       throws Exception
   {

@@ -47,13 +47,6 @@
         </fileSet>
         <fileSet>
             <outputDirectory>client</outputDirectory>
-            <directory>${project.basedir}/../scim-core/src/main/resources/com/unboundid/scim</directory>
-            <includes>
-                <include>schema/*.xsd</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <outputDirectory>client</outputDirectory>
             <directory>${project.basedir}/src/main/assemblies/client</directory>
             <includes>
                 <include>**</include>

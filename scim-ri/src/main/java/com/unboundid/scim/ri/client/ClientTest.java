@@ -19,12 +19,16 @@ package com.unboundid.scim.ri.client;
 
 
 
-import com.unboundid.scim.schema.Name;
-import com.unboundid.scim.schema.PluralAttribute;
-import com.unboundid.scim.schema.User;
-import org.apache.wink.client.ClientResponse;
+import com.unboundid.scim.client.SCIMService;
+import com.unboundid.scim.data.Entry;
+import com.unboundid.scim.data.Name;
+import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.sdk.SCIMException;
 
-import java.net.URISyntaxException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 
 
@@ -34,7 +38,7 @@ import java.util.Date;
  */
 public class ClientTest
 {
-  private Client client;
+  private SCIMService client;
 
 
 
@@ -59,8 +63,10 @@ public class ClientTest
     final String userName = args[2];
     final String password = args[3];
 
-    final Client client =
-        new Client(userName, password, host, Integer.parseInt(port));
+    final SCIMService client =
+        new SCIMService(
+            URI.create("http://" + host + ":" + Integer.parseInt(port)));
+    client.setUserCredentials(userName, password);
 
     final ClientTest clientTest = new ClientTest(client);
     clientTest.testGetUser();
@@ -79,7 +85,7 @@ public class ClientTest
    *
    * @param client  The SCIM wink client to be used by this test client.
    */
-  public ClientTest(final Client client)
+  public ClientTest(final SCIMService client)
   {
     this.client = client;
   }
@@ -93,7 +99,7 @@ public class ClientTest
    */
   public void testCreateUser() throws Exception
   {
-    assertTrue(createUser().getStatusCode() == 201);
+    createUser();
   }
 
 
@@ -106,12 +112,11 @@ public class ClientTest
   public void testEditUser() throws Exception
   {
     String changedAttributeValue = "ASSERT_DISPLAY_NAME_CHANGED";
-    User user = getUserFromResponse(createUser());
-    user.setDisplayName(changedAttributeValue);
-    final ClientResponse response = client.editUser(user);
-    assertTrue(response.getStatusCode() == 200);
 
-    User userFromResponse = getUserFromResponse(response);
+    final UserResource user = createUser();
+    user.setDisplayName(changedAttributeValue);
+    final UserResource userFromResponse =
+        client.getUserEndpoint().update(user);
     assertEquals(userFromResponse.getDisplayName(), changedAttributeValue);
   }
 
@@ -124,10 +129,9 @@ public class ClientTest
    */
   public void testDeleteUser() throws Exception
   {
-    User user = this.getUserFromResponse(createUser());
+    final UserResource user = createUser();
     String id = user.getId();
-    ClientResponse clientResponse = client.deleteUser(id);
-    assertTrue(clientResponse.getStatusCode() == 200);
+    client.getUserEndpoint().delete(id);
   }
 
 
@@ -138,10 +142,9 @@ public class ClientTest
    */
   public void testGetUser() throws Exception
   {
-    final User user = getUserFromResponse(createUser());
-    final ClientResponse clientResponse = client.getUser(user.getId());
-    assertTrue(clientResponse.getStatusCode() == 200);
-    final User userFromResponse = getUserFromResponse(clientResponse);
+    final UserResource user = createUser();
+    final UserResource userFromResponse =
+        client.getUserEndpoint().get(user.getId());
     assertNotNull(userFromResponse);
   }
 
@@ -151,27 +154,12 @@ public class ClientTest
    * Creates a new SCIM User.
    *
    * @return The newly created SCIM User.
-   * @throws URISyntaxException If error parsing the Service Provider endpoint.
+   * @throws SCIMException If error creating the user.
    */
-  private ClientResponse createUser()
-      throws URISyntaxException
+  private UserResource createUser()
+      throws SCIMException
   {
-    return client.createUser(getTemplateUser());
-  }
-
-
-
-  /**
-   * Pulls the User POJO from the Service Provider response.
-   *
-   * @param response The Service Provider response.
-   * @return The SCIM User POJO.
-   */
-  private User getUserFromResponse(final ClientResponse response)
-  {
-    User user = response.getEntity(User.class);
-    assertNotNull(user);
-    return user;
+    return client.getUserEndpoint().insert(getTemplateUser());
   }
 
 
@@ -224,25 +212,23 @@ public class ClientTest
    *
    * @return The templated User.
    */
-  private static User getTemplateUser()
+  private static UserResource getTemplateUser()
   {
     // create new user
-    final User user = new User();
+    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
 
     // make the user unique enough
     user.setUserName("bjensen" + new Date().getTime());
     user.setExternalId(user.getUserName());
     user.setDisplayName("Ms. Barbara J Jensen III");
-    final Name name = new Name();
-    name.setFamilyName("Jensen");
-    name.setGivenName("Barbara");
-    name.setFormatted("Ms. Barbara J Jensen III");
+    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", null,
+        "Barbara", null, null);
     user.setName(name);
 
-    final User.Emails emails = new User.Emails();
-    final PluralAttribute email = new PluralAttribute();
-    email.setValue("bjensen@example.com");
-    emails.getEmail().add(email);
+    final Collection<Entry<String>> emails = new ArrayList<Entry<String>>(1);
+    final Entry<String> email =
+        new Entry<String>("bjensen@example.com", null, false);
+    emails.add(email);
     user.setEmails(emails);
 
     return user;
