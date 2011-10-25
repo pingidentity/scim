@@ -17,12 +17,22 @@
 
 package com.unboundid.scim.ri;
 
+import com.unboundid.scim.data.AuthenticationScheme;
+import com.unboundid.scim.data.BulkConfig;
+import com.unboundid.scim.data.ChangePasswordConfig;
+import com.unboundid.scim.data.ETagConfig;
+import com.unboundid.scim.data.FilterConfig;
+import com.unboundid.scim.data.PatchConfig;
+import com.unboundid.scim.data.ServiceProviderConfig;
+import com.unboundid.scim.data.SortConfig;
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.sdk.SCIMObject;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
 import org.eclipse.jetty.http.security.Constraint;
@@ -38,12 +48,15 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import javax.ws.rs.core.UriBuilder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 
@@ -304,6 +317,53 @@ public class SCIMServer
   public SCIMMonitorData getMonitorData()
   {
     return monitorData;
+  }
+
+
+
+  /**
+   * Retrieve the service provider configuration.
+   * @return  The service provider configuration.
+   */
+  public ServiceProviderConfig getServiceProviderConfig()
+  {
+    final SCIMObject scimObject = new SCIMObject();
+    final ServiceProviderConfig serviceProviderConfig =
+        ServiceProviderConfig.SERVICE_PROVIDER_CONFIG_RESOURCE_FACTORY.
+            createResource(CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR,
+                           scimObject);
+
+    int maxResults = 0;
+    for (final SCIMBackend b : backends.values())
+    {
+      maxResults = Math.max(maxResults, b.getConfig().getMaxResults());
+    }
+
+    serviceProviderConfig.setId(SCHEMA_URI_CORE);
+    serviceProviderConfig.setPatchConfig(new PatchConfig(false));
+    serviceProviderConfig.setBulkConfig(new BulkConfig(false, 0, 0));
+    serviceProviderConfig.setFilterConfig(new FilterConfig(true, maxResults));
+    serviceProviderConfig.setChangePasswordConfig(
+        new ChangePasswordConfig(false));
+    serviceProviderConfig.setSortConfig(new SortConfig(false));
+    serviceProviderConfig.setETagConfig(new ETagConfig(false));
+
+    final List<AuthenticationScheme> authenticationSchemes =
+        new ArrayList<AuthenticationScheme>();
+    authenticationSchemes.add(
+        new AuthenticationScheme(
+            "HttpBasic",
+            "The HTTP Basic Access Authentication scheme. This scheme is not " +
+            "considered to be a secure method of user authentication (unless " +
+            "used in conjunction with some external secure system such as " +
+            "SSL), as the user name and password are passed over the network " +
+            "as cleartext.",
+            "http://www.ietf.org/rfc/rfc2617.txt",
+            "http://en.wikipedia.org/wiki/Basic_access_authentication",
+            null, false));
+    serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
+
+    return serviceProviderConfig;
   }
 
 

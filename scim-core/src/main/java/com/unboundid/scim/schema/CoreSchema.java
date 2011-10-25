@@ -45,7 +45,7 @@ public class CoreSchema
       AttributeDescriptor.singularSimple("primary",
           AttributeDescriptor.DataType.BOOLEAN,
           "A Boolean value indicating whether this instance of the Plural " +
-              "Attribute is the primary or preferred value of for this " +
+              "Attribute is the primary or preferred value of this " +
               "attribute",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor PLURAL_DISPLAY =
@@ -423,6 +423,127 @@ public class CoreSchema
           SCIMConstants.SCHEMA_URI_CORE, true, false, false,
           "User", "Group");
 
+  //// 9.  Service Provider Configuration Schema ////
+
+  private static final AttributeDescriptor CONFIG_DOCUMENTATION_URL =
+      AttributeDescriptor.singularSimple("documentationUrl",
+          AttributeDescriptor.DataType.STRING,
+          "An HTTP addressable URL pointing to the Service Provider's human " +
+          "consumable help documentation",
+          SCIMConstants.SCHEMA_URI_CORE, true, false, false);
+  private static final AttributeDescriptor PATCH_SUPPORTED =
+      AttributeDescriptor.singularSimple("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether the PATCH operation is supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor BULK_SUPPORTED =
+      AttributeDescriptor.singularSimple("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether the BULK operation is supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor BULK_MAX_OPERATIONS =
+      AttributeDescriptor.singularSimple("maxOperations",
+          AttributeDescriptor.DataType.INTEGER,
+          "An integer value specifying the maximum number of resource " +
+          "operations in a BULK operation",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor BULK_MAX_PAYLOAD_SIZE =
+      AttributeDescriptor.singularSimple("maxPayloadSize",
+          AttributeDescriptor.DataType.INTEGER,
+          "An integer value specifying the maximum payload size in bytes " +
+          "of a BULK operation",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor FILTER_SUPPORTED =
+      AttributeDescriptor.singularSimple("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether the BULK operation is supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor FILTER_MAX_RESULTS =
+      AttributeDescriptor.singularSimple("maxResults",
+          AttributeDescriptor.DataType.INTEGER,
+          "Integer value specifying the maximum number of Resources returned " +
+          "in a response",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor CHANGE_PASSWORD_SUPPORTED =
+      AttributeDescriptor.singularSimple("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether the Change Password operation " +
+          "is supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor SORT_SUPPORTED =
+      AttributeDescriptor.singularSimple("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether sorting is supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor ETAG_SUPPORTED =
+      AttributeDescriptor.singularSimple("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether Etag resource versions are " +
+          "supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor AUTH_SCHEME_NAME =
+      AttributeDescriptor.singularSimple("name",
+          AttributeDescriptor.DataType.STRING,
+          "The common authentication scheme name.",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor AUTH_SCHEME_DESCRIPTION =
+      AttributeDescriptor.singularSimple("description",
+          AttributeDescriptor.DataType.STRING,
+          "A description of the Authentication Scheme.",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
+  private static final AttributeDescriptor AUTH_SCHEME_SPEC_URL =
+      AttributeDescriptor.singularSimple("specUrl",
+          AttributeDescriptor.DataType.STRING,
+          "A HTTP addressable URL pointing to the Authentication Scheme's " +
+          "specification.",
+          SCIMConstants.SCHEMA_URI_CORE, true, false, false);
+  private static final AttributeDescriptor AUTH_SCHEME_DOCUMENTATION_URL =
+      AttributeDescriptor.singularSimple("documentationUrl",
+          AttributeDescriptor.DataType.STRING,
+          "A HTTP addressable URL pointing to the Authentication Scheme's " +
+          "usage documentation.",
+          SCIMConstants.SCHEMA_URI_CORE, true, false, false);
+  private static final AttributeDescriptor PATCH_CONFIG =
+      AttributeDescriptor.singularComplex(
+          "patch",
+          "A complex type that specifies PATCH configuration options",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          PATCH_SUPPORTED);
+  private static final AttributeDescriptor BULK_CONFIG =
+      AttributeDescriptor.singularComplex(
+          "bulk",
+          "A complex type that specifies BULK configuration options",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          BULK_SUPPORTED, BULK_MAX_OPERATIONS, BULK_MAX_PAYLOAD_SIZE);
+  private static final AttributeDescriptor FILTER_CONFIG =
+      AttributeDescriptor.singularComplex(
+          "filter",
+          "A complex type that specifies Filter configuration options",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          FILTER_SUPPORTED, FILTER_MAX_RESULTS);
+  private static final AttributeDescriptor CHANGE_PASSWORD_CONFIG =
+      AttributeDescriptor.singularComplex("changePassword",
+          "A complex type that specifies Change Password configuration options",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          CHANGE_PASSWORD_SUPPORTED);
+  private static final AttributeDescriptor SORT_CONFIG =
+      AttributeDescriptor.singularComplex("sort",
+          "A complex type that specifies Sort configuration options",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          SORT_SUPPORTED);
+  private static final AttributeDescriptor ETAG_CONFIG =
+      AttributeDescriptor.singularComplex("etag",
+          "A complex type that specifies Etag configuration options",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          ETAG_SUPPORTED);
+  private static final AttributeDescriptor AUTH_SCHEMES =
+      AttributeDescriptor.pluralComplex("authenticationSchemes",
+          "A complex type that specifies supported Authentication Scheme " +
+          "properties.",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, null,
+          AUTH_SCHEME_NAME, AUTH_SCHEME_DESCRIPTION, AUTH_SCHEME_SPEC_URL,
+          AUTH_SCHEME_DOCUMENTATION_URL);
+
   //// 10.  Resource Schema ////
 
   private static final AttributeDescriptor RESOURCE_NAME =
@@ -443,7 +564,7 @@ public class CoreSchema
   private static final AttributeDescriptor RESOURCE_QUERY_ENDPOINT =
       AttributeDescriptor.singularSimple("queryEndpoint",
           AttributeDescriptor.DataType.STRING,
-          "The Resource's HTTP addressable endpoint relative to the " +
+          "The Resource's HTTP addressable query endpoint relative to the " +
               "Base URL",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
 
@@ -580,6 +701,24 @@ public class CoreSchema
    * The SCIM Resource Schema.
    */
   public static final ResourceDescriptor RESOURCE_SCHEMA_DESCRIPTOR;
+
+
+  /**
+   * The SCIM Service Provider Configuration Schema.
+   */
+  public static final ResourceDescriptor
+      SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR =
+      ResourceDescriptor.create(
+          SCIMConstants.RESOURCE_NAME_SERVICE_PROVIDER_CONFIG,
+          "The Service Provider Configuration Resource enables a Service " +
+          "Provider to expose its compliance with the SCIM specification in " +
+          "a standardized form as well as provide additional implementation " +
+          "details to Consumers",
+          SCIMConstants.SCHEMA_URI_CORE,
+          SCIMConstants.RESOURCE_NAME_SERVICE_PROVIDER_CONFIG,
+          CONFIG_DOCUMENTATION_URL, PATCH_CONFIG, BULK_CONFIG, FILTER_CONFIG,
+          CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG, AUTH_SCHEMES);
+
 
   /**
    * The SCIM User Schema.

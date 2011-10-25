@@ -158,9 +158,17 @@ public class SCIMEndpoint<R extends BaseResource>
                final String... requestedAttributes)
       throws SCIMException
   {
-    URI uri =
-        UriBuilder.fromUri(scimService.getBaseURL()).path(
-            resourceDescriptor.getName()).path(id).build();
+    final UriBuilder uriBuilder = UriBuilder.fromUri(scimService.getBaseURL());
+    uriBuilder.path(resourceDescriptor.getName());
+
+    // The ServiceProviderConfig is a special case where the id is not
+    // specified.
+    if (id != null)
+    {
+      uriBuilder.path(id);
+    }
+
+    URI uri = uriBuilder.build();
     org.apache.wink.client.Resource clientResource = client.resource(uri);
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);

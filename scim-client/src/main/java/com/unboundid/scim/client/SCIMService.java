@@ -20,9 +20,11 @@ package com.unboundid.scim.client;
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
+import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.SCIMException;
 import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.RestClient;
 
@@ -98,9 +100,10 @@ public class SCIMService
   }
 
   /**
-   * Retrieve all service provider supported resources.
+   * Returns a SCIMEndpoint for the Schemas endpoint. This endpoint allows for
+   * the retrieval of schema for all service provider supported resources.
    *
-   * @return All service provider supported resources.
+   * @return The SCIMEndpoint for the Schemas endpoint.
    */
   public SCIMEndpoint<ResourceDescriptor> getResourceSchemaEndpoint()
   {
@@ -108,6 +111,29 @@ public class SCIMService
         CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
         ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
   }
+
+
+
+  /**
+   * Retrieves the Service Provider Config from the SCIM service provider.
+   *
+   * @return  The Service Provider Config.
+   *
+   * @throws SCIMException  If the Service Provider Config could not be read.
+   */
+  public ServiceProviderConfig getServiceProviderConfig()
+      throws SCIMException
+  {
+    final SCIMEndpoint<ServiceProviderConfig> endpoint =
+        getEndpoint(CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR,
+                ServiceProviderConfig.SERVICE_PROVIDER_CONFIG_RESOURCE_FACTORY);
+
+    // The ServiceProviderConfig is a special case where there is only a
+    // single resource at the endpoint, so the id is not specified.
+    return endpoint.get(null);
+  }
+
+
 
   /**
    * Retrieves the SCIM Service Provider URL.

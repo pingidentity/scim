@@ -144,4 +144,29 @@ public abstract class AttributeValueResolver<T>
           return SCIMAttributeValue.createBinaryValue(value);
         }
       };
+
+  /**
+   * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
+   * to/from <code>Integer</code> instances.
+   */
+  public static final AttributeValueResolver<Integer> INTEGER_RESOLVER =
+      new AttributeValueResolver<Integer>() {
+        /**
+         * {@inheritDoc}
+         */
+        public Integer toInstance(final SCIMAttributeValue value) {
+          return value.getLongValue().intValue();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public SCIMAttributeValue fromInstance(
+            final AttributeDescriptor attributeDescriptor,
+            final Integer value) {
+          return SCIMAttributeValue.createStringValue(String.valueOf(value));
+        }
+      };
+
+
 }

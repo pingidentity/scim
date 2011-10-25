@@ -53,6 +53,13 @@ public final class SCIMConstants
       "urn:scim:schemas:extension:enterprise:1.0";
 
   /**
+   * The resource name for the Service Provider Configuration in the core
+   * schema.
+   */
+  public static final String RESOURCE_NAME_SERVICE_PROVIDER_CONFIG =
+      "ServiceProviderConfig";
+
+  /**
    * The resource name for the Group resource in the core schema.
    */
   public static final String RESOURCE_NAME_GROUP = "Group";

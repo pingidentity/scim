@@ -13,10 +13,12 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.client.SCIMEndpoint;
 import com.unboundid.scim.client.SCIMService;
+import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Name;
+import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
@@ -317,7 +319,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     UserResource returnedUser = userEndpoint.update(user);
     assertTrue(returnedUser.getId().equalsIgnoreCase(
-                                      "uid=testModifyWithPut," + baseDN));
+        "uid=testModifyWithPut," + baseDN));
     assertEquals(returnedUser.getUserName(), "testModifyWithPut");
     assertEquals(returnedUser.getName().getFormatted(), "Test User");
     assertEquals(returnedUser.getName().getGivenName(), "Test");
@@ -787,6 +789,35 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
         "set-plugin-prop",
         "--plugin-name", "scim-plugin",
         "--remove", "extension-argument:maxResults=" + maxResults);
+  }
+
+
+
+  /**
+   * Tests the Service Provider Config endpoint.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testServiceProviderConfig() throws Exception
+  {
+    final ServiceProviderConfig config = service.getServiceProviderConfig();
+
+    // These assertions need to be updated as optional features are implemented.
+    assertFalse(config.getPatchConfig().isSupported());
+    assertFalse(config.getBulkConfig().isSupported());
+    assertTrue(config.getFilterConfig().isSupported());
+    assertTrue(config.getFilterConfig().getMaxResults() > 0);
+    assertFalse(config.getChangePasswordConfig().isSupported());
+    assertFalse(config.getSortConfig().isSupported());
+    assertFalse(config.getETagConfig().isSupported());
+    assertTrue(config.getAuthenticationSchemes().size() > 0);
+
+    for (final AuthenticationScheme s : config.getAuthenticationSchemes())
+    {
+      assertNotNull(s.getName());
+      assertNotNull(s.getDescription());
+    }
   }
 
 }

@@ -39,6 +39,9 @@ public class SCIMApplication extends WinkApplication
   static
   {
     CLASSES.add(MonitorResource.class);
+    CLASSES.add(ServiceProviderConfigResource.class);
+    CLASSES.add(XMLServiceProviderConfigResource.class);
+    CLASSES.add(JSONServiceProviderConfigResource.class);
   }
 
   private final Set<Object> instances;
