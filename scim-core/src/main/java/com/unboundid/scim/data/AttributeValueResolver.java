@@ -119,5 +119,29 @@ public abstract class AttributeValueResolver<T>
         }
       };
 
+  /**
+   * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
+   * to/from <code>byte[]</code> instances.
+   */
+  public static final AttributeValueResolver<byte[]> BINARY_RESOLVER =
+      new AttributeValueResolver<byte[]>() {
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public byte[] toInstance(final SCIMAttributeValue value) {
+          return value.getBinaryValue();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SCIMAttributeValue fromInstance(
+            final AttributeDescriptor attributeDescriptor,
+            final byte[] value) {
+          return SCIMAttributeValue.createBinaryValue(value);
+        }
+      };
 }

@@ -82,6 +82,13 @@ public final class AttributeDescriptor {
       }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+      return super.toString().toLowerCase();
+    }
   }
 
   static final class SubAttributeDescriptorResolver

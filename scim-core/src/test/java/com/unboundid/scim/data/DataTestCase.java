@@ -164,12 +164,12 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue meta1Attr =
         SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
-                    metaDescriptor.getSubAttribute("created"),
-                    SCIMAttributeValue.createDateValue(date)),
-                SCIMAttribute.createSingularAttribute(
-                    metaDescriptor.getSubAttribute("lastModified"),
-                    SCIMAttributeValue.createDateValue(date)));
+            SCIMAttribute.createSingularAttribute(
+                metaDescriptor.getSubAttribute("created"),
+                SCIMAttributeValue.createDateValue(date)),
+            SCIMAttribute.createSingularAttribute(
+                metaDescriptor.getSubAttribute("lastModified"),
+                SCIMAttributeValue.createDateValue(date)));
 
     SCIMAttributeValue meta2Attr =
         Meta.META_RESOLVER.fromInstance(metaDescriptor, meta1);
@@ -191,7 +191,6 @@ public class DataTestCase extends SCIMTestCase
   @Test
   public void testManager() throws Exception
   {
-    Date date = new Date();
     final Manager manager1 = new Manager("id1", "Bob");
 
     final AttributeDescriptor managerDescriptor =
@@ -200,12 +199,12 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue manager1Attr =
         SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
-                    managerDescriptor.getSubAttribute("managerId"),
-                    SCIMAttributeValue.createStringValue("id1")),
-                SCIMAttribute.createSingularAttribute(
-                    managerDescriptor.getSubAttribute("displayName"),
-                    SCIMAttributeValue.createStringValue("Bob")));
+            SCIMAttribute.createSingularAttribute(
+                managerDescriptor.getSubAttribute("managerId"),
+                SCIMAttributeValue.createStringValue("id1")),
+            SCIMAttribute.createSingularAttribute(
+                managerDescriptor.getSubAttribute("displayName"),
+                SCIMAttributeValue.createStringValue("Bob")));
 
     SCIMAttributeValue manager2Attr =
         Manager.MANAGER_RESOLVER.fromInstance(managerDescriptor, manager1);
@@ -217,5 +216,47 @@ public class DataTestCase extends SCIMTestCase
 
     assertEquals(manager1, manager2);
     assertEquals(manager1.hashCode(), manager2.hashCode());
+  }
+
+  /**
+   * Test the Entry model class.
+   *
+   * @throws Exception if an error occurs.
+   */
+  @Test
+  public void testEntry() throws Exception
+  {
+    final Entry<String> entry1 = new Entry<String>("test@test.com",
+        "work", true, "display");
+
+    final AttributeDescriptor emailsDescriptor =
+        CoreSchema.USER_DESCRIPTOR.getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "emails");
+
+    final SCIMAttributeValue entry1Attr =
+        SCIMAttributeValue.createComplexValue(
+                SCIMAttribute.createSingularAttribute(
+                    emailsDescriptor.getSubAttribute("value"),
+                    SCIMAttributeValue.createStringValue("test@test.com")),
+                SCIMAttribute.createSingularAttribute(
+                    emailsDescriptor.getSubAttribute("type"),
+                    SCIMAttributeValue.createStringValue("work")),
+                SCIMAttribute.createSingularAttribute(
+                    emailsDescriptor.getSubAttribute("primary"),
+                    SCIMAttributeValue.createBooleanValue(true)),
+                SCIMAttribute.createSingularAttribute(
+                    emailsDescriptor.getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue("display")));
+
+    SCIMAttributeValue entry2Attr =
+        Entry.STRINGS_RESOLVER.fromInstance(emailsDescriptor, entry1);
+
+    assertEquals(entry1Attr, entry2Attr);
+    assertEquals(entry1Attr.hashCode(), entry2Attr.hashCode());
+
+    Entry<String> entry2 = Entry.STRINGS_RESOLVER.toInstance(entry1Attr);
+
+    assertEquals(entry1, entry2);
+    assertEquals(entry1.hashCode(), entry2.hashCode());
   }
 }

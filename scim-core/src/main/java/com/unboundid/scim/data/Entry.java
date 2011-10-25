@@ -51,9 +51,11 @@ public final class Entry<T>
               value.getSingularSubAttributeValue("type", STRING_RESOLVER);
           Boolean p =
               value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+          String d =
+              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
 
 
-          return new Entry<String>(v, t, p == null ? false : p);
+          return new Entry<String>(v, t, p == null ? false : p, d);
         }
 
         /**
@@ -64,7 +66,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<String> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(3);
+              new ArrayList<SCIMAttribute>(4);
 
           if (value.value != null)
           {
@@ -90,11 +92,19 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 
+          if(value.display != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue(value.display)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
 
-    /**
+  /**
    * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
    * to/from <code>Boolean</code> valued <code>Entry</code> instances.
    */
@@ -106,10 +116,17 @@ public final class Entry<T>
          */
         @Override
         public Entry<Boolean> toInstance(final SCIMAttributeValue value) {
-          return new Entry<Boolean>(
-              value.getSingularSubAttributeValue("value", BOOLEAN_RESOLVER),
-              value.getSingularSubAttributeValue("type", STRING_RESOLVER),
-              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER));
+          Boolean v =
+              value.getSingularSubAttributeValue("value", BOOLEAN_RESOLVER);
+          String t =
+              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+          Boolean p =
+              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+          String d =
+              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+
+
+          return new Entry<Boolean>(v, t, p == null ? false : p, d);
         }
 
         /**
@@ -120,7 +137,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<Boolean> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(3);
+              new ArrayList<SCIMAttribute>(4);
 
           if (value.value != null)
           {
@@ -146,11 +163,90 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 
+          if(value.display != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue(value.display)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
 
-    /**
+  /**
+   * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
+   * to/from <code>byte[]</code> valued <code>Entry</code> instances.
+   */
+  public static final AttributeValueResolver<Entry<byte[]>>
+      BINARIES_RESOLVER =
+      new AttributeValueResolver<Entry<byte[]>>() {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Entry<byte[]> toInstance(final SCIMAttributeValue value) {
+          byte[] v =
+              value.getSingularSubAttributeValue("value", BINARY_RESOLVER);
+          String t =
+              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+          Boolean p =
+              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+          String d =
+              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+
+
+          return new Entry<byte[]>(v, t, p == null ? false : p, d);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SCIMAttributeValue fromInstance(
+            final AttributeDescriptor attributeDescriptor,
+            final Entry<byte[]> value) throws InvalidResourceException {
+          final List<SCIMAttribute> subAttributes =
+              new ArrayList<SCIMAttribute>(4);
+
+          if (value.value != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("value"),
+                    SCIMAttributeValue.createBinaryValue(value.value)));
+          }
+
+          if (value.primary)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("primary"),
+                    SCIMAttributeValue.createBooleanValue(value.primary)));
+          }
+
+          if (value.type != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("type"),
+                    SCIMAttributeValue.createStringValue(value.type)));
+          }
+
+          if(value.display != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue(value.display)));
+          }
+
+          return SCIMAttributeValue.createComplexValue(subAttributes);
+        }
+      };
+
+  /**
    * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
    * to/from <code>Date</code> valued <code>Entry</code> instances.
    */
@@ -162,11 +258,17 @@ public final class Entry<T>
          */
         @Override
         public Entry<Date> toInstance(final SCIMAttributeValue value) {
-          return new Entry<Date>(
-              value.getSingularSubAttributeValue("value", DATE_RESOLVER),
-              value.getSingularSubAttributeValue("type", STRING_RESOLVER),
-              value.getSingularSubAttributeValue("primary",
-                  BOOLEAN_RESOLVER));
+          Date v =
+              value.getSingularSubAttributeValue("value", DATE_RESOLVER);
+          String t =
+              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+          Boolean p =
+              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+          String d =
+              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+
+
+          return new Entry<Date>(v, t, p == null ? false : p, d);
         }
 
         /**
@@ -177,7 +279,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<Date> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(3);
+              new ArrayList<SCIMAttribute>(4);
 
           if (value.value != null)
           {
@@ -203,6 +305,14 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.type)));
           }
 
+          if(value.display != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.createSingularAttribute(
+                    attributeDescriptor.getSubAttribute("display"),
+                    SCIMAttributeValue.createStringValue(value.display)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
@@ -211,6 +321,18 @@ public final class Entry<T>
   private T value;
   private boolean primary;
   private String type;
+  private String display;
+
+  /**
+   * Constructs an entry instance with the specified information.
+   *
+   * @param value The primary value of this attribute.
+   * @param type The type of attribute for this instance, usually used to
+   *             label the preferred function of the given resource.
+   */
+  public Entry(final T value, final String type) {
+    this(value, type, false);
+  }
 
   /**
    * Constructs an entry instance with the specified information.
@@ -226,6 +348,26 @@ public final class Entry<T>
     this.value = value;
     this.type = type;
     this.primary = primary;
+  }
+
+  /**
+   * Constructs an entry instance with the specified information.
+   *
+   * @param value The primary value of this attribute.
+   * @param type The type of attribute for this instance, usually used to
+   *             label the preferred function of the given resource.
+   * @param primary A Boolean value indicating whether this instance of the
+   *                Plural Attribute is the primary or preferred value of for
+   *                this attribute.
+   * @param display A human readable name, primarily used for display purposes
+   *                where the value is an opaque or complex type such as an id.
+   */
+  public Entry(final T value, final String type, final boolean primary,
+               final String display) {
+    this.value = value;
+    this.type = type;
+    this.primary = primary;
+    this.display = display;
   }
 
   /**
@@ -293,6 +435,26 @@ public final class Entry<T>
   }
 
   /**
+   * Retrieves the human readable name, primarily used for display purposes
+   * where the value is an opaque or complex type such as an id.
+   *
+   * @return The human readable name.
+   */
+  public String getDisplay() {
+    return this.display;
+  }
+
+  /**
+   * Sets the human readable name, primarily used for display purposes
+   * where the value is an opaque or complex type such as an id.
+   *
+   * @param display The human readable name.
+   */
+  public void setDisplay(final String display) {
+    this.display = display;
+  }
+
+  /**
    * {@inheritDoc}
    */
   @Override
@@ -315,6 +477,10 @@ public final class Entry<T>
     if (value != null ? !value.equals(entry.value) : entry.value != null) {
       return false;
     }
+    if (display != null ? !display.equals(entry.display) :
+        entry.display != null) {
+      return false;
+    }
 
     return true;
   }
@@ -327,6 +493,7 @@ public final class Entry<T>
     int result = value != null ? value.hashCode() : 0;
     result = 31 * result + (primary ? 1 : 0);
     result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (display != null ? display.hashCode() : 0);
     return result;
   }
 
@@ -339,6 +506,7 @@ public final class Entry<T>
         "value=" + value +
         ", type='" + type + '\'' +
         ", primary=" + primary +
+        ", display=" + display +
         '}';
   }
 }
