@@ -22,6 +22,7 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -214,6 +215,31 @@ public final class SCIMAttribute
    */
   public boolean matchesFilter(final SCIMFilter filter)
   {
+    final SCIMFilterType type = filter.getFilterType();
+    final List<SCIMFilter> components = filter.getFilterComponents();
+
+    switch(type)
+    {
+      case AND:
+        for(SCIMFilter component : components)
+        {
+          if(!matchesFilter(component))
+          {
+            return false;
+          }
+        }
+        return true;
+      case OR:
+        for(SCIMFilter component : components)
+        {
+          if(matchesFilter(component))
+          {
+            return true;
+          }
+        }
+        return false;
+    }
+
     if (!filter.getFilterAttribute().getAttributeSchema().equals(getSchema()))
     {
       return false;
@@ -251,7 +277,7 @@ public final class SCIMAttribute
               // than 'emails.email'.
               final AttributePath childPath =
                   new AttributePath(schema, a.getName(), subAttributeName);
-              if (a.matchesFilter(new SCIMFilter(filter.getFilterType(),
+              if (a.matchesFilter(new SCIMFilter(type,
                                                  childPath,
                                                  filter.getFilterValue(),
                                                  filter.isQuoteFilterValue(),
@@ -277,7 +303,7 @@ public final class SCIMAttribute
             final AttributePath childPath =
                 new AttributePath(schema, subAttributeName, null);
             return a.matchesFilter(
-                new SCIMFilter(filter.getFilterType(),
+                new SCIMFilter(type,
                                childPath,
                                filter.getFilterValue(),
                                filter.isQuoteFilterValue(),
@@ -287,8 +313,7 @@ public final class SCIMAttribute
       }
       else
       {
-        final SCIMFilterType filterType = filter.getFilterType();
-        if (filterType == SCIMFilterType.PRESENCE)
+        if (type == SCIMFilterType.PRESENCE)
         {
           return true;
         }
@@ -299,7 +324,7 @@ public final class SCIMAttribute
         if (attributeValue != null)
         {
           // TODO support caseExact attributes
-          switch (filterType)
+          switch (type)
           {
             case EQUALITY:
               return attributeValue.equalsIgnoreCase(filterValue);

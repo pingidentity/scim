@@ -508,6 +508,7 @@ public final class ConfigurableResourceMapper extends ResourceMapper
                   filterAttribute.getAttributeName()))
           {
             attributeMapper = attributeMappers.get(attributeDescriptor);
+            break;
           }
         }
         if (attributeMapper != null)

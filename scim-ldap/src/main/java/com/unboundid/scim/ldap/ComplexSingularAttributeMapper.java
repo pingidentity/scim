@@ -96,82 +96,79 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
   {
-    final String subAttributeName =
-        filter.getFilterAttribute().getSubAttributeName();
-    if (subAttributeName == null)
+    final SCIMFilterType type = filter.getFilterType();
+
+    String ldapAttributeType = null;
+    String ldapFilterValue = null;
+
+    if(type != SCIMFilterType.AND && type != SCIMFilterType.OR)
     {
-      return Filter.createORFilter();
+      final String subAttributeName =
+             filter.getFilterAttribute().getSubAttributeName();
+      if(subAttributeName == null)
+      {
+        return Filter.createORFilter(); //match nothing
+      }
+
+      final SubAttributeTransformation subAttributeTransformation =
+                                              map.get(subAttributeName);
+      if(subAttributeTransformation == null)
+      {
+        return Filter.createORFilter(); //match nothing
+      }
+
+      final AttributeTransformation attributeTransformation =
+                subAttributeTransformation.getAttributeTransformation();
+
+      ldapAttributeType = attributeTransformation.getLdapAttribute();
+
+      if(filter.getFilterValue() != null)
+      {
+        final Transformation t = attributeTransformation.getTransformation();
+        ldapFilterValue = t.toLDAPFilterValue(filter.getFilterValue());
+      }
     }
 
-    final SubAttributeTransformation subAttributeTransformation =
-        map.get(subAttributeName);
-    if (subAttributeTransformation == null)
-    {
-      return Filter.createORFilter();
-    }
+    List<SCIMFilter> components = filter.getFilterComponents();
+    List<Filter> ldapComponents = new ArrayList<Filter>();
 
-    final AttributeTransformation attributeTransformation =
-        subAttributeTransformation.getAttributeTransformation();
-    final String ldapAttributeType = attributeTransformation.getLdapAttribute();
-
-    final String ldapFilterValue;
-    if (filter.getFilterValue() != null)
+    switch(type)
     {
-      final Transformation t = attributeTransformation.getTransformation();
-      ldapFilterValue = t.toLDAPFilterValue(filter.getFilterValue());
-    }
-    else
-    {
-      ldapFilterValue = null;
-    }
-
-    final SCIMFilterType filterType = filter.getFilterType();
-    switch (filterType)
-    {
+      case AND:
+        for(SCIMFilter component : components)
+        {
+          Filter f = toLDAPFilter(component);
+          ldapComponents.add(f);
+        }
+        return Filter.createANDFilter(ldapComponents);
+      case OR:
+        for(SCIMFilter component : components)
+        {
+          Filter f = toLDAPFilter(component);
+          ldapComponents.add(f);
+        }
+        return Filter.createORFilter(ldapComponents);
       case EQUALITY:
-      {
-        return Filter.createEqualityFilter(ldapAttributeType,
-                                           ldapFilterValue);
-      }
-
+        return Filter.createEqualityFilter(ldapAttributeType, ldapFilterValue);
       case CONTAINS:
-      {
-        return Filter.createSubstringFilter(ldapAttributeType,
-                                            null,
-                                            new String[] { ldapFilterValue },
-                                            null);
-      }
-
-      case STARTS_WITH:
-      {
-        return Filter.createSubstringFilter(ldapAttributeType,
-                                            ldapFilterValue,
-                                            null,
-                                            null);
-      }
-
+        return Filter.createSubstringFilter(ldapAttributeType, null,
+                                    new String[] { ldapFilterValue }, null);
       case PRESENCE:
-      {
         return Filter.createPresenceFilter(ldapAttributeType);
-      }
-
+      case STARTS_WITH:
+        return Filter.createSubstringFilter(ldapAttributeType, ldapFilterValue,
+                                              null, null);
       case GREATER_THAN:
       case GREATER_OR_EQUAL:
-      {
         return Filter.createGreaterOrEqualFilter(ldapAttributeType,
-                                                 ldapFilterValue);
-      }
-
+                ldapFilterValue);
       case LESS_THAN:
       case LESS_OR_EQUAL:
-      {
         return Filter.createLessOrEqualFilter(ldapAttributeType,
-                                              ldapFilterValue);
-      }
-
+                ldapFilterValue);
       default:
         throw new RuntimeException(
-            "Filter type " + filterType + " is not supported");
+                "Filter type " + type + " is not supported");
     }
   }
 

@@ -101,55 +101,83 @@ public class PluralAttributeMapper extends AttributeMapper
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
   {
-    final SCIMFilterType filterType = filter.getFilterType();
+    final SCIMFilterType type = filter.getFilterType();
 
-    String subAttributeName =
+    List<String> ldapFilterTypes = null;
+    List<String> ldapFilterValues = null;
+
+    if(type != SCIMFilterType.AND && type != SCIMFilterType.OR)
+    {
+      String subAttributeName =
         filter.getFilterAttribute().getSubAttributeName();
-    if (subAttributeName == null)
-    {
-      subAttributeName = "value";
-    }
-
-    final List<SubAttributeTransformation> selectedTransformations =
-        new ArrayList<SubAttributeTransformation>();
-    for (final PluralValueMapper pluralValueMapper : valueMappers.values())
-    {
-      for (final SubAttributeTransformation sat :
-          pluralValueMapper.getTransformations())
+      if (subAttributeName == null)
       {
-        if (sat.getSubAttribute().equalsIgnoreCase(subAttributeName))
+        subAttributeName = "value";
+      }
+
+      final List<SubAttributeTransformation> selectedTransformations =
+          new ArrayList<SubAttributeTransformation>();
+      for (final PluralValueMapper pluralValueMapper : valueMappers.values())
+      {
+        for (final SubAttributeTransformation sat :
+            pluralValueMapper.getTransformations())
         {
-          selectedTransformations.add(sat);
+          if (sat.getSubAttribute().equalsIgnoreCase(subAttributeName))
+          {
+            selectedTransformations.add(sat);
+          }
         }
       }
-    }
 
-    if (selectedTransformations.isEmpty())
-    {
-      return Filter.createORFilter();
-    }
-
-    final List<String> ldapFilterTypes =
-        new ArrayList<String>(selectedTransformations.size());
-    final List<String> ldapFilterValues =
-        new ArrayList<String>(selectedTransformations.size());
-
-    for (final SubAttributeTransformation sat : selectedTransformations)
-    {
-      final AttributeTransformation at = sat.getAttributeTransformation();
-      final String filterValue;
-      if (filter.getFilterValue() != null)
+      if (selectedTransformations.isEmpty())
       {
-        filterValue = at.getTransformation().toLDAPFilterValue(
-            filter.getFilterValue());
-      }
-      else
-      {
-        filterValue = null;
+        return Filter.createORFilter(); //match nothing
       }
 
-      ldapFilterTypes.add(at.getLdapAttribute());
-      ldapFilterValues.add(filterValue);
+      ldapFilterTypes = new ArrayList<String>(selectedTransformations.size());
+      ldapFilterValues = new ArrayList<String>(selectedTransformations.size());
+
+      for (final SubAttributeTransformation sat : selectedTransformations)
+      {
+        final AttributeTransformation at = sat.getAttributeTransformation();
+        final String filterValue;
+        if (filter.getFilterValue() != null)
+        {
+          filterValue = at.getTransformation().toLDAPFilterValue(
+              filter.getFilterValue());
+        }
+        else
+        {
+          filterValue = null;
+        }
+
+        ldapFilterTypes.add(at.getLdapAttribute());
+        ldapFilterValues.add(filterValue);
+      }
+    }
+    else
+    {
+      final List<SCIMFilter> components = filter.getFilterComponents();
+      final List<Filter> ldapComponents = new ArrayList<Filter>();
+      switch(type)
+      {
+        case AND:
+          for(SCIMFilter component : components)
+          {
+            Filter f = toLDAPFilter(component);
+            ldapComponents.add(f);
+          }
+          return Filter.createANDFilter(ldapComponents);
+        case OR:
+          for(SCIMFilter component : components)
+          {
+            Filter f = toLDAPFilter(component);
+            ldapComponents.add(f);
+          }
+          return Filter.createORFilter(ldapComponents);
+        default:
+          throw new RuntimeException("Invalid filter type: " + type);
+      }
     }
 
     final List<Filter> filterComponents =
@@ -159,7 +187,7 @@ public class PluralAttributeMapper extends AttributeMapper
       final String ldapAttributeType = ldapFilterTypes.get(i);
       final String ldapFilterValue = ldapFilterValues.get(i);
 
-      switch (filterType)
+      switch (type)
       {
         case EQUALITY:
         {
@@ -211,7 +239,7 @@ public class PluralAttributeMapper extends AttributeMapper
 
         default:
           throw new RuntimeException(
-              "Filter type " + filterType + " is not supported");
+              "Filter type " + type + " is not supported");
       }
     }
 

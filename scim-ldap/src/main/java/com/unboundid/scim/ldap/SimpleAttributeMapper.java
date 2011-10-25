@@ -29,8 +29,10 @@ import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SimpleValue;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 
@@ -90,8 +92,31 @@ public class SimpleAttributeMapper extends AttributeMapper
       filterValue = null;
     }
 
+    List<SCIMFilter> components = filter.getFilterComponents();
+    List<Filter> ldapComponents = new ArrayList<Filter>();
+
     switch (filterType)
     {
+      case AND:
+      {
+        for(SCIMFilter component : components)
+        {
+          Filter f = toLDAPFilter(component);
+          ldapComponents.add(f);
+        }
+        return Filter.createANDFilter(ldapComponents);
+      }
+
+      case OR:
+      {
+        for(SCIMFilter component : components)
+        {
+          Filter f = toLDAPFilter(component);
+          ldapComponents.add(f);
+        }
+        return Filter.createORFilter(ldapComponents);
+      }
+
       case EQUALITY:
       {
         return Filter.createEqualityFilter(ldapAttributeType, filterValue);

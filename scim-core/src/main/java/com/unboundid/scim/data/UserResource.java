@@ -339,7 +339,7 @@ public class UserResource extends BaseResource
   {
     try {
       setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-          "displayName", AttributeValueResolver.STRING_RESOLVER, locale);
+          "locale", AttributeValueResolver.STRING_RESOLVER, locale);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
       throw new RuntimeException(e);

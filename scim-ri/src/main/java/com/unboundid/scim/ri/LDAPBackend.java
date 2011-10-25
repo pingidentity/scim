@@ -475,7 +475,8 @@ public abstract class LDAPBackend
     {
       final LDAPInterface ldapInterface =
           getLDAPInterface(request.getAuthenticatedUserID());
-      final Entry currentEntry = ldapInterface.getEntry(entryDN);
+      final Entry currentEntry = ldapInterface.getEntry(entryDN,
+                                                        requestAttributes);
       if (currentEntry == null)
       {
         throw new ResourceNotFoundException(
@@ -485,25 +486,32 @@ public abstract class LDAPBackend
       mods.addAll(mapper.toLDAPModifications(currentEntry,
           request.getResourceObject()));
 
-      final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
-      modifyRequest.addControl(
-          new PostReadRequestControl(requestAttributes));
-      addCommonControls(request, modifyRequest);
-      final LDAPResult addResult = ldapInterface.modify(modifyRequest);
-
-      final PostReadResponseControl c = getPostReadResponseControl(addResult);
-      if (c != null)
+      if(!mods.isEmpty())
       {
-        modifiedEntry = c.getEntry();
+        final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
+        modifyRequest.addControl(new PostReadRequestControl(requestAttributes));
+        addCommonControls(request, modifyRequest);
+        final LDAPResult addResult = ldapInterface.modify(modifyRequest);
+
+        final PostReadResponseControl c = getPostReadResponseControl(addResult);
+        if (c != null)
+        {
+          modifiedEntry = c.getEntry();
+        }
+      }
+      else
+      {
+        //No modifications necessary (the mod set is empty)
+        modifiedEntry = currentEntry;
       }
 
       final BaseResource resource =
-          new BaseResource(request.getResourceDescriptor());
-
+                  new BaseResource(request.getResourceDescriptor());
       setIdAndMetaAttributes(resource, request, modifiedEntry);
 
       final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
-          modifiedEntry, request.getAttributes(), ldapInterface);
+        modifiedEntry, request.getAttributes(), ldapInterface);
+
       for (final SCIMAttribute a : scimAttributes)
       {
         resource.getScimObject().addAttribute(a);

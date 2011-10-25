@@ -20,6 +20,12 @@
         <dependencySet>
             <outputDirectory>lib/extensions</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
+            <excludes>
+              <!-- Make sure we don't include any jars that the server already has. -->
+              <exclude>com.unboundid.product:ldapsdk</exclude>
+              <exclude>com.unboundid.product.ds:server-sdk</exclude>
+              <exclude>javax.activation:activation</exclude>
+            </excludes> 
         </dependencySet>
     </dependencySets>
 </assembly>

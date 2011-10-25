@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -287,6 +288,31 @@ public class SCIMObject
    */
   public boolean matchesFilter(final SCIMFilter filter)
   {
+    final SCIMFilterType type = filter.getFilterType();
+    final List<SCIMFilter> components = filter.getFilterComponents();
+
+    switch(type)
+    {
+      case AND:
+        for(SCIMFilter component : components)
+        {
+          if(!matchesFilter(component))
+          {
+            return false;
+          }
+        }
+        return true;
+      case OR:
+        for(SCIMFilter component : components)
+        {
+          if(matchesFilter(component))
+          {
+            return true;
+          }
+        }
+        return false;
+    }
+
     final String schema = filter.getFilterAttribute().getAttributeSchema();
     final String attributeName = filter.getFilterAttribute().getAttributeName();
 

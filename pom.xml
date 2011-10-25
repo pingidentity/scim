@@ -127,31 +127,4 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>nexus-repo</id>
-            <name>Engineering Releases Repository</name>
-            <url>http://maven-eng:8080/nexus/content/groups/public</url>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>fail</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>nexus-repo-snapshots</id>
-            <name>Engineering Snapshots Repository</name>
-            <url>http://maven-eng:8080/nexus/content/groups/public-snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <checksumPolicy>fail</checksumPolicy>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>
