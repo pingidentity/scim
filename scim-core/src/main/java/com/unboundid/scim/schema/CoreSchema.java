@@ -741,4 +741,9 @@ public class CoreSchema
           "SCIM provides a schema for representing groups",
           SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_GROUPS,
           GROUP_DISPLAY_NAME, MEMBERS);
+
+  /**
+   * The SCIM AttributeDescriptor for the meta attribute.
+   */
+  public static final AttributeDescriptor META_DESCRIPTOR = META;
 }

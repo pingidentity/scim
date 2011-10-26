@@ -22,7 +22,10 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+
+import javax.xml.bind.DatatypeConverter;
 
 
 /**
@@ -318,23 +321,343 @@ public final class SCIMAttribute
           return true;
         }
 
-        final String filterValue = filter.getFilterValue();
-        String attributeValue = v.getStringValue();
+        final AttributeDescriptor.DataType dataType =
+                  attributeDescriptor.getDataType();
 
-        if (attributeValue != null)
+        String stringValue = null;
+        Long longValue = null;
+        Date dateValue = null;
+        Boolean boolValue = null;
+        byte[] binValue = null;
+
+        switch(dataType)
         {
-          // TODO support caseExact attributes
-          switch (type)
-          {
-            case EQUALITY:
-              return attributeValue.equalsIgnoreCase(filterValue);
-            case CONTAINS:
-              return attributeValue.toLowerCase().contains(
-                  filterValue.toLowerCase());
-            case STARTS_WITH:
-              return attributeValue.toLowerCase().startsWith(
-                  filterValue.toLowerCase());
-          }
+          case BINARY:
+            binValue = v.getBinaryValue();
+            if(binValue == null)
+            {
+              return false;
+            }
+            break;
+          case BOOLEAN:
+            boolValue = v.getBooleanValue();
+            if(boolValue == null)
+            {
+              return false;
+            }
+            break;
+          case DATETIME:
+            dateValue = v.getDateValue();
+            if(dateValue == null)
+            {
+              return false;
+            }
+            break;
+          case INTEGER:
+            longValue = v.getLongValue();
+            if(longValue == null)
+            {
+              return false;
+            }
+            break;
+          case STRING:
+            stringValue = v.getStringValue();
+            if(stringValue == null)
+            {
+              return false;
+            }
+            break;
+          default:
+            throw new RuntimeException(
+                    "Invalid attribute data type: " + dataType);
+        }
+
+        final String filterValue = filter.getFilterValue();
+
+        // TODO support caseExact attributes
+
+        //Note: The code below explicitly unboxes the objects before comparing
+        //      to avoid auto-unboxing and make it clear that it is just
+        //      primitives being compared.
+        switch (type)
+        {
+          case EQUALITY:
+            if(stringValue != null)
+            {
+              return stringValue.equalsIgnoreCase(filterValue);
+            }
+            else if(longValue != null)
+            {
+              try
+              {
+                long filterValueLong = Long.parseLong(filterValue);
+                return longValue.longValue() == filterValueLong;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
+            else if(boolValue != null)
+            {
+              return boolValue.booleanValue() ==
+                            Boolean.parseBoolean(filterValue);
+            }
+            else if(dateValue != null)
+            {
+              try
+              {
+                SimpleValue filterValueDate = new SimpleValue(filterValue);
+                return dateValue.equals(filterValueDate.getDateValue());
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            else if(binValue != null)
+            {
+              //TODO: It's debatable whether this ought to just check whether
+              //      the base-64 encoded string is equal, rather than checking
+              //      if the bytes are equal. This seems more correct.
+              try
+              {
+                byte[] filterValueBytes =
+                            DatatypeConverter.parseBase64Binary(filterValue);
+                return Arrays.equals(binValue, filterValueBytes);
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            return false;
+          case CONTAINS:
+            if(stringValue != null)
+            {
+              return StaticUtils.toLowerCase(stringValue).contains(
+                        StaticUtils.toLowerCase(filterValue));
+            }
+            else if(longValue != null)
+            {
+              try
+              {
+                long filterValueLong = Long.parseLong(filterValue);
+                return longValue.longValue() == filterValueLong;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
+            else if(boolValue != null)
+            {
+              return boolValue.booleanValue() ==
+                            Boolean.parseBoolean(filterValue);
+            }
+            else if(dateValue != null)
+            {
+              try
+              {
+                SimpleValue filterValueDate = new SimpleValue(filterValue);
+                return dateValue.equals(filterValueDate.getDateValue());
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            else if(binValue != null)
+            {
+              try
+              {
+                byte[] filterValueBytes =
+                          DatatypeConverter.parseBase64Binary(filterValue);
+                return Arrays.equals(binValue, filterValueBytes);
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            return false;
+          case STARTS_WITH:
+            if(stringValue != null)
+            {
+              return StaticUtils.toLowerCase(stringValue).startsWith(
+                        StaticUtils.toLowerCase(filterValue));
+            }
+            else if(longValue != null)
+            {
+              return false;
+            }
+            else if(boolValue != null)
+            {
+              return false;
+            }
+            else if(dateValue != null)
+            {
+              return false;
+            }
+            else if(binValue != null)
+            {
+              return false;
+            }
+            return false;
+          case GREATER_THAN:
+            if(stringValue != null)
+            {
+              return stringValue.compareToIgnoreCase(filterValue) > 0;
+            }
+            else if(longValue != null)
+            {
+              try
+              {
+                long filterValueLong = Long.parseLong(filterValue);
+                return longValue.longValue() > filterValueLong;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
+            else if(boolValue != null)
+            {
+              return false;
+            }
+            else if(dateValue != null)
+            {
+              try
+              {
+                SimpleValue filterValueDate = new SimpleValue(filterValue);
+                return dateValue.after(filterValueDate.getDateValue());
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            else if(binValue != null)
+            {
+              return false;
+            }
+            return false;
+          case GREATER_OR_EQUAL:
+            if(stringValue != null)
+            {
+              return stringValue.compareToIgnoreCase(filterValue) >= 0;
+            }
+            else if(longValue != null)
+            {
+              try
+              {
+                long filterValueLong = Long.parseLong(filterValue);
+                return longValue.longValue() >= filterValueLong;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
+            else if(boolValue != null)
+            {
+              return false;
+            }
+            else if(dateValue != null)
+            {
+              try
+              {
+                SimpleValue filterValueDate = new SimpleValue(filterValue);
+                return dateValue.after(filterValueDate.getDateValue()) ||
+                         dateValue.equals(filterValueDate.getDateValue());
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            else if(binValue != null)
+            {
+              return false;
+            }
+            return false;
+          case LESS_THAN:
+            if(stringValue != null)
+            {
+              return stringValue.compareToIgnoreCase(filterValue) < 0;
+            }
+            else if(longValue != null)
+            {
+              try
+              {
+                long filterValueLong = Long.parseLong(filterValue);
+                return longValue.longValue() < filterValueLong;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
+            else if(boolValue != null)
+            {
+              return false;
+            }
+            else if(dateValue != null)
+            {
+              try
+              {
+                SimpleValue filterValueDate = new SimpleValue(filterValue);
+                return dateValue.before(filterValueDate.getDateValue());
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            else if(binValue != null)
+            {
+              return false;
+            }
+            return false;
+          case LESS_OR_EQUAL:
+            if(stringValue != null)
+            {
+              return stringValue.compareToIgnoreCase(filterValue) <= 0;
+            }
+            else if(longValue != null)
+            {
+              try
+              {
+                long filterValueLong = Long.parseLong(filterValue);
+                return longValue.longValue() <= filterValueLong;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
+            else if(boolValue != null)
+            {
+              return false;
+            }
+            else if(dateValue != null)
+            {
+              try
+              {
+                SimpleValue filterValueDate = new SimpleValue(filterValue);
+                return dateValue.before(filterValueDate.getDateValue()) ||
+                         dateValue.equals(filterValueDate.getDateValue());
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
+            }
+            else if(binValue != null)
+            {
+              return false;
+            }
+            return false;
         }
       }
     }

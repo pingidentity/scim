@@ -445,17 +445,14 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
    * Tests the list/query resources functionality using all the different
    * filter types.
    *
-   * This test is disabled until we support for the "meta" object in a
-   * SCIMFilter. Currently any "meta" expressions in a filter are discarded,
-   * because there is no AttributeMapper for Meta.
-   *
    * @throws Exception If the test fails.
    */
-  @Test(enabled = false)
+  @Test
   public void testFiltering() throws Exception
   {
     final SimpleDateFormat formatter =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
     long halfwayTime = 0;
 
@@ -467,6 +464,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
       {
         //Record the time when half the entries have been created
         halfwayTime = System.currentTimeMillis();
+        TestCaseUtils.sleep(100);
       }
 
       final String uid = "filterUser." + i;

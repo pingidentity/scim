@@ -27,6 +27,7 @@ import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -109,6 +110,14 @@ public final class ConfigurableResourceMapper extends ResourceMapper
    */
   private final Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
 
+  /**
+   * The internal AttributeMapper for the Meta object. This allows the
+   * toLDAPFilter() code to generate LDAP filters which are based on the meta
+   * information, even though there are no explicit mappings for Meta set up in
+   * resources.xml.
+   */
+  private final AttributeMapper metaAttributeMapper;
+
 
 
   /**
@@ -131,9 +140,10 @@ public final class ConfigurableResourceMapper extends ResourceMapper
       final Collection<AttributeMapper> mappers,
       final Collection<DerivedAttribute> derivedAttributes)
   {
-    this.resourceDescriptor = resourceDescriptor;
-    this.addParameters     = addParameters;
-    this.searchBaseDN      = searchBaseDN;
+    this.resourceDescriptor  = resourceDescriptor;
+    this.addParameters       = addParameters;
+    this.searchBaseDN        = searchBaseDN;
+    this.metaAttributeMapper = createMetaAttributeMapper();
 
     try
     {
@@ -500,15 +510,24 @@ public final class ConfigurableResourceMapper extends ResourceMapper
         final AttributePath filterAttribute = filter.getFilterAttribute();
         // TODO: This should have a reference to the resource descriptor
         AttributeMapper attributeMapper = null;
-        for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
+
+        if(metaAttributeMapper.getAttributeDescriptor().getName()
+                .equalsIgnoreCase(filterAttribute.getAttributeName()))
         {
-          if(attributeDescriptor.getSchema().equals(
-              filterAttribute.getAttributeSchema()) &&
-              attributeDescriptor.getName().equalsIgnoreCase(
-                  filterAttribute.getAttributeName()))
+          attributeMapper = metaAttributeMapper;
+        }
+        else
+        {
+          for(AttributeDescriptor attrDescriptor : attributeMappers.keySet())
           {
-            attributeMapper = attributeMappers.get(attributeDescriptor);
-            break;
+            if(attrDescriptor.getSchema().equals(
+                filterAttribute.getAttributeSchema()) &&
+                  attrDescriptor.getName().equalsIgnoreCase(
+                    filterAttribute.getAttributeName()))
+            {
+              attributeMapper = attributeMappers.get(attrDescriptor);
+              break;
+            }
           }
         }
         if (attributeMapper != null)
@@ -780,5 +799,29 @@ public final class ConfigurableResourceMapper extends ResourceMapper
       Debug.debugCodingError(e);
       throw e;
     }
+  }
+
+
+  /**
+   * Gets an AttributeMapper for the SCIM Meta object (part of the core schema).
+   *
+   * @return an AttributeMapper
+   */
+  private AttributeMapper createMetaAttributeMapper()
+  {
+    List<SubAttributeTransformation> transformations =
+              new ArrayList<SubAttributeTransformation>();
+
+    final Transformation dateTransformation =
+        Transformation.create(GeneralizedTimeTransformation.class.getName());
+
+    transformations.add(new SubAttributeTransformation("created",
+           new AttributeTransformation("createTimestamp", dateTransformation)));
+
+    transformations.add(new SubAttributeTransformation("lastModified",
+           new AttributeTransformation("modifyTimestamp", dateTransformation)));
+
+    return new ComplexSingularAttributeMapper(
+                    CoreSchema.META_DESCRIPTOR, transformations);
   }
 }
