@@ -67,8 +67,10 @@ import com.unboundid.scim.sdk.UnsupportedOperationException;
 import com.unboundid.util.StaticUtils;
 
 import javax.ws.rs.core.UriBuilder;
+
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -83,6 +85,22 @@ import java.util.logging.Level;
 public abstract class LDAPBackend
     extends SCIMBackend
 {
+  /**
+   * The default set of timestamp attributes that we need to ask for when
+   * making requests to the underlying LDAP server.
+   */
+  private static final Set<String> DEFAULT_LASTMOD_ATTRS;
+
+  static
+  {
+    HashSet<String> attrs = new HashSet<String>(2);
+    attrs.add("createTimestamp");
+    attrs.add("modifyTimestamp");
+    DEFAULT_LASTMOD_ATTRS = Collections.unmodifiableSet(attrs);
+  }
+
+
+
   /**
    * Create a new instance of an LDAP backend.
    */
@@ -121,6 +139,22 @@ public abstract class LDAPBackend
 
 
 
+  /**
+   * Get the names of the create-time and modify-time attributes to request
+   * when searching the directory server. Typically these will be
+   * 'createTimestamp' and 'modifyTimestamp', but this can be overridden by
+   * subclasses.
+   *
+   * @return the set of last-mod attributes to request when performing
+   *         operations which return an entry from the directory server.
+   */
+  protected Set<String> getLastModAttributes()
+  {
+    return DEFAULT_LASTMOD_ATTRS;
+  }
+
+
+
   @Override
   public BaseResource getResource(
       final GetResourceRequest request) throws SCIMException
@@ -135,8 +169,7 @@ public abstract class LDAPBackend
       final Set<String> requestAttributeSet = new HashSet<String>();
       requestAttributeSet.addAll(
           mapper.toLDAPAttributeTypes(request.getAttributes()));
-      requestAttributeSet.add("createTimestamp");
-      requestAttributeSet.add("modifyTimestamp");
+      requestAttributeSet.addAll(getLastModAttributes());
 
       final String[] requestAttributes = new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
@@ -203,8 +236,7 @@ public abstract class LDAPBackend
 
       final Set<String> requestAttributeSet =
           resourceMapper.toLDAPAttributeTypes(request.getAttributes());
-      requestAttributeSet.add("createTimestamp");
-      requestAttributeSet.add("modifyTimestamp");
+      requestAttributeSet.addAll(getLastModAttributes());
       requestAttributeSet.add("objectClass");
 
       final int maxResults = getConfig().getMaxResults();
@@ -335,8 +367,7 @@ public abstract class LDAPBackend
     final Set<String> requestAttributeSet = new HashSet<String>();
     requestAttributeSet.addAll(
         mapper.toLDAPAttributeTypes(request.getAttributes()));
-    requestAttributeSet.add("createTimestamp");
-    requestAttributeSet.add("modifyTimestamp");
+    requestAttributeSet.addAll(getLastModAttributes());
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -462,8 +493,7 @@ public abstract class LDAPBackend
     final Set<String> requestAttributeSet = new HashSet<String>();
     requestAttributeSet.addAll(
         mapper.toLDAPAttributeTypes(request.getAttributes()));
-    requestAttributeSet.add("createTimestamp");
-    requestAttributeSet.add("modifyTimestamp");
+    requestAttributeSet.addAll(getLastModAttributes());
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -553,35 +583,67 @@ public abstract class LDAPBackend
       resource.setId(entry.getDN());
     }
 
-    final String createTimestamp =
-        entry.getAttributeValue("createTimestamp");
     Date createDate = null;
-    if (createTimestamp != null)
+    Attribute createTimeAttr = entry.getAttribute("createTimestamp");
+    if(createTimeAttr != null && createTimeAttr.hasValue())
     {
       try
       {
-        createDate = StaticUtils.decodeGeneralizedTime(createTimestamp);
+        createDate =
+              StaticUtils.decodeGeneralizedTime(createTimeAttr.getValue());
       }
-      catch (ParseException e)
+      catch(ParseException e)
       {
         Debug.debugException(e);
-        // Unlikely to come here.
+      }
+    }
+    else
+    {
+      createTimeAttr = entry.getAttribute("ds-create-time");
+
+      if (createTimeAttr != null && createTimeAttr.hasValue())
+      {
+        try
+        {
+          createDate =
+              expandCompactTimestamp(createTimeAttr.getValueByteArray());
+        }
+        catch (Exception e)
+        {
+          Debug.debugException(e);
+        }
       }
     }
 
-    final String modifyTimestamp =
-        entry.getAttributeValue("modifyTimestamp");
     Date modifyDate = null;
-    if (modifyTimestamp != null)
+    Attribute modifyTimeAttr = entry.getAttribute("modifyTimestamp");
+    if(modifyTimeAttr != null && modifyTimeAttr.hasValue())
     {
       try
       {
-        modifyDate = StaticUtils.decodeGeneralizedTime(modifyTimestamp);
+        modifyDate =
+              StaticUtils.decodeGeneralizedTime(modifyTimeAttr.getValue());
       }
-      catch (ParseException e)
+      catch(ParseException e)
       {
         Debug.debugException(e);
-        // Unlikely to come here.
+      }
+    }
+    else
+    {
+      modifyTimeAttr = entry.getAttribute("ds-update-time");
+
+      if (modifyTimeAttr != null && modifyTimeAttr.hasValue())
+      {
+        try
+        {
+          modifyDate =
+              expandCompactTimestamp(modifyTimeAttr.getValueByteArray());
+        }
+        catch (Exception e)
+        {
+          Debug.debugException(e);
+        }
       }
     }
 
@@ -740,5 +802,39 @@ public abstract class LDAPBackend
         attributes.add(filter.getAttributeName());
         break;
     }
+  }
+
+
+
+  /**
+   * This method expands the compact representation of the 'ds-create-time' and
+   * 'ds-update-time' attributes from the Directory Server. These are stored in
+   * a compact 8-byte format and decoded using the
+   * ExpandTimestampVirtualAttributeProvider in the core server. This code is
+   * modeled after that code, so consider updating this if that class changes.
+   *
+   * We would prefer to use the 'createTimestamp' and 'modifyTimestamp' virtual
+   * attributes so as not to have to perform this conversion, but unfortunately
+   * there is a bug with retrieving them using the PostReadResponseControl,
+   * which is what we use when creating a new entry via SCIM.
+   *
+   * @param bytes the compact representation of the timestamp to expand. This
+   *        must be exactly 8 bytes long.
+   * @return a Date instance constructed from long represented by the bytes
+   */
+  private static Date expandCompactTimestamp(final byte[] bytes)
+  {
+    if(bytes.length != 8)
+    {
+      throw new IllegalArgumentException("The compact representation of the " +
+              "timestamp was not 8 bytes");
+    }
+    long l = 0L;
+    for (int i=0; i < 8; i++)
+    {
+      l <<= 8;
+      l |= (bytes[i] & 0xFF);
+    }
+    return new Date(l);
   }
 }

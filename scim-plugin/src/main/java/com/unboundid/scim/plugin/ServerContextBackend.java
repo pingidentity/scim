@@ -5,6 +5,10 @@
 
 package com.unboundid.scim.plugin;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.unboundid.directory.sdk.common.types.InternalConnection;
 import com.unboundid.directory.sdk.common.types.ServerContext;
 import com.unboundid.ldap.sdk.BindResult;
@@ -29,8 +33,25 @@ public class ServerContextBackend extends LDAPBackend
   /**
    * The server context provided by the extension.
    */
-  private ServerContext serverContext;
+  private final ServerContext serverContext;
 
+  /**
+   * The set of timestamp attributes that we need to ask for when
+   * making requests to the underlying LDAP server. We are overriding this for
+   * this backend because we use the PostReadResponseControl to get the entry,
+   * but there is a bug with this control in that it won't return virtual
+   * attribute values such as 'createTimestamp' or 'modifyTimestamp'. So instead
+   * we use the compact form of the lastMod attributes.
+   */
+  private static final Set<String> LASTMOD_ATTRS;
+
+  static
+  {
+    HashSet<String> attrs = new HashSet<String>(2);
+    attrs.add("ds-create-time");
+    attrs.add("ds-update-time");
+    LASTMOD_ATTRS = Collections.unmodifiableSet(attrs);
+  }
 
 
   /**
@@ -121,6 +142,17 @@ public class ServerContextBackend extends LDAPBackend
   public void finalizeBackend()
   {
     // No action required.
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected Set<String> getLastModAttributes()
+  {
+    return LASTMOD_ATTRS;
   }
 
 

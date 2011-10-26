@@ -193,34 +193,31 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
             Manager.MANAGER_RESOLVER).getDisplayName(), "Mr. Manager");
 
-    //Do the insert and verify what is returned from the endpoint
-    Date startDate = new Date();
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual createTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
     UserResource returnedUser = userEndpoint.insert(user);
+    Date createTime = returnedUser.getMeta().getCreated();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    //Verify what is returned from the SDK
     assertNotNull(returnedUser);
     assertEquals(returnedUser.getUserName(), user.getUserName());
     assertEquals(returnedUser.getName().getFormatted(),
                    user.getName().getFormatted());
     assertEquals(returnedUser.getTitle(), user.getTitle());
-
-    //FIXME: no LDAP schema for UserType
-    //assertEquals(returnedUser.getUserType(), user.getUserType());
-
+    assertEquals(returnedUser.getUserType(), user.getUserType());
     assertEquals(returnedUser.getEmails().iterator().next().getValue(),
                    user.getEmails().iterator().next().getValue());
+    assertTrue(createTime.after(startTime));
+    assertTrue(createTime.before(endTime));
 
-    //FIXME: no LDAP schema for Locale
+    //TODO: no LDAP schema for Locale
     //assertEquals(returnedUser.getLocale(), user.getLocale());
 
-    //FIXME: no LDAP schema for TimeZone
+    //TODO: no LDAP schema for TimeZone
     //assertEquals(returnedUser.getTimeZone(), user.getTimeZone());
-
-    assertNotNull(returnedUser.getMeta());
-
-    //FIXME: Meta comes back non-null, but the "created" and "lastModified"
-    //       fields are null for some reason.
-    //assertNotNull(returnedUser.getMeta().getCreated());
-    //assertTrue(returnedUser.getMeta().getCreated().after(startDate));
-    //assertTrue(returnedUser.getMeta().getCreated().before(new Date()));
 
     //FIXME: attribute value always comes back null here
     //assertEquals(returnedUser.getSingularAttributeValue(
@@ -246,7 +243,6 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     System.out.println("Full user entry:\n" + entry.toLDIFString());
 
-
     //Create a new group
     SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
     GroupResource group = grpEndpoint.newResource();
@@ -261,15 +257,15 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                           returnedUser.getId());
 
     //Do the insert and verify what is returned from the endpoint
-    startDate = new Date();
+    startTime = new Date(System.currentTimeMillis() - 500);
     GroupResource returnedGroup = grpEndpoint.insert(group);
+    createTime = returnedGroup.getMeta().getCreated();
+    endTime = new Date(System.currentTimeMillis() + 500);
+
     assertNotNull(returnedGroup);
     assertEquals(returnedGroup.getDisplayName(), group.getDisplayName());
-    assertNotNull(returnedGroup.getMeta());
-    //FIXME: as with the UserResource, the meta comes back empty
-    //assertNotNull(returnedGroup.getMeta().getCreated());
-    //assertTrue(returnedGroup.getMeta().getCreated().after(startDate));
-    //assertTrue(returnedGroup.getMeta().getCreated().before(new Date()));
+    assertTrue(createTime.after(startTime));
+    assertTrue(createTime.before(endTime));
     assertEquals(returnedGroup.getMembers().iterator().next().getValue(),
                     group.getMembers().iterator().next().getValue());
 
@@ -283,7 +279,6 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
             entry.toLDIFString());
 
     System.out.println("Full group entry:\n" + entry.toLDIFString());
-
   }
 
 
@@ -317,7 +312,15 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     user.setTitle("Chief of Operations");
     user.setDisplayName("Test Modify with PUT");
 
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual modifyTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
     UserResource returnedUser = userEndpoint.update(user);
+    Date lastModified = returnedUser.getMeta().getLastModified();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    //Verify what is returned from the SDK
     assertTrue(returnedUser.getId().equalsIgnoreCase(
         "uid=testModifyWithPut," + baseDN));
     assertEquals(returnedUser.getUserName(), "testModifyWithPut");
@@ -326,6 +329,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(returnedUser.getName().getFamilyName(), "User");
     assertEquals(returnedUser.getTitle(), user.getTitle());
     assertEquals(returnedUser.getDisplayName(), user.getDisplayName());
+    assertTrue(lastModified.after(startTime));
+    assertTrue(lastModified.before(endTime));
 
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry =
@@ -422,7 +427,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                       "sn: User",
                       "title: Chief of R&D",
                       "displayName: John Smith",
-                      "mail: jsmith@example.com");
+                      "mail: jsmith@example.com",
+                      "employeeType: Engineer");
 
     //Try to retrieve the user via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -430,6 +436,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertNotNull(user);
     assertTrue(user.getId().equalsIgnoreCase("uid=testRetrieve," + baseDN));
     assertEquals(user.getUserName(), "testRetrieve");
+    assertEquals(user.getUserType(), "Engineer");
     assertEquals(user.getName().getFormatted(), "testRetrieve");
     assertEquals(user.getName().getGivenName(), "Test");
     assertEquals(user.getName().getFamilyName(), "User");
@@ -583,7 +590,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @Test(enabled = false)
   public void testChangePassword() throws Exception
   {
-
+    //This is an optional feature of the spec and has not been implemented yet.
   }
 
 

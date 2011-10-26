@@ -119,7 +119,9 @@
 
     <attribute name="userType" readOnly="false" required="false">
       <description>TBD</description>
-      <simple dataType="string" caseExact="false"/>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="employeeType"/>
+      </simple>
     </attribute>
 
     <attribute name="preferredLanguage" readOnly="false" required="false">
