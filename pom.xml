@@ -16,7 +16,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
         <project.build.genSourceDirectory>${basedir}/target/generated/src/main/java</project.build.genSourceDirectory>
+        <!-- Note that SCIM-RI overrides this and uses the Standard Edition of LDAP SDK. If
+             you change this, consider changing that as well. -->
         <unboundid.ldapsdk.version>2.2.1-ce-SNAPSHOT</unboundid.ldapsdk.version>
+        <unboundid.serversdk.version>3.1.0.0</unboundid.serversdk.version>
     </properties>
 
     <distributionManagement>
@@ -83,10 +86,27 @@
                     </execution>
                 </executions>
                 <configuration>
-                   <headerLocation>config/ubid.sourceheader</headerLocation>
+                    <headerLocation>config/ubid.sourceheader</headerLocation>
                     <failOnViolation>true</failOnViolation>
                     <propertyExpansion>cacheFile=${project.build.directory}/checkstyle-cachefile</propertyExpansion>
                     <logViolationsToConsole>true</logViolationsToConsole>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                  <archive>
+                    <manifestEntries>
+                      <Implementation-Title>${project.name}</Implementation-Title>
+                      <Implementation-Version>${project.version}</Implementation-Version>
+                      <Implementation-Vendor>UnboundID Corp.</Implementation-Vendor>
+                      <Implementation-URL>http://www.unboundid.com</Implementation-URL>
+                      <Extension-Support-Contact>support@unboundid.com</Extension-Support-Contact>
+                      <UnboundID-Server-SDK-Version>${unboundid.serversdk.version}</UnboundID-Server-SDK-Version>
+                    </manifestEntries>
+                  </archive>
                 </configuration>
             </plugin>
             <plugin>
