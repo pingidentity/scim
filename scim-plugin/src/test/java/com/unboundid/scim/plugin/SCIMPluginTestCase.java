@@ -443,6 +443,17 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(user.getDisplayName(), "John Smith");
     assertEquals(user.getEmails().iterator().next().getValue(),
                                                 "jsmith@example.com");
+
+    //Retrieve the user with only the 'userName' attribute
+    user = userEndpoint.get("uid=testRetrieve," + baseDN, null, "userName");
+    assertNotNull(user);
+    assertTrue(user.getId().equalsIgnoreCase("uid=testRetrieve," + baseDN));
+    assertEquals(user.getUserName(), "testRetrieve");
+    assertNull(user.getUserType());
+    assertNull(user.getName());
+    assertNull(user.getTitle());
+    assertNull(user.getDisplayName());
+    assertNull(user.getEmails());
   }
 
 

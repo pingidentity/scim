@@ -546,6 +546,9 @@ public final class ConfigurableResourceMapper extends ResourceMapper
   {
     final AttributePath attributePath = sortParameters.getSortBy();
     AttributeMapper attributeMapper = null;
+
+    //TODO: handle if scimAttributeType == meta here
+
     for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
     {
       if(attributeDescriptor.getSchema().equals(
