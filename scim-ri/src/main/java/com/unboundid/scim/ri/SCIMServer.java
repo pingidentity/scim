@@ -33,6 +33,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.util.StaticUtils;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
 import org.eclipse.jetty.http.security.Constraint;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.Debug.debugException;
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
@@ -142,6 +144,39 @@ public class SCIMServer
         this.registerResourceMapper(resourceMapper);
       }
     }
+  }
+
+
+
+  /**
+   * Indicates whether the provided configuration is valid for the SCIM server.
+   *
+   * @param  serverConfig         The configuration for the SCIM server.
+   * @param  unacceptableReasons  A list that can be updated with reasons that
+   *                              the proposed configuration is not acceptable.
+   *
+   * @return  {@code true} if the proposed configuration is acceptable, or
+   *          {@code false} if not.
+   */
+  public boolean isConfigAcceptable(final SCIMServerConfig serverConfig,
+                                    final List<String> unacceptableReasons)
+  {
+    boolean acceptable = true;
+
+    try
+    {
+      ConfigurableResourceMapper.parse(serverConfig.getResourcesFile());
+    }
+    catch (Exception e)
+    {
+      debugException(e);
+      unacceptableReasons.add(
+          "The resources file '" + serverConfig.getResourcesFile() +
+          "' cannot be parsed: " + StaticUtils.getExceptionMessage(e));
+      acceptable = false;
+    }
+
+    return acceptable;
   }
 
 

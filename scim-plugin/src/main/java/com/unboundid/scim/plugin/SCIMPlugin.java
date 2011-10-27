@@ -28,8 +28,6 @@ import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,23 +48,10 @@ public final class SCIMPlugin
        extends Plugin
 {
   /**
-   * The DN of a SCIM root user that has proxied auth privilege.
-   * TODO: it was too hard to get proxied auth to work
-   */
-//  public static final String SCIM_USER_DN =
-//      "cn=SCIM User,cn=Root DNs,cn=config";
-
-  /**
    * The name of the argument that will be used to define the resources
    * supported by the SCIM protocol interface.
    */
   private static final String ARG_NAME_USE_RESOURCES_FILE = "useResourcesFile";
-
-  /**
-   * The name of the argument that will be used to specify the XML schema
-   * supported by the SCIM protocol interface.
-   */
-  private static final String ARG_NAME_USE_SCHEMA_FILE = "useSchemaFile";
 
   /**
    * The name of the argument that will be used to specify the port number of
@@ -185,15 +170,6 @@ public final class SCIMPlugin
                          "supported by the SCIM interface.",
                          true, true, true, false));
 
-    // This argument is not required because built-in defaults are available.
-    parser.addArgument(
-        new FileArgument(null, ARG_NAME_USE_SCHEMA_FILE,
-                         false, 1, "{path}",
-                         "The path to a file or directory containing XML " +
-                         "schema definitions for resources supported by " +
-                         "the SCIM interface.",
-                         true, true, false, false));
-
     // This is a required argument.
     parser.addArgument(
         new IntegerArgument(null, ARG_NAME_PORT,
@@ -287,34 +263,6 @@ public final class SCIMPlugin
 
     this.serverContext = serverContext;
 
-    // It was too hard to get Proxied Auth to work.
-//    final InternalConnection internalConnection =
-//        serverContext.getInternalRootConnection();
-//    if (internalConnection.getEntry(SCIM_USER_DN) == null)
-//    {
-//      try
-//      {
-//        internalConnection.add(
-//            "dn: " + SCIM_USER_DN,
-//            "objectClass: top",
-//            "objectClass: person",
-//            "objectClass: organizationalPerson",
-//            "objectClass: inetOrgPerson",
-//            "objectClass: ds-cfg-root-dn-user",
-//            "cn: SCIM User",
-//            "givenName: SCIM",
-//            "sn: User",
-//            "userPassword: password",
-//            "ds-cfg-inherit-default-root-privileges: false",
-//            "ds-privilege-name: proxied-auth");
-//      }
-//      catch (LDIFException e)
-//      {
-//        Debug.debugException(e);
-//        throw new LDAPException(ResultCode.OTHER, e);
-//      }
-//    }
-
     final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
 
     final SCIMServer scimServer = SCIMServer.getInstance();
@@ -395,7 +343,6 @@ public final class SCIMPlugin
     final StringArgument debugTypeArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
 
-    final Properties properties = new Properties();
     if (debugLevelArg.isPresent())
     {
       try
@@ -413,8 +360,6 @@ public final class SCIMPlugin
 
     if (debugTypeArg.isPresent())
     {
-      properties.setProperty(Debug.PROPERTY_DEBUG_TYPE,
-                             debugTypeArg.getValue());
       final StringTokenizer t =
           new StringTokenizer(debugTypeArg.getValue(), ", ");
       while (t.hasMoreTokens())
@@ -430,46 +375,12 @@ public final class SCIMPlugin
         }
       }
     }
-    Debug.initialize(properties);
 
-    final FileArgument useSchemaFileArg =
-         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_SCHEMA_FILE);
-
-    if (useSchemaFileArg.isPresent())
+    final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
+    if (!SCIMServer.getInstance().isConfigAcceptable(scimServerConfig,
+                                                     unacceptableReasons))
     {
-      final File f = useSchemaFileArg.getValue();
-      if (f.exists())
-      {
-        final ArrayList<File> schemaFiles = new ArrayList<File>(1);
-        if (f.isFile())
-        {
-          schemaFiles.add(f);
-        }
-        else
-        {
-          for (final File subFile : f.listFiles())
-          {
-            if (subFile.isFile())
-            {
-              schemaFiles.add(subFile);
-            }
-          }
-        }
-
-        if (schemaFiles.isEmpty())
-        {
-          unacceptableReasons.add("No schema files found at " +
-                                  useSchemaFileArg.toString());
-          acceptable = false;
-        }
-      }
-      else
-      {
-        unacceptableReasons.add("Schema file or directory " +
-                                useSchemaFileArg.toString() +
-                                " does not exist");
-        acceptable = false;
-      }
+      acceptable = false;
     }
 
     return acceptable;

@@ -799,6 +799,30 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
 
   /**
+   * Tests that an attempt to set an invalid configuration is handled correctly.
+   *
+   * @throws Exception If the test passes.
+   */
+  @Test(expectedExceptions = AssertionError.class)
+  public void testInvalidConfiguration() throws Exception
+  {
+    // Create a resources configuration that is not valid because it defines
+    // no resources.
+    final String resourcesFile = TestCaseUtils.createTempFile(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
+        "<scim-ldap:resources xmlns:" +
+        "scim-ldap=\"http://www.unboundid.com/scim-ldap\">",
+        "</scim-ldap:resources>");
+    instance.dsconfig(
+        "set-plugin-prop",
+        "--plugin-name", "scim-plugin",
+        "--set", "extension-argument:useResourcesFile=" + resourcesFile,
+        "--set", "extension-argument:port=" + TestCaseUtils.getFreePort());
+  }
+
+
+
+  /**
    * Tests the Service Provider Config endpoint.
    *
    * @throws Exception If the test fails.
