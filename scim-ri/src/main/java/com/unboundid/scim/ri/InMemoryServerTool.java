@@ -19,6 +19,7 @@ package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
+import com.unboundid.ldap.listener.InMemoryListenerConfig;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
@@ -63,12 +64,6 @@ import static com.unboundid.scim.ri.RIMessages.*;
  *       server.</LI>
  *   <LI>"--useResourcesFile {path}" -- specifies the path to an XML file
  *       containing resource definitions to use for the SCIM server.</LI>
- *   <LI>"-S {path}" or "--useSchemaFile {path}" -- specifies the path to a file
- *       or directory containing XML schema definitions to use for the
- *       SCIM server.  If the specified path represents a file, then it must be
- *       an XML file containing a valid XML schema.  If the path is a
- *       directory, then its files will be processed in lexicographic order by
- *       name.</LI>
  *   <LI>"-u {baseURI}" or "--baseURI {baseURI}" -- specifies a base URI to use
  *       for the SCIM server.  If no base URI is specified, then the default
  *       value '/' is used.</LI>
@@ -132,6 +127,9 @@ public class InMemoryServerTool
 
   // The argument used to specify the port on which the server should listen.
   private IntegerArgument portArgument;
+
+  // The argument used to specify the LDAP port.
+  private IntegerArgument ldapPortArgument;
 
   // The in-memory directory server instance that has been created by this tool.
   private InMemoryDirectoryServer directoryServer;
@@ -214,6 +212,7 @@ public class InMemoryServerTool
     useLdapSchemaFileArgument      = null;
     portArgument                   = null;
     maxResultsArgument             = null;
+    ldapPortArgument               = null;
   }
 
 
@@ -283,6 +282,11 @@ public class InMemoryServerTool
          INFO_MEM_SERVER_TOOL_ARG_DESC_BASE_URI.get(),
          Arrays.asList("/"));
     parser.addArgument(baseURIArgument);
+
+    ldapPortArgument = new IntegerArgument(null, "ldapPort", false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_LDAP_PORT.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_LDAP_PORT.get(), 0, 65535);
+    parser.addArgument(ldapPortArgument);
 
     baseDNArgument = new DNArgument('b', "baseDN", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_BASE_DN.get(),
@@ -405,8 +409,10 @@ public class InMemoryServerTool
     // Start the server.
     try
     {
+      directoryServer.startListening();
       scimServer.startListening();
-      out(INFO_MEM_SERVER_TOOL_LISTENING.get(scimServer.getListenPort()));
+      out(INFO_MEM_SERVER_TOOL_LISTENING.get(scimServer.getListenPort(),
+                                             directoryServer.getListenPort()));
     }
     catch (final Exception e)
     {
@@ -466,6 +472,13 @@ public class InMemoryServerTool
 
     final InMemoryDirectoryServerConfig serverConfig =
          new InMemoryDirectoryServerConfig(baseDNs);
+
+    if (ldapPortArgument.isPresent())
+    {
+      serverConfig.setListenerConfigs(
+          InMemoryListenerConfig.createLDAPConfig("default",
+                                                  ldapPortArgument.getValue()));
+    }
 
 
     // TODO: config argument for manager password
