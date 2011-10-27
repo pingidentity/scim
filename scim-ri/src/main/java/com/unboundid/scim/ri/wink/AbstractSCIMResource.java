@@ -21,6 +21,7 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
@@ -29,7 +30,6 @@ import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.Resources;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
@@ -179,9 +179,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       if (sortBy != null && !sortBy.isEmpty())
       {
         sortParameters =
-            new SortParameters(
-                SCIMAttributeType.fromQualifiedName(sortBy),
-                sortOrder);
+            new SortParameters(AttributePath.parse(sortBy), sortOrder);
       }
       else
       {

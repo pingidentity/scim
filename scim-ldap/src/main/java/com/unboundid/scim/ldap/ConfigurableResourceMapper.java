@@ -32,7 +32,6 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
@@ -545,14 +544,14 @@ public final class ConfigurableResourceMapper extends ResourceMapper
   @Override
   public Control toLDAPSortControl(final SortParameters sortParameters)
   {
-    final SCIMAttributeType scimAttributeType = sortParameters.getSortBy();
+    final AttributePath attributePath = sortParameters.getSortBy();
     AttributeMapper attributeMapper = null;
     for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
     {
       if(attributeDescriptor.getSchema().equals(
-          scimAttributeType.getSchema()) &&
+          attributePath.getAttributeSchema()) &&
           attributeDescriptor.getName().equalsIgnoreCase(
-              scimAttributeType.getName()))
+              attributePath.getAttributeName()))
       {
         attributeMapper = attributeMappers.get(attributeDescriptor);
       }
@@ -560,7 +559,7 @@ public final class ConfigurableResourceMapper extends ResourceMapper
     if (attributeMapper == null)
     {
       throw new RuntimeException("Cannot sort by attribute " +
-                                 scimAttributeType);
+                                 attributePath);
     }
 
     final String ldapAttribute = attributeMapper.toLDAPSortAttributeType();

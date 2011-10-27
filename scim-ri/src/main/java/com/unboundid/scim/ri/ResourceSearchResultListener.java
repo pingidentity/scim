@@ -23,11 +23,11 @@ import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
@@ -134,12 +134,12 @@ public class ResourceSearchResultListener implements SearchResultListener
           // Keep only the requested attributes.
           final BaseResource returnedResource =
               new BaseResource(request.getResourceDescriptor());
-          for (final SCIMAttributeType attributeType :
+          for (final AttributePath attributePath :
               request.getAttributes().getAttributeTypes())
           {
             final SCIMAttribute a =
-                scimObject.getAttribute(attributeType.getSchema(),
-                    attributeType.getName());
+                scimObject.getAttribute(attributePath.getAttributeSchema(),
+                    attributePath.getSubAttributeName());
             if (a != null)
             {
               returnedResource.getScimObject().addAttribute(a);

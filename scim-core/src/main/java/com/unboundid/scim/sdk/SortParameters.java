@@ -25,9 +25,10 @@ package com.unboundid.scim.sdk;
 public final class SortParameters
 {
   /**
-   * The attribute whose value is used to order the returned resources.
+   * The attribute or sub-attribute whose value is used to order the returned
+   * resources.
    */
-  private final SCIMAttributeType sortBy;
+  private final AttributePath sortBy;
 
   /**
    * The order in which the sortBy parameter is applied. e.g. ascending or
@@ -45,13 +46,29 @@ public final class SortParameters
   /**
    * Create a new instance of sort parameters.
    *
-   * @param sortBy    The attribute whose value is used to order the returned
-   *                  resources.
+   * @param sortBy    The attribute or sub-attribute whose value is used to
+   *                  order the returned resources.
    * @param sortOrder The order in which the sortBy parameter is applied. e.g.
    *                  ascending or descending, or {@code null} if no sort order
    *                  was specified.
    */
-  public SortParameters(final SCIMAttributeType sortBy, final String sortOrder)
+  public SortParameters(final String sortBy, final String sortOrder)
+  {
+    this(AttributePath.parse(sortBy), sortOrder);
+  }
+
+
+
+  /**
+   * Create a new instance of sort parameters.
+   *
+   * @param sortBy    The attribute or sub-attribute whose value is used to
+   *                  order the returned resources.
+   * @param sortOrder The order in which the sortBy parameter is applied. e.g.
+   *                  ascending or descending, or {@code null} if no sort order
+   *                  was specified.
+   */
+  public SortParameters(final AttributePath sortBy, final String sortOrder)
   {
     this.sortBy           = sortBy;
     this.sortOrder        = sortOrder;
@@ -62,12 +79,13 @@ public final class SortParameters
 
 
   /**
-   * Retrieve the attribute whose value is used to order the returned
-   * resources.
+   * Retrieve the attribute or sub-attribute whose value is used to order the
+   * returned resources.
    *
-   * @return The attribute whose value is used to order the returned resources.
+   * @return The attribute or sub-attribute whose value is used to order the
+   *         returned resources.
    */
-  public SCIMAttributeType getSortBy()
+  public AttributePath getSortBy()
   {
     return sortBy;
   }

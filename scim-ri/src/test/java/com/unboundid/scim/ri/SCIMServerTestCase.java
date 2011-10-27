@@ -32,7 +32,6 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.PageParameters;
 import org.testng.annotations.Test;
@@ -535,8 +534,7 @@ public class SCIMServerTestCase
           "User", sortValue, "password"));
     }
 
-    final SCIMAttributeType sortBy =
-        SCIMAttributeType.fromQualifiedName("userName");
+    final String sortBy = "userName";
     final String sortAscending = "ascending";
     final String sortDescending = "descending";
 

@@ -255,7 +255,7 @@ public class SCIMEndpoint<R extends BaseResource>
     if(sortParameters != null)
     {
       clientResource.queryParam("sortBy",
-          sortParameters.getSortBy().toQualifiedName());
+          sortParameters.getSortBy().toString());
       if(!sortParameters.isAscendingOrder())
       {
         clientResource.queryParam("sortOrder", sortParameters.getSortOrder());

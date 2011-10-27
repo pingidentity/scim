@@ -27,33 +27,33 @@ import java.util.List;
 
 /**
  * This class represents a list of query attributes taken from the attributes
- * query parameter. e.g. attributes=displayName,userName
+ * query parameter. e.g. attributes=name.formatted,userName
  */
 public class SCIMQueryAttributes
 {
   /**
-   * The set of attributes explicitly requested, or empty if all attributes are
-   * requested.
+   * The set of attributes or sub-attributes explicitly requested, or empty if
+   * all attributes and sub-attributes are requested.
    */
-  private final List<SCIMAttributeType> types;
+  private final List<AttributePath> types;
 
 
   /**
    * Create a new instance of query attributes from their string representation.
    *
-   * @param attributes     The set of attributes requested, or empty if all
-   *                       attributes are requested. The attributes must be
-   *                       qualified by their schema URI if they are not in the
-   *                       core schema.
+   * @param attributes     The set of attributes or sub-attributes requested,
+   *                       or empty if all attributes and sub-attributes are
+   *                       requested. The attributes must be qualified by their
+   *                       schema URI if they are not in the core schema.
    */
   public SCIMQueryAttributes(final String ... attributes)
   {
-    types = new ArrayList<SCIMAttributeType>();
+    types = new ArrayList<AttributePath>();
     if (attributes.length > 0)
     {
       for (final String a : attributes)
       {
-        types.add(SCIMAttributeType.fromQualifiedName(a));
+        types.add(AttributePath.parse(a));
       }
     }
   }
@@ -66,7 +66,7 @@ public class SCIMQueryAttributes
    * @return  The list of query attributes, or an empty list if all attributes
    *          are requested.
    */
-  public List<SCIMAttributeType> getAttributeTypes()
+  public List<AttributePath> getAttributeTypes()
   {
     return Collections.unmodifiableList(types);
   }
@@ -74,10 +74,11 @@ public class SCIMQueryAttributes
 
 
   /**
-   * Determine whether all attributes are requested by these query attributes.
+   * Determine whether all attributes and sub-attributes are requested by
+   * these query attributes.
    *
-   * @return  {@code true} if all attributes are requested, and {@code false}
-   *          otherwise.
+   * @return  {@code true} if all attributes and sub-attributes are requested,
+   *          and {@code false} otherwise.
    */
   public boolean allAttributesRequested()
   {
@@ -90,7 +91,7 @@ public class SCIMQueryAttributes
    * Determine whether the specified attribute is requested by these query
    * attributes.
    *
-   * @param attributeDescriptor  The attribute type for which to make the
+   * @param attributeDescriptor  The attribute for which to make the
    *                             determination.
    *
    * @return  {@code true} if the specified attribute is requested, or false
@@ -99,54 +100,22 @@ public class SCIMQueryAttributes
   public boolean isAttributeRequested(
       final AttributeDescriptor attributeDescriptor)
   {
-    return allAttributesRequested() || types.contains(new SCIMAttributeType(
-        attributeDescriptor.getSchema(), attributeDescriptor.getName()));
-
-  }
-
-
-
-  /**
-   * Determine whether the specified attribute is requested by these query
-   * attributes.
-   *
-   * @param schema  The URI of the schema to which the specified attribute
-   *                belongs.
-   * @param name    The name of the attribute for which to make the
-   *                determination.
-   *
-   * @return  {@code true} if the specified attribute is requested, or false
-   *          otherwise.
-   */
-  public boolean isAttributeRequested(final String schema, final String name)
-  {
     if (allAttributesRequested())
     {
       return true;
     }
 
-    return types.contains(new SCIMAttributeType(schema, name));
-  }
-
-
-
-  /**
-   * Determine whether the specified core schema attribute is requested by
-   * these query attributes.
-   *
-   * @param name    The name of the core schema attribute for which to make the
-   *                determination.
-   *
-   * @return  {@code true} if the specified attribute is requested, or false
-   *          otherwise.
-   */
-  public boolean isAttributeRequested(final String name)
-  {
-    if (allAttributesRequested())
+    for (final AttributePath p : types)
     {
-      return true;
+      if (p.getAttributeSchema().equals(attributeDescriptor.getSchema()) &&
+          p.getAttributeName().equalsIgnoreCase(attributeDescriptor.getName()))
+      {
+        return true;
+      }
     }
-
-    return types.contains(new SCIMAttributeType(name));
+    return false;
   }
+
+
+
 }

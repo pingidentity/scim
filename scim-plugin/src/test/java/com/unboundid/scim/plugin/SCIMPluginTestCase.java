@@ -23,7 +23,6 @@ import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
-import com.unboundid.scim.sdk.SCIMAttributeType;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Version;
@@ -731,7 +730,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     {
       final Resources<GroupResource> resources =
         groupEndpoint.query("displayName sw 'paginationGroup'",
-          new SortParameters(new SCIMAttributeType("displayName"), "ascending"),
+          new SortParameters("displayName", "ascending"),
           new PageParameters(startIndex, pageSize));
 
       assertEquals(resources.getTotalResults(), NUM_GROUPS);
@@ -751,7 +750,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     final long startIndex = NUM_GROUPS + 1;
     final Resources<GroupResource> resources =
         groupEndpoint.query("displayName sw 'paginationGroup'",
-          new SortParameters(new SCIMAttributeType("displayName"), "ascending"),
+          new SortParameters("displayName", "ascending"),
           new PageParameters(startIndex, pageSize));
     assertEquals(resources.getTotalResults(), NUM_GROUPS);
     assertEquals(resources.getItemsPerPage(), 0);
