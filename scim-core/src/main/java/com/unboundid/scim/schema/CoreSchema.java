@@ -119,10 +119,13 @@ public class CoreSchema
   {
     List<AttributeDescriptor> attributeList =
         new ArrayList<AttributeDescriptor>(attributes.length + 3);
+
+    // These attributes need to be in the same order as defined in the SCIM XML
+    // schema scim-core.xsd.
     attributeList.add(ID);
+    attributeList.add(META);
     attributeList.add(EXTERNAL_ID);
     attributeList.addAll(Arrays.asList(attributes));
-    attributeList.add(META);
     return attributeList;
   }
 
@@ -627,9 +630,9 @@ public class CoreSchema
           "A complex type that specifies the set of associated " +
               "Resource attributes", SCIMConstants.SCHEMA_URI_CORE, true,
           true, null, ATTRIBUTES_NAME, ATTRIBUTES_TYPE,
-          ATTRIBUTES_PLURAL, ATTRIBUTES_DESCRIPTION, ATTRIBUTES_SCHEMA,
+          ATTRIBUTES_DESCRIPTION, ATTRIBUTES_SCHEMA,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT,
-          RESOURCE_SUB_ATTRIBUTES, RESOURCE_PLURAL_TYPES);
+          ATTRIBUTES_PLURAL, RESOURCE_SUB_ATTRIBUTES, RESOURCE_PLURAL_TYPES);
 
   private static final AttributeDescriptor.AttributeDescriptorResolver
         NESTING_ATTRIBUTES_RESOLVER =
@@ -657,20 +660,20 @@ public class CoreSchema
     {
       entries[0] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
           fromInstance(RESOURCE_ATTRIBUTES, ID);
-      entries[1] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, EXTERNAL_ID);
-      entries[2] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_NAME);
-      entries[3] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_DESCRIPTION);
-      entries[4] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_SCHEMA);
-      entries[5] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_QUERY_ENDPOINT);
-      entries[6] = NESTING_ATTRIBUTES_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_ATTRIBUTES);
-      entries[7] = NESTING_ATTRIBUTES_RESOLVER.
+      entries[1] = NESTING_ATTRIBUTES_RESOLVER.
           fromInstance(RESOURCE_ATTRIBUTES, META);
+      entries[2] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, EXTERNAL_ID);
+      entries[3] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_NAME);
+      entries[4] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_DESCRIPTION);
+      entries[5] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_SCHEMA);
+      entries[6] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_QUERY_ENDPOINT);
+      entries[7] = NESTING_ATTRIBUTES_RESOLVER.
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_ATTRIBUTES);
     }
     catch(InvalidResourceException e)
     {
