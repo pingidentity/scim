@@ -156,7 +156,16 @@ public class QueryRateThread
         fixedRateBarrier.await();
       }
 
-      final String filterValue = filterPattern.nextValue();
+      final String filterValue;
+      if (filterPattern != null)
+      {
+        filterValue = filterPattern.nextValue();
+      }
+      else
+      {
+        filterValue = null;
+      }
+
       final long startTime = System.nanoTime();
 
       try

@@ -92,13 +92,24 @@ public class ResourceSchemaBackend extends SCIMBackend
         break;
       }
     }
+
+    // Try to find a match in case the schema name was not provided.
+    for(ResourceDescriptor rd : resourceDescriptors)
+    {
+      if(rd.getName().equals(request.getResourceID()))
+      {
+        resourceDescriptor = rd;
+        break;
+      }
+    }
+
     if(resourceDescriptor == null)
     {
       throw new ResourceNotFoundException("No Resource Schema with ID " +
           request.getResourceID() + " exists");
     }
-    // All attributes in the Resource Schema are required so we don't need
-    // to worry about the attributes query parameter.
+
+    // TODO honor attributes requested
     return copyAndSetIdAndMetaAttributes(resourceDescriptor, request);
   }
 

@@ -465,18 +465,24 @@ public class SCIMQueryRate
       seed = null;
     }
 
-    // Create a value patterns for the filter.
+    // Create a value pattern for the filter.
     final ValuePattern filterPattern;
-    try
+    if (filter.isPresent())
     {
-      // TODO provide seed after updating LDAP SDK
-      filterPattern = new ValuePattern(filter.getValue());
+      try
+      {
+        filterPattern = new ValuePattern(filter.getValue(), seed);
+      }
+      catch (ParseException pe)
+      {
+        Debug.debugException(pe);
+        err("Unable to parse the filter pattern:  ", pe.getMessage());
+        return ResultCode.PARAM_ERROR;
+      }
     }
-    catch (ParseException pe)
+    else
     {
-      Debug.debugException(pe);
-      err("Unable to parse the filter pattern:  ", pe.getMessage());
-      return ResultCode.PARAM_ERROR;
+      filterPattern = null;
     }
 
     // Get the attributes to return.
