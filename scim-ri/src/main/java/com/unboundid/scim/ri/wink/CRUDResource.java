@@ -51,12 +51,15 @@ public class CRUDResource extends AbstractSCIMResource
    * Create a new SCIM wink resource for CRUD operations on a SCIM endpoint.
    *
    * @param resourceDescriptor  The resource descriptor to use.
+   * @param resourceStats       The ResourceStats instance to use.
    * @param backend             The SCIMBackend to use to process requests.
    */
   public CRUDResource(final ResourceDescriptor resourceDescriptor,
+                      final ResourceStats resourceStats,
                       final SCIMBackend backend)
   {
-    super(resourceDescriptor.getName(), resourceDescriptor, backend);
+    super(resourceDescriptor.getName(), resourceDescriptor, resourceStats,
+        backend);
   }
 
 

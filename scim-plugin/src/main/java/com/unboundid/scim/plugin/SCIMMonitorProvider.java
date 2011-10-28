@@ -11,16 +11,14 @@ import com.unboundid.directory.sdk.common.types.ServerContext;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.ri.SCIMMonitorData;
-import com.unboundid.scim.ri.SCIMServer;
-import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.ri.wink.ResourceStats;
+import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.sdk.Version;
 import com.unboundid.util.args.ArgumentParser;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-
+import java.util.Map;
 
 
 /**
@@ -99,59 +97,24 @@ public class SCIMMonitorProvider extends MonitorProvider
   {
     final ArrayList<Attribute> attrList = new ArrayList<Attribute>();
 
-    final SCIMServer scimServer = SCIMServer.getInstance();
-    final SCIMMonitorData monitorData = scimServer.getMonitorData();
+    attrList.add(new Attribute("version", Version.VERSION));
+    attrList.add(new Attribute("build", Version.BUILD_TIMESTAMP));
+    attrList.add(new Attribute("revision",
+        String.valueOf(Version.REVISION_NUMBER)));
 
-    for (final Method m : monitorData.getClass().getMethods())
+    if(SCIMPlugin.getInstance() != null)
     {
-      String name = m.getName();
-      if (name.startsWith("get") && (m.getParameterTypes().length == 0))
+      final SCIMApplication application =
+          SCIMPlugin.getInstance().getSCIMApplication();
+
+      for(ResourceStats stats : application.getResourceStats())
       {
-        if (name.equals("getClass"))
+        for(Map.Entry<String, Long> stat : stats.getStats().entrySet())
         {
-          continue;
-        }
-
-        if (m.getReturnType().isArray())
-        {
-          continue;
-        }
-
-        try
-        {
-          final StringBuilder builder = new StringBuilder();
-          builder.append(Character.toLowerCase(name.charAt(3)));
-          if (name.length() > 4)
-          {
-            builder.append(name.substring(4));
-          }
-
-          final String statName = builder.toString();
-          final Object value = m.invoke(monitorData);
-          if (value == null)
-          {
-            continue;
-          }
-
-          if (value instanceof Collection)
-          {
-            final Collection<String> values = new ArrayList<String>();
-            for (final Object v : (Collection)value)
-            {
-              values.add(String.valueOf(v));
-            }
-            final Attribute a = new Attribute(statName, values);
-            attrList.add(a);
-          }
-          else
-          {
-            final Attribute a = new Attribute(statName, String.valueOf(value));
-            attrList.add(a);
-          }
-        }
-        catch (Exception e)
-        {
-          Debug.debugException(e);
+          attrList.add(
+              new Attribute(
+                  stats.getName().toLowerCase() + "-resource-" + stat.getKey(),
+                  String.valueOf(stat.getValue())));
         }
       }
     }

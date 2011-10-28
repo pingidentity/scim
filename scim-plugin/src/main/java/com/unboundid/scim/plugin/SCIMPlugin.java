@@ -17,6 +17,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldif.LDIFException;
 import com.unboundid.scim.ri.SCIMServer;
 import com.unboundid.scim.ri.SCIMServerConfig;
+import com.unboundid.scim.ri.wink.SCIMApplication;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.SCIMBackend;
@@ -90,6 +91,11 @@ public final class SCIMPlugin
   private static final String ARG_NAME_MAX_RESULTS = "maxResults";
 
   /**
+   * The singleton instance of this plugin.
+   */
+  private static volatile SCIMPlugin INSTANCE;
+
+  /**
    * The server context for the server in which this extension is running.
    */
   private DirectoryServerContext serverContext;
@@ -99,7 +105,10 @@ public final class SCIMPlugin
    */
   private SCIMBackend scimBackend;
 
-
+  /**
+   * The JAX-RS application that will handle the SCIM requests.
+   */
+  private volatile SCIMApplication scimApplication;
 
   /**
    * Creates a new instance of this plugin.  All plugin implementations must
@@ -286,7 +295,7 @@ public final class SCIMPlugin
     final String baseUri = baseUriArg.getValue();
     scimBackend = new ServerContextBackend(serverContext);
     scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
-    scimServer.registerBackend(baseUri, scimBackend);
+    scimApplication = scimServer.registerBackend(baseUri, scimBackend);
 
     if (serverContext.isRunning())
     {
@@ -314,6 +323,9 @@ public final class SCIMPlugin
 
     Debug.debug(Level.INFO, DebugType.OTHER,
                 "Finished SCIM plugin initialization");
+
+    // Set the instance singleton to this initialized instance.
+    INSTANCE = this;
   }
 
 
@@ -468,7 +480,7 @@ public final class SCIMPlugin
     final String baseUri = baseUriArg.getValue();
     scimBackend = new ServerContextBackend(serverContext);
     scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
-    scimServer.registerBackend(baseUri, scimBackend);
+    scimApplication = scimServer.registerBackend(baseUri, scimBackend);
 
     try
     {
@@ -652,5 +664,25 @@ public final class SCIMPlugin
         debugException(e);
       }
     }
+  }
+
+  /**
+   * Retrieves the SCIM JAX-RS application instance used by this plugin.
+   *
+   * @return The SCIM JAX-RS application instance used by this plugin.
+   */
+  SCIMApplication getSCIMApplication()
+  {
+    return scimApplication;
+  }
+
+  /**
+   * Retrieves the singleton instance of this SCIMPlugin.
+   *
+   * @return The singleton instance of this SCIMPlugin.
+   */
+  static SCIMPlugin getInstance()
+  {
+    return INSTANCE;
   }
 }

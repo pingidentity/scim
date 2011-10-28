@@ -17,9 +17,8 @@
 
 package com.unboundid.scim.ri.wink;
 
-import com.unboundid.scim.ri.SCIMMonitorData;
-import com.unboundid.scim.ri.SCIMServer;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.Version;
 import org.json.JSONException;
 import org.json.JSONStringer;
 import org.json.JSONWriter;
@@ -29,9 +28,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.lang.reflect.Method;
-import java.util.Collection;
-
+import java.util.Map;
 
 
 /**
@@ -41,6 +38,22 @@ import java.util.Collection;
 @Path("monitor")
 public class MonitorResource
 {
+  private final SCIMApplication application;
+  private final ResourceStats resourceStats;
+
+  /**
+   * Create a new JAX-RS resource.
+   *
+   * @param application    The SCIM JAX-RS application associated with this
+   *                       resource.
+   * @param resourceStats  The ResourceStats instance to use.
+   */
+  public MonitorResource(final SCIMApplication application,
+                         final ResourceStats resourceStats) {
+    this.application = application;
+    this.resourceStats = resourceStats;
+  }
+
   /**
    * Implement the GET operation on the monitor resource to fetch the monitor
    * data in JSON format.
@@ -55,11 +68,14 @@ public class MonitorResource
     {
       final JSONStringer writer = new JSONStringer();
       writeMonitorData(writer);
+      resourceStats.incrementStat(ResourceStats.GET_RESPONSE_JSON);
+      resourceStats.incrementStat(ResourceStats.GET_OK);
       return Response.ok(writer.toString(), MediaType.APPLICATION_JSON).build();
     }
     catch (JSONException e)
     {
       Debug.debugException(e);
+      resourceStats.incrementStat(ResourceStats.GET_INTERNAL_SERVER_ERROR);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
@@ -76,62 +92,29 @@ public class MonitorResource
   private void writeMonitorData(final JSONWriter writer)
       throws JSONException
   {
-    final SCIMServer scimServer = SCIMServer.getInstance();
-    final SCIMMonitorData monitorData = scimServer.getMonitorData();
-
     writer.object();
-    for (final Method m : monitorData.getClass().getMethods())
+    writer.key("version");
+    writer.value(Version.VERSION);
+    writer.key("build");
+    writer.value(Version.BUILD_TIMESTAMP);
+    writer.key("revision");
+    writer.value(Version.REVISION_NUMBER);
+
+    writer.key("resources");
+    writer.array();
+    for(ResourceStats stats : application.getResourceStats())
     {
-      String name = m.getName();
-      if (name.startsWith("get") && (m.getParameterTypes().length == 0))
+      writer.object();
+      writer.key("name");
+      writer.value(stats.getName());
+      for(Map.Entry<String, Long> stat : stats.getStats().entrySet())
       {
-        if (name.equals("getClass"))
-        {
-          continue;
-        }
-
-        if (m.getReturnType().isArray())
-        {
-          continue;
-        }
-
-        try
-        {
-          final StringBuilder builder = new StringBuilder();
-          builder.append(Character.toLowerCase(name.charAt(3)));
-          if (name.length() > 4)
-          {
-            builder.append(name.substring(4));
-          }
-
-          final String statName = builder.toString();
-          final Object value = m.invoke(monitorData);
-          if (value == null)
-          {
-            continue;
-          }
-
-          writer.key(statName);
-          if (value instanceof Collection)
-          {
-            writer.array();
-            for (final Object o : (Collection)value)
-            {
-              writer.value(o);
-            }
-            writer.endArray();
-          }
-          else
-          {
-            writer.value(value);
-          }
-        }
-        catch (Exception e)
-        {
-          Debug.debugException(e);
-        }
+        writer.key(stat.getKey());
+        writer.value(stat.getValue());
       }
+      writer.endObject();
     }
+    writer.endArray();
     writer.endObject();
   }
 }

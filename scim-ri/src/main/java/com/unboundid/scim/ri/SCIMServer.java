@@ -17,22 +17,12 @@
 
 package com.unboundid.scim.ri;
 
-import com.unboundid.scim.data.AuthenticationScheme;
-import com.unboundid.scim.data.BulkConfig;
-import com.unboundid.scim.data.ChangePasswordConfig;
-import com.unboundid.scim.data.ETagConfig;
-import com.unboundid.scim.data.FilterConfig;
-import com.unboundid.scim.data.PatchConfig;
-import com.unboundid.scim.data.ServiceProviderConfig;
-import com.unboundid.scim.data.SortConfig;
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.ri.wink.SCIMApplication;
-import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
-import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.util.StaticUtils;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
@@ -48,8 +38,6 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
-import javax.ws.rs.core.UriBuilder;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,7 +46,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.unboundid.scim.sdk.Debug.debugException;
-import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 
@@ -93,9 +80,10 @@ public class SCIMServer
   private Server server;
 
   /**
-   * The set of backends registered with the server, keyed by the base URI.
+   * The set of SCIMApplications registered with the server,
+   * keyed by the ServletContextHandler.
    */
-  private volatile Map<ServletContextHandler, SCIMBackend> backends;
+  private volatile Map<ServletContextHandler, SCIMApplication> backends;
 
 
   /**
@@ -103,10 +91,6 @@ public class SCIMServer
    */
   private volatile Map<ResourceDescriptor, ResourceMapper> resourceMappers;
 
-  /**
-   * Monitor data.
-   */
-  private SCIMMonitorData monitorData;
 
 
 
@@ -131,9 +115,8 @@ public class SCIMServer
 
     this.config = serverConfig;
     this.server = s;
-    this.backends = new HashMap<ServletContextHandler, SCIMBackend>();
+    this.backends = new HashMap<ServletContextHandler, SCIMApplication>();
     this.resourceMappers = new HashMap<ResourceDescriptor, ResourceMapper>();
-    this.monitorData = new SCIMMonitorData();
 
     if (serverConfig.getResourcesFile() != null)
     {
@@ -201,29 +184,13 @@ public class SCIMServer
    *
    * @param baseURI The base URI with which the backend is associated.
    * @param backend The backend to be registered. It must not be {@code null}.
-   */
-  public void registerBackend(final String baseURI,
-                              final SCIMBackend backend)
-  {
-    // For now, v1 is the only supported API version.
-    final String v1BaseURI =
-        UriBuilder.fromPath(baseURI).path("v1").build().getPath();
-
-    registerBackendPrivate(baseURI, backend);
-    registerBackendPrivate(v1BaseURI, backend);
-  }
-
-
-
-  /**
-   * Register a backend with this server under the specified base URI.
    *
-   * @param baseURI The base URI with which the backend is associated.
-   * @param backend The backend to be registered. It must not be {@code null}.
+   * @return The SCIMApplication associated with this backend.
    */
-  private void registerBackendPrivate(final String baseURI,
-                                      final SCIMBackend backend)
+  public SCIMApplication registerBackend(final String baseURI,
+                                         final SCIMBackend backend)
   {
+    SCIMApplication application;
     synchronized (this)
     {
       final String normalizedBaseURI = normalizeURI(baseURI);
@@ -235,14 +202,15 @@ public class SCIMServer
               "for base URI " + normalizedBaseURI);
         }
       }
-      final Map<ServletContextHandler, SCIMBackend> newBackends =
-          new HashMap<ServletContextHandler, SCIMBackend>(backends);
+      final Map<ServletContextHandler, SCIMApplication> newBackends =
+          new HashMap<ServletContextHandler, SCIMApplication>(backends);
 
       final ServletContextHandler contextHandler =
           new ServletContextHandler(
               (ContextHandlerCollection) server.getHandler(),
               normalizedBaseURI);
-      newBackends.put(contextHandler, backend);
+      application = new SCIMApplication(resourceMappers.keySet(), backend);
+      newBackends.put(contextHandler, application);
 
       // Configure authentication.
 
@@ -289,9 +257,12 @@ public class SCIMServer
           new ServletHolder(RestServlet.class);
       winkServletHolder.setInitOrder(1);
       contextHandler.addServlet(winkServletHolder, "/*");
+      // For now, v1 is the only supported API version.
+      contextHandler.addServlet(winkServletHolder, "/v1/*");
 
       backends = newBackends;
     }
+    return application;
   }
 
 
@@ -304,7 +275,7 @@ public class SCIMServer
    * @param resourceMapper    The resource mapper to be registered. It must not
    *                          be {@code null}.
    */
-  public void registerResourceMapper(final ResourceMapper resourceMapper)
+  private void registerResourceMapper(final ResourceMapper resourceMapper)
   {
     synchronized (this)
     {
@@ -346,64 +317,6 @@ public class SCIMServer
 
 
   /**
-   * Retrieve the current monitoring data.
-   * @return  The current monitoring data.
-   */
-  public SCIMMonitorData getMonitorData()
-  {
-    return monitorData;
-  }
-
-
-
-  /**
-   * Retrieve the service provider configuration.
-   * @return  The service provider configuration.
-   */
-  public ServiceProviderConfig getServiceProviderConfig()
-  {
-    final SCIMObject scimObject = new SCIMObject();
-    final ServiceProviderConfig serviceProviderConfig =
-        ServiceProviderConfig.SERVICE_PROVIDER_CONFIG_RESOURCE_FACTORY.
-            createResource(CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR,
-                           scimObject);
-
-    int maxResults = 0;
-    for (final SCIMBackend b : backends.values())
-    {
-      maxResults = Math.max(maxResults, b.getConfig().getMaxResults());
-    }
-
-    serviceProviderConfig.setId(SCHEMA_URI_CORE);
-    serviceProviderConfig.setPatchConfig(new PatchConfig(false));
-    serviceProviderConfig.setBulkConfig(new BulkConfig(false, 0, 0));
-    serviceProviderConfig.setFilterConfig(new FilterConfig(true, maxResults));
-    serviceProviderConfig.setChangePasswordConfig(
-        new ChangePasswordConfig(false));
-    serviceProviderConfig.setSortConfig(new SortConfig(false));
-    serviceProviderConfig.setETagConfig(new ETagConfig(false));
-
-    final List<AuthenticationScheme> authenticationSchemes =
-        new ArrayList<AuthenticationScheme>();
-    authenticationSchemes.add(
-        new AuthenticationScheme(
-            "HttpBasic",
-            "The HTTP Basic Access Authentication scheme. This scheme is not " +
-            "considered to be a secure method of user authentication (unless " +
-            "used in conjunction with some external secure system such as " +
-            "SSL), as the user name and password are passed over the network " +
-            "as cleartext.",
-            "http://www.ietf.org/rfc/rfc2617.txt",
-            "http://en.wikipedia.org/wiki/Basic_access_authentication",
-            null, false));
-    serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
-
-    return serviceProviderConfig;
-  }
-
-
-
-  /**
    * Attempts to start listening for client connections.
    *
    * @throws Exception If an error occurs during startup.
@@ -417,11 +330,10 @@ public class SCIMServer
           "with the SCIM server");
     }
     server.start();
-    for(Map.Entry<ServletContextHandler, SCIMBackend> entry :
+    for(Map.Entry<ServletContextHandler, SCIMApplication> entry :
         backends.entrySet())
     {
-      RegistrationUtils.registerApplication(
-          new SCIMApplication(resourceMappers.keySet(), entry.getValue()),
+      RegistrationUtils.registerApplication(entry.getValue(),
           entry.getKey().getServletContext());
     }
   }

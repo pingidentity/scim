@@ -53,13 +53,15 @@ public class XMLQueryResource extends AbstractSCIMResource
    *
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             resource.
+   * @param resourceStats       The ResourceStats instance to use.
    * @param backend             The SCIMBackend to use to process requests.
    */
   public XMLQueryResource(final ResourceDescriptor resourceDescriptor,
-                           final SCIMBackend backend)
+                          final ResourceStats resourceStats,
+                          final SCIMBackend backend)
   {
     super(resourceDescriptor.getQueryEndpoint() + ".xml",
-        resourceDescriptor, backend);
+        resourceDescriptor, resourceStats, backend);
   }
 
 

@@ -53,13 +53,15 @@ public class JSONQueryResource extends AbstractSCIMResource
    *
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             resource.
+   * @param resourceStats       The ResourceStats instance to use.
    * @param backend             The SCIMBackend to use to process requests.
    */
   public JSONQueryResource(final ResourceDescriptor resourceDescriptor,
+                           final ResourceStats resourceStats,
                            final SCIMBackend backend)
   {
     super(resourceDescriptor.getQueryEndpoint() + ".json",
-        resourceDescriptor, backend);
+          resourceDescriptor, resourceStats, backend);
   }
 
 

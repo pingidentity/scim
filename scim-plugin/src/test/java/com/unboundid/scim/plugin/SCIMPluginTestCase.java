@@ -148,7 +148,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @Test
   public void enablePlugin() throws Exception
   {
-    assertEquals(getMonitorAsString(instance, "Version"), Version.VERSION);
+    assertEquals(getMonitorAsString(instance, "version"), Version.VERSION);
   }
 
 
@@ -196,7 +196,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //the Directory Server will record the actual createTimestamp using the
     //TimeThread, which only updates once every 100ms.
     Date startTime = new Date(System.currentTimeMillis() - 500);
+    String beforeCount =
+        getMonitorAsString(instance, "user-resource-post-successful");
     UserResource returnedUser = userEndpoint.insert(user);
+    String afterCount =
+        getMonitorAsString(instance, "user-resource-post-successful");
     Date createTime = returnedUser.getMeta().getCreated();
     Date endTime = new Date(System.currentTimeMillis() + 500);
 
@@ -211,6 +215,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                    user.getEmails().iterator().next().getValue());
     assertTrue(createTime.after(startTime));
     assertTrue(createTime.before(endTime));
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
 
     //TODO: no LDAP schema for Locale
     //assertEquals(returnedUser.getLocale(), user.getLocale());
@@ -257,7 +263,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     //Do the insert and verify what is returned from the endpoint
     startTime = new Date(System.currentTimeMillis() - 500);
+    beforeCount =
+        getMonitorAsString(instance, "group-resource-post-successful");
     GroupResource returnedGroup = grpEndpoint.insert(group);
+    afterCount =
+        getMonitorAsString(instance, "group-resource-post-successful");
     createTime = returnedGroup.getMeta().getCreated();
     endTime = new Date(System.currentTimeMillis() + 500);
 
@@ -267,6 +277,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertTrue(createTime.before(endTime));
     assertEquals(returnedGroup.getMembers().iterator().next().getValue(),
                     group.getMembers().iterator().next().getValue());
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
 
     //Verify what is actually in the Directory
     entry = instance.getConnectionPool().getEntry(
@@ -346,8 +358,17 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     //Make the exact same update again; this should result in no net change to
     //the Directory entry, but should not fail.
+    String beforeCount =
+        getMonitorAsString(instance, "user-resource-put-successful");
     returnedUser = userEndpoint.update(user);
+    String afterCount =
+        getMonitorAsString(instance, "user-resource-put-successful");
 
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
+
+    beforeCount =
+        getMonitorAsString(instance, "user-resource-put-404");
     try
     {
       //Try to update an entry that doesn't exist
@@ -361,6 +382,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     {
       //expected
     }
+    afterCount =
+        getMonitorAsString(instance, "user-resource-put-404");
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
   }
 
 
@@ -389,12 +414,22 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
            generateUserEntry("testDelete", baseDN, "Test", "User", "password"));
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    userEndpoint.delete("uid=testDelete," + baseDN);
 
+    String beforeCount =
+        getMonitorAsString(instance, "user-resource-delete-successful");
+    userEndpoint.delete("uid=testDelete," + baseDN);
+    String afterCount =
+        getMonitorAsString(instance, "user-resource-delete-successful");
+
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
+
+    beforeCount =
+        getMonitorAsString(instance, "user-resource-delete-404");
     try
     {
       //Should throw ResourceNotFoundException
-      userEndpoint.get("uid=testDelete," + baseDN);
+      userEndpoint.delete("uid=testDelete," + baseDN);
       fail("Expected ResourceNotFoundException when retrieving " +
               "non-existent user");
     }
@@ -402,6 +437,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     {
       //expected
     }
+    afterCount =
+        getMonitorAsString(instance, "user-resource-delete-404");
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
   }
 
 
@@ -431,7 +470,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     //Try to retrieve the user via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    String beforeCount =
+        getMonitorAsString(instance, "user-resource-get-successful");
     UserResource user = userEndpoint.get("uid=testRetrieve," + baseDN);
+    String afterCount =
+        getMonitorAsString(instance, "user-resource-get-successful");
     assertNotNull(user);
     assertTrue(user.getId().equalsIgnoreCase("uid=testRetrieve," + baseDN));
     assertEquals(user.getUserName(), "testRetrieve");
@@ -454,6 +497,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertNull(user.getTitle());
     assertNull(user.getDisplayName());
     assertNull(user.getEmails());
+
+    //Make sure the stats were updated properly
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 1);
   }
 
 
@@ -515,6 +562,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     // "filterUser" so that we only consider the users created for this test.
     //
 
+    String beforeCount =
+        getMonitorAsString(instance, "user-resource-query-successful");
     //Test 'eq' (equals)
     Resources<UserResource> results =
         userEndpoint.query("userName sw 'filterUser' and " +
@@ -588,6 +637,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
       int idx = Integer.parseInt(uid.substring(uid.indexOf(".") + 1));
       assertTrue(idx < 5);
     }
+    String afterCount =
+        getMonitorAsString(instance, "user-resource-query-successful");
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+        Integer.valueOf(afterCount) - 6);
   }
 
 

@@ -18,7 +18,6 @@
 package com.unboundid.scim.ri.wink;
 
 import com.unboundid.scim.data.ServiceProviderConfig;
-import com.unboundid.scim.ri.SCIMServer;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -35,6 +34,22 @@ import javax.ws.rs.core.Response;
 @Path("ServiceProviderConfig.xml")
 public class XMLServiceProviderConfigResource extends AbstractStaticResource
 {
+  private final SCIMApplication application;
+  private final ResourceStats resourceStats;
+
+  /**
+   * Create a new JAX-RS resource.
+   *
+   * @param application    The SCIM JAX-RS application associated with this
+   *                       resource.
+   * @param resourceStats  The ResourceStats instance to use.
+   */
+  public XMLServiceProviderConfigResource(final SCIMApplication application,
+                                       final ResourceStats resourceStats) {
+    this.application = application;
+    this.resourceStats = resourceStats;
+  }
+
   /**
    * Implement the GET operation to fetch the configuration in XML format.
    *
@@ -44,11 +59,12 @@ public class XMLServiceProviderConfigResource extends AbstractStaticResource
   @Produces(MediaType.APPLICATION_XML)
   public Response doXmlGet()
   {
-    final ServiceProviderConfig config =
-        SCIMServer.getInstance().getServiceProviderConfig();
+    final ServiceProviderConfig config = application.getServiceProviderConfig();
     Response.ResponseBuilder builder = Response.ok();
 
     setResponseEntity(builder, MediaType.APPLICATION_XML_TYPE, config);
+    resourceStats.incrementStat(ResourceStats.GET_RESPONSE_XML);
+    resourceStats.incrementStat(ResourceStats.GET_OK);
     return builder.build();
   }
 }

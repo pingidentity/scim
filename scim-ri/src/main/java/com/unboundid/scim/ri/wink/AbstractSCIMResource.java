@@ -66,6 +66,11 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
   private final ResourceDescriptor resourceDescriptor;
 
   /**
+   * The ResourceStats used to keep activity statistics.
+   */
+  private final ResourceStats resourceStats;
+
+  /**
    * The SCIMBackend to use to process requests.
    */
   private final SCIMBackend backend;
@@ -75,14 +80,17 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    *
    * @param path                The path of this resource.
    * @param resourceDescriptor  The resource descriptor to use.
+   * @param resourceStats       The ResourceStats instance to use.
    * @param backend             The SCIMBackend to use to process requests.
    */
   public AbstractSCIMResource(final String path,
                               final ResourceDescriptor resourceDescriptor,
+                              final ResourceStats resourceStats,
                               final SCIMBackend backend)
   {
     this.resourceDescriptor = resourceDescriptor;
     this.backend = backend;
+    this.resourceStats = resourceStats;
     super.setPath(path);
   }
 
@@ -120,10 +128,12 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       {
         responseBuilder.location(location);
       }
+      resourceStats.incrementStat(ResourceStats.GET_OK);
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, mediaType, e);
+      resourceStats.incrementStat("get-" + e.getStatusCode());
     }
 
     if (requestContext.getOrigin() != null)
@@ -133,6 +143,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     }
     responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
         Boolean.TRUE.toString());
+
+    if(mediaType == MediaType.APPLICATION_JSON_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.GET_RESPONSE_JSON);
+    }
+    else if(mediaType == MediaType.APPLICATION_XML_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.GET_RESPONSE_XML);
+    }
 
     return responseBuilder.build();
   }
@@ -267,12 +286,14 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       responseBuilder =
           Response.status(Response.Status.OK);
       setResponseEntity(responseBuilder, mediaType, resources);
+      resourceStats.incrementStat(ResourceStats.QUERY_OK);
     }
     catch(SCIMException e)
     {
       responseBuilder =
           Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, mediaType, e);
+      resourceStats.incrementStat("query-" + e.getStatusCode());
     }
 
     if (requestContext.getOrigin() != null)
@@ -282,6 +303,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     }
     responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
         Boolean.TRUE.toString());
+
+    if(mediaType == MediaType.APPLICATION_JSON_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.QUERY_RESPONSE_JSON);
+    }
+    else if(mediaType == MediaType.APPLICATION_XML_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.QUERY_RESPONSE_XML);
+    }
 
     return responseBuilder.build();
   }
@@ -311,11 +341,13 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     {
       unmarshaller = marshalContext.unmarshaller(
           com.unboundid.scim.marshal.Context.Format.Json);
+      resourceStats.incrementStat(ResourceStats.POST_CONTENT_JSON);
     }
     else
     {
       unmarshaller = marshalContext.unmarshaller(
           com.unboundid.scim.marshal.Context.Format.Xml);
+      resourceStats.incrementStat(ResourceStats.POST_CONTENT_XML);
     }
 
     Response.ResponseBuilder responseBuilder;
@@ -340,11 +372,22 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       setResponseEntity(responseBuilder, produceMediaType,
           resource);
       responseBuilder.location(resource.getMeta().getLocation());
+      resourceStats.incrementStat(ResourceStats.POST_OK);
     } catch (SCIMException e) {
       Debug.debugException(e);
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, produceMediaType, e);
+      resourceStats.incrementStat("post-" + e.getStatusCode());
+    }
+
+    if(produceMediaType == MediaType.APPLICATION_JSON_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.POST_RESPONSE_JSON);
+    }
+    else if(produceMediaType == MediaType.APPLICATION_XML_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.POST_RESPONSE_XML);
     }
 
     return responseBuilder.build();
@@ -377,11 +420,13 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     {
       unmarshaller = marshalContext.unmarshaller(
           com.unboundid.scim.marshal.Context.Format.Json);
+      resourceStats.incrementStat(ResourceStats.PUT_CONTENT_JSON);
     }
     else
     {
       unmarshaller = marshalContext.unmarshaller(
           com.unboundid.scim.marshal.Context.Format.Xml);
+      resourceStats.incrementStat(ResourceStats.PUT_CONTENT_XML);
     }
 
     Response.ResponseBuilder responseBuilder;
@@ -404,10 +449,21 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       responseBuilder = Response.status(Response.Status.OK);
       setResponseEntity(responseBuilder, produceMediaType, scimResponse);
       responseBuilder.location(scimResponse.getMeta().getLocation());
+      resourceStats.incrementStat(ResourceStats.PUT_OK);
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, produceMediaType, e);
+      resourceStats.incrementStat("put-" + e.getStatusCode());
+    }
+
+    if(produceMediaType == MediaType.APPLICATION_JSON_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_JSON);
+    }
+    else if(produceMediaType == MediaType.APPLICATION_XML_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_XML);
     }
 
     return responseBuilder.build();
@@ -437,10 +493,12 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       backend.deleteResource(deleteResourceRequest);
       // Build the response.
       responseBuilder = Response.status(HttpStatus.OK_200);
+      resourceStats.incrementStat(ResourceStats.DELETE_OK);
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, mediaType, e);
+      resourceStats.incrementStat("delete-" + e.getStatusCode());
     }
 
     return responseBuilder.build();

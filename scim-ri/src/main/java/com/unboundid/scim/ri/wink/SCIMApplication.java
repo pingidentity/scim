@@ -17,16 +17,29 @@
 
 package com.unboundid.scim.ri.wink;
 
+import com.unboundid.scim.data.AuthenticationScheme;
+import com.unboundid.scim.data.BulkConfig;
+import com.unboundid.scim.data.ChangePasswordConfig;
+import com.unboundid.scim.data.ETagConfig;
+import com.unboundid.scim.data.FilterConfig;
+import com.unboundid.scim.data.PatchConfig;
+import com.unboundid.scim.data.ServiceProviderConfig;
+import com.unboundid.scim.data.SortConfig;
 import com.unboundid.scim.ri.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.sdk.SCIMObject;
 import org.apache.wink.common.WinkApplication;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 
 
 /**
@@ -35,16 +48,9 @@ import java.util.Set;
  */
 public class SCIMApplication extends WinkApplication
 {
-  private static final Set<Class<?>> CLASSES = new HashSet<Class<?>>();
-  static
-  {
-    CLASSES.add(MonitorResource.class);
-    CLASSES.add(ServiceProviderConfigResource.class);
-    CLASSES.add(XMLServiceProviderConfigResource.class);
-    CLASSES.add(JSONServiceProviderConfigResource.class);
-  }
-
   private final Set<Object> instances;
+  private final Collection<ResourceStats> resourceStats;
+  private final SCIMBackend backend;
 
   /**
    * Create a new SCIMApplication that defines the endpoints provided by the
@@ -56,33 +62,47 @@ public class SCIMApplication extends WinkApplication
   public SCIMApplication(
       final Collection<ResourceDescriptor> resourceDescriptors,
       final SCIMBackend backend) {
-    instances = new HashSet<Object>(resourceDescriptors.size() * 4 + 4);
+    instances = new HashSet<Object>(resourceDescriptors.size() * 4 + 8);
+    Collection<ResourceStats> statsCollection =
+        new ArrayList<ResourceStats>(resourceDescriptors.size() + 2);
 
+    ResourceStats stats = new ResourceStats("monitor");
+    instances.add(new MonitorResource(this, stats));
+    statsCollection.add(stats);
+
+    stats = new ResourceStats(
+        CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR.getName());
+    instances.add(new ServiceProviderConfigResource(this, stats));
+    instances.add(new XMLServiceProviderConfigResource(this, stats));
+    instances.add(new JSONServiceProviderConfigResource(this, stats));
+    statsCollection.add(stats);
+
+    stats = new ResourceStats(
+        CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR.getName());
     // The resources for the /Schema and /Schemas endpoints.
     ResourceSchemaBackend resourceSchemaBackend =
         new ResourceSchemaBackend(resourceDescriptors);
     instances.add(new CRUDResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        resourceSchemaBackend));
+        stats, resourceSchemaBackend));
     instances.add(new QueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        resourceSchemaBackend));
+        stats, resourceSchemaBackend));
     instances.add(new XMLQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        resourceSchemaBackend));
+        stats, resourceSchemaBackend));
     instances.add(new JSONQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        resourceSchemaBackend));
+        stats, resourceSchemaBackend));
+    statsCollection.add(stats);
 
     for(ResourceDescriptor resourceDescriptor : resourceDescriptors)
     {
-      instances.add(new CRUDResource(resourceDescriptor, backend));
-      instances.add(new QueryResource(resourceDescriptor, backend));
-      instances.add(new XMLQueryResource(resourceDescriptor, backend));
-      instances.add(new JSONQueryResource(resourceDescriptor, backend));
+      stats = new ResourceStats(resourceDescriptor.getName());
+      instances.add(new CRUDResource(resourceDescriptor, stats, backend));
+      instances.add(new QueryResource(resourceDescriptor, stats, backend));
+      instances.add(new XMLQueryResource(resourceDescriptor, stats, backend));
+      instances.add(new JSONQueryResource(resourceDescriptor, stats, backend));
+      statsCollection.add(stats);
     }
-  }
-
-  @Override
-  public Set<Class<?>> getClasses()
-  {
-    return CLASSES;
+    this.resourceStats = Collections.unmodifiableCollection(statsCollection);
+    this.backend = backend;
   }
 
 
@@ -91,5 +111,58 @@ public class SCIMApplication extends WinkApplication
   public Set<Object> getInstances()
   {
     return instances;
+  }
+
+
+  /**
+   * Retrieves the statistics for the resources being served by this
+   * application instance.
+   *
+   * @return The statistics for the resources being served by this
+   * application instance.
+   */
+  public Collection<ResourceStats> getResourceStats()
+  {
+    return resourceStats;
+  }
+
+  /**
+   * Retrieve the service provider configuration.
+   * @return  The service provider configuration.
+   */
+  public ServiceProviderConfig getServiceProviderConfig()
+  {
+    final SCIMObject scimObject = new SCIMObject();
+    final ServiceProviderConfig serviceProviderConfig =
+        ServiceProviderConfig.SERVICE_PROVIDER_CONFIG_RESOURCE_FACTORY.
+            createResource(CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR,
+                           scimObject);
+
+    serviceProviderConfig.setId(SCHEMA_URI_CORE);
+    serviceProviderConfig.setPatchConfig(new PatchConfig(false));
+    serviceProviderConfig.setBulkConfig(new BulkConfig(false, 0, 0));
+    serviceProviderConfig.setFilterConfig(new FilterConfig(true,
+        backend.getConfig().getMaxResults()));
+    serviceProviderConfig.setChangePasswordConfig(
+        new ChangePasswordConfig(false));
+    serviceProviderConfig.setSortConfig(new SortConfig(false));
+    serviceProviderConfig.setETagConfig(new ETagConfig(false));
+
+    final List<AuthenticationScheme> authenticationSchemes =
+        new ArrayList<AuthenticationScheme>();
+    authenticationSchemes.add(
+        new AuthenticationScheme(
+            "HttpBasic",
+            "The HTTP Basic Access Authentication scheme. This scheme is not " +
+            "considered to be a secure method of user authentication (unless " +
+            "used in conjunction with some external secure system such as " +
+            "SSL), as the user name and password are passed over the network " +
+            "as cleartext.",
+            "http://www.ietf.org/rfc/rfc2617.txt",
+            "http://en.wikipedia.org/wiki/Basic_access_authentication",
+            null, false));
+    serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
+
+    return serviceProviderConfig;
   }
 }
