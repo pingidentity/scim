@@ -38,6 +38,7 @@ import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
 
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -50,7 +51,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.unboundid.util.StaticUtils.NO_STRINGS;
-
+import static com.unboundid.scim.ri.RIMessages.*;
 
 
 /**
@@ -78,11 +79,8 @@ import static com.unboundid.util.StaticUtils.NO_STRINGS;
  *   <LI>"--resourceName {resource-name}" -- specifies the name of resources to
  *       be queried.  If this isn't specified, then a default of "User" will
  *       be used.</LI>
- *   <LI>"--endpointURI {endpointURI}" -- specifies the endpoint URI to use for
- *       the queries.  If this isn't specified, then a default of "/Users" will
- *       be used. The endpoint may have a .json or .xml suffix to indicate that
- *       the resources should be returned in the specified form. The default is
- *       to use JSON.</LI>
+ *   <LI>"-x" or "--xml" -- Specifies XML format in requests rather than
+ *       JSON format.</LI>
  *   <LI>"-f {filter}" or "--filter {filter}" -- specifies the filter to use for
  *       the queries.  It may be a simple filter, or it may be a value pattern
  *       to express a range of filters. If this isn't specified, then no
@@ -129,6 +127,10 @@ public class SCIMQueryRate
   // The argument used to indicate whether to generate output in CSV format.
   private BooleanArgument csvFormat;
 
+  // The argument used to indicate whether to use XML format in requests rather
+  // than JSON format.
+  private BooleanArgument xmlFormat;
+
   // The argument used to specify the collection interval.
   private IntegerArgument collectionInterval;
 
@@ -150,9 +152,6 @@ public class SCIMQueryRate
 
   // The argument used to specify the attributes to return.
   private StringArgument attributes;
-
-  // The argument used to specify the endpoint URI for the queries.
-  private StringArgument endpointURI;
 
   // The argument used to specify the filters for the queries.
   private StringArgument filter;
@@ -245,7 +244,7 @@ public class SCIMQueryRate
   @Override()
   public String getToolDescription()
   {
-    return "Perform repeated resource queries against a SCIM server.";
+    return INFO_QUERY_TOOL_DESC.get();
   }
 
 
@@ -257,152 +256,129 @@ public class SCIMQueryRate
   public void addToolArguments(final ArgumentParser parser)
          throws ArgumentException
   {
-    String description = "The IP address or resolvable name to use to " +
-                         "connect to the server.  If this is not " +
-                         "provided, then a default value of 'localhost' " +
-                         "will be used.";
-    host = new StringArgument('h', "hostname", true, 1, "{host}",
-                              description, "localhost");
+    host = new StringArgument(
+        'h', "hostname", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_HOSTNAME.get(),
+        INFO_QUERY_TOOL_ARG_DESC_HOSTNAME.get(),
+        "localhost");
     parser.addArgument(host);
 
 
-    description = "The port to use to connect to the server.  If " +
-                  "this is not provided, then a default value of 80 will " +
-                  "be used.";
-    port = new IntegerArgument('p', "port", true, 1, "{port}",
-                               description, 1, 65535, 80);
+    port = new IntegerArgument(
+        'p', "port", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_PORT.get(),
+        INFO_QUERY_TOOL_ARG_DESC_PORT.get(),
+        1, 65535, 80);
     parser.addArgument(port);
 
 
-    description = "The ID to use to authenticate to the server when " +
-                  "performing basic authentication";
-    authID = new StringArgument(null, "authID", false, 1, "{userName}",
-                                description);
+    authID = new StringArgument(
+        null, "authID", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_AUTHID.get(),
+        INFO_QUERY_TOOL_ARG_DESC_AUTHID.get());
     parser.addArgument(authID);
 
 
-    description = "The password to use to authenticate to the server when " +
-                  "performing basic authentication or a password-based " +
-                  "SASL mechanism.";
-    authPassword = new StringArgument('w', "authPassword", false, 1,
-                                      "{password}", description);
+    authPassword = new StringArgument(
+        'w', "authPassword", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_AUTH_PASSWORD.get(),
+        INFO_QUERY_TOOL_ARG_DESC_AUTH_PASSWORD.get());
     parser.addArgument(authPassword);
 
 
-    description = "The path to the file containing the password to use to " +
-                  "authenticate to the server when performing basic " +
-                  "authentication or a password-based SASL mechanism.";
-    authPasswordFile = new FileArgument('j', "authPasswordFile", false, 1,
-                                        "{path}", description, true, true, true,
-                                        false);
+    authPasswordFile = new FileArgument(
+        'j', "authPasswordFile", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_AUTH_PASSWORD_FILE.get(),
+        INFO_QUERY_TOOL_ARG_DESC_AUTH_PASSWORD_FILE.get(),
+        true, true, true, false);
     parser.addArgument(authPasswordFile);
 
 
-    description = "The name of resources to be queried.  If this " +
-                  "isn't specified, then a default of 'User' will " +
-                  "be used.";
-    resourceName = new StringArgument(null, "resourceName", false, 1,
-                                     "{resource-name}", description, null,
-                                     Arrays.asList("User"));
+    resourceName = new StringArgument(
+        null, "resourceName", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_RESOURCE_NAME.get(),
+        INFO_QUERY_TOOL_ARG_DESC_RESOURCE_NAME.get(),
+        null, Arrays.asList("User"));
     parser.addArgument(resourceName);
 
 
-    description = "The endpoint URI to use for the queries.  If this " +
-                  "isn't specified, then a default of '/Users' will " +
-                  "be used. The endpoint may have a '.json' or '.xml' " +
-                  "suffix to indicate that the resources should be " +
-                  "returned in the specified form. The default is to " +
-                  "use JSON.";
-    endpointURI = new StringArgument(null, "endpointURI", false, 1,
-                                     "{endpointURI}", description, null,
-                                     Arrays.asList("/Users"));
-    parser.addArgument(endpointURI);
+    xmlFormat = new BooleanArgument(
+        'x', "xml", 1,
+        INFO_QUERY_TOOL_ARG_DESC_XML_FORMAT.get());
+    parser.addArgument(xmlFormat);
 
-
-    description = "The filter to use for the queries.  It may be a simple " +
-                  "filter, or it may be a value pattern to express a range " +
-                  "of filters (e.g., \"userName eq user.[1-1000]\"). If this " +
-                  "isn't specified, then no filtering is requested.";
-    filter = new StringArgument('f', "filter", false, 1, "{filter}",
-                                description);
+    filter = new StringArgument(
+        'f', "filter", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_FILTER.get(),
+        INFO_QUERY_TOOL_ARG_DESC_FILTER.get());
     parser.addArgument(filter);
 
 
-    description = "The name of an attribute to include in resources returned " +
-                  "from the queries.  Multiple attributes may be requested " +
-                  "by providing this argument multiple times.  If no request " +
-                  "attributes are provided, then the resources returned will " +
-                  "include all available attributes.";
-    attributes = new StringArgument('A', "attribute", false, 0, "{name}",
-                                    description);
+    attributes = new StringArgument(
+        'A', "attribute", false, 0,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_ATTRIBUTE.get(),
+        INFO_QUERY_TOOL_ARG_DESC_ATTRIBUTE.get());
     parser.addArgument(attributes);
 
 
-    description = "The number of threads to use to perform the queries.  If " +
-                  "this is not provided, then a default of one thread will " +
-                  "be used.";
-    numThreads = new IntegerArgument('t', "numThreads", true, 1, "{num}",
-                                     description, 1, Integer.MAX_VALUE, 1);
+    numThreads = new IntegerArgument(
+        't', "numThreads", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_NUM_THREADS.get(),
+        INFO_QUERY_TOOL_ARG_DESC_NUM_THREADS.get(),
+        1, Integer.MAX_VALUE, 1);
     parser.addArgument(numThreads);
 
 
-    description = "The length of time in seconds between output lines.  If " +
-                  "this is not provided, then a default interval of five " +
-                  "seconds will be used.";
-    collectionInterval = new IntegerArgument('i', "intervalDuration", true, 1,
-                                             "{num}", description, 1,
-                                             Integer.MAX_VALUE, 5);
+    collectionInterval = new IntegerArgument(
+        'i', "intervalDuration", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_INTERVAL_DURATION.get(),
+        INFO_QUERY_TOOL_ARG_DESC_INTERVAL_DURATION.get(), 1,
+        Integer.MAX_VALUE, 5);
     parser.addArgument(collectionInterval);
 
 
-    description = "The maximum number of intervals for which to run.  If " +
-                  "this is not provided, then the tool will run until it is " +
-                  "interrupted.";
-    numIntervals = new IntegerArgument('I', "numIntervals", true, 1, "{num}",
-                                       description, 1, Integer.MAX_VALUE,
-                                       Integer.MAX_VALUE);
+    numIntervals = new IntegerArgument(
+        'I', "numIntervals", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_NUM_INTERVALS.get(),
+        INFO_QUERY_TOOL_ARG_DESC_NUM_INTERVALS.get(),
+        1, Integer.MAX_VALUE,
+        Integer.MAX_VALUE);
     parser.addArgument(numIntervals);
 
-    description = "The target number of queries to perform per second.  It " +
-                  "is still necessary to specify a sufficient number of " +
-                  "threads for achieving this rate.  If this option is not " +
-                  "provided, then the tool will run at the maximum rate for " +
-                  "the specified number of threads.";
-    ratePerSecond = new IntegerArgument('r', "ratePerSecond", false, 1,
-                                        "{searches-per-second}", description,
-                                        1, Integer.MAX_VALUE);
+    ratePerSecond = new IntegerArgument(
+        'r', "ratePerSecond", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_RATE_PER_SECOND.get(),
+        INFO_QUERY_TOOL_ARG_DESC_RATE_PER_SECOND.get(),
+        1, Integer.MAX_VALUE);
     parser.addArgument(ratePerSecond);
 
-    description = "The number of intervals to complete before beginning " +
-                  "overall statistics collection.  Specifying a nonzero " +
-                  "number of warm-up intervals gives the client and server " +
-                  "a chance to warm up without skewing performance results.";
-    warmUpIntervals = new IntegerArgument(null, "warmUpIntervals", true, 1,
-         "{num}", description, 0, Integer.MAX_VALUE, 0);
+    warmUpIntervals = new IntegerArgument(
+        null, "warmUpIntervals", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_WARM_UP_INTERVALS.get(),
+        INFO_QUERY_TOOL_ARG_DESC_WARM_UP_INTERVALS.get(),
+        0, Integer.MAX_VALUE, 0);
     parser.addArgument(warmUpIntervals);
 
-    description = "Indicates the format to use for timestamps included in " +
-                  "the output.  A value of 'none' indicates that no " +
-                  "timestamps should be included.  A value of 'with-date' " +
-                  "indicates that both the date and the time should be " +
-                  "included.  A value of 'without-date' indicates that only " +
-                  "the time should be included.";
     final LinkedHashSet<String> allowedFormats = new LinkedHashSet<String>(3);
     allowedFormats.add("none");
     allowedFormats.add("with-date");
     allowedFormats.add("without-date");
-    timestampFormat = new StringArgument(null, "timestampFormat", true, 1,
-         "{format}", description, allowedFormats, "none");
+    timestampFormat = new StringArgument(
+        null, "timestampFormat", true, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_TIMESTAMP_FORMAT.get(),
+        INFO_QUERY_TOOL_ARG_DESC_TIMESTAMP_FORMAT.get(),
+        allowedFormats, "none");
     parser.addArgument(timestampFormat);
 
-    description = "Generate output in CSV format rather than a " +
-                  "display-friendly format";
-    csvFormat = new BooleanArgument('c', "csv", 1, description);
+    csvFormat = new BooleanArgument(
+        'c', "csv", 1,
+        INFO_QUERY_TOOL_ARG_DESC_CSV_FORMAT.get());
     parser.addArgument(csvFormat);
 
-    description = "Specifies the seed to use for the random number generator.";
-    randomSeed = new IntegerArgument('R', "randomSeed", false, 1, "{value}",
-         description);
+    randomSeed = new IntegerArgument(
+        'R', "randomSeed", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_RANDOM_SEED.get(),
+        INFO_QUERY_TOOL_ARG_DESC_RANDOM_SEED.get());
     parser.addArgument(randomSeed);
 
     parser.addDependentArgumentSet(authID, authPassword, authPasswordFile);
@@ -426,18 +402,13 @@ public class SCIMQueryRate
       "--port", "80",
       "--authID", "admin",
       "--authPassword", "password",
-      "--endpointURI", "/Users.xml",
+      "--xml",
       "--filter", "userName eq 'user.[1-1000000]'",
       "--attribute", "userName",
       "--attribute", "name",
       "--numThreads", "8"
     };
-    final String description =
-         "Test query performance by querying randomly across a set of one " +
-         "million users with eight concurrent threads.  The user resources " +
-         "returned to the client will be in XML form and will include the " +
-         "userName and name attributes.";
-    examples.put(args, description);
+    examples.put(args, INFO_QUERY_TOOL_EXAMPLE_1.get());
 
     return examples;
   }
@@ -476,7 +447,7 @@ public class SCIMQueryRate
       catch (ParseException pe)
       {
         Debug.debugException(pe);
-        err("Unable to parse the filter pattern:  ", pe.getMessage());
+        err(ERR_QUERY_TOOL_BAD_FILTER_PATTERN.get(pe.getMessage()));
         return ResultCode.PARAM_ERROR;
       }
     }
@@ -612,9 +583,15 @@ public class SCIMQueryRate
       catch (IOException e)
       {
         Debug.debugException(e);
-        err("Unable to set basic authentication:  ", e.getMessage());
+        err(ERR_QUERY_TOOL_SET_BASIC_AUTH.get(e.getMessage()));
         return ResultCode.LOCAL_ERROR;
       }
+    }
+
+    if (xmlFormat.isPresent())
+    {
+      service.setContentType(MediaType.APPLICATION_XML_TYPE);
+      service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
     }
 
     // Retrieve the resource schema.
@@ -627,7 +604,7 @@ public class SCIMQueryRate
     catch (SCIMException e)
     {
       Debug.debugException(e);
-      err("Error retrieving resource schema:  ", e.getMessage());
+      err(ERR_QUERY_TOOL_RETRIEVE_RESOURCE_SCHEMA.get(e.getMessage()));
       return ResultCode.OTHER;
     }
 
@@ -746,7 +723,7 @@ public class SCIMQueryRate
         remainingWarmUpIntervals--;
         if (remainingWarmUpIntervals == 0)
         {
-          out("Warm-up completed.  Beginning overall statistics collection.");
+          out(INFO_QUERY_TOOL_WARM_UP_COMPLETED.get());
           setOverallStartTime = true;
         }
       }
