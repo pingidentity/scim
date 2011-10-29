@@ -26,6 +26,7 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.json.JSONArray;
@@ -93,8 +94,9 @@ public class JsonUnmarshaller implements Unmarshaller
     // The first keyed object ought to be a schemas array, but it may not be
     // present if 1) the attrs are all core and 2) the client decided to omit
     // the schema declaration.
-    //Object schemas = jsonObject.get(SCIMObject.SCHEMAS_ATTRIBUTE_NAME);
+    final JSONArray schemas = jsonObject.optJSONArray("schemas");
 
+    // Read the core attributes.
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor
         .getAttributes())
     {
@@ -102,26 +104,42 @@ public class JsonUnmarshaller implements Unmarshaller
       final Object jsonAttribute = jsonObject.opt(externalAttributeName);
       if (jsonAttribute != null)
       {
-        final SCIMAttribute attr;
-        if (attributeDescriptor.isPlural())
-        {
-          attr = createPluralAttribute((JSONArray) jsonAttribute,
-                                       attributeDescriptor);
-        }
-        else if (attributeDescriptor.getDataType() ==
-            AttributeDescriptor.DataType.COMPLEX)
-        {
-          attr = SCIMAttribute.createSingularAttribute(attributeDescriptor,
-              createComplexAttribute((JSONObject) jsonAttribute,
-                  attributeDescriptor));
-        }
-        else
-        {
-          attr = this.createSimpleAttribute(jsonAttribute, attributeDescriptor);
-        }
-        scimObject.addAttribute(attr);
+        scimObject.addAttribute(
+            createAttribute(attributeDescriptor, jsonAttribute));
       }
     }
+
+    // Read the extension attributes.
+    if (schemas != null)
+    {
+      for (int i = 0; i < schemas.length(); i++)
+      {
+        final String schema = schemas.getString(i);
+        if (schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+        {
+          continue;
+        }
+
+        final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
+        if (schemaAttrs != null)
+        {
+          if (resourceDescriptor.getAttributeSchemas().contains(schema))
+          {
+            final Iterator keys = schemaAttrs.keys();
+            while (keys.hasNext())
+            {
+              final String attributeName = (String) keys.next();
+              final AttributeDescriptor attributeDescriptor =
+                  resourceDescriptor.getAttribute(schema, attributeName);
+              final Object jsonAttribute = schemaAttrs.get(attributeName);
+              scimObject.addAttribute(
+                  createAttribute(attributeDescriptor, jsonAttribute));
+            }
+          }
+        }
+      }
+    }
+
     return resourceFactory.createResource(resourceDescriptor, scimObject);
   }
 
@@ -191,11 +209,7 @@ public class JsonUnmarshaller implements Unmarshaller
         {
           JSONObject error = errors.getJSONObject(0);
           int code = error.getInt("code"); // TODO: code is optional!
-          String description = null;
-          if(error.has("description"))
-          {
-            description = error.getString("description");
-          }
+          String description = error.optString("description");
           return SCIMException.createException(code, description);
         }
       }
@@ -294,5 +308,38 @@ public class JsonUnmarshaller implements Unmarshaller
     }
 
     return SCIMAttributeValue.createComplexValue(complexAttrs);
+  }
+
+
+
+  /**
+   * Create a SCIM attribute from its JSON object representation.
+   *
+   * @param descriptor     The attribute descriptor.
+   * @param jsonAttribute  The JSON object representing the attribute.
+   *
+   * @return  The created SCIM attribute.
+   *
+   * @throws JSONException If the JSON object is not valid.
+   * @throws InvalidResourceException If a schema error occurs.
+   */
+  private SCIMAttribute createAttribute(
+      final AttributeDescriptor descriptor, final Object jsonAttribute)
+      throws JSONException, InvalidResourceException
+  {
+    if (descriptor.isPlural())
+    {
+      return createPluralAttribute((JSONArray) jsonAttribute, descriptor);
+    }
+    else if (descriptor.getDataType() == AttributeDescriptor.DataType.COMPLEX)
+    {
+      return SCIMAttribute.createSingularAttribute(
+          descriptor,
+          createComplexAttribute((JSONObject) jsonAttribute, descriptor));
+    }
+    else
+    {
+      return this.createSimpleAttribute(jsonAttribute, descriptor);
+    }
   }
 }

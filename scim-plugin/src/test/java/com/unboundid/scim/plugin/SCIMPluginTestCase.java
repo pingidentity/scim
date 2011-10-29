@@ -224,13 +224,12 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //TODO: no LDAP schema for TimeZone
     //assertEquals(returnedUser.getTimeZone(), user.getTimeZone());
 
-    //FIXME: attribute value always comes back null here
-    //assertEquals(returnedUser.getSingularAttributeValue(
-    //        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
-    //        Manager.MANAGER_RESOLVER).getManagerId(),
-    //             user.getSingularAttributeValue(
-    //               SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
-    //               Manager.MANAGER_RESOLVER).getManagerId());
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getManagerId(),
+                 user.getSingularAttributeValue(
+                   SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+                   Manager.MANAGER_RESOLVER).getManagerId());
 
 
     //Verify what is actually in the Directory
@@ -243,8 +242,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(entry.getAttributeValue("sn"), "Doe");
     assertEquals(entry.getAttributeValue("title"), "Vice President");
     assertEquals(entry.getAttributeValue("mail"), "j.doe@example.com");
-    //FIXME: attribute value always comes back null here
-    //assertEquals(entry.getAttributeValue("manager"), "uid=myManager,"+baseDN);
+    assertEquals(entry.getAttributeValue("manager"), "uid=myManager,"+baseDN);
 
     System.out.println("Full user entry:\n" + entry.toLDIFString());
 

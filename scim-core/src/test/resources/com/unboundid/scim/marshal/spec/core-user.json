@@ -1,12 +1,7 @@
 {
     "schemas":[
-        {
-            "urn":"urn:scim:schemas:core:1.0"
-        },
-        {
-          "urn":"http://hr.example.com"
-        }
-
+        "urn:scim:schemas:core:1.0",
+        "http://hr.example.com"
     ],
     "id":"uid=babs",
     "externalId":"701984",
