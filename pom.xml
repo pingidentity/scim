@@ -25,14 +25,13 @@
     <distributionManagement>
         <repository>
             <id>releases</id>
-            <name>Engineering Releases Repository</name>
-            <url>http://maven-eng:8080/nexus/content/repositories/releases</url>
+            <name>QA Releases Repository</name>
+            <url>http://hudson:8081/nexus/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
-            <name>Engineering Snapshots Repository</name>
-            <url>http://maven-eng:8080/nexus/content/repositories/snapshots</url>
-            <uniqueVersion>false</uniqueVersion>
+            <name>QA Snapshots Repository</name>
+            <url>http://hudson:8081/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
