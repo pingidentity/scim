@@ -48,7 +48,7 @@ public final class Version
    * value is "${build.product.name}".
    */
   public static final String PRODUCT_NAME =
-       "${build.product.name}";
+       "${scim.build.product.name}";
 
 
 
@@ -57,7 +57,7 @@ public final class Version
    * For this build, the value is "${build.product.short.name}".
    */
   public static final String SHORT_NAME =
-       "${build.product.short.name}";
+       "${scim.build.product.short.name}";
 
 
 
@@ -66,7 +66,7 @@ public final class Version
    * For this build, the value is "${build.version}".
    */
   public static final String VERSION =
-       "${build.version}";
+       "${scim.build.version}";
 
 
 
@@ -74,7 +74,7 @@ public final class Version
    * A timestamp that indicates when this build of the SCIM SDK was generated.
    * For this build, the value is "${build.timestamp}".
    */
-  public static final String BUILD_TIMESTAMP = "${build.timestamp}";
+  public static final String BUILD_TIMESTAMP = "${scim.build.timestamp}";
 
 
 

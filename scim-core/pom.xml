@@ -17,10 +17,10 @@
 
     <properties>
         <maven.build.timestamp.format>yyyyMMddHHmmss'Z'</maven.build.timestamp.format>
-        <build.timestamp>${maven.build.timestamp}</build.timestamp>
-        <build.product.name>UnboundID SCIM SDK for Java</build.product.name>
-        <build.product.short.name>unboundid-scimsdk</build.product.short.name>
-        <build.version>${project.version}</build.version>
+        <scim.build.timestamp>${maven.build.timestamp}</scim.build.timestamp>
+        <scim.build.product.name>UnboundID SCIM SDK for Java</scim.build.product.name>
+        <scim.build.product.short.name>unboundid-scimsdk</scim.build.product.short.name>
+        <scim.build.version>${project.version}</scim.build.version>
         <build.version.package.name>com.unboundid.scim.sdk</build.version.package.name>
         <build.version.package.dir>com/unboundid/scim/sdk</build.version.package.dir>
     </properties>
