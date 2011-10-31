@@ -48,7 +48,7 @@ public final class Version
    * value is "${build.product.name}".
    */
   public static final String PRODUCT_NAME =
-       "${scim.build.product.name}";
+       "${build.product.name}";
 
 
 
@@ -57,7 +57,7 @@ public final class Version
    * For this build, the value is "${build.product.short.name}".
    */
   public static final String SHORT_NAME =
-       "${scim.build.product.short.name}";
+       "${build.product.short.name}";
 
 
 
@@ -66,13 +66,13 @@ public final class Version
    * For this build, the value is "${build.version}".
    */
   public static final String VERSION =
-       "${scim.build.version}";
+       "${build.version}";
 
 
 
   /**
    * A timestamp that indicates when this build of the SCIM SDK was generated.
-   * For this build, the value is "${build.timestamp}".
+   * For this build, the value is "${scim.build.timestamp}".
    */
   public static final String BUILD_TIMESTAMP = "${scim.build.timestamp}";
 
@@ -100,7 +100,7 @@ public final class Version
 
   /**
    * The full version string for the SCIM SDK.  For this build, the value is
-   * "${build.product.name} ${product.version}".
+   * "${build.product.name} ${build.version}".
    */
   public static final String FULL_VERSION_STRING =
        PRODUCT_NAME + ' ' + VERSION;
@@ -110,7 +110,7 @@ public final class Version
   /**
    * The short version string for the SCIM SDK.  This will not have any spaces.
    * For this build, the value is
-   * "${build.product.short.name}-${product.version}".
+   * "${build.product.short.name}-${build.version}".
    */
   public static final String SHORT_VERSION_STRING =
        SHORT_NAME + '-' + VERSION;
