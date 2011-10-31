@@ -16,8 +16,8 @@
     <name>UnboundID SCIM SDK Core</name>
 
     <properties>
-        <maven.build.timestamp.format>yyyyMMddHHmmss'Z'</maven.build.timestamp.format>
-        <scim.build.timestamp>${maven.build.timestamp}</scim.build.timestamp>
+        <!-- Note, the 'scim.build.timestamp' property is set in the parent POM using
+             the build-number plugin. -->
         <scim.build.product.name>UnboundID SCIM SDK for Java</scim.build.product.name>
         <scim.build.product.short.name>unboundid-scimsdk</scim.build.product.short.name>
         <scim.build.version>${project.version}</scim.build.version>
