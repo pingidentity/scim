@@ -117,7 +117,7 @@ public class SCIMEndpoint<R extends BaseResource>
   /**
    * Constructs a new instance of a resource object which is empty. This
    * method does not interact with the SCIM service. It creates a local object
-   * that may be provided to the {@link SCIMEndpoint#insert} method after the
+   * that may be provided to the {@link SCIMEndpoint#create} method after the
    * attributes have been specified.
    *
    * @return  A new instance of a resource object.
@@ -298,28 +298,28 @@ public class SCIMEndpoint<R extends BaseResource>
   }
 
   /**
-   * Insert the specified resource instance.
+   * Create the specified resource instance at the service provider.
    *
-   * @param resource The resource to insert.
+   * @param resource The resource to create.
    * @return The newly inserted resource returned by the service provider.
    * @throws SCIMException If an error occurs.
    */
-  public R insert(final R resource) throws SCIMException
+  public R create(final R resource) throws SCIMException
   {
-    return insert(resource, null);
+    return create(resource, null);
   }
 
   /**
-   * Insert the specified resource instance and return only the specified
-   * attributes from the newly inserted resource.
+   * Create the specified resource instance at the service provider and return
+   * only the specified attributes from the newly inserted resource.
    *
-   * @param resource The resource to insert.
+   * @param resource The resource to create.
    * @param requestedAttributes The attributes of the newly inserted resource
    *                            to retrieve.
    * @return The newly inserted resource returned by the service provider.
    * @throws SCIMException If an error occurs.
    */
-  public R insert(final R resource,
+  public R create(final R resource,
                   final String... requestedAttributes)
       throws SCIMException
   {

@@ -103,7 +103,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                             null, null, null);
     service = new SCIMService(uri);
     service.setUserCredentials(instance.getDirmanagerDN(),
-                               instance.getDirmanagerPassword());
+        instance.getDirmanagerPassword());
 
     //
     //This can be helpful if you want to make SCIM requests from your browser
@@ -198,7 +198,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     Date startTime = new Date(System.currentTimeMillis() - 500);
     String beforeCount =
         getMonitorAsString(instance, "user-resource-post-successful");
-    UserResource returnedUser = userEndpoint.insert(user);
+    UserResource returnedUser = userEndpoint.create(user);
     String afterCount =
         getMonitorAsString(instance, "user-resource-post-successful");
     Date createTime = returnedUser.getMeta().getCreated();
@@ -212,7 +212,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(returnedUser.getTitle(), user.getTitle());
     assertEquals(returnedUser.getUserType(), user.getUserType());
     assertEquals(returnedUser.getEmails().iterator().next().getValue(),
-                   user.getEmails().iterator().next().getValue());
+        user.getEmails().iterator().next().getValue());
     assertTrue(createTime.after(startTime));
     assertTrue(createTime.before(endTime));
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
@@ -259,11 +259,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(group.getMembers().iterator().next().getValue(),
                           returnedUser.getId());
 
-    //Do the insert and verify what is returned from the endpoint
+    //Do the create and verify what is returned from the endpoint
     startTime = new Date(System.currentTimeMillis() - 500);
     beforeCount =
         getMonitorAsString(instance, "group-resource-post-successful");
-    GroupResource returnedGroup = grpEndpoint.insert(group);
+    GroupResource returnedGroup = grpEndpoint.create(group);
     afterCount =
         getMonitorAsString(instance, "group-resource-post-successful");
     createTime = returnedGroup.getMeta().getCreated();
@@ -274,7 +274,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertTrue(createTime.after(startTime));
     assertTrue(createTime.before(endTime));
     assertEquals(returnedGroup.getMembers().iterator().next().getValue(),
-                    group.getMembers().iterator().next().getValue());
+        group.getMembers().iterator().next().getValue());
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
 
@@ -673,7 +673,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     UserResource user1 = userEndpoint.newResource();
     user1.setUserName("groupsUser.1");
     user1.setName(new Name("User 1", "GroupsUser", null, "Test", null, null));
-    user1 = userEndpoint.insert(user1);
+    user1 = userEndpoint.create(user1);
 
     // Create different kinds of groups.
     GroupResource groupOfUniqueNames = groupEndpoint.newResource();
@@ -681,7 +681,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     final List<Entry<String>> members = new ArrayList<Entry<String>>(1);
     members.add(new Entry<String>(user1.getId(), null, false));
     groupOfUniqueNames.setMembers(members);
-    groupOfUniqueNames = groupEndpoint.insert(groupOfUniqueNames);
+    groupOfUniqueNames = groupEndpoint.create(groupOfUniqueNames);
 
     instance.getConnectionPool().add(
         generateGroupOfNamesEntry("groupOfNames", baseDN,

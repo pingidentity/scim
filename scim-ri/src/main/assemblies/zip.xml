@@ -39,10 +39,10 @@
             <fileMode>755</fileMode>
         </fileSet>
         <fileSet>
-            <outputDirectory>server</outputDirectory>
-            <directory>${project.basedir}/../scim-core/src/main/resources/com/unboundid/scim</directory>
+            <outputDirectory>server/config</outputDirectory>
+            <directory>${project.basedir}/../scim-ldap/src/main/resources/com/unboundid/scim/ldap</directory>
             <includes>
-                <include>schema/*.xsd</include>
+                <include>*.xsd</include>
             </includes>
         </fileSet>
         <fileSet>

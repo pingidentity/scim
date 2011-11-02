@@ -15,6 +15,13 @@
             <outputDirectory>config/scim</outputDirectory>
             <directory>${project.basedir}/../scim-ri/src/main/assemblies/server/config</directory>
         </fileSet>
+        <fileSet>
+            <outputDirectory>config/scim</outputDirectory>
+            <directory>${project.basedir}/../scim-ldap/src/main/resources/com/unboundid/scim/ldap</directory>
+            <includes>
+                <include>*.xsd</include>
+            </includes>
+        </fileSet>
     </fileSets>
     <dependencySets>
         <dependencySet>

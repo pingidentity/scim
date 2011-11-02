@@ -629,7 +629,7 @@ public class SCIMServerTestCase
 
     // Post the user via SCIM, returning selected attributes.
     SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-    final UserResource user1 = endpoint.insert(user, "id","meta");
+    final UserResource user1 = endpoint.create(user, "id", "meta");
 
     // Check the returned user.
     assertNotNull(user1);
@@ -701,7 +701,7 @@ public class SCIMServerTestCase
     user.setName(name);
 
     // Create the user via SCIM.
-    //final UserResource response = endpoint.insert(user);
+    //final UserResource response = endpoint.create(user);
 
     // Delete the user by providing the returned resource URI.
     //assertTrue(client.deleteResourceByURI(response.getResourceURI()));
@@ -753,7 +753,7 @@ public class SCIMServerTestCase
     }
 
     // Post a new user.
-    final UserResource user1 = endpoint.insert(user);
+    final UserResource user1 = endpoint.create(user);
 
     // Add a value that should be preserved during SCIM updates.
     testDS.modify(userDN, new Modification(ModificationType.ADD, "description",
@@ -920,13 +920,13 @@ public class SCIMServerTestCase
 
     SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
     // Post the new groups.
-    groupA = endpoint.insert(groupA);
+    groupA = endpoint.create(groupA);
     assertNotNull(groupA);
     Entry entry = testDS.getEntry(idGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
         "uid=user.1,dc=example,dc=com"));
 
-    groupB = endpoint.insert(groupB);
+    groupB = endpoint.create(groupB);
     assertNotNull(groupB);
 
     // Add a value that should be preserved during SCIM updates.
@@ -1025,7 +1025,7 @@ public class SCIMServerTestCase
 
     SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // Post a new user.
-    final UserResource user1 = endpoint.insert(user);
+    final UserResource user1 = endpoint.create(user);
     assertNotNull(user1);
 
     // Add some values to the user.

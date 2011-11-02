@@ -159,7 +159,7 @@ public class ClientTest
   private UserResource createUser()
       throws SCIMException
   {
-    return client.getUserEndpoint().insert(getTemplateUser());
+    return client.getUserEndpoint().create(getTemplateUser());
   }
 
 
