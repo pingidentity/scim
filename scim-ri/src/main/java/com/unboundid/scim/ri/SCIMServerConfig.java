@@ -50,6 +50,11 @@ public class SCIMServerConfig
    */
   private File resourcesFile;
 
+  /**
+   * The path to the HTTP access log file.
+   */
+  private String accessLogFile;
+
 
 
   /**
@@ -134,5 +139,29 @@ public class SCIMServerConfig
   public void setResourcesFile(final File resourcesFile)
   {
     this.resourcesFile = resourcesFile;
+  }
+
+
+
+  /**
+   * Retrieve the path of the HTTP access log file.
+   *
+   * @return The path of the HTTP access log file or <code>null</code> if
+   *         not specified.
+   */
+  public String getAccessLogFile() {
+    return accessLogFile;
+  }
+
+
+
+  /**
+   * Specifies the path of the HTTP access log file.
+   *
+   * @param accessLogFile The path of the HTTP access log file or
+   *                      <code>null</code> to disable access logging.
+   */
+  public void setAccessLogFile(final String accessLogFile) {
+    this.accessLogFile = accessLogFile;
   }
 }

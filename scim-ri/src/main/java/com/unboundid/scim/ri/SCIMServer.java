@@ -32,8 +32,13 @@ import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -80,6 +85,11 @@ public class SCIMServer
   private Server server;
 
   /**
+   * The Jetty ContextHandlerCollection used to handle requests.
+   */
+  private ContextHandlerCollection contextHandlerCollection;
+
+  /**
    * The set of SCIMApplications registered with the server,
    * keyed by the ServletContextHandler.
    */
@@ -110,11 +120,27 @@ public class SCIMServer
     final Server s = new Server(serverConfig.getListenPort());
     s.setThreadPool(new QueuedThreadPool(serverConfig.getMaxThreads()));
 
+    final HandlerCollection handlers = new HandlerCollection();
     final ContextHandlerCollection contexts = new ContextHandlerCollection();
-    s.setHandler(contexts);
+    final RequestLogHandler requestLogHandler = new RequestLogHandler();
+    handlers.setHandlers(
+        new Handler[]{contexts, new DefaultHandler(), requestLogHandler});
+    s.setHandler(handlers);
+
+    if(serverConfig.getAccessLogFile() != null)
+    {
+      NCSARequestLog requestLog =
+          new NCSARequestLog(serverConfig.getAccessLogFile());
+      requestLog.setRetainDays(90);
+      requestLog.setAppend(true);
+      requestLog.setExtended(false);
+      requestLog.setLogTimeZone("GMT");
+      requestLogHandler.setRequestLog(requestLog);
+    }
 
     this.config = serverConfig;
     this.server = s;
+    this.contextHandlerCollection = contexts;
     this.backends = new HashMap<ServletContextHandler, SCIMApplication>();
     this.resourceMappers = new HashMap<ResourceDescriptor, ResourceMapper>();
 
@@ -206,8 +232,7 @@ public class SCIMServer
           new HashMap<ServletContextHandler, SCIMApplication>(backends);
 
       final ServletContextHandler contextHandler =
-          new ServletContextHandler(
-              (ContextHandlerCollection) server.getHandler(),
+          new ServletContextHandler(contextHandlerCollection,
               normalizedBaseURI);
       application = new SCIMApplication(resourceMappers.keySet(), backend);
       newBackends.put(contextHandler, application);

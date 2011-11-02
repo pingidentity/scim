@@ -304,7 +304,6 @@ public class InMemoryServerTool
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
          INFO_MEM_SERVER_TOOL_ARG_DESC_ACCESS_LOG_FILE.get(), false, true, true,
          false);
-    accessLogFileArgument.setHidden(true); // TODO
     parser.addArgument(accessLogFileArgument);
 
     ldapAccessLogFileArgument = new FileArgument(null, "ldapAccessLogFile",
@@ -449,6 +448,13 @@ public class InMemoryServerTool
 
     serverConfig.setResourcesFile(useResourcesFileArgument.getValue());
 
+    // If an access log file was specified, then create the appropriate log
+    // handler.
+    if (accessLogFileArgument.isPresent())
+    {
+      serverConfig.setAccessLogFile(
+          accessLogFileArgument.getValue().getAbsolutePath());
+    }
     return serverConfig;
   }
 
