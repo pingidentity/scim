@@ -68,8 +68,8 @@ public class SCIMServerTestCase
   public void setup()
   {
     // Start a client for the SCIM operations.
-    service = new SCIMService(URI.create("http://localhost:"+getSSTestPort()));
-    service.setUserCredentials("cn=Manager", "password");
+    service = new SCIMService(URI.create("http://localhost:"+getSSTestPort()),
+        "cn=Manager", "password");
   }
 
 
@@ -84,8 +84,8 @@ public class SCIMServerTestCase
       throws Exception
   {
     SCIMService v1Service =
-        new SCIMService(URI.create("http://localhost:"+getSSTestPort()+"/v1"));
-    v1Service.setUserCredentials("cn=Manager", "password");
+        new SCIMService(URI.create("http://localhost:"+getSSTestPort()+"/v1"),
+            "cn=Manager", "password");
 
     SCIMEndpoint<UserResource> userEndpoint =
         v1Service.getUserEndpoint();
