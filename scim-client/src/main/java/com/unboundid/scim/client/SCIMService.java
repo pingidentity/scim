@@ -46,15 +46,43 @@ public class SCIMService
   private boolean[] overrides = new boolean[3];
 
   /**
-   * Constructs a SCIM client service.
+   * Constructs a new SCIMService that is configured from the provided
+   * <code>org.apache.wink.client.ClientConfig</code> instance.
+   *
+   * @param baseUrl The SCIM Service Provider URL.
+   * @param clientConfig The configuration to use.
+   */
+  public SCIMService(final URI baseUrl, final ClientConfig clientConfig)
+  {
+    this.baseURL = baseUrl;
+    this.client = new RestClient(clientConfig);
+  }
+
+  /**
+   * Constructs a new SCIMService that uses
+   * <code>java.net.HttpURLConnection</code> for the HTTP layer.
+   *
    * @param baseUrl The SCIM Service Provider URL.
    */
   public SCIMService(final URI baseUrl)
   {
-    this.baseURL = baseUrl;
+    this(baseUrl, new ClientConfig());
+  }
 
-    ClientConfig config = new ClientConfig();
-    this.client = new RestClient(config);
+  /**
+   * Constructs a new SCIMService with basic authentication support
+   * using the provided credentials. This SCIMService will use
+   * <code>java.net.HttpURLConnection</code> for the HTTP layer.
+   *
+   * @param baseUrl The SCIM Service Provider URL.
+   * @param username The username.
+   * @param password The password.
+   */
+  public SCIMService(final URI baseUrl, final String username,
+                     final String password)
+  {
+    this(baseUrl, new ClientConfig().handlers(new HttpBasicAuthSecurityHandler
+      (username,password)));
   }
 
   /**
@@ -246,20 +274,5 @@ public class SCIMService
    */
   public void setOverridePut(final boolean overridePut) {
     this.overrides[0] = overridePut;
-  }
-
-  /**
-   * Sets the basic authentication credentials that should be used.
-   *
-   * @param username The username;
-   * @param password The password.
-   */
-  public void setUserCredentials(final String username, final String password)
-  {
-    ClientConfig config = new ClientConfig();
-    HttpBasicAuthSecurityHandler basicAuth = new HttpBasicAuthSecurityHandler
-      (username,password);
-    config.handlers(basicAuth);
-    this.client = new RestClient(config);
   }
 }

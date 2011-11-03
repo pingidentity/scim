@@ -25,6 +25,7 @@ import org.apache.wink.client.handlers.HandlerContext;
 import org.apache.wink.common.http.HttpStatus;
 
 import javax.xml.bind.DatatypeConverter;
+import java.io.InputStream;
 
 /**
  * This class provides HTTP Basic Authentication handling.
@@ -58,6 +59,11 @@ public class HttpBasicAuthSecurityHandler implements ClientHandler {
     final HandlerContext context) throws Exception {
     ClientResponse response = context.doChain(request);
     if (response.getStatusCode() == HttpStatus.UNAUTHORIZED.getCode()) {
+      InputStream is = response.getEntity(InputStream.class);
+      if(is != null) {
+        // Throw away any entity content.
+        is.close();
+      }
       request.getHeaders().putSingle("Authorization", this.encodedCredentials);
       response = context.doChain(request);
       if (response.getStatusCode() == HttpStatus.UNAUTHORIZED.getCode()) {

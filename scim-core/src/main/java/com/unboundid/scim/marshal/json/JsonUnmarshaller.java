@@ -297,12 +297,22 @@ public class JsonUnmarshaller implements Unmarshaller
     while (keys.hasNext())
     {
       final String key = (String) keys.next();
-      final Object o = jsonAttribute.get(key);
-      final AttributeDescriptor complexAttr =
+      final AttributeDescriptor subAttribute =
           attributeDescriptor.getSubAttribute(key);
-      if (complexAttr != null)
+      if (subAttribute != null)
       {
-        SCIMAttribute childAttr = createSimpleAttribute(o, complexAttr);
+        SCIMAttribute childAttr;
+        // Allow plural sub-attribute as the resource schema needs this.
+        if (subAttribute.isPlural())
+        {
+          final JSONArray o = jsonAttribute.getJSONArray(key);
+          childAttr = createPluralAttribute(o, subAttribute);
+        }
+        else
+        {
+          final Object o = jsonAttribute.get(key);
+          childAttr = createSimpleAttribute(o, subAttribute);
+        }
         complexAttrs.add(childAttr);
       }
     }

@@ -24,6 +24,7 @@ import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.Resources;
@@ -180,32 +181,45 @@ public class SCIMEndpoint<R extends BaseResource>
 
     ClientResponse response = clientResource.get();
 
-    if(response.getStatusType() == Response.Status.NOT_MODIFIED)
+    InputStream entity = response.getEntity(InputStream.class);
+    try
     {
-      return null;
-    }
-    else if(response.getStatusType() == Response.Status.OK)
-    {
-      R resource = unmarshaller.unmarshal(
-          response.getEntity(InputStream.class), resourceDescriptor,
-          resourceFactory);
-      addMissingMetaData(response, resource);
-      return resource;
-    }
-    else
-    {
-      SCIMException scimException = null;
-      InputStream entity = response.getEntity(InputStream.class);
-      if(entity != null)
+      if(response.getStatusType() == Response.Status.NOT_MODIFIED)
       {
-        scimException = unmarshaller.unmarshalError(entity);
+        return null;
       }
-      if(scimException == null)
+      else if(response.getStatusType() == Response.Status.OK)
       {
-        scimException = SCIMException.createException(response.getStatusCode(),
-            response.getMessage());
+        R resource = unmarshaller.unmarshal(entity, resourceDescriptor,
+            resourceFactory);
+        addMissingMetaData(response, resource);
+        return resource;
       }
-      throw scimException;
+      else
+      {
+        SCIMException scimException = null;
+        if(entity != null)
+        {
+          scimException = unmarshaller.unmarshalError(entity);
+        }
+        if(scimException == null)
+        {
+          scimException = SCIMException.createException(
+              response.getStatusCode(), response.getMessage());
+        }
+        throw scimException;
+      }
+    }
+    finally
+    {
+      try {
+        if (entity != null) {
+          entity.close();
+        }
+      } catch (IOException e) {
+        // Lets just log this and ignore.
+        Debug.debugException(e);
+      }
     }
   }
 
@@ -273,27 +287,40 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
     ClientResponse response = clientResource.get();
+    InputStream entity = response.getEntity(InputStream.class);
+    try
+    {
+      if(response.getStatusType() == Response.Status.OK)
+      {
+        return unmarshaller.unmarshalResources(entity, resourceDescriptor,
+            resourceFactory);
+      }
+      else
+      {
+        SCIMException scimException = null;
 
-    if(response.getStatusType() == Response.Status.OK)
-    {
-      return unmarshaller.unmarshalResources(
-          response.getEntity(InputStream.class), resourceDescriptor,
-          resourceFactory);
+        if(entity != null)
+        {
+          scimException = unmarshaller.unmarshalError(entity);
+        }
+        if(scimException == null)
+        {
+          scimException = SCIMException.createException(
+              response.getStatusCode(), response.getMessage());
+        }
+        throw scimException;
+      }
     }
-    else
+    finally
     {
-      SCIMException scimException = null;
-      InputStream entity = response.getEntity(InputStream.class);
-      if(entity != null)
-      {
-        scimException = unmarshaller.unmarshalError(entity);
+      try {
+        if (entity != null) {
+          entity.close();
+        }
+      } catch (IOException e) {
+        // Lets just log this and ignore.
+        Debug.debugException(e);
       }
-      if(scimException == null)
-      {
-        scimException = SCIMException.createException(response.getStatusCode(),
-            response.getMessage());
-      }
-      throw scimException;
     }
   }
 
@@ -344,29 +371,42 @@ public class SCIMEndpoint<R extends BaseResource>
     };
 
     ClientResponse response = clientResource.post(output);
+    InputStream entity = response.getEntity(InputStream.class);
+    try
+    {
+      if(response.getStatusType() == Response.Status.CREATED)
+      {
+        R postedResource = unmarshaller.unmarshal(entity, resourceDescriptor,
+            resourceFactory);
+        addMissingMetaData(response, postedResource);
+        return postedResource;
+      }
+      else
+      {
+        SCIMException scimException = null;
 
-    if(response.getStatusType() == Response.Status.CREATED)
-    {
-      R postedResource = unmarshaller.unmarshal(
-          response.getEntity(InputStream.class), resourceDescriptor,
-          resourceFactory);
-      addMissingMetaData(response, postedResource);
-      return postedResource;
+        if(entity != null)
+        {
+          scimException = unmarshaller.unmarshalError(entity);
+        }
+        if(scimException == null)
+        {
+          scimException = SCIMException.createException(
+              response.getStatusCode(), response.getMessage());
+        }
+        throw scimException;
+      }
     }
-    else
+    finally
     {
-      SCIMException scimException = null;
-      InputStream entity = response.getEntity(InputStream.class);
-      if(entity != null)
-      {
-        scimException = unmarshaller.unmarshalError(entity);
+      try {
+        if (entity != null) {
+          entity.close();
+        }
+      } catch (IOException e) {
+        // Lets just log this and ignore.
+        Debug.debugException(e);
       }
-      if(scimException == null)
-      {
-        scimException = SCIMException.createException(response.getStatusCode(),
-            response.getMessage());
-      }
-      throw scimException;
     }
   }
 
@@ -442,28 +482,42 @@ public class SCIMEndpoint<R extends BaseResource>
       response = clientResource.put(output);
     }
 
-    if(response.getStatusType() == Response.Status.OK)
+    InputStream entity = response.getEntity(InputStream.class);
+    try
     {
-      R postedResource = unmarshaller.unmarshal(
-          response.getEntity(InputStream.class), resourceDescriptor,
-          resourceFactory);
-      addMissingMetaData(response, postedResource);
-      return postedResource;
+      if(response.getStatusType() == Response.Status.OK)
+      {
+        R postedResource = unmarshaller.unmarshal(entity, resourceDescriptor,
+            resourceFactory);
+        addMissingMetaData(response, postedResource);
+        return postedResource;
+      }
+      else
+      {
+        SCIMException scimException = null;
+
+        if(entity != null)
+        {
+          scimException = unmarshaller.unmarshalError(entity);
+        }
+        if(scimException == null)
+        {
+          scimException = SCIMException.createException(
+              response.getStatusCode(), response.getMessage());
+        }
+        throw scimException;
+      }
     }
-    else
+    finally
     {
-      SCIMException scimException = null;
-      InputStream entity = response.getEntity(InputStream.class);
-      if(entity != null)
-      {
-        scimException = unmarshaller.unmarshalError(entity);
+      try {
+        if (entity != null) {
+          entity.close();
+        }
+      } catch (IOException e) {
+        // Lets just log this and ignore.
+        Debug.debugException(e);
       }
-      if(scimException == null)
-      {
-        scimException = SCIMException.createException(response.getStatusCode(),
-            response.getMessage());
-      }
-      throw scimException;
     }
   }
 
@@ -518,20 +572,35 @@ public class SCIMEndpoint<R extends BaseResource>
       response = clientResource.delete();
     }
 
-    if(response.getStatusType() != Response.Status.OK)
+    InputStream entity = response.getEntity(InputStream.class);
+    try
     {
-      SCIMException scimException = null;
-      InputStream entity = response.getEntity(InputStream.class);
-      if(entity != null)
+      if(response.getStatusType() != Response.Status.OK)
       {
-        scimException = unmarshaller.unmarshalError(entity);
+        SCIMException scimException = null;
+
+        if(entity != null)
+        {
+          scimException = unmarshaller.unmarshalError(entity);
+        }
+        if(scimException == null)
+        {
+          scimException = SCIMException.createException(
+              response.getStatusCode(), response.getMessage());
+        }
+        throw scimException;
       }
-      if(scimException == null)
-      {
-        scimException = SCIMException.createException(response.getStatusCode(),
-            response.getMessage());
+    }
+    finally
+    {
+      try {
+        if (entity != null) {
+          entity.close();
+        }
+      } catch (IOException e) {
+        // Lets just log this and ignore.
+        Debug.debugException(e);
       }
-      throw scimException;
     }
   }
 

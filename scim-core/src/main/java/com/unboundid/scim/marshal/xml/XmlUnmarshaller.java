@@ -337,9 +337,18 @@ public class XmlUnmarshaller implements Unmarshaller
       Node item1 = childNodes.item(i);
       if (item1.getNodeType() == Node.ELEMENT_NODE)
       {
-        AttributeDescriptor complexAttr =
+        SCIMAttribute childAttr;
+        AttributeDescriptor subAttribute =
             attributeDescriptor.getSubAttribute(item1.getNodeName());
-        SCIMAttribute childAttr = createSimpleAttribute(item1, complexAttr);
+        // Allow plural sub-attribute as the resource schema needs this.
+        if(subAttribute.isPlural())
+        {
+          childAttr = createPluralAttribute(item1, subAttribute);
+        }
+        else
+        {
+          childAttr = createSimpleAttribute(item1, subAttribute);
+        }
         complexAttrs.add(childAttr);
       }
     }

@@ -65,8 +65,8 @@ public class ClientTest
 
     final SCIMService client =
         new SCIMService(
-            URI.create("http://" + host + ":" + Integer.parseInt(port)));
-    client.setUserCredentials(userName, password);
+            URI.create("http://" + host + ":" + Integer.parseInt(port)),
+            userName, password);
 
     final ClientTest clientTest = new ClientTest(client);
     clientTest.testGetUser();

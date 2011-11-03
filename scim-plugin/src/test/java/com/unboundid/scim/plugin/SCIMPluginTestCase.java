@@ -101,8 +101,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     final URI uri = new URI("http", null, instance.getLdapHost(), scimPort,
                             null, null, null);
-    service = new SCIMService(uri);
-    service.setUserCredentials(instance.getDirmanagerDN(),
+    service = new SCIMService(uri, instance.getDirmanagerDN(),
         instance.getDirmanagerPassword());
 
     //

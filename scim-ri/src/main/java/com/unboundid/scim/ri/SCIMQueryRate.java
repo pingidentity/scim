@@ -23,6 +23,8 @@ import com.unboundid.scim.client.SCIMService;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.util.ColumnFormatter;
 import com.unboundid.util.CommandLineTool;
@@ -37,6 +39,13 @@ import com.unboundid.util.args.BooleanArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.wink.client.ApacheHttpClientConfig;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
@@ -52,7 +61,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.unboundid.util.StaticUtils.NO_STRINGS;
 import static com.unboundid.scim.ri.RIMessages.*;
-
+import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
 /**
  * This class provides a tool that can be used to query a SCIM server repeatedly
@@ -558,9 +567,16 @@ public class SCIMQueryRate
     final long intervalMillis = 1000L * collectionInterval.getValue();
 
 
-    // Create the SCIM client to use for the queries.
-    SCIMService service = new SCIMService(URI.create(
-        "http://"+ host.getValue() + ":" + port.getValue()));
+    // We will use Apache's HttpClient library for this tool.
+    HttpParams params = new BasicHttpParams();
+    DefaultHttpClient.setDefaultHttpParams(params);
+    params.setBooleanParameter(SO_REUSEADDR, true);
+    ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager();
+    mgr.setMaxTotal(numThreads.getValue());
+    DefaultHttpClient httpClient =
+        new DefaultHttpClient(new ThreadSafeClientConnManager(), params);
+    ApacheHttpClientConfig clientConfig =
+        new ApacheHttpClientConfig(httpClient);
     if (authID.isPresent())
     {
       try
@@ -578,7 +594,9 @@ public class SCIMQueryRate
         {
           password = null;
         }
-        service.setUserCredentials(authID.getValue(), password);
+        httpClient.getCredentialsProvider().setCredentials(
+            new AuthScope(host.getValue(), port.getValue()),
+            new UsernamePasswordCredentials(authID.getValue(), password));
       }
       catch (IOException e)
       {
@@ -587,6 +605,10 @@ public class SCIMQueryRate
         return ResultCode.LOCAL_ERROR;
       }
     }
+
+    // Create the SCIM client to use for the queries.
+    SCIMService service = new SCIMService(URI.create(
+        "http://"+ host.getValue() + ":" + port.getValue()), clientConfig);
 
     if (xmlFormat.isPresent())
     {
@@ -598,8 +620,16 @@ public class SCIMQueryRate
     ResourceDescriptor resourceDescriptor;
     try
     {
-      resourceDescriptor =
-          service.getResourceSchemaEndpoint().get(resourceName.getValue());
+      Resources<ResourceDescriptor> resources =
+          service.getResourceSchemaEndpoint().query(
+              "name eq '" + resourceName.getValue() + "'");
+      if(resources.getTotalResults() == 0)
+      {
+        throw new ResourceNotFoundException("Resource " +
+            resourceName.getValue() +
+            " is not defined by the service provider");
+      }
+      resourceDescriptor = resources.iterator().next();
     }
     catch (SCIMException e)
     {
