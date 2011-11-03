@@ -590,7 +590,12 @@ public final class ConfigurableResourceMapper extends ResourceMapper
         final SCIMAttribute attribute = attributeMapper.toSCIMAttribute(entry);
         if (attribute != null)
         {
-          attributes.add(attribute);
+          final SCIMAttribute paredAttribute =
+              queryAttributes.pareAttribute(attribute);
+          if (paredAttribute != null)
+          {
+            attributes.add(paredAttribute);
+          }
         }
       }
     }
@@ -608,7 +613,12 @@ public final class ConfigurableResourceMapper extends ResourceMapper
                                                searchBaseDN);
           if (attribute != null)
           {
-            attributes.add(attribute);
+            final SCIMAttribute paredAttribute =
+                queryAttributes.pareAttribute(attribute);
+            if (paredAttribute != null)
+            {
+              attributes.add(paredAttribute);
+            }
           }
         }
       }

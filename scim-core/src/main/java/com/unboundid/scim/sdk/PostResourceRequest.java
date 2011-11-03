@@ -26,17 +26,12 @@ import java.net.URI;
 /**
  * This class represents a SCIM Post Resource request to create a new resource.
  */
-public final class PostResourceRequest extends SCIMRequest
+public final class PostResourceRequest extends ResourceReturningRequest
 {
   /**
    * The contents of the resource to be created.
    */
   private final SCIMObject resourceObject;
-
-  /**
-   * The set of requested attributes.
-   */
-  private final SCIMQueryAttributes attributes;
 
 
 
@@ -57,9 +52,8 @@ public final class PostResourceRequest extends SCIMRequest
                              final SCIMObject resourceObject,
                              final SCIMQueryAttributes attributes)
   {
-    super(baseURL, authenticatedUserID, resourceDescriptor);
+    super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
     this.resourceObject      = resourceObject;
-    this.attributes          = attributes;
   }
 
 
@@ -72,17 +66,5 @@ public final class PostResourceRequest extends SCIMRequest
   public SCIMObject getResourceObject()
   {
     return resourceObject;
-  }
-
-
-
-  /**
-   * Get the set of requested attributes.
-   *
-   * @return  The set of requested attributes.
-   */
-  public SCIMQueryAttributes getAttributes()
-  {
-    return attributes;
   }
 }

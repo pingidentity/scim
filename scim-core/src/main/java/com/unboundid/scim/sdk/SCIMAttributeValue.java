@@ -46,8 +46,8 @@ public final class SCIMAttributeValue
   private final SimpleValue value;
 
   /**
-   * The attributes comprising the complex value, keyed by the name of the
-   * attribute, or {@code null} if the attribute value is simple.
+   * The attributes comprising the complex value, keyed by the lower case
+   * name of the attribute, or {@code null} if the attribute value is simple.
    */
   private final Map<String,SCIMAttribute> attributes;
 
@@ -215,12 +215,13 @@ public final class SCIMAttributeValue
         new LinkedHashMap<String, SCIMAttribute>();
     for (final SCIMAttribute a : attributes)
     {
-      if (map.containsKey(a.getName()))
+      final String lowerCaseName = StaticUtils.toLowerCase(a.getName());
+      if (map.containsKey(lowerCaseName))
       {
         throw new RuntimeException("Duplicate attribute " + a.getName() +
                                    " in complex attribute value");
       }
-      map.put(a.getName(), a);
+      map.put(lowerCaseName, a);
     }
     return new SCIMAttributeValue(Collections.unmodifiableMap(map));
   }
@@ -241,12 +242,13 @@ public final class SCIMAttributeValue
         new LinkedHashMap<String, SCIMAttribute>();
     for (final SCIMAttribute a : attributes)
     {
-      if (map.containsKey(a.getName()))
+      final String lowerCaseName = StaticUtils.toLowerCase(a.getName());
+      if (map.containsKey(lowerCaseName))
       {
         throw new RuntimeException("Duplicate attribute " + a.getName() +
                                    " in complex attribute value");
       }
-      map.put(a.getName(), a);
+      map.put(lowerCaseName, a);
     }
     return new SCIMAttributeValue(Collections.unmodifiableMap(map));
   }
@@ -351,8 +353,9 @@ public final class SCIMAttributeValue
 
 
   /**
-   * Retrieves the attributes comprising the complex value, keyed by the name
-   * of the attribute, or {@code null} if the attribute value is simple.
+   * Retrieves the attributes comprising the complex value, keyed by the lower
+   * case name of the attribute, or {@code null} if the attribute value is
+   * simple.
    *
    * @return  The attributes comprising the complex value.
    */
@@ -377,7 +380,7 @@ public final class SCIMAttributeValue
   {
     if (attributes != null)
     {
-      return attributes.get(attributeName);
+      return attributes.get(StaticUtils.toLowerCase(attributeName));
     }
     else
     {
@@ -401,7 +404,7 @@ public final class SCIMAttributeValue
   {
     if (attributes != null)
     {
-      return attributes.containsKey(attributeName);
+      return attributes.containsKey(StaticUtils.toLowerCase(attributeName));
     }
     else
     {

@@ -17,8 +17,6 @@
 
 package com.unboundid.scim.ri.wink;
 
-import com.unboundid.scim.sdk.SCIMQueryAttributes;
-
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
@@ -58,11 +56,6 @@ public class RequestContext
   private final String authID;
 
   /**
-   * The query attributes of the current request.
-   */
-  private final SCIMQueryAttributes queryAttributes;
-
-  /**
    * The value of the HTTP Origin header.
    */
   private final String origin;
@@ -96,18 +89,6 @@ public class RequestContext
     else
     {
       authID = null;
-    }
-
-    // Parse the query attributes.
-    final String attributes =
-        uriInfo.getQueryParameters().getFirst(QUERY_PARAMETER_ATTRIBUTES);
-    if (attributes != null && !attributes.isEmpty())
-    {
-      queryAttributes = new SCIMQueryAttributes(attributes.split(","));
-    }
-    else
-    {
-      queryAttributes = new SCIMQueryAttributes();
     }
 
     final List<String> originHeaders =
@@ -175,17 +156,6 @@ public class RequestContext
   public String getAuthID()
   {
     return authID;
-  }
-
-
-
-  /**
-   * Retrieve the query attributes of the current request.
-   * @return The query attributes of the current request.
-   */
-  public SCIMQueryAttributes getQueryAttributes()
-  {
-    return queryAttributes;
   }
 
 

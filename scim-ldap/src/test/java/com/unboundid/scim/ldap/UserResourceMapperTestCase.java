@@ -125,7 +125,9 @@ public class UserResourceMapperTestCase
 
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
-        mapper.toSCIMAttributes(entry, new SCIMQueryAttributes(), null))
+        mapper.toSCIMAttributes(
+            entry,
+            new SCIMQueryAttributes(user.getResourceDescriptor(), null), null))
     {
       user2.addAttribute(a);
     }
@@ -204,10 +206,14 @@ public class UserResourceMapperTestCase
             new Attribute("telephoneNumber", "+1 319 805 3070"),
             new Attribute("homePhone", "+1 003 490 8631"));
 
+    final ResourceDescriptor userResourceDescriptor =
+        CoreSchema.USER_DESCRIPTOR;
     final ResourceMapper mapper = getUserResourceMapper();
 
     List<SCIMAttribute> attributes =
-        mapper.toSCIMAttributes(entry, new SCIMQueryAttributes(), null);
+        mapper.toSCIMAttributes(
+            entry,
+            new SCIMQueryAttributes(userResourceDescriptor, null), null);
 
     final SCIMObject object = new SCIMObject();
     for (final SCIMAttribute a : attributes)
@@ -215,8 +221,6 @@ public class UserResourceMapperTestCase
       object.addAttribute(a);
     }
 
-    final ResourceDescriptor userResourceDescriptor =
-        CoreSchema.USER_DESCRIPTOR;
     final Context context = Context.instance();
     final Marshaller marshaller = context.marshaller();
     final OutputStream outputStream = new ByteArrayOutputStream();

@@ -26,12 +26,12 @@ import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
+import com.unboundid.scim.sdk.ResourceReturningRequest;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.UnsupportedOperationException;
 
 import javax.ws.rs.core.UriBuilder;
@@ -109,7 +109,6 @@ public class ResourceSchemaBackend extends SCIMBackend
           request.getResourceID() + " exists");
     }
 
-    // TODO honor attributes requested
     return copyAndSetIdAndMetaAttributes(resourceDescriptor, request);
   }
 
@@ -187,7 +186,7 @@ public class ResourceSchemaBackend extends SCIMBackend
    */
   public static ResourceDescriptor copyAndSetIdAndMetaAttributes(
       final ResourceDescriptor resource,
-      final SCIMRequest request)
+      final ResourceReturningRequest request)
   {
     ResourceDescriptor copy =
         ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY.createResource(
@@ -201,6 +200,10 @@ public class ResourceSchemaBackend extends SCIMBackend
     URI location = UriBuilder.fromUri(request.getBaseURL()).path(
         resource.getResourceDescriptor().getName()).path(id).build();
     copy.setMeta(new Meta(null, null,location, null));
-    return copy;
+
+    // Pare down the attributes to those requested.
+    return ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY.createResource(
+        resource.getResourceDescriptor(),
+        request.getAttributes().pareObject(copy.getScimObject()));
   }
 }

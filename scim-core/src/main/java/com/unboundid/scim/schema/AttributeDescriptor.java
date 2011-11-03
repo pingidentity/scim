@@ -23,6 +23,7 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.StaticUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -359,7 +360,8 @@ public final class AttributeDescriptor {
           new LinkedHashMap<String, AttributeDescriptor>(subAttributes.size());
       for(AttributeDescriptor attributeDescriptor : subAttributes)
       {
-        this.subAttributes.put(attributeDescriptor.getName(),
+        this.subAttributes.put(StaticUtils.toLowerCase(
+            attributeDescriptor.getName()),
             attributeDescriptor);
       }
     }
@@ -429,7 +431,8 @@ public final class AttributeDescriptor {
   {
     // TODO: Should we have a strict and non strict mode?
     AttributeDescriptor subAttribute =
-        subAttributes == null ? null : subAttributes.get(externalName);
+        subAttributes == null ? null :
+        subAttributes.get(StaticUtils.toLowerCase(externalName));
     if(subAttribute == null)
     {
       throw new InvalidResourceException("Sub-attribute " + externalName +

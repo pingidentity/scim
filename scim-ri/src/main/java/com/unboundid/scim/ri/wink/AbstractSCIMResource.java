@@ -33,6 +33,7 @@ import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.SortParameters;
 import org.apache.wink.common.AbstractDynamicResource;
@@ -51,6 +52,9 @@ import static com.unboundid.scim.sdk.SCIMConstants.
     HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static com.unboundid.scim.sdk.SCIMConstants.
     HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_ATTRIBUTES;
+
+
 
 /**
  * This class is an abstract Wink dynamic resource implementation for
@@ -109,15 +113,22 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                            final MediaType mediaType,
                            final String userID)
   {
-    // Process the request.
-    final GetResourceRequest getResourceRequest =
-        new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
-            requestContext.getAuthID(),
-            resourceDescriptor,
-            userID,
-            requestContext.getQueryAttributes());
     Response.ResponseBuilder responseBuilder;
     try {
+      final String attributes =
+          requestContext.getUriInfo().getQueryParameters().getFirst(
+              QUERY_PARAMETER_ATTRIBUTES);
+      final SCIMQueryAttributes queryAttributes =
+          new SCIMQueryAttributes(resourceDescriptor, attributes);
+
+      // Process the request.
+      final GetResourceRequest getResourceRequest =
+          new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
+              requestContext.getAuthID(),
+              resourceDescriptor,
+              userID,
+              queryAttributes);
+
       BaseResource resource =
           backend.getResource(getResourceRequest);
       // Build the response.
@@ -182,6 +193,12 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     Response.ResponseBuilder responseBuilder;
     try
     {
+      final String attributes =
+          requestContext.getUriInfo().getQueryParameters().getFirst(
+              QUERY_PARAMETER_ATTRIBUTES);
+      final SCIMQueryAttributes queryAttributes =
+          new SCIMQueryAttributes(resourceDescriptor, attributes);
+
       // Parse the filter parameters.
       final SCIMFilter filter;
       if (filterString != null && !filterString.isEmpty())
@@ -277,7 +294,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
               filter,
               sortParameters,
               pageParameters,
-              requestContext.getQueryAttributes());
+              queryAttributes);
 
 
       final Resources resources = backend.getResources(getResourcesRequest);
@@ -357,13 +374,19 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       final BaseResource postedResource = unmarshaller.unmarshal(
           inputStream, resourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
 
+      final String attributes =
+          requestContext.getUriInfo().getQueryParameters().getFirst(
+              QUERY_PARAMETER_ATTRIBUTES);
+      final SCIMQueryAttributes queryAttributes =
+          new SCIMQueryAttributes(resourceDescriptor, attributes);
+
       // Process the request.
       final PostResourceRequest postResourceRequest =
           new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
               requestContext.getAuthID(),
               resourceDescriptor,
               postedResource.getScimObject(),
-              requestContext.getQueryAttributes());
+              queryAttributes);
 
       final BaseResource resource =
           backend.postResource(postResourceRequest);
@@ -435,13 +458,19 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       final BaseResource puttedResource = unmarshaller.unmarshal(
           inputStream, resourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
 
+      final String attributes =
+          requestContext.getUriInfo().getQueryParameters().getFirst(
+              QUERY_PARAMETER_ATTRIBUTES);
+      final SCIMQueryAttributes queryAttributes =
+          new SCIMQueryAttributes(resourceDescriptor, attributes);
+
       // Process the request.
       final PutResourceRequest putResourceRequest =
           new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
               requestContext.getAuthID(),
               resourceDescriptor,
               userID, puttedResource.getScimObject(),
-              requestContext.getQueryAttributes());
+              queryAttributes);
 
 
       final BaseResource scimResponse = backend.putResource(putResourceRequest);

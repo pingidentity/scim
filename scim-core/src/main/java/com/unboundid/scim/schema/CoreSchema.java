@@ -168,7 +168,7 @@ public class CoreSchema
           "The version of the Resource being returned",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META_ATTRIBUTES =
-      AttributeDescriptor.singularSimple("externalId",
+      AttributeDescriptor.singularSimple("attributes",
           AttributeDescriptor.DataType.STRING,
           "The names of the attributes to remove from the Resource during a " +
               "PATCH operation",

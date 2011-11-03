@@ -24,48 +24,49 @@ import java.net.URI;
 
 
 /**
- * This class represents a SCIM Get Resource request to retrieve all or
- * selected attributes from a single resource.
+ * This class is the base class for SCIM requests that return resources in the
+ * response.
  */
-public final class GetResourceRequest extends ResourceReturningRequest
+public class ResourceReturningRequest extends SCIMRequest
 {
   /**
-   * The requested resource ID.
+   * The set of requested attributes.
    */
-  private final String resourceID;
+  private final SCIMQueryAttributes attributes;
 
 
 
   /**
-   * Create a new SCIM Get Resource request from the provided information.
+   * Create a new SCIM request from the provided information.
    *
    * @param baseURL              The base URL for the SCIM service.
    * @param authenticatedUserID  The authenticated user name or {@code null} if
    *                             the request is not authenticated.
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             request.
-   * @param resourceID           The requested resource ID.
    * @param attributes           The set of requested attributes.
    */
-  public GetResourceRequest(final URI baseURL,
-                            final String authenticatedUserID,
-                            final ResourceDescriptor resourceDescriptor,
-                            final String resourceID,
-                            final SCIMQueryAttributes attributes)
+  public ResourceReturningRequest(final URI baseURL,
+                                  final String authenticatedUserID,
+                                  final ResourceDescriptor resourceDescriptor,
+                                  final SCIMQueryAttributes attributes)
   {
-    super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
-    this.resourceID          = resourceID;
+    super(baseURL, authenticatedUserID, resourceDescriptor);
+    this.attributes = attributes;
   }
 
 
 
+
+
+
   /**
-   * Get the requested resource ID.
+   * Get the set of requested attributes.
    *
-   * @return  The requested resource ID.
+   * @return  The set of requested attributes.
    */
-  public String getResourceID()
+  public SCIMQueryAttributes getAttributes()
   {
-    return resourceID;
+    return attributes;
   }
 }

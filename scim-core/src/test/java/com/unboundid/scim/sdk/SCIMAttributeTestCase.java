@@ -103,7 +103,8 @@ public class SCIMAttributeTestCase
         getSingularValue().getStringValue(), "Ms. Barbara J Jensen III");
     assertEquals(name.getSingularValue().getAttribute("familyName").
         getSingularValue().getStringValue(), "Jensen");
-    assertNull(name.getSingularValue().getAttribute("familyname"));
+    assertEquals(name.getSingularValue().getAttribute("FAMILYNAME").
+        getSingularValue().getStringValue(), "Jensen");
     assertEquals(name.getSingularValue().getAttribute("givenName").
         getSingularValue().getStringValue(), "Barbara");
     assertEquals(name.getSingularValue().getAttribute("middleName").

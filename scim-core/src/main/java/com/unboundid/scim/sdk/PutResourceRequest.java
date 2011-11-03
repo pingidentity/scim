@@ -27,7 +27,7 @@ import java.net.URI;
  * This class represents a SCIM Put Resource request to replace the contents
  * of an existing resource.
  */
-public final class PutResourceRequest extends SCIMRequest
+public final class PutResourceRequest extends ResourceReturningRequest
 {
   /**
    * The target resource ID.
@@ -38,11 +38,6 @@ public final class PutResourceRequest extends SCIMRequest
    * The new contents of the resource.
    */
   private final SCIMObject resourceObject;
-
-  /**
-   * The set of requested attributes.
-   */
-  private final SCIMQueryAttributes attributes;
 
 
 
@@ -65,10 +60,9 @@ public final class PutResourceRequest extends SCIMRequest
                             final SCIMObject resourceObject,
                             final SCIMQueryAttributes attributes)
   {
-    super(baseURL, authenticatedUserID, resourceDescriptor);
+    super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
     this.resourceID          = resourceID;
     this.resourceObject      = resourceObject;
-    this.attributes          = attributes;
   }
 
 
@@ -93,17 +87,5 @@ public final class PutResourceRequest extends SCIMRequest
   public SCIMObject getResourceObject()
   {
     return resourceObject;
-  }
-
-
-
-  /**
-   * Get the set of requested attributes.
-   *
-   * @return  The set of requested attributes.
-   */
-  public SCIMQueryAttributes getAttributes()
-  {
-    return attributes;
   }
 }

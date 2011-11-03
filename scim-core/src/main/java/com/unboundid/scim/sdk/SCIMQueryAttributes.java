@@ -18,10 +18,13 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.ResourceDescriptor;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 
 
@@ -32,43 +35,105 @@ import java.util.List;
 public class SCIMQueryAttributes
 {
   /**
-   * The set of attributes or sub-attributes explicitly requested, or empty if
-   * all attributes and sub-attributes are requested.
+   * Indicates whether all attributes and sub-attributes are requested.
    */
-  private final List<AttributePath> types;
+  private final boolean allAttributesRequested;
+
+  /**
+   * The set of attributes and sub-attributes explicitly requested.
+   */
+  private final Map<AttributeDescriptor,Set<AttributeDescriptor>> descriptors;
+
 
 
   /**
    * Create a new instance of query attributes from their string representation.
    *
-   * @param attributes     The set of attributes or sub-attributes requested,
-   *                       or empty if all attributes and sub-attributes are
-   *                       requested. The attributes must be qualified by their
+   * @param resourceDescriptor  The resource descriptor for the SCIM endpoint.
+   * @param attributes     The attributes query parameter specifying the set of
+   *                       attributes or sub-attributes requested, or null if
+   *                       all attributes and sub-attributes are requested. The
+   *                       attributes must be qualified by their
    *                       schema URI if they are not in the core schema.
+   *
+   * @throws InvalidResourceException  If one of the specified attributes does
+   *                                   not exist.
    */
-  public SCIMQueryAttributes(final String ... attributes)
+  public SCIMQueryAttributes(final ResourceDescriptor resourceDescriptor,
+                             final String attributes)
+      throws InvalidResourceException
   {
-    types = new ArrayList<AttributePath>();
-    if (attributes.length > 0)
+    descriptors =
+        new HashMap<AttributeDescriptor, Set<AttributeDescriptor>>();
+
+    if (attributes == null)
     {
-      for (final String a : attributes)
+      allAttributesRequested = true;
+    }
+    else if (attributes.isEmpty())
+    {
+      allAttributesRequested = false;
+    }
+    else
+    {
+      allAttributesRequested = false;
+      final String[] paths = attributes.split(",");
+      if (paths.length > 0)
       {
-        types.add(AttributePath.parse(a));
+        for (final String a : paths)
+        {
+          final AttributePath path = AttributePath.parse(a);
+          final AttributeDescriptor attributeDescriptor =
+              resourceDescriptor.getAttribute(path.getAttributeSchema(),
+                                              path.getAttributeName());
+
+          Set<AttributeDescriptor> subAttributes =
+              descriptors.get(attributeDescriptor);
+          if (subAttributes == null)
+          {
+            subAttributes = new HashSet<AttributeDescriptor>();
+            if (path.getSubAttributeName() != null)
+            {
+              subAttributes.add(
+                  attributeDescriptor.getSubAttribute(
+                      path.getSubAttributeName()));
+            }
+            descriptors.put(attributeDescriptor, subAttributes);
+          }
+          else
+          {
+            if (!subAttributes.isEmpty())
+            {
+              if (path.getSubAttributeName() != null)
+              {
+                subAttributes.add(
+                    attributeDescriptor.getSubAttribute(
+                        path.getSubAttributeName()));
+              }
+              else
+              {
+                subAttributes.clear();
+              }
+            }
+          }
+        }
+      }
+
+      final AttributeDescriptor id =
+          resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "id");
+      if (!descriptors.containsKey(id))
+      {
+        descriptors.put(id, new HashSet<AttributeDescriptor>());
+      }
+
+      final AttributeDescriptor meta =
+          resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                                          "meta");
+      if (!descriptors.containsKey(meta))
+      {
+        descriptors.put(meta, new HashSet<AttributeDescriptor>());
       }
     }
-  }
-
-
-
-  /**
-   * Retrieve the list of query attributes.
-   *
-   * @return  The list of query attributes, or an empty list if all attributes
-   *          are requested.
-   */
-  public List<AttributePath> getAttributeTypes()
-  {
-    return Collections.unmodifiableList(types);
   }
 
 
@@ -82,7 +147,7 @@ public class SCIMQueryAttributes
    */
   public boolean allAttributesRequested()
   {
-    return types.isEmpty();
+    return allAttributesRequested;
   }
 
 
@@ -100,22 +165,116 @@ public class SCIMQueryAttributes
   public boolean isAttributeRequested(
       final AttributeDescriptor attributeDescriptor)
   {
-    if (allAttributesRequested())
-    {
-      return true;
-    }
-
-    for (final AttributePath p : types)
-    {
-      if (p.getAttributeSchema().equals(attributeDescriptor.getSchema()) &&
-          p.getAttributeName().equalsIgnoreCase(attributeDescriptor.getName()))
-      {
-        return true;
-      }
-    }
-    return false;
+    return allAttributesRequested() ||
+           descriptors.containsKey(attributeDescriptor);
   }
 
 
 
+  /**
+   * Pare down a SCIM object to its requested attributes.
+   *
+   * @param scimObject  The SCIM object to be pared down.
+   *
+   * @return  The pared down SCIM object.
+   */
+  public SCIMObject pareObject(final SCIMObject scimObject)
+  {
+    if (allAttributesRequested())
+    {
+      return scimObject;
+    }
+
+    final SCIMObject paredObject = new SCIMObject();
+    for (final Map.Entry<AttributeDescriptor,Set<AttributeDescriptor>> entry :
+        descriptors.entrySet())
+    {
+      final AttributeDescriptor attributeDescriptor = entry.getKey();
+
+      final SCIMAttribute a =
+          scimObject.getAttribute(attributeDescriptor.getSchema(),
+                                  attributeDescriptor.getName());
+      if (a != null)
+      {
+        final SCIMAttribute paredAttribute = pareAttribute(a);
+        if (paredAttribute != null)
+        {
+          paredObject.addAttribute(paredAttribute);
+        }
+      }
+    }
+
+    return paredObject;
+  }
+
+
+
+  /**
+   * Pare down an attribute to its requested sub-attributes.
+   *
+   * @param attribute  The attribute to be pared down.
+   *
+   * @return  The pared down attribute, or {@code null} if the attribute
+   *          should not be included at all.
+   */
+  public SCIMAttribute pareAttribute(final SCIMAttribute attribute)
+  {
+    final AttributeDescriptor descriptor = attribute.getAttributeDescriptor();
+
+    if (allAttributesRequested() || descriptor.getSubAttributes() == null)
+    {
+      return attribute;
+    }
+
+    final Set<AttributeDescriptor> subDescriptors = descriptors.get(descriptor);
+    if (subDescriptors == null)
+    {
+      return null;
+    }
+
+    if (subDescriptors.isEmpty())
+    {
+      return attribute;
+    }
+
+    if (attribute.isPlural())
+    {
+      final ArrayList<SCIMAttributeValue> values =
+          new ArrayList<SCIMAttributeValue>();
+
+      for (final SCIMAttributeValue v : attribute.getPluralValues())
+      {
+        final ArrayList<SCIMAttribute> subAttributes =
+            new ArrayList<SCIMAttribute>();
+        for (final AttributeDescriptor d : subDescriptors)
+        {
+          final SCIMAttribute subAttribute = v.getAttribute(d.getName());
+          if (subAttribute != null)
+          {
+            subAttributes.add(subAttribute);
+          }
+        }
+        values.add(SCIMAttributeValue.createComplexValue(subAttributes));
+      }
+
+      return SCIMAttribute.createPluralAttribute(
+          descriptor, values.toArray(new SCIMAttributeValue[values.size()]));
+    }
+    else
+    {
+      final ArrayList<SCIMAttribute> subAttributes =
+          new ArrayList<SCIMAttribute>();
+      for (final AttributeDescriptor d : subDescriptors)
+      {
+        final SCIMAttribute subAttribute =
+            attribute.getSingularValue().getAttribute(d.getName());
+        if (subAttribute != null)
+        {
+          subAttributes.add(subAttribute);
+        }
+      }
+      return SCIMAttribute.createSingularAttribute(
+          descriptor, SCIMAttributeValue.createComplexValue(subAttributes));
+    }
+  }
 }

@@ -23,6 +23,7 @@ import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.StaticUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,7 +56,8 @@ public class ResourceDescriptor extends BaseResource
 
   /**
    * A schema -> name -> AttributeDescriptor map to quickly look up
-   * attributes.
+   * attributes. The attribute descriptors are keyed by the lower case
+   * attribute name because attribute names are case-insensitive.
    */
   private Map<String, Map<String, AttributeDescriptor>> attributesCache;
 
@@ -98,7 +100,7 @@ public class ResourceDescriptor extends BaseResource
     Map<String, AttributeDescriptor> map = attributesCache.get(schema);
     if(map != null)
     {
-      attributeDescriptor = map.get(name);
+      attributeDescriptor = map.get(StaticUtils.toLowerCase(name));
     }
     if(attributeDescriptor == null)
     {
@@ -326,7 +328,8 @@ public class ResourceDescriptor extends BaseResource
             map = new HashMap<String, AttributeDescriptor>();
             attributesCache.put(attributeDescriptor.getSchema(), map);
           }
-          map.put(attributeDescriptor.getName(), attributeDescriptor);
+          map.put(StaticUtils.toLowerCase(attributeDescriptor.getName()),
+                  attributeDescriptor);
         }
       }
     }

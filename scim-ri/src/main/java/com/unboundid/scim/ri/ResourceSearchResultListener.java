@@ -23,11 +23,9 @@ import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.ldap.ResourceMapper;
-import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
-import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
@@ -71,6 +69,9 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   private final int maxResults;
 
+  private final SCIMQueryAttributes allAttributes;
+
+
 
   /**
    * Create a new search result listener to retrieve SCIM objects.
@@ -79,10 +80,13 @@ public class ResourceSearchResultListener implements SearchResultListener
    * @param ldapInterface  An LDAP interface that can be used to
    *                       derive attributes from other entries.
    * @param maxResults  The maximum number of resources that may be returned.
+   *
+   * @throws InvalidResourceException  Should never be thrown.
    */
   public ResourceSearchResultListener(final GetResourcesRequest request,
                                       final LDAPInterface ldapInterface,
                                       final int maxResults)
+      throws InvalidResourceException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
 
@@ -92,6 +96,8 @@ public class ResourceSearchResultListener implements SearchResultListener
     this.resources      = new ArrayList<BaseResource>();
     this.ldapInterface  = ldapInterface;
     this.maxResults     = maxResults;
+    this.allAttributes =
+        new SCIMQueryAttributes(request.getResourceDescriptor(), null);
   }
 
 
@@ -110,17 +116,16 @@ public class ResourceSearchResultListener implements SearchResultListener
       return;
     }
 
-    // Get all the attributes so we can filter on them.
-    // TODO could be too expensive for derived attributes
-    final SCIMQueryAttributes allAttributes = new SCIMQueryAttributes();
-    final SCIMObject scimObject;
     try {
-      scimObject = resourceMapper.toSCIMObject(searchEntry, allAttributes,
-          ldapInterface);
+      // Get all the attributes so we can filter on them.
+      // TODO could be too expensive for derived attributes
+      final SCIMObject scimObject =
+          resourceMapper.toSCIMObject(searchEntry, allAttributes,
+                                      ldapInterface);
       final BaseResource resource =
           new BaseResource(request.getResourceDescriptor(), scimObject);
 
-      LDAPBackend.setIdAndMetaAttributes(resource, request, searchEntry);
+      LDAPBackend.setIdAndMetaAttributes(resource, request, searchEntry, null);
 
       if (request.getFilter() == null ||
           scimObject.matchesFilter(request.getFilter()))
@@ -132,19 +137,10 @@ public class ResourceSearchResultListener implements SearchResultListener
         else
         {
           // Keep only the requested attributes.
+          final SCIMObject paredObject =
+              request.getAttributes().pareObject(scimObject);
           final BaseResource returnedResource =
-              new BaseResource(request.getResourceDescriptor());
-          for (final AttributePath attributePath :
-              request.getAttributes().getAttributeTypes())
-          {
-            final SCIMAttribute a =
-                scimObject.getAttribute(attributePath.getAttributeSchema(),
-                    attributePath.getSubAttributeName());
-            if (a != null)
-            {
-              returnedResource.getScimObject().addAttribute(a);
-            }
-          }
+              new BaseResource(request.getResourceDescriptor(), paredObject);
 
           resources.add(returnedResource);
         }

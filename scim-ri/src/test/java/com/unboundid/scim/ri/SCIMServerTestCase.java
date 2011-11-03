@@ -132,10 +132,21 @@ public class SCIMServerTestCase
     assertFalse(iterator.hasNext());
 
     final Resources<ResourceDescriptor> resources =
-        schemaEndpoint.query(null, null, new PageParameters(1, 1));
+        schemaEndpoint.query(null, null, new PageParameters(1, 1),
+                             "NAME", "attributes.name");
     assertTrue(resources.getTotalResults() >= 2);
     assertEquals(resources.getItemsPerPage(), 1);
     assertEquals(resources.getStartIndex(), 1);
+    for (final ResourceDescriptor r : resources)
+    {
+      assertNotNull(r.getName());
+      assertNull(r.getDescription());
+//      for (final AttributeDescriptor a : r.getAttributes())
+//      {
+//        assertNotNull(a.getName());
+//        assertNull(a.getDescription());
+//      }
+    }
   }
 
 
@@ -364,34 +375,67 @@ public class SCIMServerTestCase
 
     // Create a user directly on the test DS.
     testDS.add(generateUserEntry("b jensen", "dc=example,dc=com",
-        "Barbara", "Jensen", "password"));
+        "Barbara", "Jensen", "password",
+        new Attribute("mail", "user.1@example.com"),
+        new Attribute("l", "Austin"),
+        new Attribute("postalCode", "78759")));
 
     // Fetch the user through the SCIM client.
     final UserResource user1 = endpoint.get("uid=b jensen,dc=example,dc=com");
     assertNotNull(user1);
     assertEquals(user1.getId(), "uid=b jensen,dc=example,dc=com");
-    assertEquals(user1.getName().getFamilyName(), "Jensen");
-    assertEquals(user1.getName().getGivenName(), "Barbara");
-    assertEquals(user1.getUserName(), "b jensen");
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
     assertNotNull(user1.getMeta().getLocation());
+    assertNotNull(user1.getUserName());
+    assertEquals(user1.getUserName(), "b jensen");
+    assertEquals(user1.getName().getFamilyName(), "Jensen");
+    assertEquals(user1.getName().getGivenName(), "Barbara");
+    assertNotNull(user1.getEmails());
+    assertNotNull(user1.getAddresses());
 
     // Ensure that we can retrieve the user again using meta.location
     /*
     assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
+    */
 
     // Fetch selected attributes only. (id and meta should always be returned)
-    final User partialUser1 =
-        client.getUser("uid=b jensen,dc=example,dc=com", "username",
-                       "good night + good luck?");
-    assertNotNull(partialUser1);
-    assertNotNull(partialUser1.getId());
-    assertNotNull(partialUser1.getMeta());
-    assertNull(partialUser1.getName());
-    assertEquals(partialUser1.getUserName(), "b jensen");
-    */
+    UserResource partialUser =
+        endpoint.get("uid=b jensen,dc=example,dc=com", null,
+                     "USERNAME", "name.FORMATTED",
+                     "addresses.postalCode",
+                     "addresses.streetAddress");
+    assertNotNull(partialUser);
+    assertTrue(partialUser.getId().equalsIgnoreCase(
+        "uid=b jensen,dc=example,dc=com"));
+    assertNotNull(partialUser.getMeta());
+    assertNotNull(partialUser.getMeta().getCreated());
+    assertNotNull(partialUser.getMeta().getLastModified());
+    assertNotNull(partialUser.getMeta().getLocation());
+    assertNotNull(partialUser.getUserName());
+    assertNotNull(partialUser.getName());
+    assertNotNull(partialUser.getName().getFormatted());
+    assertNull(partialUser.getName().getFamilyName());
+    assertNull(partialUser.getName().getGivenName());
+    assertNull(partialUser.getEmails());
+    assertNotNull(partialUser.getAddresses());
+    for (final Address address : partialUser.getAddresses())
+    {
+      assertNull(address.getLocality());
+      assertNotNull(address.getPostalCode());
+    }
+
+    // Fetch selected meta sub-attributes.
+    partialUser =
+        endpoint.get("uid=b jensen,dc=example,dc=com", null,
+                     "meta.location");
+    assertNotNull(partialUser);
+    assertNotNull(partialUser.getId());
+    assertNotNull(partialUser.getMeta());
+    assertNull(partialUser.getMeta().getCreated());
+    assertNull(partialUser.getMeta().getLastModified());
+    assertNotNull(partialUser.getMeta().getLocation());
   }
 
 
@@ -459,7 +503,8 @@ public class SCIMServerTestCase
     testDS.add(generateUserEntry("user.1", "dc=example,dc=com",
         "User", "One", "password",
         new Attribute("mail", "user.1@example.com"),
-        new Attribute("l", "Austin")));
+        new Attribute("l", "Austin"),
+        new Attribute("postalCode", "78759")));
     testDS.add(generateUserEntry("user.2", "dc=example,dc=com",
         "User", "Two", "password"));
 
@@ -489,7 +534,7 @@ public class SCIMServerTestCase
     resources = endpoint.query("userName eq 'user.1'");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("userName eq 'User.1'");
+    resources = endpoint.query("USERNAME eq 'User.1'");
     assertEquals(resources.getTotalResults(), 1);
 
     resources = endpoint.query("userName sw 'user'");
@@ -509,6 +554,35 @@ public class SCIMServerTestCase
 
     resources = endpoint.query("addresses.locality eq 'Austin'");
     assertEquals(resources.getTotalResults(), 1);
+
+    // Fetch selected attributes.
+    resources = endpoint.query("addresses.LOCALITY eq 'Austin'",
+                               null, null,
+                               "USERNAME", "name.FORMATTED",
+                               "addresses.postalCode",
+                               "addresses.streetAddress",
+                               "meta.location");
+    assertEquals(resources.getTotalResults(), 1);
+    for (final UserResource u : resources)
+    {
+      assertNotNull(u.getId());
+      assertNotNull(u.getMeta());
+      assertNull(u.getMeta().getCreated());
+      assertNull(u.getMeta().getLastModified());
+      assertNotNull(u.getMeta().getLocation());
+      assertNotNull(u.getUserName());
+      assertNotNull(u.getName());
+      assertNotNull(u.getName().getFormatted());
+      assertNull(u.getName().getFamilyName());
+      assertNull(u.getName().getGivenName());
+      assertNotNull(u.getAddresses());
+      for (final Address address : u.getAddresses())
+      {
+        assertNull(address.getLocality());
+        assertNotNull(address.getPostalCode());
+      }
+      assertNull(u.getEmails());
+    }
   }
 
 

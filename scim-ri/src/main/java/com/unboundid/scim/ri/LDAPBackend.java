@@ -48,6 +48,7 @@ import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
@@ -195,7 +196,8 @@ public abstract class LDAPBackend
         final BaseResource resource =
             new BaseResource(request.getResourceDescriptor());
 
-        setIdAndMetaAttributes(resource, request, searchResultEntry);
+        setIdAndMetaAttributes(resource, request, searchResultEntry,
+                               request.getAttributes());
 
         final List<SCIMAttribute> attributes = mapper.toSCIMAttributes(
             searchResultEntry, request.getAttributes(), ldapInterface);
@@ -416,7 +418,8 @@ public abstract class LDAPBackend
       final BaseResource resource =
           new BaseResource(request.getResourceDescriptor());
 
-      setIdAndMetaAttributes(resource, request, addedEntry);
+      setIdAndMetaAttributes(resource, request, addedEntry,
+                             request.getAttributes());
 
       final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
           addedEntry, request.getAttributes(), ldapInterface);
@@ -537,7 +540,8 @@ public abstract class LDAPBackend
 
       final BaseResource resource =
                   new BaseResource(request.getResourceDescriptor());
-      setIdAndMetaAttributes(resource, request, modifiedEntry);
+      setIdAndMetaAttributes(resource, request, modifiedEntry,
+                             request.getAttributes());
 
       final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
         modifiedEntry, request.getAttributes(), ldapInterface);
@@ -567,11 +571,14 @@ public abstract class LDAPBackend
    * @param request     The SCIM request.
    * @param entry       The LDAP entry from which the attribute values are to
    *                    be derived.
+   * @param queryAttributes  The request query attributes, or {@code null} if
+   *                         the attributes should not be pared down.
    */
   public static void setIdAndMetaAttributes(
       final BaseResource resource,
       final SCIMRequest request,
-      final Entry entry)
+      final Entry entry,
+      final SCIMQueryAttributes queryAttributes)
   {
     try
     {
@@ -653,6 +660,15 @@ public abstract class LDAPBackend
 
     resource.setMeta(new Meta(createDate, modifyDate,
         uriBuilder.build(), null));
+
+    if (queryAttributes != null)
+    {
+      final SCIMAttribute meta =
+          resource.getScimObject().getAttribute(
+              SCIMConstants.SCHEMA_URI_CORE, "meta");
+      resource.getScimObject().setAttribute(
+          queryAttributes.pareAttribute(meta));
+    }
   }
 
 

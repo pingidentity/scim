@@ -27,7 +27,7 @@ import java.net.URI;
  * This class represents a SCIM Get Resources request to retrieve selected
  * resources.
  */
-public final class GetResourcesRequest extends SCIMRequest
+public final class GetResourcesRequest extends ResourceReturningRequest
 {
   /**
    * The filter parameters of the request.
@@ -43,11 +43,6 @@ public final class GetResourcesRequest extends SCIMRequest
    * The pagination parameters of the request.
    */
   private final PageParameters pageParameters;
-
-  /**
-   * The set of requested attributes.
-   */
-  private final SCIMQueryAttributes attributes;
 
 
 
@@ -72,11 +67,10 @@ public final class GetResourcesRequest extends SCIMRequest
                              final PageParameters pageParameters,
                              final SCIMQueryAttributes attributes)
   {
-    super(baseURL, authenticatedUserID, resourceDescriptor);
+    super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
     this.filter         = filter;
     this.sortParameters = sortParameters;
     this.pageParameters = pageParameters;
-    this.attributes     = attributes;
   }
 
 
@@ -113,17 +107,5 @@ public final class GetResourcesRequest extends SCIMRequest
   public PageParameters getPageParameters()
   {
     return pageParameters;
-  }
-
-
-
-  /**
-   * Retrieve the set of requested attributes.
-   *
-   * @return  The set of requested attributes.
-   */
-  public SCIMQueryAttributes getAttributes()
-  {
-    return attributes;
   }
 }
