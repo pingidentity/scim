@@ -386,11 +386,6 @@ public class InMemoryServerTool
 
     // Create the SCIM server instance using the provided configuration, but
     // don't start it yet.
-    final String baseURI = baseURIArgument.getValue();
-    final SCIMBackend backend =
-        new InMemoryLDAPBackend(directoryServer);
-    backend.getConfig().setMaxResults(maxResultsArgument.getValue());
-
     scimServer = SCIMServer.getInstance();
     try
     {
@@ -403,6 +398,13 @@ public class InMemoryServerTool
           StaticUtils.getExceptionMessage(e)));
       return ResultCode.LOCAL_ERROR;
     }
+
+    final String baseURI = baseURIArgument.getValue();
+    final SCIMBackend backend =
+        new InMemoryLDAPBackend(scimServer.getResourceMappers(),
+                                directoryServer);
+    backend.getConfig().setMaxResults(maxResultsArgument.getValue());
+
     scimServer.registerBackend(baseURI, backend);
 
     // Start the server.

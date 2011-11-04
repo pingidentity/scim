@@ -26,8 +26,13 @@ import com.unboundid.ldap.sdk.PLAINBindRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
+import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMRequest;
+
+import java.util.Map;
+
 
 
 /**
@@ -43,11 +48,15 @@ public class ExternalLDAPBackend extends LDAPBackend
   /**
    * Create a new external LDAP backend.
    *
-   * @param config  An LDAP external server configuration.
+   * @param resourceMappers  The resource mappers configured for SCIM resource
+   *                         end-points.
+   * @param config           An LDAP external server configuration.
    */
-  public ExternalLDAPBackend(final LDAPExternalServerConfig config)
+  public ExternalLDAPBackend(
+      final Map<ResourceDescriptor, ResourceMapper> resourceMappers,
+      final LDAPExternalServerConfig config)
   {
-    super();
+    super(resourceMappers);
     this.ldapExternalServer = new LDAPExternalServer(config);
   }
 

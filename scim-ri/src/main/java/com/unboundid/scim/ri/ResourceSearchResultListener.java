@@ -26,6 +26,7 @@ import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
@@ -76,22 +77,24 @@ public class ResourceSearchResultListener implements SearchResultListener
   /**
    * Create a new search result listener to retrieve SCIM objects.
    *
-   * @param request  The request that is being processed.
+   * @param backend        The LDAP backend that is processing the SCIM request.
+   * @param request        The request that is being processed.
    * @param ldapInterface  An LDAP interface that can be used to
    *                       derive attributes from other entries.
-   * @param maxResults  The maximum number of resources that may be returned.
+   * @param maxResults     The maximum number of resources that may be returned.
    *
-   * @throws InvalidResourceException  Should never be thrown.
+   * @throws SCIMException  Should never be thrown.
    */
-  public ResourceSearchResultListener(final GetResourcesRequest request,
+  public ResourceSearchResultListener(final LDAPBackend backend,
+                                      final GetResourcesRequest request,
                                       final LDAPInterface ldapInterface,
                                       final int maxResults)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final SCIMServer scimServer = SCIMServer.getInstance();
 
     this.resourceMapper =
-        scimServer.getResourceMapper(request.getResourceDescriptor());
+        backend.getResourceMapper(request.getResourceDescriptor());
     this.request        = request;
     this.resources      = new ArrayList<BaseResource>();
     this.ldapInterface  = ldapInterface;

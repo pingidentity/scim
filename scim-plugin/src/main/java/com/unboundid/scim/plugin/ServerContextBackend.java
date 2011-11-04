@@ -7,6 +7,7 @@ package com.unboundid.scim.plugin;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.unboundid.directory.sdk.common.types.InternalConnection;
@@ -20,7 +21,9 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
+import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.ri.LDAPBackend;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMRequest;
 
 
@@ -55,13 +58,17 @@ public class ServerContextBackend extends LDAPBackend
 
 
   /**
-   * Create a new external LDAP backend.
+   * Create a new Server Context LDAP backend.
    *
-   * @param serverContext  The server context provided by the extension.
+   * @param resourceMappers  The resource mappers configured for SCIM resource
+   *                         end-points.
+   * @param serverContext    The server context provided by the extension.
    */
-  public ServerContextBackend(final ServerContext serverContext)
+  public ServerContextBackend(
+      final Map<ResourceDescriptor, ResourceMapper> resourceMappers,
+      final ServerContext serverContext)
   {
-    super();
+    super(resourceMappers);
     this.serverContext = serverContext;
   }
 

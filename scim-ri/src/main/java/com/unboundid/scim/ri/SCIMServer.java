@@ -150,7 +150,8 @@ public class SCIMServer
           ConfigurableResourceMapper.parse(serverConfig.getResourcesFile());
       for (final ResourceMapper resourceMapper : mappers)
       {
-        this.registerResourceMapper(resourceMapper);
+        resourceMappers.put(resourceMapper.getResourceDescriptor(),
+                            resourceMapper);
       }
     }
   }
@@ -293,50 +294,13 @@ public class SCIMServer
 
 
   /**
-   * Register a resource mapper with this server for the specified SCIM
-   * resource end-points. e.g. User and Users. Multiple resource mappers may be
-   * registered for a single resource end-point.
+   * Retrieve the configured resource mappers.
    *
-   * @param resourceMapper    The resource mapper to be registered. It must not
-   *                          be {@code null}.
+   * @return  The configured resource mappers.
    */
-  private void registerResourceMapper(final ResourceMapper resourceMapper)
+  public Map<ResourceDescriptor, ResourceMapper> getResourceMappers()
   {
-    synchronized (this)
-    {
-      if (resourceMappers.get(
-          resourceMapper.getResourceDescriptor()) == resourceMapper)
-      {
-        throw new RuntimeException("The resource mapper was already " +
-            "registered for resource " +
-            resourceMapper.getResourceDescriptor().getName());
-      }
-
-      final Map<ResourceDescriptor, ResourceMapper> newResourceMappers =
-          new HashMap<ResourceDescriptor, ResourceMapper>(resourceMappers);
-
-      newResourceMappers.put(resourceMapper.getResourceDescriptor(),
-          resourceMapper);
-      resourceMappers = newResourceMappers;
-    }
-  }
-
-
-
-  /**
-   * Retrieve the set of resource mappers registered for the provided resource
-   * end-point.
-   *
-   * @param resourceDescriptor The ResourceDescriptor for which the registered
-   *                           resource mappers are requested.
-   *
-   * @return The set of resource mappers registered for the provided resource
-   *         end-point. This is never {@code null} but it may be empty.
-   */
-  public ResourceMapper getResourceMapper(
-      final ResourceDescriptor resourceDescriptor)
-  {
-    return resourceMappers.get(resourceDescriptor);
+    return resourceMappers;
   }
 
 

@@ -18,15 +18,15 @@
 package com.unboundid.scim.sdk;
 
 /**
- * Signals an error while marshaling or unmarshaling a SCIM entity because it is
- * unparseable, syntactically incorrect, or violates schema.
+ * Signals an error while looking up resources and attributes.
  *
  * This exception corresponds to HTTP response code 400 BAD REQUEST.
  */
 public class InvalidResourceException extends SCIMException
 {
   /**
-   * Create a new <code>MarshalException</code> from the provided information.
+   * Create a new <code>InvalidResourceException</code> from the provided
+   * information.
    *
    * @param errorMessage  The error message for this SCIM exception.
    */
@@ -35,7 +35,8 @@ public class InvalidResourceException extends SCIMException
   }
 
   /**
-   * Create a new <code>MarshalException</code> from the provided information.
+   * Create a new <code>InvalidResourceException</code> from the provided
+   * information.
    *
    * @param errorMessage  The error message for this SCIM exception.
    * @param cause         The cause (which is saved for later retrieval by the

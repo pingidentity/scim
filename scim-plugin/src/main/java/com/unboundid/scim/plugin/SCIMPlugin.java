@@ -293,7 +293,8 @@ public final class SCIMPlugin
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
 
     final String baseUri = baseUriArg.getValue();
-    scimBackend = new ServerContextBackend(serverContext);
+    scimBackend = new ServerContextBackend(scimServer.getResourceMappers(),
+                                           serverContext);
     scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
     scimApplication = scimServer.registerBackend(baseUri, scimBackend);
 
@@ -478,7 +479,8 @@ public final class SCIMPlugin
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
 
     final String baseUri = baseUriArg.getValue();
-    scimBackend = new ServerContextBackend(serverContext);
+    scimBackend = new ServerContextBackend(scimServer.getResourceMappers(),
+                                           serverContext);
     scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
     scimApplication = scimServer.registerBackend(baseUri, scimBackend);
 

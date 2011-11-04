@@ -43,6 +43,7 @@ import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
 import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
@@ -75,6 +76,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -92,6 +94,11 @@ public abstract class LDAPBackend
    */
   private static final Set<String> DEFAULT_LASTMOD_ATTRS;
 
+  /**
+   * The resource mappers configured for SCIM resource end-points.
+   */
+  private volatile Map<ResourceDescriptor, ResourceMapper> resourceMappers;
+
   static
   {
     HashSet<String> attrs = new HashSet<String>(2);
@@ -104,9 +111,14 @@ public abstract class LDAPBackend
 
   /**
    * Create a new instance of an LDAP backend.
+   *
+   * @param  resourceMappers  The resource mappers configured for SCIM resource
+   *                          end-points.
    */
-  public LDAPBackend()
+  public LDAPBackend(
+      final Map<ResourceDescriptor, ResourceMapper> resourceMappers)
   {
+    this.resourceMappers = resourceMappers;
   }
 
 
@@ -156,16 +168,40 @@ public abstract class LDAPBackend
 
 
 
+  /**
+   * Retrieve the resource mapper for the provided resource descriptor.
+   *
+   * @param resourceDescriptor The ResourceDescriptor for which the resource
+   *                           mapper is requested.
+   *
+   * @return  The resource mapper for the provided resource descriptor.
+   *
+   * @throws  SCIMException  If there is no such resource mapper.
+   */
+  ResourceMapper getResourceMapper(final ResourceDescriptor resourceDescriptor)
+      throws SCIMException
+  {
+    final ResourceMapper mapper = resourceMappers.get(resourceDescriptor);
+    if (mapper == null)
+    {
+      throw new ServerErrorException(
+          "No resource mapper found for resource '" +
+          resourceDescriptor.getName() + "'");
+    }
+
+    return mapper;
+  }
+
+
+
   @Override
   public BaseResource getResource(
       final GetResourceRequest request) throws SCIMException
   {
     try
     {
-      final SCIMServer scimServer = SCIMServer.getInstance();
       final ResourceMapper mapper =
-          scimServer.getResourceMapper(
-              request.getResourceDescriptor());
+          getResourceMapper(request.getResourceDescriptor());
 
       final Set<String> requestAttributeSet = new HashSet<String>();
       requestAttributeSet.addAll(
@@ -222,9 +258,8 @@ public abstract class LDAPBackend
   public Resources getResources(final GetResourcesRequest request)
       throws SCIMException
   {
-    final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper resourceMapper =
-        scimServer.getResourceMapper(request.getResourceDescriptor());
+        getResourceMapper(request.getResourceDescriptor());
     if (resourceMapper == null || !resourceMapper.supportsQuery())
     {
       throw new UnsupportedOperationException(
@@ -245,7 +280,8 @@ public abstract class LDAPBackend
       final LDAPInterface ldapInterface =
           getLDAPInterface(request.getAuthenticatedUserID());
       final ResourceSearchResultListener resultListener =
-          new ResourceSearchResultListener(request, ldapInterface, maxResults);
+          new ResourceSearchResultListener(this, request, ldapInterface,
+                                           maxResults);
       SearchRequest searchRequest = null;
       if (scimFilter != null)
       {
@@ -362,9 +398,8 @@ public abstract class LDAPBackend
   public BaseResource postResource(
       final PostResourceRequest request) throws SCIMException
   {
-    final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper mapper =
-        scimServer.getResourceMapper(request.getResourceDescriptor());
+        getResourceMapper(request.getResourceDescriptor());
 
     final Set<String> requestAttributeSet = new HashSet<String>();
     requestAttributeSet.addAll(
@@ -489,9 +524,8 @@ public abstract class LDAPBackend
   public BaseResource putResource(final PutResourceRequest request)
       throws SCIMException
   {
-    final SCIMServer scimServer = SCIMServer.getInstance();
     final ResourceMapper mapper =
-        scimServer.getResourceMapper(request.getResourceDescriptor());
+        getResourceMapper(request.getResourceDescriptor());
 
     final Set<String> requestAttributeSet = new HashSet<String>();
     requestAttributeSet.addAll(

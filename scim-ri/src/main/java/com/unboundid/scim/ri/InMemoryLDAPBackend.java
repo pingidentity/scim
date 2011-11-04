@@ -26,8 +26,13 @@ import com.unboundid.ldap.sdk.PLAINBindRequest;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
+import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMRequest;
+
+import java.util.Map;
+
 
 
 /**
@@ -46,12 +51,17 @@ public class InMemoryLDAPBackend
   /**
    * Create a new in-memory LDAP backend.
    *
-   * @param ldapServer  An in-memory LDAP server. The server will be shut down
-   *                    by the backend when the backend is taken out of service.
+   * @param resourceMappers  The resource mappers configured for SCIM resource
+   *                         end-points.
+   * @param ldapServer       An in-memory LDAP server. The server will be shut
+   *                         down by the backend when the backend is taken out
+   *                         of service.
    */
-  public InMemoryLDAPBackend(final InMemoryDirectoryServer ldapServer)
+  public InMemoryLDAPBackend(
+      final Map<ResourceDescriptor, ResourceMapper> resourceMappers,
+      final InMemoryDirectoryServer ldapServer)
   {
-    super();
+    super(resourceMappers);
     this.ldapServer = ldapServer;
   }
 

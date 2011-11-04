@@ -139,9 +139,11 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     ldapConfig.setDsBindPassword("password");
     ldapConfig.setNumConnections(16);
 
-    ldapBackend = new ExternalLDAPBackend(ldapConfig);
     testSS = SCIMServer.getInstance();
     testSS.initializeServer(ssConfig);
+
+    ldapBackend = new ExternalLDAPBackend(testSS.getResourceMappers(),
+                                          ldapConfig);
     testSS.registerBackend("/", ldapBackend);
     testSS.startListening();
   }
