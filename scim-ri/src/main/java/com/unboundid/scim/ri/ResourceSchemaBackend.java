@@ -198,7 +198,7 @@ public class ResourceSchemaBackend extends SCIMBackend
     copy.setId(id);
 
     URI location = UriBuilder.fromUri(request.getBaseURL()).path(
-        resource.getResourceDescriptor().getName()).path(id).build();
+        resource.getResourceDescriptor().getQueryEndpoint()).path(id).build();
     copy.setMeta(new Meta(null, null,location, null));
 
     // Pare down the attributes to those requested.

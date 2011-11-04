@@ -82,9 +82,7 @@ public class SCIMApplication extends WinkApplication
     // The resources for the /Schema and /Schemas endpoints.
     ResourceSchemaBackend resourceSchemaBackend =
         new ResourceSchemaBackend(resourceDescriptors);
-    instances.add(new CRUDResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend));
-    instances.add(new QueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
+    instances.add(new SCIMResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
         stats, resourceSchemaBackend));
     instances.add(new XMLQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
         stats, resourceSchemaBackend));
@@ -95,8 +93,7 @@ public class SCIMApplication extends WinkApplication
     for(ResourceDescriptor resourceDescriptor : resourceDescriptors)
     {
       stats = new ResourceStats(resourceDescriptor.getName());
-      instances.add(new CRUDResource(resourceDescriptor, stats, backend));
-      instances.add(new QueryResource(resourceDescriptor, stats, backend));
+      instances.add(new SCIMResource(resourceDescriptor, stats, backend));
       instances.add(new XMLQueryResource(resourceDescriptor, stats, backend));
       instances.add(new JSONQueryResource(resourceDescriptor, stats, backend));
       statsCollection.add(stats);

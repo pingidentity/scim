@@ -25,13 +25,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import static com.unboundid.scim.sdk.SCIMConstants.
+    RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG;
+
 
 
 /**
  * This class is a JAX-RS resource for the SCIM Service Provider Configuration
  * where the response format is specified in the URL to be XML.
  */
-@Path("ServiceProviderConfig.xml")
+@Path(RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG + ".xml")
 public class XMLServiceProviderConfigResource extends AbstractStaticResource
 {
   private final SCIMApplication application;

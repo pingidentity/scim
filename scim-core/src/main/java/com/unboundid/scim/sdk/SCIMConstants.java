@@ -75,6 +75,13 @@ public final class SCIMConstants
   public static final String RESOURCE_NAME_SCHEMA = "Schema";
 
   /**
+   * The end point for the Service Provider Configuration in the core
+   * schema.
+   */
+  public static final String RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG =
+      "ServiceProviderConfigs";
+
+  /**
    * The end point for Groups in the REST protocol.
    */
   public static final String RESOURCE_ENDPOINT_GROUPS = "Groups";

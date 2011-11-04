@@ -718,7 +718,7 @@ public class CoreSchema
           "a standardized form as well as provide additional implementation " +
           "details to Consumers",
           SCIMConstants.SCHEMA_URI_CORE,
-          SCIMConstants.RESOURCE_NAME_SERVICE_PROVIDER_CONFIG,
+          SCIMConstants.RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG,
           CONFIG_DOCUMENTATION_URL, PATCH_CONFIG, BULK_CONFIG, FILTER_CONFIG,
           CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG, AUTH_SCHEMES);
 

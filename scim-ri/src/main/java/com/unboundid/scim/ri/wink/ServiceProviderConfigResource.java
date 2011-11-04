@@ -25,12 +25,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import static com.unboundid.scim.sdk.SCIMConstants.
+    RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG;
+
 
 
 /**
  * This class is a JAX-RS resource for the SCIM Service Provider Configuration.
  */
-@Path("ServiceProviderConfig")
+@Path(RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG)
 public class ServiceProviderConfigResource extends AbstractStaticResource
 {
   private final SCIMApplication application;

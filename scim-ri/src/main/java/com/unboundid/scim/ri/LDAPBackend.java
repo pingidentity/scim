@@ -689,7 +689,7 @@ public abstract class LDAPBackend
     }
 
     final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
-    uriBuilder.path(resource.getResourceDescriptor().getName());
+    uriBuilder.path(resource.getResourceDescriptor().getQueryEndpoint());
     uriBuilder.path(entry.getDN());
 
     resource.setMeta(new Meta(createDate, modifyDate,

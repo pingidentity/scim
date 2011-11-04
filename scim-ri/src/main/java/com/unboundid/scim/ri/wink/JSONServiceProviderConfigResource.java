@@ -25,13 +25,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import static com.unboundid.scim.sdk.SCIMConstants.
+    RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG;
+
 
 
 /**
  * This class is a JAX-RS resource for the SCIM Service Provider Configuration
  * where the response format is specified in the URL to be JSON.
  */
-@Path("ServiceProviderConfig.json")
+@Path(RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG + ".json")
 public class JSONServiceProviderConfigResource extends AbstractStaticResource
 {
   private final SCIMApplication application;
