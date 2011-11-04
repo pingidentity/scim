@@ -34,7 +34,7 @@
                 <TERM>xterm</TERM>
               </environmentVariables>
               <systemPropertyVariables>
-                <serverInstanceVersion>3.2.0.0-GA</serverInstanceVersion>
+                <serverInstanceVersion>3.2.1.0-SNAPSHOT</serverInstanceVersion>
                 <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                 <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
                 <pluginZipFile>${project.build.directory}/${project.build.finalName}.zip</pluginZipFile>
@@ -89,6 +89,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.unboundid.product</groupId>
+            <artifactId>ldapsdk</artifactId>
+            <version>${unboundid.ldapsdk.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.unboundid.product.ds</groupId>
             <artifactId>server-sdk</artifactId>
             <version>${unboundid.serversdk.version}</version>
@@ -113,16 +118,16 @@
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.6</version>
+            <version>0.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.6</version>
+            <version>0.7</version>
             <classifier>sources</classifier>
             <scope>test</scope>
-      </dependency>
+        </dependency>
     </dependencies>
 
 </project>

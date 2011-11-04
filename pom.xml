@@ -19,7 +19,7 @@
         <!-- Note that SCIM-RI overrides this and uses the Standard Edition of LDAP SDK. If
              you change this, consider changing that as well. -->
         <unboundid.ldapsdk.version>2.2.1-ce-SNAPSHOT</unboundid.ldapsdk.version>
-        <unboundid.serversdk.version>3.1.0.0</unboundid.serversdk.version>
+        <unboundid.serversdk.version>3.2.1.0-SNAPSHOT</unboundid.serversdk.version>
     </properties>
 
     <distributionManagement>
@@ -103,7 +103,9 @@
                       <Implementation-Vendor>UnboundID Corp.</Implementation-Vendor>
                       <Implementation-URL>http://www.unboundid.com</Implementation-URL>
                       <Extension-Support-Contact>support@unboundid.com</Extension-Support-Contact>
-                      <UnboundID-Server-SDK-Version>${unboundid.serversdk.version}</UnboundID-Server-SDK-Version>
+                      <!-- TODO Put this back in when there is a release version.
+                           The server rejects a version with a SNAPSHOT qualifier -->
+                      <!--<UnboundID-Server-SDK-Version>${unboundid.serversdk.version}</UnboundID-Server-SDK-Version>-->
                     </manifestEntries>
                   </archive>
                 </configuration>
