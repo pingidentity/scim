@@ -279,7 +279,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       }
       else if (count >= 0)
       {
-        pageParameters = new PageParameters(0, count);
+        pageParameters = new PageParameters(1, count);
       }
       else
       {
