@@ -260,7 +260,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
               "' is not parsable");
         }
 
-        if (startIndex <= 0)
+        if (count <= 0)
         {
           throw SCIMException.createException(
               400, "The pagination count value '" + pageSize +
