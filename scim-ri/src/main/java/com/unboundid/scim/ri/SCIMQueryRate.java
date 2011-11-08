@@ -573,8 +573,7 @@ public class SCIMQueryRate
     params.setBooleanParameter(SO_REUSEADDR, true);
     ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager();
     mgr.setMaxTotal(numThreads.getValue());
-    DefaultHttpClient httpClient =
-        new DefaultHttpClient(new ThreadSafeClientConnManager(), params);
+    DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
     ApacheHttpClientConfig clientConfig =
         new ApacheHttpClientConfig(httpClient);
     if (authID.isPresent())
