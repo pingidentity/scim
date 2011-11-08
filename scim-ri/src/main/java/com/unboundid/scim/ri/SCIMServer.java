@@ -27,6 +27,7 @@ import com.unboundid.util.StaticUtils;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
 import org.eclipse.jetty.http.security.Constraint;
+import org.eclipse.jetty.http.ssl.SslContextFactory;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.LoginService;
@@ -39,10 +40,14 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,7 +122,34 @@ public class SCIMServer
   public void initializeServer(final SCIMServerConfig serverConfig)
       throws Exception
   {
+    final ArrayList<Connector> connectors = new ArrayList<Connector>();
+    if (serverConfig.getSslContext() != null)
+    {
+      final SslContextFactory f;
+
+      // NOTE:  Even though we're providing a pre-initialized SSL context, the
+      // SslContextFactory expects to be configured with a keystore path.  In
+      // that case, we'll just create an empty temp file to use for that
+      // purpose, since it won't actually be used.
+      final File tempFile = File.createTempFile(
+          "dummy-scim-server-", ".keystore");
+      tempFile.deleteOnExit();
+      f = new SslContextFactory(tempFile.getAbsolutePath());
+      f.setSslContext(serverConfig.getSslContext());
+
+      final SslSocketConnector c = new SslSocketConnector(f);
+      c.setPort(serverConfig.getListenPort());
+      connectors.add(c);
+    }
+    else
+    {
+      final Connector c = new SelectChannelConnector();
+      c.setPort(serverConfig.getListenPort());
+      connectors.add(c);
+    }
+
     final Server s = new Server(serverConfig.getListenPort());
+    s.setConnectors(connectors.toArray(new Connector[connectors.size()]));
     s.setThreadPool(new QueuedThreadPool(serverConfig.getMaxThreads()));
 
     final HandlerCollection handlers = new HandlerCollection();

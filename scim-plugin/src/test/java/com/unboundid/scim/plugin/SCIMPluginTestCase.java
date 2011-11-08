@@ -26,11 +26,24 @@ import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Version;
-
+import com.unboundid.util.ssl.SSLUtil;
+import com.unboundid.util.ssl.TrustStoreTrustManager;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.wink.client.ApacheHttpClientConfig;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -44,7 +57,13 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import static org.testng.Assert.*;
+import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 
 
@@ -63,6 +82,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
    * The SCIM service client.
    */
   private SCIMService service;
+
+  /**
+   * The SCIM secure service client.
+   */
+  private SCIMService secureService;
 
   /**
    * Base DN of the Directory Server.
@@ -101,12 +125,52 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     );
 
     int scimPort = TestCaseUtils.getFreePort();
-    configureExtension(instance, scimPort);
+    int scimSecurePort = TestCaseUtils.getFreePort();
+    configureExtension(instance, scimPort, scimSecurePort);
+
+    // Use the external instance trust store as our client trust store.
+    final File pwFile =
+        instance.fileRelativeToInstanceRoot("config/truststore.pin");
+    final char[] pw =
+        TestCaseUtils.readFileToLines(pwFile).get(0).toCharArray();
+    final KeyManager keyManager = null;
+    final TrustManager trustManager =
+        new TrustStoreTrustManager(
+            instance.fileRelativeToInstanceRoot("config/truststore"),
+            pw, "JKS", true);
+
+    final SSLUtil sslUtil = new SSLUtil(keyManager, trustManager);
+//    final SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
+
+    final SSLSocketFactory socketFactory =
+        new SSLSocketFactory(sslUtil.createSSLContext());
+    final Scheme httpsScheme = new Scheme("https", 443, socketFactory);
+    SchemeRegistry schemeRegistry = new SchemeRegistry();
+    schemeRegistry.register(httpsScheme);
+
+    final HttpParams params = new BasicHttpParams();
+    params.setBooleanParameter(SO_REUSEADDR, true);
+    DefaultHttpClient.setDefaultHttpParams(params);
+    final ThreadSafeClientConnManager mgr =
+        new ThreadSafeClientConnManager(schemeRegistry);
+    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+    httpClient.getCredentialsProvider().setCredentials(
+        new AuthScope(instance.getLdapHost(), scimPort),
+        new UsernamePasswordCredentials(instance.getDirmanagerDN(),
+                                        instance.getDirmanagerPassword()));
+    final ApacheHttpClientConfig clientConfig =
+        new ApacheHttpClientConfig(httpClient);
 
     final URI uri = new URI("http", null, instance.getLdapHost(), scimPort,
                             null, null, null);
-    service = new SCIMService(uri, instance.getDirmanagerDN(),
-        instance.getDirmanagerPassword());
+    service = new SCIMService(uri, clientConfig);
+
+    final URI secureUri = new URI("https", null, instance.getLdapHost(),
+                                  scimSecurePort, null, null, null);
+    secureService = new SCIMService(secureUri, clientConfig);
+
+    // TODO
+    service = secureService;
 
     //
     //This can be helpful if you want to make SCIM requests from your browser

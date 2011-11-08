@@ -42,12 +42,14 @@ public class ServerExtensionTestCase extends BaseTestCase
   /**
    * Configure the SCIM extension.
    *
-   * @param instance    The external instance where the extension is to be
-   *                    configured.
-   * @param listenPort  The HTTP listen port.
+   * @param instance          The external instance where the extension is to be
+   *                          configured.
+   * @param listenPort        The HTTP listen port.
+   * @param secureListenPort  The HTTPS listen port.
    */
   protected static void configureExtension(final ExternalInstance instance,
-                                           final int listenPort)
+                                           final int listenPort,
+                                           final int secureListenPort)
   {
     instance.dsconfig(
         "set-log-publisher-prop",
@@ -75,27 +77,26 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "retention-policy:File Count Retention Policy",
         "--set", "retention-policy:Free Disk Space Retention Policy");
 
-    instance.dsconfig(
-        "create-connection-handler",
-        "--handler-name", "HTTP",
-        "--type", "http",
-        "--set", "enabled:true",
-        "--set", "http-servlet-extension:" + "SCIM",
-        "--set", "http-operation-log-publisher:HTTP Common Access",
-        "--set", "listen-port:" + listenPort);
-
-//    final int secureListenPort = 8443;
 //    instance.dsconfig(
 //        "create-connection-handler",
-//        "--handler-name", "HTTPS",
+//        "--handler-name", "HTTP",
 //        "--type", "http",
 //        "--set", "enabled:true",
 //        "--set", "http-servlet-extension:" + "SCIM",
 //        "--set", "http-operation-log-publisher:HTTP Common Access",
-//        "--set", "listen-port:" + secureListenPort,
-//        "--set", "use-ssl:true",
-//        "--set", "key-manager-provider:JKS",
-//        "--set", "trust-manager-provider:JKS");
+//        "--set", "listen-port:" + listenPort);
+
+    instance.dsconfig(
+        "create-connection-handler",
+        "--handler-name", "HTTPS",
+        "--type", "http",
+        "--set", "enabled:true",
+        "--set", "http-servlet-extension:" + "SCIM",
+        "--set", "http-operation-log-publisher:HTTP Common Access",
+        "--set", "listen-port:" + secureListenPort,
+        "--set", "use-ssl:true",
+        "--set", "key-manager-provider:JKS",
+        "--set", "trust-manager-provider:JKS");
 
     instance.dsconfig(
         "create-monitor-provider",

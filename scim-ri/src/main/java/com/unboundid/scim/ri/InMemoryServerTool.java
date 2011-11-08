@@ -31,11 +31,18 @@ import com.unboundid.util.MinimalLogFormatter;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.args.ArgumentException;
 import com.unboundid.util.args.ArgumentParser;
+import com.unboundid.util.args.BooleanArgument;
 import com.unboundid.util.args.DNArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
+import com.unboundid.util.ssl.KeyStoreKeyManager;
+import com.unboundid.util.ssl.SSLUtil;
+import com.unboundid.util.ssl.TrustAllTrustManager;
+import com.unboundid.util.ssl.TrustStoreTrustManager;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -131,6 +138,23 @@ public class InMemoryServerTool
   // The argument used to specify the LDAP port.
   private IntegerArgument ldapPortArgument;
 
+  // The argument used to indicate that the server should use SSL.
+  private BooleanArgument useSSLArgument;
+
+  // The argument used to specify the path to the SSL key store file.
+  private FileArgument keyStorePathArgument;
+
+  // The argument used to specify the path to the SSL trust store file.
+  private FileArgument trustStorePathArgument;
+
+  // The argument used to specify the password to use to access the contents of
+  // the SSL key store
+  private StringArgument keyStorePasswordArgument;
+
+  // The argument used to specify the password to use to access the contents of
+  // the SSL trust store
+  private StringArgument trustStorePasswordArgument;
+
   // The in-memory directory server instance that has been created by this tool.
   private InMemoryDirectoryServer directoryServer;
 
@@ -213,6 +237,11 @@ public class InMemoryServerTool
     portArgument                   = null;
     maxResultsArgument             = null;
     ldapPortArgument               = null;
+    useSSLArgument                 = null;
+    keyStorePathArgument           = null;
+    trustStorePathArgument         = null;
+    keyStorePasswordArgument       = null;
+    trustStorePasswordArgument     = null;
   }
 
 
@@ -285,7 +314,7 @@ public class InMemoryServerTool
 
     ldapPortArgument = new IntegerArgument(null, "ldapPort", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_LDAP_PORT.get(),
-         INFO_MEM_SERVER_TOOL_ARG_DESC_LDAP_PORT.get(), 0, 65535);
+         INFO_MEM_SERVER_TOOL_ARG_DESC_LDAP_PORT.get(), 0, 65535, 1389);
     parser.addArgument(ldapPortArgument);
 
     baseDNArgument = new DNArgument('b', "baseDN", false, 1,
@@ -320,6 +349,39 @@ public class InMemoryServerTool
          false, false);
     parser.addArgument(useLdapSchemaFileArgument);
 
+    useSSLArgument = new BooleanArgument('Z', "useSSL",
+         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_SSL.get());
+    parser.addArgument(useSSLArgument);
+
+    keyStorePathArgument = new FileArgument('K', "keyStorePath", false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_KEY_STORE_PATH.get(), true, true, true,
+         false);
+    parser.addArgument(keyStorePathArgument);
+
+    keyStorePasswordArgument = new StringArgument('W', "keyStorePassword",
+         false, 1, INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PASSWORD.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_KEY_STORE_PW.get());
+    parser.addArgument(keyStorePasswordArgument);
+
+    trustStorePathArgument = new FileArgument('P', "trustStorePath", false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_TRUST_STORE_PATH.get(), true, true, true,
+         false);
+    parser.addArgument(trustStorePathArgument);
+
+    trustStorePasswordArgument = new StringArgument('T', "trustStorePassword",
+         false, 1, INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PASSWORD.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_TRUST_STORE_PW.get());
+    parser.addArgument(trustStorePasswordArgument);
+
+    parser.addDependentArgumentSet(useSSLArgument, keyStorePathArgument);
+    parser.addDependentArgumentSet(useSSLArgument, keyStorePasswordArgument);
+    parser.addDependentArgumentSet(keyStorePathArgument, useSSLArgument);
+    parser.addDependentArgumentSet(keyStorePasswordArgument, useSSLArgument);
+    parser.addDependentArgumentSet(trustStorePathArgument, useSSLArgument);
+    parser.addDependentArgumentSet(trustStorePasswordArgument,
+         trustStorePathArgument);
   }
 
 
@@ -384,6 +446,49 @@ public class InMemoryServerTool
     // Create a base configuration for the SCIM server.
     final SCIMServerConfig serverConfig = getSCIMConfig();
 
+    // If SSL is to be used, then create the corresponding socket factories.
+    if (useSSLArgument.isPresent())
+    {
+      try
+      {
+        final KeyManager keyManager = new KeyStoreKeyManager(
+             keyStorePathArgument.getValue(),
+             keyStorePasswordArgument.getValue().toCharArray());
+
+        final TrustManager trustManager;
+        if (trustStorePathArgument.isPresent())
+        {
+          final char[] password;
+          if (trustStorePasswordArgument.isPresent())
+          {
+            password = trustStorePasswordArgument.getValue().toCharArray();
+          }
+          else
+          {
+            password = null;
+          }
+
+          trustManager = new TrustStoreTrustManager(
+               trustStorePathArgument.getValue(), password, "JKS", true);
+        }
+        else
+        {
+          trustManager = new TrustAllTrustManager();
+        }
+
+        final SSLUtil serverSSLUtil = new SSLUtil(keyManager, trustManager);
+
+        serverConfig.setSslContext(serverSSLUtil.createSSLContext());
+      }
+      catch (final Exception e)
+      {
+        Debug.debugException(e);
+        err(ERR_MEM_SERVER_TOOL_ERROR_INITIALIZING_SSL.get(
+            StaticUtils.getExceptionMessage(e)));
+        return ResultCode.LOCAL_ERROR;
+      }
+    }
+
     // Create the SCIM server instance using the provided configuration, but
     // don't start it yet.
     scimServer = SCIMServer.getInstance();
@@ -412,8 +517,10 @@ public class InMemoryServerTool
     {
       directoryServer.startListening();
       scimServer.startListening();
-      out(INFO_MEM_SERVER_TOOL_LISTENING.get(scimServer.getListenPort(),
-                                             directoryServer.getListenPort()));
+      out(INFO_MEM_SERVER_TOOL_LISTENING.get(
+          useSSLArgument.isPresent() ? "HTTPS" : "HTTP",
+          scimServer.getListenPort(),
+          directoryServer.getListenPort()));
     }
     catch (final Exception e)
     {
@@ -439,13 +546,19 @@ public class InMemoryServerTool
   {
     final SCIMServerConfig serverConfig = new SCIMServerConfig();
 
-    // If a listen port was specified, then update the configuration to use it.
-    int listenPort = 0;
+    final int listenPort;
     if (portArgument.isPresent())
     {
       listenPort = portArgument.getValue();
     }
-
+    else if (useSSLArgument.isPresent())
+    {
+      listenPort = 8443;
+    }
+    else
+    {
+      listenPort = 8080;
+    }
     serverConfig.setListenPort(listenPort);
 
     serverConfig.setResourcesFile(useResourcesFileArgument.getValue());
@@ -593,7 +706,7 @@ public class InMemoryServerTool
     {
       "--useResourcesFile", "config/resources.xml",
       "--baseURI", "scim",
-      "--port", "8080",
+      "--port", "8181",
       "--ldifFile", "test.ldif"
     };
     exampleUsages.put(example2Args, INFO_MEM_SERVER_TOOL_EXAMPLE_2.get());

@@ -19,6 +19,7 @@ package com.unboundid.scim.ri;
 
 
 
+import javax.net.ssl.SSLContext;
 import java.io.File;
 
 
@@ -35,15 +36,16 @@ public class SCIMServerConfig
   private int listenPort = 0;
 
   /**
+   * The SSL context that should be used for secure client connections, or
+   * {@code null} if SSL should not be used.
+   */
+  private SSLContext sslContext = null;
+
+  /**
    * The maximum number of threads available for incoming connections to the
    * server.
    */
   private int maxThreads = 16;
-
-  /**
-   * The XML schema to be used by the server.
-   */
-  private File[] schemaFiles;
 
   /**
    * The XML file defining the SCIM resources.
@@ -163,5 +165,31 @@ public class SCIMServerConfig
    */
   public void setAccessLogFile(final String accessLogFile) {
     this.accessLogFile = accessLogFile;
+  }
+
+
+
+  /**
+   * Retrieve the SSL context that should be used for secure client connections.
+   * @return  The SSL context that should be used for secure client connections,
+   *          or {@code null} if SSL should not be used.
+   */
+  public SSLContext getSslContext()
+  {
+    return sslContext;
+  }
+
+
+
+  /**
+   * Specifies the SSL context that should be used for secure client
+   * connections.
+   *
+   * @param sslContext  The SSL context that should be used for secure client
+   *                    connections, or {@code null} if SSL should not be used.
+   */
+  public void setSslContext(final SSLContext sslContext)
+  {
+    this.sslContext = sslContext;
   }
 }
