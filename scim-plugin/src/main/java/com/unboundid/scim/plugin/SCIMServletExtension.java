@@ -5,22 +5,18 @@
 
 package com.unboundid.scim.plugin;
 
-
-
-import com.unboundid.directory.sdk.common.types.LogSeverity;
-import com.unboundid.directory.sdk.ds.api.Plugin;
-import com.unboundid.directory.sdk.ds.config.PluginConfig;
+import com.unboundid.directory.sdk.ds.api.HTTPServletExtension;
+import com.unboundid.directory.sdk.ds.config.HTTPServletExtensionConfig;
 import com.unboundid.directory.sdk.ds.types.DirectoryServerContext;
-import com.unboundid.directory.sdk.ds.types.StartupPluginResult;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldif.LDIFException;
-import com.unboundid.scim.ri.SCIMServer;
-import com.unboundid.scim.ri.SCIMServerConfig;
+import com.unboundid.scim.ldap.ConfigurableResourceMapper;
+import com.unboundid.scim.ldap.ResourceMapper;
+import com.unboundid.scim.ri.LDAPBackend;
 import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
-import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.args.ArgumentException;
 import com.unboundid.util.args.ArgumentParser;
@@ -28,8 +24,11 @@ import com.unboundid.util.args.BooleanArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
+import org.apache.wink.server.internal.servlet.RestServlet;
+import org.apache.wink.server.utils.RegistrationUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +41,11 @@ import static com.unboundid.scim.sdk.Debug.debugException;
 
 
 /**
- * This class provides a plugin that presents a Simple Cloud Identity
- * Management (SCIM) protocol interface to the Directory Server.
+ * This class provides a HTTP Servlet Extension that presents a Simple Cloud
+ * Identity Management (SCIM) protocol interface to the Directory Server.
  */
-public final class SCIMPlugin
-       extends Plugin
+public final class SCIMServletExtension
+       extends HTTPServletExtension
 {
   /**
    * The name of the argument that will be used to define the resources
@@ -55,32 +54,20 @@ public final class SCIMPlugin
   private static final String ARG_NAME_USE_RESOURCES_FILE = "useResourcesFile";
 
   /**
-   * The name of the argument that will be used to specify the port number of
-   * the SCIM protocol interface.
-   */
-  private static final String ARG_NAME_PORT = "port";
-
-  /**
-   * The name of the argument that will be used to specify the base URI of
-   * the SCIM protocol interface.
-   */
-  private static final String ARG_NAME_BASE_URI = "baseURI";
-
-  /**
    * The name of the argument that will be used to enable debug logging in the
-   * SCIM plugin.
+   * SCIM servlet.
    */
   private static final String ARG_NAME_DEBUG_ENABLED = "debugEnabled";
 
   /**
    * The name of the argument that will be used to specify the level of debug
-   * logging in the SCIM plugin.
+   * logging in the SCIM servlet.
    */
   private static final String ARG_NAME_DEBUG_LEVEL = "debugLevel";
 
   /**
    * The name of the argument that will be used to specify the types of debug
-   * logging in the SCIM plugin.
+   * logging in the SCIM servlet.
    */
   private static final String ARG_NAME_DEBUG_TYPE = "debugType";
 
@@ -91,33 +78,50 @@ public final class SCIMPlugin
   private static final String ARG_NAME_MAX_RESULTS = "maxResults";
 
   /**
-   * The singleton instance of this plugin.
+   * The name of the argument that will be used to specify the path that will be
+   * used to access the servlet.
    */
-  private static volatile SCIMPlugin INSTANCE;
+  private static final String ARG_NAME_PATH = "path";
 
   /**
-   * The server context for the server in which this extension is running.
+   * The singleton instance of this servlet extension.
    */
-  private DirectoryServerContext serverContext;
+  private static volatile SCIMServletExtension INSTANCE;
+
+  /**
+   * The servlet that has been created.
+   */
+  private volatile RestServlet servlet;
+
+  /**
+   * The path that will be used for the servlet.
+   */
+  private volatile String path;
 
   /**
    * The backend that will handle the SCIM requests.
    */
-  private SCIMBackend scimBackend;
+  private LDAPBackend backend;
 
   /**
    * The JAX-RS application that will handle the SCIM requests.
    */
-  private volatile SCIMApplication scimApplication;
+  private volatile SCIMApplication application;
+
+
 
   /**
-   * Creates a new instance of this plugin.  All plugin implementations must
-   * include a default constructor, but any initialization should generally be
-   * done in the {@code initializePlugin} method.
+   * Creates a new instance of this HTTP servlet extension.  All HTTP servlet
+   * extension implementations must include a default constructor, but any
+   * initialization should generally be done in the {@code createServlet}
+   * method.
    */
-  public SCIMPlugin()
+  public SCIMServletExtension()
   {
-    // No implementation required.
+    servlet     = null;
+    path        = null;
+    backend     = null;
+    application = null;
   }
 
 
@@ -130,7 +134,7 @@ public final class SCIMPlugin
   @Override()
   public String getExtensionName()
   {
-    return "SCIM Plugin";
+    return "SCIM HTTP Servlet Extension";
   }
 
 
@@ -148,8 +152,8 @@ public final class SCIMPlugin
   {
     return new String[]
     {
-      "This plugin provides a Simple Cloud Identity Management (SCIM) " +
-      "protocol interface to the Directory Server."
+      "This HTTP servlet extension provides a Simple Cloud Identity " +
+      "Management (SCIM) protocol interface to the Directory Server."
     };
   }
 
@@ -157,12 +161,12 @@ public final class SCIMPlugin
 
   /**
    * Updates the provided argument parser to define any configuration arguments
-   * which may be used by this plugin.  The argument parser may also be updated
-   * to define relationships between arguments (e.g., to specify required,
-   * exclusive, or dependent argument sets).
+   * which may be used by this HTTP servlet extension.  The argument parser may
+   * also be updated to define relationships between arguments (e.g., to specify
+   * required, exclusive, or dependent argument sets).
    *
    * @param  parser  The argument parser to be updated with the configuration
-   *                 arguments which may be used by this plugin.
+   *                 arguments which may be used by this HTTP servlet extension.
    *
    * @throws  ArgumentException  If a problem is encountered while updating the
    *                             provided argument parser.
@@ -179,39 +183,35 @@ public final class SCIMPlugin
                          "supported by the SCIM interface.",
                          true, true, true, false));
 
-    // This is a required argument.
+    // This argument has a default.
     parser.addArgument(
-        new IntegerArgument(null, ARG_NAME_PORT,
-                            true, 1, "{port}",
-                            "The port number of the SCIM interface.",
-                            0, 65535));
-
-    // This argument is required but has a default.
-    parser.addArgument(
-        new StringArgument(null, ARG_NAME_BASE_URI,
-                           true, 1, "{URL-path}",
-                           "The base URI of the SCIM interface. If no base " +
-                           "URI is specified then the default value '/' is " +
-                           "used", "/"));
+        new StringArgument(null, ARG_NAME_PATH,
+                           true, 1, "{path}",
+                           "The path to use to access the SCIM interface. If " +
+                           "no path is specified then the default value" +
+                           "'/' is used. Note that changes to this argument " +
+                           "will only take effect if the associated HTTP " +
+                           "connection handler (or the entire server) is " +
+                           "stopped and re-started.", "/"));
 
     // Debug log arguments.
     parser.addArgument(
         new BooleanArgument(null, ARG_NAME_DEBUG_ENABLED,
-                           "Enables debug logging in the SCIM plugin"));
+                           "Enables debug logging in the SCIM servlet"));
 
     parser.addArgument(
         new StringArgument(null, ARG_NAME_DEBUG_LEVEL,
                            false, 1,
                            "(SEVERE|WARN|INFO|CONFIG|FINE|FINER|FINEST)",
                            "Specifies the level of debug logging in the SCIM" +
-                           " plugin"));
+                           " servlet"));
 
     parser.addArgument(
         new StringArgument(null, ARG_NAME_DEBUG_TYPE,
                            false, 1,
                            "{debug-type,...}",
                            "Specifies the types of debug logging in the SCIM" +
-                           " plugin"));
+                           " servlet"));
 
     // This argument has a default.
     parser.addArgument(
@@ -220,26 +220,66 @@ public final class SCIMPlugin
                             "The maximum number of resources that are " +
                             "returned in a response. The default value is 100",
                             1, Integer.MAX_VALUE, 100));
-
   }
 
 
 
   /**
-   * Initializes this plugin.
+   * Retrieves the order in which the servlet should be started.  A value
+   * greater than or equal to zero guarantees that the servlet will be started
+   * as soon as the servlet engine has been started, in order of ascending
+   * servlet init order values, before the {@code doPostRegistrationProcessing}
+   * method has been called.  If the value is less than zero, the servlet may
+   * not be started until a request is received for one of its registered paths.
+   *
+   * @return  The order in which the servlet should be started, or a negative
+   *          value if startup order does not matter.
+   */
+  @Override
+  public int getServletInitOrder()
+  {
+    return 0;
+  }
+
+
+
+  @Override
+  public void doPostRegistrationProcessing()
+  {
+    RegistrationUtils.registerApplication(application,
+                                          servlet.getServletContext());
+  }
+
+
+
+  @Override
+  public void doPostShutdownProcessing()
+  {
+    // No implementation required.
+  }
+
+
+
+  /**
+   * Creates an HTTP servlet extension using the provided information.
    *
    * @param  serverContext  A handle to the server context for the server in
    *                        which this extension is running.
-   * @param  config         The general configuration for this plugin.
+   * @param  config         The general configuration for this HTTP servlet
+   *                        extension.
    * @param  parser         The argument parser which has been initialized from
-   *                        the configuration for this plugin.
+   *                        the configuration for this HTTP servlet extension.
    *
-   * @throws  LDAPException  If a problem occurs while initializing this plugin.
+   * @return  The HTTP servlet that has been created.
+   *
+   * @throws  LDAPException  If a problem is encountered while attempting to
+   *                         create the HTTP servlet.
    */
   @Override()
-  public void initializePlugin(final DirectoryServerContext serverContext,
-                               final PluginConfig config,
-                               final ArgumentParser parser)
+  public RestServlet createServlet(
+      final DirectoryServerContext serverContext,
+      final HTTPServletExtensionConfig config,
+      final ArgumentParser parser)
       throws LDAPException
   {
     Debug.getLogger().addHandler(new DebugLogHandler(serverContext));
@@ -251,6 +291,14 @@ public final class SCIMPlugin
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_LEVEL);
     final StringArgument debugTypeArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
+    final StringArgument pathArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_PATH);
+    final IntegerArgument maxResultsArg =
+         (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
+    final FileArgument useResourcesFileArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
+
+    path = pathArg.getValue();
 
     final Properties properties = new Properties();
     properties.setProperty(Debug.PROPERTY_DEBUG_ENABLED,
@@ -268,65 +316,72 @@ public final class SCIMPlugin
     Debug.initialize(properties);
 
     Debug.debug(Level.INFO, DebugType.OTHER,
-                "Beginning SCIM plugin initialization");
+                "Beginning SCIM Servlet Extension initialization");
 
-    this.serverContext = serverContext;
-
-    final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
-
-    final SCIMServer scimServer = SCIMServer.getInstance();
+    final Map<ResourceDescriptor, ResourceMapper> resourceMappers =
+        new HashMap<ResourceDescriptor, ResourceMapper>();
     try
     {
-      scimServer.initializeServer(scimServerConfig);
+      final List<ResourceMapper> mappers =
+          ConfigurableResourceMapper.parse(useResourcesFileArg.getValue());
+      for (final ResourceMapper resourceMapper : mappers)
+      {
+        resourceMappers.put(resourceMapper.getResourceDescriptor(),
+                            resourceMapper);
+      }
     }
     catch (Exception e)
     {
       debugException(e);
       throw new LDAPException(
           ResultCode.OTHER,
-          "An error occurred while initializing the SCIM plugin.", e);
+          "An error occurred while initializing the resources file.", e);
     }
 
-    final StringArgument baseUriArg =
-         (StringArgument) parser.getNamedArgument(ARG_NAME_BASE_URI);
-    final IntegerArgument maxResultsArg =
-         (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
+    backend = new ServerContextBackend(resourceMappers, serverContext);
+    backend.getConfig().setMaxResults(maxResultsArg.getValue());
 
-    final String baseUri = baseUriArg.getValue();
-    scimBackend = new ServerContextBackend(scimServer.getResourceMappers(),
-                                           serverContext);
-    scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
-    scimApplication = scimServer.registerBackend(baseUri, scimBackend);
+    System.setProperty("wink.httpMethodOverrideHeaders",
+                       "X-HTTP-Method-Override");
+    System.setProperty("wink.response.defaultCharset",
+                       "true");
 
-    if (serverContext.isRunning())
-    {
-      // This is needed to start listening if the plugin was dynamically added
-      // after the server was started (e.g., via dsconfig).
-      try
-      {
-        scimServer.startListening();
-        serverContext.logMessage(
-            LogSeverity.NOTICE,
-            "The server is listening for SCIM requests on port " +
-            scimServer.getListenPort());
-      }
-      catch (final Exception e)
-      {
-        debugException(e);
-        throw new LDAPException(
-            ResultCode.OTHER,
-            "An error occurred while attempting to start listening for " +
-            "SCIM requests:" + StaticUtils.getExceptionMessage(e), e);
-      }
-
-      addMonitorProvider();
-    }
+    servlet = new RestServlet();
+    application = new SCIMApplication(resourceMappers.keySet(), backend);
 
     Debug.debug(Level.INFO, DebugType.OTHER,
-                "Finished SCIM plugin initialization");
+                "Finished SCIM Servlet Extension initialization");
 
     // Set the instance singleton to this initialized instance.
     INSTANCE = this;
+
+    return servlet;
+  }
+
+
+
+  /**
+   * Retrieves a list of the request paths for which the associated servlet
+   * should be invoked.  This method will be called after the
+   * {@link #createServlet} method has been used to create the servlet instance.
+   *
+   * @return  A list of the request paths for which the associated servlet
+   *          should be invoked.
+   */
+  @Override()
+  public List<String> getServletPaths()
+  {
+    final String normalizedPath;
+    if (!path.endsWith("/"))
+    {
+      normalizedPath = path + "/";
+    }
+    else
+    {
+      normalizedPath = path;
+    }
+
+    return Arrays.asList(normalizedPath + "*", normalizedPath + "v1/*");
   }
 
 
@@ -335,7 +390,8 @@ public final class SCIMPlugin
    * Indicates whether the configuration contained in the provided argument
    * parser represents a valid configuration for this extension.
    *
-   * @param  config               The general configuration for this plugin.
+   * @param  config               The general configuration for this HTTP
+   *                              servlet extension.
    * @param  parser               The argument parser which has been initialized
    *                              with the proposed configuration.
    * @param  unacceptableReasons  A list that can be updated with reasons that
@@ -345,7 +401,8 @@ public final class SCIMPlugin
    *          {@code false} if not.
    */
   @Override()
-  public boolean isConfigurationAcceptable(final PluginConfig config,
+  public boolean isConfigurationAcceptable(
+                      final HTTPServletExtensionConfig config,
                       final ArgumentParser parser,
                       final List<String> unacceptableReasons)
   {
@@ -355,6 +412,8 @@ public final class SCIMPlugin
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_LEVEL);
     final StringArgument debugTypeArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
+    final FileArgument useResourcesFileArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
 
     if (debugLevelArg.isPresent())
     {
@@ -366,7 +425,7 @@ public final class SCIMPlugin
       {
         debugException(e);
         unacceptableReasons.add("Invalid value '" + debugLevelArg.getValue() +
-                                "' for the SCIM plugin debug level");
+                                "' for the SCIM servlet debug level");
         acceptable = false;
       }
     }
@@ -382,17 +441,23 @@ public final class SCIMPlugin
         {
           unacceptableReasons.add(
               "Invalid value '" + debugTypeName +
-              "' for a SCIM plugin debug type.  Allowed values include:  " +
+              "' for a SCIM servlet debug type.  Allowed values include:  " +
               DebugType.getTypeNameList() + '.');
           acceptable = false;
         }
       }
     }
 
-    final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
-    if (!SCIMServer.getInstance().isConfigAcceptable(scimServerConfig,
-                                                     unacceptableReasons))
+    try
     {
+      ConfigurableResourceMapper.parse(useResourcesFileArg.getValue());
+    }
+    catch (Exception e)
+    {
+      debugException(e);
+      unacceptableReasons.add(
+          "The resources file '" + useResourcesFileArg.getValue() +
+          "' cannot be parsed: " + StaticUtils.getExceptionMessage(e));
       acceptable = false;
     }
 
@@ -405,7 +470,8 @@ public final class SCIMPlugin
    * Attempts to apply the configuration contained in the provided argument
    * parser.
    *
-   * @param  config                The general configuration for this plugin.
+   * @param  config                The general configuration for this HTTP
+   *                               servlet extension.
    * @param  parser                The argument parser which has been
    *                               initialized with the new configuration.
    * @param  adminActionsRequired  A list that can be updated with information
@@ -420,12 +486,23 @@ public final class SCIMPlugin
    *          attempting to apply the configuration change.
    */
   @Override()
-  public ResultCode applyConfiguration(final PluginConfig config,
+  public ResultCode applyConfiguration(final HTTPServletExtensionConfig config,
                                        final ArgumentParser parser,
                                        final List<String> adminActionsRequired,
                                        final List<String> messages)
   {
     ResultCode rc = ResultCode.SUCCESS;
+
+    // The path will not change dynamically.  If a different path was given,
+    // then report that as a required administrative action.
+    final StringArgument pathArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_PATH);
+    if (! path.equals(pathArg.getValue()))
+    {
+      adminActionsRequired.add("Changes to the servlet path will not take " +
+           "effect until the HTTP connection handler (or entire server) is " +
+           "restarted.");
+    }
 
     final BooleanArgument debugEnabledArg =
         (BooleanArgument) parser.getNamedArgument(ARG_NAME_DEBUG_ENABLED);
@@ -449,131 +526,36 @@ public final class SCIMPlugin
     }
     Debug.initialize(properties);
 
-    final SCIMServer scimServer = SCIMServer.getInstance();
-    try
-    {
-      scimServer.shutdown();
-    }
-    catch (Exception e)
-    {
-      debugException(e);
-    }
-
-    final SCIMServerConfig scimServerConfig = getSCIMConfig(parser);
-
-    try
-    {
-      scimServer.initializeServer(scimServerConfig);
-    }
-    catch (Exception e)
-    {
-      debugException(e);
-      messages.add("An error occurred while initializing the SCIM plugin:" +
-                   StaticUtils.getExceptionMessage(e));
-      return ResultCode.OTHER;
-    }
-
-    final StringArgument baseUriArg =
-         (StringArgument) parser.getNamedArgument(ARG_NAME_BASE_URI);
     final IntegerArgument maxResultsArg =
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
 
-    final String baseUri = baseUriArg.getValue();
-    scimBackend = new ServerContextBackend(scimServer.getResourceMappers(),
-                                           serverContext);
-    scimBackend.getConfig().setMaxResults(maxResultsArg.getValue());
-    scimApplication = scimServer.registerBackend(baseUri, scimBackend);
+    backend.getConfig().setMaxResults(maxResultsArg.getValue());
 
+    final FileArgument useResourcesFileArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
     try
     {
-      scimServer.startListening();
-      serverContext.logMessage(
-          LogSeverity.NOTICE,
-          "The server is listening for SCIM requests on port " +
-          scimServer.getListenPort());
+      final Map<ResourceDescriptor, ResourceMapper> resourceMappers =
+          new HashMap<ResourceDescriptor, ResourceMapper>();
+      final List<ResourceMapper> mappers =
+          ConfigurableResourceMapper.parse(useResourcesFileArg.getValue());
+      for (final ResourceMapper resourceMapper : mappers)
+      {
+        resourceMappers.put(resourceMapper.getResourceDescriptor(),
+                            resourceMapper);
+      }
+
+      backend.setResourceMappers(resourceMappers);
     }
-    catch (final Exception e)
+    catch (Exception e)
     {
       debugException(e);
-      messages.add("An error occurred while attempting to start listening " +
-                   "for SCIM requests:" + StaticUtils.getExceptionMessage(e));
-      return ResultCode.OTHER;
+      messages.add("An error occurred while initializing the resources " +
+                   "file: " + StaticUtils.getExceptionMessage(e));
+      rc = ResultCode.OTHER;
     }
 
     return rc;
-  }
-
-
-
-  /**
-   * Performs any processing which may be necessary when the server is starting.
-   *
-   * @return  Information about the result of the plugin processing.
-   */
-  public StartupPluginResult doStartup()
-  {
-    // Start listening for SCIM requests.
-    try
-    {
-      final SCIMServer scimServer = SCIMServer.getInstance();
-      scimServer.startListening();
-      serverContext.logMessage(
-          LogSeverity.NOTICE,
-          "The server is listening for SCIM requests on port " +
-          scimServer.getListenPort());
-    }
-    catch (final Exception e)
-    {
-      debugException(e);
-      return new StartupPluginResult(
-          false, true,
-          "An error occurred while attempting to start listening for " +
-          "SCIM requests:" + StaticUtils.getExceptionMessage(e));
-    }
-
-    addMonitorProvider();
-
-    return StartupPluginResult.SUCCESS;
-  }
-
-
-
-  /**
-   * Performs any processing which may be necessary when the server is shutting
-   * down.
-   *
-   * @param  shutdownReason  A message which may provide information about the
-   *                         reason the server is shutting down.
-   */
-  public void doShutdown(final String shutdownReason)
-  {
-    try
-    {
-      SCIMServer.getInstance().shutdown();
-    }
-    catch (Exception e)
-    {
-      debugException(e);
-    }
-  }
-
-
-
-  /**
-   * Performs any cleanup which may be necessary when this plugin is to be taken
-   * out of service.
-   */
-  @Override()
-  public void finalizePlugin()
-  {
-    try
-    {
-      SCIMServer.getInstance().shutdown();
-    }
-    catch (Exception e)
-    {
-      debugException(e);
-    }
   }
 
 
@@ -596,94 +578,34 @@ public final class SCIMPlugin
 
     exampleMap.put(
          Arrays.asList(
-              ARG_NAME_USE_RESOURCES_FILE + "=config/resources.xml",
-              ARG_NAME_PORT + "=8080"),
-         "Creates a SCIM protocol interface listening on port 8080. The " +
-         "interface supports the resources defined in resources.xml.");
+             ARG_NAME_USE_RESOURCES_FILE + "=config/resources.xml"),
+         "Create a SCIM servlet that handles resources defined in " +
+         "resources.xml.");
 
     return exampleMap;
   }
 
 
 
-  /**
-   * Creates a SCIM server configuration based on information provided in an
-   * argument parser.
-   *
-   * @param parser  The argument parser containing the information needed to
-   *                create the configuration.
-   *
-   * @return  The configuration that was created.
-   *
-   */
-  private static SCIMServerConfig getSCIMConfig(final ArgumentParser parser)
-  {
-    final FileArgument useResourcesFileArg =
-         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
-
-    final IntegerArgument portArg =
-         (IntegerArgument) parser.getNamedArgument(ARG_NAME_PORT);
-
-    final SCIMServerConfig scimServerConfig = new SCIMServerConfig();
-
-    scimServerConfig.setListenPort(portArg.getValue());
-    scimServerConfig.setResourcesFile(useResourcesFileArg.getValue());
-
-    return scimServerConfig;
-  }
-
-
 
   /**
-   * Add a configuration entry for the SCIM monitor provider if there is not
-   * one already.
-   */
-  private void addMonitorProvider()
-  {
-    try
-    {
-      serverContext.getInternalRootConnection().add(
-          "dn: cn=SCIM Monitor Provider,cn=Monitor Providers,cn=config",
-          "objectClass: top",
-          "objectClass: ds-cfg-monitor-provider",
-          "objectClass: ds-cfg-third-party-monitor-provider",
-          "cn: SCIM Monitor Provider",
-          "ds-cfg-java-class: " +
-          "com.unboundid.directory.sdk.extensions.ThirdPartyMonitorProvider",
-          "ds-cfg-extension-class: " +
-          "com.unboundid.scim.plugin.SCIMMonitorProvider",
-          "ds-cfg-enabled: true"
-      );
-    }
-    catch (LDIFException e)
-    {
-      debugException(e);
-    }
-    catch (LDAPException e)
-    {
-      if (!e.getResultCode().equals(ResultCode.ENTRY_ALREADY_EXISTS))
-      {
-        debugException(e);
-      }
-    }
-  }
-
-  /**
-   * Retrieves the SCIM JAX-RS application instance used by this plugin.
+   * Retrieves the SCIM JAX-RS application instance used by this servlet.
    *
-   * @return The SCIM JAX-RS application instance used by this plugin.
+   * @return The SCIM JAX-RS application instance used by this servlet.
    */
   SCIMApplication getSCIMApplication()
   {
-    return scimApplication;
+    return application;
   }
+
+
 
   /**
    * Retrieves the singleton instance of this SCIMPlugin.
    *
    * @return The singleton instance of this SCIMPlugin.
    */
-  static SCIMPlugin getInstance()
+  static SCIMServletExtension getInstance()
   {
     return INSTANCE;
   }

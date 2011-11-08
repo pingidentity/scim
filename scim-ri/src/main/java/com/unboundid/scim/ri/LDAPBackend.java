@@ -124,6 +124,19 @@ public abstract class LDAPBackend
 
 
   /**
+   * Specifies the resource mappers configured for SCIM resource end-points.
+   * @param resourceMappers  The resource mappers configured for SCIM resource
+   *                         end-points.
+   */
+  public void setResourceMappers(
+      final Map<ResourceDescriptor, ResourceMapper> resourceMappers)
+  {
+    this.resourceMappers = resourceMappers;
+  }
+
+
+
+  /**
    * Retrieve an LDAP interface that may be used to interact with the LDAP
    * server.
    *

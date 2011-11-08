@@ -360,12 +360,12 @@ public class ResourceDescriptor extends BaseResource
       return true;
     }
 
-    if (!(obj instanceof AttributeDescriptor))
+    if (!(obj instanceof ResourceDescriptor))
     {
       return false;
     }
 
-    final AttributeDescriptor that = (AttributeDescriptor)obj;
+    final ResourceDescriptor that = (ResourceDescriptor)obj;
     final String thisSchema = getSchema();
     final String thisName = getName();
     final String thatSchema = that.getSchema();

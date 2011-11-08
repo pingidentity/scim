@@ -32,7 +32,10 @@
               <exclude>com.unboundid.product:ldapsdk</exclude>
               <exclude>com.unboundid.product.ds:server-sdk</exclude>
               <exclude>javax.activation:activation</exclude>
-            </excludes> 
+              <exclude>org.eclipse.jetty:jetty-*</exclude>
+              <exclude>org.mortbay.jetty:servlet-api</exclude>
+              <exclude>org.json:json</exclude>
+            </excludes>
         </dependencySet>
     </dependencySets>
 </assembly>

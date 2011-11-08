@@ -119,6 +119,12 @@ public class ServerContextBackend extends LDAPBackend
   protected LDAPInterface getLDAPInterface(final String userID)
       throws LDAPException
   {
+    // TODO: Need authentication support in the HTTP servlet extension
+    if (userID == null)
+    {
+      return serverContext.getInternalRootConnection();
+    }
+
     final DN bindDN = getUserDN(userID);
     if (bindDN == null)
     {

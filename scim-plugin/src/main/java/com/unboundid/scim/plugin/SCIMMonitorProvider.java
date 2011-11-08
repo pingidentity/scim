@@ -78,7 +78,8 @@ public class SCIMMonitorProvider extends MonitorProvider
   {
     return new String[]
     {
-      "This monitor provider supplies information about the SCIM plugin."
+      "This monitor provider supplies information about the SCIM HTTP " +
+      "Servlet Extension."
     };
   }
 
@@ -102,10 +103,10 @@ public class SCIMMonitorProvider extends MonitorProvider
     attrList.add(new Attribute("revision",
         String.valueOf(Version.REVISION_NUMBER)));
 
-    if(SCIMPlugin.getInstance() != null)
+    if(SCIMServletExtension.getInstance() != null)
     {
       final SCIMApplication application =
-          SCIMPlugin.getInstance().getSCIMApplication();
+          SCIMServletExtension.getInstance().getSCIMApplication();
 
       for(ResourceStats stats : application.getResourceStats())
       {

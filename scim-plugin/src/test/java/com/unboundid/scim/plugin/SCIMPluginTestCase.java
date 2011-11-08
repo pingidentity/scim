@@ -82,6 +82,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     instance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
 
+    instance.runSetup("--ldapsPort", "1636",
+                      "--generateSelfSignedCertificate",
+                      "--doNotStart");
+
     final File pluginZipFile = new File(System.getProperty("pluginZipFile"));
     installExtension(instance, pluginZipFile);
 
@@ -97,7 +101,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     );
 
     int scimPort = TestCaseUtils.getFreePort();
-    configurePlugin(instance, "scim-plugin", scimPort);
+    configureExtension(instance, scimPort);
 
     final URI uri = new URI("http", null, instance.getLdapHost(), scimPort,
                             null, null, null);
@@ -831,8 +835,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     // Lower the maxResults setting.
     final int maxResults = 1;
     instance.dsconfig(
-        "set-plugin-prop",
-        "--plugin-name", "scim-plugin",
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
         "--add", "extension-argument:maxResults=" + maxResults);
 
     // Create some users.
@@ -851,8 +855,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     //Clean up
     instance.dsconfig(
-        "set-plugin-prop",
-        "--plugin-name", "scim-plugin",
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
         "--remove", "extension-argument:maxResults=" + maxResults);
   }
 
@@ -874,10 +878,9 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
         "scim-ldap=\"http://www.unboundid.com/scim-ldap\">",
         "</scim-ldap:resources>");
     instance.dsconfig(
-        "set-plugin-prop",
-        "--plugin-name", "scim-plugin",
-        "--set", "extension-argument:useResourcesFile=" + resourcesFile,
-        "--set", "extension-argument:port=" + TestCaseUtils.getFreePort());
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
+        "--set", "extension-argument:useResourcesFile=" + resourcesFile);
   }
 
 

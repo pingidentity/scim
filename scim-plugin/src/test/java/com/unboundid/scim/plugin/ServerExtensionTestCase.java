@@ -40,15 +40,14 @@ public class ServerExtensionTestCase extends BaseTestCase
 
 
   /**
-   * Configure a new instance of the scim-plugin.
+   * Configure the SCIM extension.
    *
-   * @param instance    The external instance where the plugin is to be created.
-   * @param pluginName  The name of the plugin to be created.
+   * @param instance    The external instance where the extension is to be
+   *                    configured.
    * @param listenPort  The HTTP listen port.
    */
-  protected static void configurePlugin(final ExternalInstance instance,
-                                        final String pluginName,
-                                        final int listenPort)
+  protected static void configureExtension(final ExternalInstance instance,
+                                           final int listenPort)
   {
     instance.dsconfig(
         "set-log-publisher-prop",
@@ -56,16 +55,56 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "enabled:true");
 
     instance.dsconfig(
-        "create-plugin",
-        "--plugin-name", pluginName,
+        "create-http-servlet-extension",
+        "--extension-name", "SCIM",
+        "--type", "third-party",
+        "--set", "extension-class:" +
+                 "com.unboundid.scim.plugin.SCIMServletExtension",
+        "--set", "extension-argument:" +
+                 "useResourcesFile=config/scim/resources.xml",
+        "--set", "extension-argument:debugEnabled");
+
+    instance.dsconfig(
+        "create-log-publisher",
+        "--publisher-name", "HTTP Common Access",
+        "--type", "common-log-file-http-operation",
+        "--set", "enabled:true",
+        "--set", "log-file:logs/http-common-access",
+        "--set", "rotation-policy:24 Hours Time Limit Rotation Policy",
+        "--set", "rotation-policy:Size Limit Rotation Policy",
+        "--set", "retention-policy:File Count Retention Policy",
+        "--set", "retention-policy:Free Disk Space Retention Policy");
+
+    instance.dsconfig(
+        "create-connection-handler",
+        "--handler-name", "HTTP",
+        "--type", "http",
+        "--set", "enabled:true",
+        "--set", "http-servlet-extension:" + "SCIM",
+        "--set", "http-operation-log-publisher:HTTP Common Access",
+        "--set", "listen-port:" + listenPort);
+
+//    final int secureListenPort = 8443;
+//    instance.dsconfig(
+//        "create-connection-handler",
+//        "--handler-name", "HTTPS",
+//        "--type", "http",
+//        "--set", "enabled:true",
+//        "--set", "http-servlet-extension:" + "SCIM",
+//        "--set", "http-operation-log-publisher:HTTP Common Access",
+//        "--set", "listen-port:" + secureListenPort,
+//        "--set", "use-ssl:true",
+//        "--set", "key-manager-provider:JKS",
+//        "--set", "trust-manager-provider:JKS");
+
+    instance.dsconfig(
+        "create-monitor-provider",
+        "--provider-name", "SCIM",
         "--type", "third-party",
         "--set", "enabled:true",
-        "--set", "plugin-type:startup",
-        "--set", "extension-class:com.unboundid.scim.plugin.SCIMPlugin",
-        "--set", "extension-argument:port=" + listenPort,
-        "--set",
-        "extension-argument:useResourcesFile=config/scim/resources.xml",
-        "--set", "extension-argument:debugEnabled");
+        "--set", "extension-class:" +
+                 "com.unboundid.scim.plugin.SCIMMonitorProvider");
+
   }
 
 
