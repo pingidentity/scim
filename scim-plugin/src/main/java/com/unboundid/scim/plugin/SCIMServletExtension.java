@@ -5,9 +5,9 @@
 
 package com.unboundid.scim.plugin;
 
-import com.unboundid.directory.sdk.ds.api.HTTPServletExtension;
-import com.unboundid.directory.sdk.ds.config.HTTPServletExtensionConfig;
-import com.unboundid.directory.sdk.ds.types.DirectoryServerContext;
+import com.unboundid.directory.sdk.http.api.HTTPServletExtension;
+import com.unboundid.directory.sdk.http.config.HTTPServletExtensionConfig;
+import com.unboundid.directory.sdk.http.types.HTTPServerContext;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
@@ -27,6 +27,7 @@ import com.unboundid.util.args.StringArgument;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
 
+import javax.servlet.http.HttpServlet;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -276,8 +277,8 @@ public final class SCIMServletExtension
    *                         create the HTTP servlet.
    */
   @Override()
-  public RestServlet createServlet(
-      final DirectoryServerContext serverContext,
+  public HttpServlet createServlet(
+      final HTTPServerContext serverContext,
       final HTTPServletExtensionConfig config,
       final ArgumentParser parser)
       throws LDAPException
