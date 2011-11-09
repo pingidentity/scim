@@ -137,7 +137,8 @@ public class ProxyPluginTestCase extends ServerExtensionTestCase
     );
 
     int scimPort = TestCaseUtils.getFreePort();
-    configureExtension(proxyInstance, scimPort);
+    int scimSecurePort = TestCaseUtils.getFreePort();
+    configureExtension(proxyInstance, scimPort, scimSecurePort);
 
     final URI uri = new URI("http", null, proxyInstance.getLdapHost(), scimPort,
                             null, null, null);
