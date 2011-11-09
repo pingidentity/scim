@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.ri;
 
+import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.client.SCIMEndpoint;
 import com.unboundid.scim.client.SCIMService;
@@ -39,18 +40,30 @@ import com.unboundid.util.args.BooleanArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
+import com.unboundid.util.ssl.KeyStoreKeyManager;
+import com.unboundid.util.ssl.PromptTrustManager;
+import com.unboundid.util.ssl.SSLUtil;
+import com.unboundid.util.ssl.TrustAllTrustManager;
+import com.unboundid.util.ssl.TrustStoreTrustManager;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.wink.client.ApacheHttpClientConfig;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -58,9 +71,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.unboundid.scim.sdk.Debug.debugException;
 import static com.unboundid.util.StaticUtils.NO_STRINGS;
 import static com.unboundid.scim.ri.RIMessages.*;
+import static com.unboundid.util.StaticUtils.getExceptionMessage;
 import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
 /**
@@ -132,6 +148,17 @@ public class SCIMQueryRate
   private StringArgument  authID;
   private StringArgument  authPassword;
   private StringArgument  host;
+  private BooleanArgument trustAll;
+  private BooleanArgument useSSL;
+  private FileArgument    keyStorePasswordFile;
+  private FileArgument    trustStorePasswordFile;
+  private StringArgument  certificateNickname;
+  private StringArgument  keyStoreFormat;
+  private StringArgument  keyStorePath;
+  private StringArgument  keyStorePassword;
+  private StringArgument  trustStoreFormat;
+  private StringArgument  trustStorePath;
+  private StringArgument  trustStorePassword;
 
   // The argument used to indicate whether to generate output in CSV format.
   private BooleanArgument csvFormat;
@@ -171,6 +198,11 @@ public class SCIMQueryRate
   // The argument used to specify the timestamp format.
   private StringArgument timestampFormat;
 
+  // The prompt trust manager that will be shared by all connections created
+  // for which it is appropriate.  This will allow them to benefit from the
+  // common cache.
+  private final AtomicReference<PromptTrustManager> promptTrustManager =
+      new AtomicReference<PromptTrustManager>();
 
 
   /**
@@ -390,8 +422,64 @@ public class SCIMQueryRate
         INFO_QUERY_TOOL_ARG_DESC_RANDOM_SEED.get());
     parser.addArgument(randomSeed);
 
+    useSSL = new BooleanArgument('Z', "useSSL", 1,
+         INFO_SCIM_TOOL_DESCRIPTION_USE_SSL.get());
+    parser.addArgument(useSSL);
+
+    trustAll = new BooleanArgument('X', "trustAll", 1,
+         INFO_SCIM_TOOL_DESCRIPTION_TRUST_ALL.get());
+    parser.addArgument(trustAll);
+
+    keyStorePath = new StringArgument('K', "keyStorePath", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_PATH.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_KEY_STORE_PATH.get());
+    parser.addArgument(keyStorePath);
+
+    keyStorePassword = new StringArgument('W', "keyStorePassword", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_PASSWORD.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_KEY_STORE_PASSWORD.get());
+    parser.addArgument(keyStorePassword);
+
+    keyStorePasswordFile = new FileArgument('u', "keyStorePasswordFile", false,
+         1, INFO_SCIM_TOOL_PLACEHOLDER_PATH.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_KEY_STORE_PASSWORD_FILE.get());
+    parser.addArgument(keyStorePasswordFile);
+
+    keyStoreFormat = new StringArgument(null, "keyStoreFormat", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_FORMAT.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_KEY_STORE_FORMAT.get());
+    parser.addArgument(keyStoreFormat);
+
+    trustStorePath = new StringArgument('P', "trustStorePath", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_PATH.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_TRUST_STORE_PATH.get());
+    parser.addArgument(trustStorePath);
+
+    trustStorePassword = new StringArgument('T', "trustStorePassword", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_PASSWORD.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_TRUST_STORE_PASSWORD.get());
+    parser.addArgument(trustStorePassword);
+
+    trustStorePasswordFile = new FileArgument('U', "trustStorePasswordFile",
+         false, 1, INFO_SCIM_TOOL_PLACEHOLDER_PATH.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_TRUST_STORE_PASSWORD_FILE.get());
+    parser.addArgument(trustStorePasswordFile);
+
+    trustStoreFormat = new StringArgument(null, "trustStoreFormat", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_FORMAT.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_TRUST_STORE_FORMAT.get());
+    parser.addArgument(trustStoreFormat);
+
+    certificateNickname = new StringArgument('N', "certNickname", false, 1,
+         INFO_SCIM_TOOL_PLACEHOLDER_CERT_NICKNAME.get(),
+         INFO_SCIM_TOOL_DESCRIPTION_CERT_NICKNAME.get());
+    parser.addArgument(certificateNickname);
+
     parser.addDependentArgumentSet(authID, authPassword, authPasswordFile);
     parser.addExclusiveArgumentSet(authPassword, authPasswordFile);
+    parser.addExclusiveArgumentSet(keyStorePassword, keyStorePasswordFile);
+    parser.addExclusiveArgumentSet(trustStorePassword, trustStorePasswordFile);
+    parser.addExclusiveArgumentSet(trustAll, trustStorePath);
   }
 
 
@@ -568,13 +656,57 @@ public class SCIMQueryRate
 
 
     // We will use Apache's HttpClient library for this tool.
-    HttpParams params = new BasicHttpParams();
-    DefaultHttpClient.setDefaultHttpParams(params);
+    final HttpParams params = new BasicHttpParams();
     params.setBooleanParameter(SO_REUSEADDR, true);
-    ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager();
+    DefaultHttpClient.setDefaultHttpParams(params);
+
+    SSLUtil sslUtil;
+    try
+    {
+      sslUtil = createSSLUtil();
+    }
+    catch (LDAPException e)
+    {
+      debugException(e);
+      err(e.getMessage());
+      return e.getResultCode();
+    }
+
+    final SchemeRegistry schemeRegistry = new SchemeRegistry();
+    final String schemeName;
+    if (sslUtil != null)
+    {
+      final SSLSocketFactory socketFactory;
+      try
+      {
+        socketFactory = new SSLSocketFactory(sslUtil.createSSLContext());
+      }
+      catch (GeneralSecurityException e)
+      {
+        debugException(e);
+        err(ERR_SCIM_TOOL_CANNOT_CREATE_SSL_CONTEXT.get(
+            getExceptionMessage(e)));
+        return ResultCode.LOCAL_ERROR;
+      }
+      schemeName = "https";
+      final Scheme scheme = new Scheme(schemeName, 443, socketFactory);
+      schemeRegistry.register(scheme);
+    }
+    else
+    {
+      schemeName = "http";
+      final Scheme scheme =
+          new Scheme(schemeName, 80, PlainSocketFactory.getSocketFactory());
+      schemeRegistry.register(scheme);
+    }
+
+    final ThreadSafeClientConnManager mgr =
+        new ThreadSafeClientConnManager(schemeRegistry);
     mgr.setMaxTotal(numThreads.getValue());
-    DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
-    ApacheHttpClientConfig clientConfig =
+
+    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+
+    final ApacheHttpClientConfig clientConfig =
         new ApacheHttpClientConfig(httpClient);
     if (authID.isPresent())
     {
@@ -606,8 +738,9 @@ public class SCIMQueryRate
     }
 
     // Create the SCIM client to use for the queries.
-    SCIMService service = new SCIMService(URI.create(
-        "http://"+ host.getValue() + ":" + port.getValue()), clientConfig);
+    final URI uri =
+        URI.create(schemeName + "://"+ host.getValue() + ":" + port.getValue());
+    final SCIMService service = new SCIMService(uri, clientConfig);
 
     if (xmlFormat.isPresent())
     {
@@ -616,10 +749,10 @@ public class SCIMQueryRate
     }
 
     // Retrieve the resource schema.
-    ResourceDescriptor resourceDescriptor;
+    final ResourceDescriptor resourceDescriptor;
     try
     {
-      Resources<ResourceDescriptor> resources =
+      final Resources<ResourceDescriptor> resources =
           service.getResourceSchemaEndpoint().query(
               "name eq '" + resourceName.getValue() + "'");
       if(resources.getTotalResults() == 0)
@@ -637,7 +770,7 @@ public class SCIMQueryRate
       return ResultCode.OTHER;
     }
 
-    SCIMEndpoint<? extends BaseResource> endpoint =
+    final SCIMEndpoint<? extends BaseResource> endpoint =
         service.getEndpoint(resourceDescriptor,
             BaseResource.BASE_RESOURCE_FACTORY);
 
@@ -809,4 +942,111 @@ public class SCIMQueryRate
 
     return resultCode;
   }
+
+
+
+  /**
+   * Creates the SSLUtil instance to use for secure communication.
+   *
+   * @return  The SSLUtil instance to use for secure communication, or
+   *          {@code null} if secure communication is not needed.
+   *
+   * @throws LDAPException   If a problem occurs while creating the SSLUtil
+   *                         instance.
+   */
+  private SSLUtil createSSLUtil()
+          throws LDAPException
+  {
+    if (useSSL.isPresent())
+    {
+      KeyManager keyManager = null;
+      if (keyStorePath.isPresent())
+      {
+        char[] pw = null;
+        if (keyStorePassword.isPresent())
+        {
+          pw = keyStorePassword.getValue().toCharArray();
+        }
+        else if (keyStorePasswordFile.isPresent())
+        {
+          try
+          {
+            pw = keyStorePasswordFile.getNonBlankFileLines().get(0).
+                      toCharArray();
+          }
+          catch (Exception e)
+          {
+            Debug.debugException(e);
+            throw new LDAPException(ResultCode.LOCAL_ERROR,
+                 ERR_SCIM_TOOL_CANNOT_READ_KEY_STORE_PASSWORD.get(
+                      getExceptionMessage(e)), e);
+          }
+        }
+
+        try
+        {
+          keyManager = new KeyStoreKeyManager(keyStorePath.getValue(), pw,
+               keyStoreFormat.getValue(), certificateNickname.getValue());
+        }
+        catch (Exception e)
+        {
+          Debug.debugException(e);
+          throw new LDAPException(ResultCode.LOCAL_ERROR,
+               ERR_SCIM_TOOL_CANNOT_CREATE_KEY_MANAGER.get(
+                    getExceptionMessage(e)), e);
+        }
+      }
+
+      TrustManager trustManager;
+      if (trustAll.isPresent())
+      {
+        trustManager = new TrustAllTrustManager(false);
+      }
+      else if (trustStorePath.isPresent())
+      {
+        char[] pw = null;
+        if (trustStorePassword.isPresent())
+        {
+          pw = trustStorePassword.getValue().toCharArray();
+        }
+        else if (trustStorePasswordFile.isPresent())
+        {
+          try
+          {
+            pw = trustStorePasswordFile.getNonBlankFileLines().get(0).
+                      toCharArray();
+          }
+          catch (Exception e)
+          {
+            Debug.debugException(e);
+            throw new LDAPException(ResultCode.LOCAL_ERROR,
+                 ERR_SCIM_TOOL_CANNOT_READ_TRUST_STORE_PASSWORD.get(
+                      getExceptionMessage(e)), e);
+          }
+        }
+
+        trustManager = new TrustStoreTrustManager(trustStorePath.getValue(), pw,
+             trustStoreFormat.getValue(), true);
+      }
+      else
+      {
+        trustManager = promptTrustManager.get();
+        if (trustManager == null)
+        {
+          final PromptTrustManager m = new PromptTrustManager();
+          promptTrustManager.compareAndSet(null, m);
+          trustManager = promptTrustManager.get();
+        }
+      }
+
+      return new SSLUtil(keyManager, trustManager);
+    }
+    else
+    {
+      return null;
+    }
+  }
+
+
+
 }

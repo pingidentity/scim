@@ -106,7 +106,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     instance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
 
-    instance.runSetup("--ldapsPort", "1636",
+    instance.runSetup("--ldapsPort",
+                      String.valueOf(TestCaseUtils.getFreePort()),
                       "--generateSelfSignedCertificate",
                       "--doNotStart");
 
