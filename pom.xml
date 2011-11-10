@@ -212,7 +212,7 @@
                   <configuration>
                     <licenseOutputText>${project.build.directory}/3RD_PARTY_LICENSES.txt</licenseOutputText>
                     <licenseSummaryXML>${project.build.directory}/licenseSummary.xml</licenseSummaryXML>
-                    <lookupTableFile>${main.basedir}/resource/licenseTable.xml</lookupTableFile>
+                    <lookupTableFile>${main.basedir}/resource/licenses/licenseTable.xml</lookupTableFile>
                   </configuration>
                 </execution>
               </executions>

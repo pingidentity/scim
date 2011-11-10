@@ -23,9 +23,9 @@
                    and use this tool to get the official UnboundID License text.
         <fileSet>
             <outputDirectory>.</outputDirectory>
-            <directory>${main.basedir}/resource</directory>
+            <directory>${project.build.directory}</directory>
             <includes>
-                <include>CORE_LICENSE.txt</include>
+                <include>CORE-UBID-LICENSE.txt</include>
             </includes>
         </fileSet>
         -->

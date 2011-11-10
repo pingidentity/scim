@@ -20,17 +20,13 @@
         </fileSet>
         <fileSet>
             <outputDirectory>.</outputDirectory>
-            <directory>${main.basedir}/resource</directory>
+            <directory>${main.basedir}/resource/licenses</directory>
             <includes>
-                <include>LICENSE.txt</include>
+                <include>LICENSE*.txt</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <outputDirectory />
-            <directory>${project.basedir}/src/main/assemblies</directory>
-            <includes>
-                <include>*.txt</include>
-            </includes>
+            <excludes>
+                <exclude>licenseTable.xml</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
     <dependencySets>

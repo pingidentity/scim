@@ -21,10 +21,13 @@
         </fileSet>
         <fileSet>
             <outputDirectory>.</outputDirectory>
-            <directory>${main.basedir}/resource</directory>
+            <directory>${main.basedir}/resource/licenses</directory>
             <includes>
-                <include>LICENSE.txt</include>
+                <include>LICENSE*.txt</include>
             </includes>
+            <excludes>
+                <exclude>licenseTable.xml</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <outputDirectory>server</outputDirectory>
