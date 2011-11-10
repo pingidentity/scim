@@ -197,17 +197,7 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       else
       {
-        SCIMException scimException = null;
-        if(entity != null)
-        {
-          scimException = unmarshaller.unmarshalError(entity);
-        }
-        if(scimException == null)
-        {
-          scimException = SCIMException.createException(
-              response.getStatusCode(), response.getMessage());
-        }
-        throw scimException;
+        throw createErrorResponseException(response, entity);
       }
     }
     finally
@@ -297,18 +287,7 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       else
       {
-        SCIMException scimException = null;
-
-        if(entity != null)
-        {
-          scimException = unmarshaller.unmarshalError(entity);
-        }
-        if(scimException == null)
-        {
-          scimException = SCIMException.createException(
-              response.getStatusCode(), response.getMessage());
-        }
-        throw scimException;
+        throw createErrorResponseException(response, entity);
       }
     }
     finally
@@ -323,6 +302,8 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     }
   }
+
+
 
   /**
    * Create the specified resource instance at the service provider.
@@ -383,18 +364,7 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       else
       {
-        SCIMException scimException = null;
-
-        if(entity != null)
-        {
-          scimException = unmarshaller.unmarshalError(entity);
-        }
-        if(scimException == null)
-        {
-          scimException = SCIMException.createException(
-              response.getStatusCode(), response.getMessage());
-        }
-        throw scimException;
+        throw createErrorResponseException(response, entity);
       }
     }
     finally
@@ -494,18 +464,7 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       else
       {
-        SCIMException scimException = null;
-
-        if(entity != null)
-        {
-          scimException = unmarshaller.unmarshalError(entity);
-        }
-        if(scimException == null)
-        {
-          scimException = SCIMException.createException(
-              response.getStatusCode(), response.getMessage());
-        }
-        throw scimException;
+        throw createErrorResponseException(response, entity);
       }
     }
     finally
@@ -577,18 +536,7 @@ public class SCIMEndpoint<R extends BaseResource>
     {
       if(response.getStatusType() != Response.Status.OK)
       {
-        SCIMException scimException = null;
-
-        if(entity != null)
-        {
-          scimException = unmarshaller.unmarshalError(entity);
-        }
-        if(scimException == null)
-        {
-          scimException = SCIMException.createException(
-              response.getStatusCode(), response.getMessage());
-        }
-        throw scimException;
+        throw createErrorResponseException(response, entity);
       }
     }
     finally
@@ -671,5 +619,46 @@ public class SCIMEndpoint<R extends BaseResource>
     {
       resource.setMeta(meta);
     }
+  }
+
+
+
+  /**
+   * Returns a SCIM exception representing the error response.
+   *
+   * @param response  The client response.
+   * @param entity    The response content.
+   *
+   * @return  The SCIM exception representing the error response.
+   */
+  private SCIMException createErrorResponseException(
+      final ClientResponse response,
+      final InputStream entity)
+  {
+    SCIMException scimException = null;
+
+    if(entity != null)
+    {
+      try
+      {
+        scimException = unmarshaller.unmarshalError(entity);
+      }
+      catch (InvalidResourceException e)
+      {
+        // The response content could not be parsed as a SCIM error
+        // response, which is the case if the response is a more general
+        // HTTP error. It is better to just provide the HTTP response
+        // details in this case.
+        Debug.debugException(e);
+      }
+    }
+
+    if(scimException == null)
+    {
+      scimException = SCIMException.createException(
+          response.getStatusCode(), response.getMessage());
+    }
+
+    return scimException;
   }
 }

@@ -5,14 +5,17 @@
 
 package com.unboundid.scim.plugin;
 
+import com.unboundid.directory.sdk.common.types.RegisteredMonitorProvider;
 import com.unboundid.directory.sdk.http.api.HTTPServletExtension;
 import com.unboundid.directory.sdk.http.config.HTTPServletExtensionConfig;
 import com.unboundid.directory.sdk.http.types.HTTPServerContext;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.ri.LDAPBackend;
+import com.unboundid.scim.ri.LDAPLoginService;
 import com.unboundid.scim.ri.wink.SCIMApplication;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
@@ -26,14 +29,24 @@ import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
+import org.eclipse.jetty.http.security.Constraint;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 
 import javax.servlet.http.HttpServlet;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
@@ -85,11 +98,6 @@ public final class SCIMServletExtension
   private static final String ARG_NAME_PATH = "path";
 
   /**
-   * The singleton instance of this servlet extension.
-   */
-  private static volatile SCIMServletExtension INSTANCE;
-
-  /**
    * The servlet that has been created.
    */
   private volatile RestServlet servlet;
@@ -109,6 +117,16 @@ public final class SCIMServletExtension
    */
   private volatile SCIMApplication application;
 
+  /**
+   * The server context for the server in which this extension is running.
+   */
+  private HTTPServerContext serverContext;
+
+  /**
+   * The registered monitor provider for this extension.
+   */
+  private RegisteredMonitorProvider monitorProvider;
+
 
 
   /**
@@ -119,10 +137,12 @@ public final class SCIMServletExtension
    */
   public SCIMServletExtension()
   {
-    servlet     = null;
-    path        = null;
-    backend     = null;
-    application = null;
+    servlet         = null;
+    path            = null;
+    backend         = null;
+    application     = null;
+    serverContext   = null;
+    monitorProvider = null;
   }
 
 
@@ -244,23 +264,6 @@ public final class SCIMServletExtension
 
 
 
-  @Override
-  public void doPostRegistrationProcessing()
-  {
-    RegistrationUtils.registerApplication(application,
-                                          servlet.getServletContext());
-  }
-
-
-
-  @Override
-  public void doPostShutdownProcessing()
-  {
-    // No implementation required.
-  }
-
-
-
   /**
    * Creates an HTTP servlet extension using the provided information.
    *
@@ -283,6 +286,10 @@ public final class SCIMServletExtension
       final ArgumentParser parser)
       throws LDAPException
   {
+    this.serverContext = serverContext;
+
+    config.getConfigObjectName();
+
     Debug.getLogger().addHandler(new DebugLogHandler(serverContext));
     Debug.getLogger().setUseParentHandlers(false);
 
@@ -342,21 +349,83 @@ public final class SCIMServletExtension
     backend = new ServerContextBackend(resourceMappers, serverContext);
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
 
+    // Set Wink system properties.
     System.setProperty("wink.httpMethodOverrideHeaders",
                        "X-HTTP-Method-Override");
     System.setProperty("wink.response.defaultCharset",
                        "true");
 
+    // Create the Wink JAX-RS servlet.
     servlet = new RestServlet();
+
+    // Create the Wink JAX-RS application. It will be registered with the
+    // servlet once the HTTP server has started in doPostRegistrationProcessing.
     application = new SCIMApplication(resourceMappers.keySet(), backend);
+
+    // Configure authenication in the HTTP server.
+    final Server server = (Server)config.getHTTPServerObject();
+    configureAuthentication(server);
+
+    // Register a custom monitor provider.
+    final String monitorInstanceName = getMonitorInstanceName(config);
+    monitorProvider = serverContext.registerMonitorProvider(
+        new SCIMServletMonitorProvider(monitorInstanceName, this), config);
 
     Debug.debug(Level.INFO, DebugType.OTHER,
                 "Finished SCIM Servlet Extension initialization");
 
-    // Set the instance singleton to this initialized instance.
-    INSTANCE = this;
-
     return servlet;
+  }
+
+
+
+  /**
+   * Configure the HTTP server to authenticate against the Directory Server.
+   *
+   * @param server  The Jetty HTTP server instance.
+   */
+  private void configureAuthentication(final Server server)
+  {
+    if (server.getHandler() instanceof ServletContextHandler)
+    {
+      final ServletContextHandler contextHandler =
+          (ServletContextHandler)server.getHandler();
+      final LoginService loginService = new LDAPLoginService(backend);
+      server.addBean(loginService);
+
+      // TODO: Potential conflict with other servlet security handlers.
+      final ConstraintSecurityHandler security =
+          new ConstraintSecurityHandler();
+      contextHandler.setSecurityHandler(security);
+      final Constraint constraint = new Constraint();
+      constraint.setAuthenticate(true);
+
+      // A user possessing (literally) any role will do
+      constraint.setRoles(new String[]{Constraint.ANY_ROLE});
+
+      // Constrain the security handler to our path.
+      final String normalizedPath = getNormalizedPath();
+      final ConstraintMapping mapping = new ConstraintMapping();
+      mapping.setPathSpec(normalizedPath + "*");
+      mapping.setConstraint(constraint);
+
+      // for now force map all roles - that is the assertions is only "is the
+      // user authenticated" - not are they authenticated && possess a
+      // roles(s)
+      final Set<String> knownRoles = new HashSet<String>();
+      knownRoles.add(Constraint.ANY_ROLE);
+      security.setConstraintMappings(Collections.singletonList(mapping),
+                                     knownRoles);
+
+      // use the HTTP Basic authentication mechanism
+      security.setAuthenticator(new BasicAuthenticator());
+      security.setLoginService(loginService);
+
+      // strictness refers to Jetty's role handling
+      security.setStrict(false);
+      security.setHandler(contextHandler);
+      security.setServer(server);
+    }
   }
 
 
@@ -372,6 +441,20 @@ public final class SCIMServletExtension
   @Override()
   public List<String> getServletPaths()
   {
+    final String normalizedPath = getNormalizedPath();
+
+    return Arrays.asList(normalizedPath + "*", normalizedPath + "v1/*");
+  }
+
+
+
+  /**
+   * Gets the path with a trailing '/'.
+   *
+   * @return  The path with a trailing '/'.
+   */
+  private String getNormalizedPath()
+  {
     final String normalizedPath;
     if (!path.endsWith("/"))
     {
@@ -382,7 +465,31 @@ public final class SCIMServletExtension
       normalizedPath = path;
     }
 
-    return Arrays.asList(normalizedPath + "*", normalizedPath + "v1/*");
+    return normalizedPath;
+  }
+
+
+
+  @Override
+  public void doPostRegistrationProcessing()
+  {
+    RegistrationUtils.registerApplication(application,
+                                          servlet.getServletContext());
+  }
+
+
+
+  @Override
+  public void doPostShutdownProcessing()
+  {
+    serverContext.deregisterMonitorProvider(monitorProvider);
+
+    servlet         = null;
+    path            = null;
+    backend         = null;
+    application     = null;
+    serverContext   = null;
+    monitorProvider = null;
   }
 
 
@@ -556,6 +663,22 @@ public final class SCIMServletExtension
       rc = ResultCode.OTHER;
     }
 
+    // Re-register the monitor provider with the new config.
+    try
+    {
+      final String monitorInstanceName = getMonitorInstanceName(config);
+      serverContext.deregisterMonitorProvider(monitorProvider);
+      monitorProvider = serverContext.registerMonitorProvider(
+          new SCIMServletMonitorProvider(monitorInstanceName, this), config);
+    }
+    catch (LDAPException e)
+    {
+      debugException(e);
+      messages.add("An error occurred while registering the monitor " +
+                   "provider: " + StaticUtils.getExceptionMessage(e));
+      rc = ResultCode.OTHER;
+    }
+
     return rc;
   }
 
@@ -588,7 +711,6 @@ public final class SCIMServletExtension
 
 
 
-
   /**
    * Retrieves the SCIM JAX-RS application instance used by this servlet.
    *
@@ -602,12 +724,22 @@ public final class SCIMServletExtension
 
 
   /**
-   * Retrieves the singleton instance of this SCIMPlugin.
+   * Get the name that identifies the monitor provider instance for this
+   * extension. The returned name will include the name of the HTTP connection
+   * handler that created this servlet extension.
    *
-   * @return The singleton instance of this SCIMPlugin.
+   * @param config  The general configuration for this HTTP servlet extension.
+   *
+   * @return  The name that identifies the monitor provider instance for this
+   *          extension.
+   *
+   * @throws LDAPException  If the monitor instance name could not be
+   *                        constructed.
    */
-  static SCIMServletExtension getInstance()
+  private String getMonitorInstanceName(final HTTPServletExtensionConfig config)
+      throws LDAPException
   {
-    return INSTANCE;
+    final DN dn = new DN(config.getHTTPConnectionHandlerConfigDN());
+    return "SCIM Servlet (" + dn.getRDN().getAttributeValues()[0] + ")";
   }
 }

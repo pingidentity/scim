@@ -28,16 +28,7 @@ import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Version;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.wink.client.ApacheHttpClientConfig;
+import org.apache.wink.client.ClientConfig;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -57,7 +48,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
@@ -119,6 +109,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     baseDN = instance.getPrimaryBaseDN();
 
+    instance.getDnsToDumpOnFailureMutable().add("cn=monitor");
     instance.dsconfig(
         "set-log-publisher-prop",
         "--publisher-name", "File-Based Access Logger",
@@ -143,24 +134,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     final SSLUtil sslUtil = new SSLUtil(keyManager, trustManager);
 //    final SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
 
-    final SSLSocketFactory socketFactory =
-        new SSLSocketFactory(sslUtil.createSSLContext());
-    final Scheme httpsScheme = new Scheme("https", 443, socketFactory);
-    SchemeRegistry schemeRegistry = new SchemeRegistry();
-    schemeRegistry.register(httpsScheme);
-
-    final HttpParams params = new BasicHttpParams();
-    params.setBooleanParameter(SO_REUSEADDR, true);
-    DefaultHttpClient.setDefaultHttpParams(params);
-    final ThreadSafeClientConnManager mgr =
-        new ThreadSafeClientConnManager(schemeRegistry);
-    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
-    httpClient.getCredentialsProvider().setCredentials(
-        new AuthScope(instance.getLdapHost(), scimPort),
-        new UsernamePasswordCredentials(instance.getDirmanagerDN(),
-                                        instance.getDirmanagerPassword()));
-    final ApacheHttpClientConfig clientConfig =
-        new ApacheHttpClientConfig(httpClient);
+    final ClientConfig clientConfig =
+        createManagerClientConfig(instance, sslUtil.createSSLContext());
 
     final URI uri = new URI("http", null, instance.getLdapHost(), scimPort,
                             null, null, null);
@@ -169,9 +144,6 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     final URI secureUri = new URI("https", null, instance.getLdapHost(),
                                   scimSecurePort, null, null, null);
     secureService = new SCIMService(secureUri, clientConfig);
-
-    // TODO
-    service = secureService;
 
     //
     //This can be helpful if you want to make SCIM requests from your browser
@@ -426,7 +398,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //the Directory entry, but should not fail.
     String beforeCount =
         getMonitorAsString(instance, "user-resource-put-successful");
-    returnedUser = userEndpoint.update(user);
+    // returnedUser =
+    userEndpoint.update(user);
     String afterCount =
         getMonitorAsString(instance, "user-resource-put-successful");
 
@@ -519,13 +492,47 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @Test
   public void testRetrieve() throws Exception
   {
+    testRetrieve(service, "HTTP");
+  }
+
+
+
+  /**
+   * Tests retrieval of a simple user resource over SSL.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testRetrieveSecure() throws Exception
+  {
+    testRetrieve(secureService, "HTTPS");
+  }
+
+
+
+  /**
+   * Tests retrieval of a simple user resource.
+   *
+   * @param service  The SCIM service with which to invoke operations.
+   * @param connectionHandler  The name of the connection handler that will
+   *                           handle the operations.
+   *
+   * @throws Exception If the test fails.
+   */
+  private void testRetrieve(final SCIMService service,
+                            final String connectionHandler)
+      throws Exception
+  {
+    final String uid = "testRetrieve " + connectionHandler;
+    final String dn = "uid=" + uid + "," + baseDN;
+
     //Add an entry to the Directory
-    instance.addEntry("dn: uid=testRetrieve," + baseDN,
+    instance.addEntry("dn: " + dn,
                       "objectclass: top",
                       "objectclass: person",
                       "objectclass: organizationalPerson",
                       "objectclass: inetOrgPerson",
-                      "uid: testRetrieve",
+                      "uid: " + uid,
                       "cn: testRetrieve",
                       "givenname: Test",
                       "sn: User",
@@ -537,13 +544,15 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //Try to retrieve the user via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     String beforeCount =
-        getMonitorAsString(instance, "user-resource-get-successful");
-    UserResource user = userEndpoint.get("uid=testRetrieve," + baseDN);
+        getMonitorAsString(instance, connectionHandler,
+                           "user-resource-get-successful");
+    UserResource user = userEndpoint.get(dn);
     String afterCount =
-        getMonitorAsString(instance, "user-resource-get-successful");
+        getMonitorAsString(instance, connectionHandler,
+                           "user-resource-get-successful");
     assertNotNull(user);
-    assertTrue(user.getId().equalsIgnoreCase("uid=testRetrieve," + baseDN));
-    assertEquals(user.getUserName(), "testRetrieve");
+    assertTrue(user.getId().equalsIgnoreCase(dn));
+    assertEquals(user.getUserName(), uid);
     assertEquals(user.getUserType(), "Engineer");
     assertEquals(user.getName().getFormatted(), "testRetrieve");
     assertEquals(user.getName().getGivenName(), "Test");
@@ -554,10 +563,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                                                 "jsmith@example.com");
 
     //Retrieve the user with only the 'userName' attribute
-    user = userEndpoint.get("uid=testRetrieve," + baseDN, null, "userName");
+    user = userEndpoint.get(dn, null, "userName");
     assertNotNull(user);
-    assertTrue(user.getId().equalsIgnoreCase("uid=testRetrieve," + baseDN));
-    assertEquals(user.getUserName(), "testRetrieve");
+    assertTrue(user.getId().equalsIgnoreCase(dn));
+    assertEquals(user.getUserName(), uid);
     assertNull(user.getUserType());
     assertNull(user.getName());
     assertNull(user.getTitle());
