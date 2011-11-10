@@ -23,6 +23,7 @@
         <ds.basedn>dc=example,dc=com</ds.basedn>
         <ds.binddn>cn=Directory Manager</ds.binddn>
         <ds.bindpw>password</ds.bindpw>
+        <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
     <build>

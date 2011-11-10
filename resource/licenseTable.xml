@@ -1,0 +1,103 @@
+<!--
+   This is the license lookup table for SCIM. It contains mappings for any of the 3rd party
+   dependencies which do not list a license it their POM, or list a license who's name cannot
+   be automatically recognized by the OSS license plugin.
+-->
+<SCHEMES>
+  <SCHEME name="artifact-coordinates">
+     <LICENSES>
+       <LICENSE index="1">
+         <GROUPID>javax.xml.bind</GROUPID>
+         <ARTIFACTID>jaxb-api</ARTIFACTID>
+         <VERSION>2.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="2">
+         <GROUPID>javax.xml.stream</GROUPID>
+         <ARTIFACTID>stax-api</ARTIFACTID>
+         <VERSION>1.0-2</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="3">
+         <GROUPID>com.sun.xml.bind</GROUPID>
+         <ARTIFACTID>jaxb-impl</ARTIFACTID>
+         <VERSION>2.1.3</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:gpl-v2-classpath-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="4">
+         <GROUPID>org.json</GROUPID>
+         <ARTIFACTID>json</ARTIFACTID>
+         <VERSION>3e3951f</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:json-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="5">
+         <GROUPID>org.slf4j</GROUPID>
+         <ARTIFACTID>slf4j-api</ARTIFACTID>
+         <VERSION>1.6.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="6">
+         <GROUPID>org.slf4j</GROUPID>
+         <ARTIFACTID>slf4j-jdk14</ARTIFACTID>
+         <VERSION>1.6.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="7">
+         <GROUPID>org.slf4j</GROUPID>
+         <ARTIFACTID>jcl-over-slf4j</ARTIFACTID>
+         <VERSION>1.6.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+      
+       <!-- Below are the licenses for Jetty artifacts. --> 
+       <LICENSE index="8">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-util</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="9">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-server</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="10">
+         <GROUPID>org.mortbay.jetty</GROUPID>
+         <ARTIFACTID>servlet-api</ARTIFACTID>
+         <VERSION>3.0.20100224</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="11">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-continuation</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="12">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-http</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="13">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-io</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="14">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-servlet</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="15">
+         <GROUPID>org.eclipse.jetty</GROUPID>
+         <ARTIFACTID>jetty-security</ARTIFACTID>
+         <VERSION>8.0.4.v20111024</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+       </LICENSE>
+     </LICENSES>
+  </SCHEME>
+</SCHEMES>

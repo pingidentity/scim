@@ -15,6 +15,10 @@
     <packaging>jar</packaging>
     <name>UnboundID SCIM SDK LDAP</name>
 
+    <properties>
+      <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

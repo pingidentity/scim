@@ -1,23 +1,17 @@
 UnboundID SCIM SDK for Java
 Copyright 2011 UnboundID Corp.  All Rights Reserved.
 
-This package contains the UnboundID SCIM SDK for Java Client.  It
-contains the following elements:
+This package contains the UnboundID SCIM SDK Reference Implementation Client.
+It contains the following elements:
 
-- LICENSE.txt -- Provides information about the licenses under which the
-  UnboundID SCIM SDK for Java is made available.
+  * pom.xml -- A Maven POM to build and run the UnboundID SCIM Reference
+               Implementation Client.
 
-- ThirdPartyLicenses.txt -- Provides information about the licenses and terms
-  of use for included components.
+  * docs    -- Javadocs describing the client example.
 
-- pom.xml -- A Maven pom to build and run the UnboundID SCIM
-  Reference Implementation for Java Client.
+  * schema  -- Directory containing the SCIM core schema files.
 
-- docs -- Javadocs describing the client example.
-
-- schema -- Directory containing the SCIM core schema files.
-
-- src -- Directory containing the client source code.
+  * src     -- Directory containing the client source code.
 
 Package usage:
 
@@ -53,14 +47,3 @@ Package usage:
  found in src and rebuild.
 
  For further information visit UnboundID labs at http://www.unboundid.com.
-
-
-
-
-
-
-
-
-
-
-

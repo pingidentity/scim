@@ -23,6 +23,7 @@
         <build.version>${project.version}</build.version>
         <build.version.package.name>com.unboundid.scim.sdk</build.version.package.name>
         <build.version.package.dir>com/unboundid/scim/sdk</build.version.package.dir>
+        <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
     <build>

@@ -15,11 +15,12 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
-        <project.build.genSourceDirectory>${basedir}/target/generated/src/main/java</project.build.genSourceDirectory>
+        <project.build.genSourceDirectory>${project.build.directory}/generated/src/main/java</project.build.genSourceDirectory>
         <!-- Note that SCIM-RI overrides this and uses the Standard Edition of LDAP SDK. If
              you change this, consider changing that as well. -->
         <unboundid.ldapsdk.version>2.2.1-ce-SNAPSHOT</unboundid.ldapsdk.version>
         <unboundid.serversdk.version>3.2.1.0-SNAPSHOT</unboundid.serversdk.version>
+        <main.basedir>${project.basedir}</main.basedir>
     </properties>
 
     <distributionManagement>
@@ -196,6 +197,25 @@
                     <metrics>class:90,method:90,line:70</metrics>
                     <sort>+name,+line</sort>
                 </configuration>
+            </plugin>
+            <plugin>
+              <groupId>com.unboundid.build</groupId>
+              <artifactId>osslicense-maven-plugin</artifactId>
+              <version>1.1.4</version>
+              <executions>
+                <execution>
+                  <id>collect 3rd party licenses</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                    <goal>collect-licenses</goal>
+                  </goals>
+                  <configuration>
+                    <licenseOutputText>${project.build.directory}/3RD_PARTY_LICENSES.txt</licenseOutputText>
+                    <licenseSummaryXML>${project.build.directory}/licenseSummary.xml</licenseSummaryXML>
+                    <lookupTableFile>${main.basedir}/resource/licenseTable.xml</lookupTableFile>
+                  </configuration>
+                </execution>
+              </executions>
             </plugin>
         </plugins>
     </build>

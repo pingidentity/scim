@@ -12,6 +12,24 @@
     </formats>
     <fileSets>
         <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.build.directory}</directory>
+            <includes>
+                <include>3RD_PARTY_LICENSES.txt</include>
+            </includes>
+        </fileSet>
+        <!-- TODO: we need to move the core server's GenerateLicenseText build tool
+                   over to the Common module, then update SCIM to depend on Common
+                   and use this tool to get the official UnboundID License text.
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${main.basedir}/resource</directory>
+            <includes>
+                <include>CORE_LICENSE.txt</include>
+            </includes>
+        </fileSet>
+        -->
+        <fileSet>
             <outputDirectory>config/scim</outputDirectory>
             <directory>${project.basedir}/../scim-ri/src/main/assemblies/server/config</directory>
         </fileSet>

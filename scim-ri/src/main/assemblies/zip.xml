@@ -13,6 +13,20 @@
     </formats>
     <fileSets>
         <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.build.directory}</directory>
+            <includes>
+                <include>3RD_PARTY_LICENSES.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${main.basedir}/resource</directory>
+            <includes>
+                <include>LICENSE.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <outputDirectory>server</outputDirectory>
             <directory>${project.basedir}/src/main/assemblies/server</directory>
             <includes>
