@@ -5,52 +5,29 @@
 
 package com.unboundid.scim.plugin;
 
-import com.unboundid.directory.tests.standalone.DirectoryInstance;
 import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
 import com.unboundid.directory.tests.standalone.ProxyInstance;
 import com.unboundid.directory.tests.standalone.TestCaseUtils;
-import com.unboundid.scim.client.SCIMEndpoint;
-import com.unboundid.scim.client.SCIMService;
-import com.unboundid.scim.data.UserResource;
-
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.net.URI;
-
-import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
 
 
 
 /**
- * Test coverage for the SCIM proxy plugin.
+ * Test coverage for the SCIM server extension running in the Proxy Server.
+ * The test methods are inherited from the SCIMPluginTestCase.
  */
 @Test(sequential = true)
-public class ProxyPluginTestCase extends ServerExtensionTestCase
+public class ProxyPluginTestCase extends SCIMPluginTestCase
 {
-  /**
-   * The Directory Server external instance.
-   */
-  private DirectoryInstance dsInstance;
-
   /**
    * The Proxy Server external instance.
    */
   private ProxyInstance proxyInstance;
-
-  /**
-   * The SCIM service client.
-   */
-  private SCIMService service;
-
-  /**
-   * Base DN of the Directory Server.
-   */
-  private String baseDN;
 
 
 
@@ -59,13 +36,19 @@ public class ProxyPluginTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If an error occurs.
    */
-  @BeforeClass
+  @BeforeClass(alwaysRun = true)
+  @Override
   public void setup() throws Exception
   {
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
 
     dsInstance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
     proxyInstance = m.getExternalInstance(ExternalInstanceId.ProxyOne);
+
+    proxyInstance.runSetup("--ldapsPort",
+                           String.valueOf(TestCaseUtils.getFreePort()),
+                           "--generateSelfSignedCertificate",
+                           "--doNotStart");
 
     final File pluginZipFile = new File(System.getProperty("pluginZipFile"));
     installExtension(proxyInstance, pluginZipFile);
@@ -119,7 +102,10 @@ public class ProxyPluginTestCase extends ServerExtensionTestCase
             "--processor-name", dsInstanceName,
             "--type", "proxying",
             "--set", "enabled:true",
-            "--set", "load-balancing-algorithm:" + dsInstanceName
+            "--set", "load-balancing-algorithm:" + dsInstanceName,
+            // Need VLV and SORT control for SCIM.
+            "--set", "supported-control-oid:2.16.840.1.113730.3.4.9",
+            "--set", "supported-control-oid:1.2.840.113556.1.4.473"
         },
         new String[]
         {
@@ -136,14 +122,8 @@ public class ProxyPluginTestCase extends ServerExtensionTestCase
         }
     );
 
-    int scimPort = TestCaseUtils.getFreePort();
-    int scimSecurePort = TestCaseUtils.getFreePort();
-    configureExtension(proxyInstance, scimPort, scimSecurePort);
-
-    final URI uri = new URI("http", null, proxyInstance.getLdapHost(), scimPort,
-                            null, null, null);
-    service = new SCIMService(uri, proxyInstance.getDirmanagerDN(),
-                              proxyInstance.getDirmanagerPassword());
+    scimInstance = proxyInstance;
+    setupServices();
 
     //
     //This can be helpful if you want to make SCIM requests from your browser
@@ -159,7 +139,8 @@ public class ProxyPluginTestCase extends ServerExtensionTestCase
   /**
    * Tear down after the tests are finished.
    */
-  @AfterClass
+  @AfterClass(alwaysRun = true)
+  @Override
   public void tearDown()
   {
     //
@@ -182,50 +163,4 @@ public class ProxyPluginTestCase extends ServerExtensionTestCase
 
 
 
-  /**
-   * Tests retrieval of a simple user resource.
-   *
-   * @throws Exception If the test fails.
-   */
-  @Test(enabled = false)
-  public void testRetrieve() throws Exception
-  {
-    //Add an entry to the Directory
-    proxyInstance.addEntry("dn: uid=testRetrieve," + baseDN,
-                           "objectclass: top",
-                           "objectclass: person",
-                           "objectclass: organizationalPerson",
-                           "objectclass: inetOrgPerson",
-                           "uid: testRetrieve",
-                           "cn: testRetrieve",
-                           "givenname: Test",
-                           "sn: User",
-                           "title: Chief of R&D",
-                           "displayName: John Smith",
-                           "mail: jsmith@example.com",
-                           "employeeType: Engineer");
-
-    //Try to retrieve the user via SCIM
-    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    String beforeCount =
-        getMonitorAsString(proxyInstance, "user-resource-get-successful");
-    UserResource user = userEndpoint.get("uid=testRetrieve," + baseDN);
-    String afterCount =
-        getMonitorAsString(proxyInstance, "user-resource-get-successful");
-    assertNotNull(user);
-    assertTrue(user.getId().equalsIgnoreCase("uid=testRetrieve," + baseDN));
-    assertEquals(user.getUserName(), "testRetrieve");
-    assertEquals(user.getUserType(), "Engineer");
-    assertEquals(user.getName().getFormatted(), "testRetrieve");
-    assertEquals(user.getName().getGivenName(), "Test");
-    assertEquals(user.getName().getFamilyName(), "User");
-    assertEquals(user.getTitle(), "Chief of R&D");
-    assertEquals(user.getDisplayName(), "John Smith");
-    assertEquals(user.getEmails().iterator().next().getValue(),
-                 "jsmith@example.com");
-
-    //Make sure the stats were updated properly
-    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
-        Integer.valueOf(afterCount) - 1);
-  }
 }

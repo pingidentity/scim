@@ -6,6 +6,7 @@
 package com.unboundid.scim.plugin;
 
 import com.unboundid.directory.tests.standalone.DirectoryInstance;
+import com.unboundid.directory.tests.standalone.ExternalInstance;
 import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
 import com.unboundid.directory.tests.standalone.TestCaseUtils;
@@ -58,7 +59,9 @@ import static org.testng.Assert.fail;
 
 
 /**
- * Test coverage for the SCIM plugin.
+ * Test coverage for the SCIM server extension. This class tests the extension
+ * running in the Directory Server, and serves as a base class to allow the
+ * extension to be tested in the Proxy Server.
  */
 @Test(sequential = true)
 public class SCIMPluginTestCase extends ServerExtensionTestCase
@@ -66,22 +69,67 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   /**
    * The Directory Server external instance.
    */
-  private DirectoryInstance instance;
+  protected DirectoryInstance dsInstance;
+
+  /**
+   * A reference to the external instance where the SCIM extension is installed.
+   */
+  protected ExternalInstance scimInstance;
 
   /**
    * The SCIM service client.
    */
-  private SCIMService service;
+  protected SCIMService service;
 
   /**
    * The SCIM secure service client.
    */
-  private SCIMService secureService;
+  protected SCIMService secureService;
 
   /**
    * Base DN of the Directory Server.
    */
-  private String baseDN;
+  protected String baseDN;
+
+
+
+  /**
+   * Set up SCIM services before running the tests.
+   *
+   * @throws Exception  If an error occurs.
+   */
+  protected void setupServices() throws Exception
+  {
+    int scimPort = TestCaseUtils.getFreePort();
+    int scimSecurePort = TestCaseUtils.getFreePort();
+    configureExtension(scimInstance, scimPort, scimSecurePort);
+
+    // Use the external instance trust store as our client trust store.
+    final File pwFile =
+        scimInstance.fileRelativeToInstanceRoot("config/truststore.pin");
+    final char[] pw =
+        TestCaseUtils.readFileToLines(pwFile).get(0).toCharArray();
+    final KeyManager keyManager = null;
+    final TrustManager trustManager =
+        new TrustStoreTrustManager(
+            scimInstance.fileRelativeToInstanceRoot("config/truststore"),
+            pw, "JKS", true);
+
+    final SSLUtil sslUtil = new SSLUtil(keyManager, trustManager);
+//    final SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
+
+    final ClientConfig clientConfig =
+        createManagerClientConfig(scimInstance, sslUtil.createSSLContext());
+
+    final URI uri = new URI("http", null, scimInstance.getLdapHost(), scimPort,
+                            null, null, null);
+    service = new SCIMService(uri, clientConfig);
+
+    final URI secureUri = new URI("https", null, scimInstance.getLdapHost(),
+                                  scimSecurePort, null, null, null);
+    secureService = new SCIMService(secureUri, clientConfig);
+  }
+
 
 
   /**
@@ -89,61 +137,35 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If an error occurs.
    */
-  @BeforeClass
+  @BeforeClass(alwaysRun = true)
   public void setup() throws Exception
   {
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
 
-    instance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
+    dsInstance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
 
-    instance.runSetup("--ldapsPort",
+    dsInstance.runSetup("--ldapsPort",
                       String.valueOf(TestCaseUtils.getFreePort()),
                       "--generateSelfSignedCertificate",
                       "--doNotStart");
 
     final File pluginZipFile = new File(System.getProperty("pluginZipFile"));
-    installExtension(instance, pluginZipFile);
+    installExtension(dsInstance, pluginZipFile);
 
-    instance.startInstance();
-    instance.addBaseEntry();
+    dsInstance.startInstance();
+    dsInstance.addBaseEntry();
 
-    baseDN = instance.getPrimaryBaseDN();
+    baseDN = dsInstance.getPrimaryBaseDN();
 
-    instance.getDnsToDumpOnFailureMutable().add("cn=monitor");
-    instance.dsconfig(
+    dsInstance.getDnsToDumpOnFailureMutable().add("cn=monitor");
+    dsInstance.dsconfig(
         "set-log-publisher-prop",
         "--publisher-name", "File-Based Access Logger",
         "--set", "suppress-internal-operations:false"
     );
 
-    int scimPort = TestCaseUtils.getFreePort();
-    int scimSecurePort = TestCaseUtils.getFreePort();
-    configureExtension(instance, scimPort, scimSecurePort);
-
-    // Use the external instance trust store as our client trust store.
-    final File pwFile =
-        instance.fileRelativeToInstanceRoot("config/truststore.pin");
-    final char[] pw =
-        TestCaseUtils.readFileToLines(pwFile).get(0).toCharArray();
-    final KeyManager keyManager = null;
-    final TrustManager trustManager =
-        new TrustStoreTrustManager(
-            instance.fileRelativeToInstanceRoot("config/truststore"),
-            pw, "JKS", true);
-
-    final SSLUtil sslUtil = new SSLUtil(keyManager, trustManager);
-//    final SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
-
-    final ClientConfig clientConfig =
-        createManagerClientConfig(instance, sslUtil.createSSLContext());
-
-    final URI uri = new URI("http", null, instance.getLdapHost(), scimPort,
-                            null, null, null);
-    service = new SCIMService(uri, clientConfig);
-
-    final URI secureUri = new URI("https", null, instance.getLdapHost(),
-                                  scimSecurePort, null, null, null);
-    secureService = new SCIMService(secureUri, clientConfig);
+    scimInstance = dsInstance;
+    setupServices();
 
     //
     //This can be helpful if you want to make SCIM requests from your browser
@@ -159,7 +181,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   /**
    * Tear down after the tests are finished.
    */
-  @AfterClass
+  @AfterClass(alwaysRun = true)
   public void tearDown()
   {
     //
@@ -174,8 +196,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //                                JOptionPane.OK_CANCEL_OPTION);
 
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
-    instance.stopInstance();
-    m.destroyInstance(instance.getInstanceId());
+    dsInstance.stopInstance();
+    m.destroyInstance(dsInstance.getInstanceId());
   }
 
 
@@ -188,7 +210,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @Test
   public void enablePlugin() throws Exception
   {
-    assertEquals(getMonitorAsString(instance, "version"), Version.VERSION);
+    assertEquals(getMonitorAsString(scimInstance, "version"), Version.VERSION);
   }
 
 
@@ -237,10 +259,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //TimeThread, which only updates once every 100ms.
     Date startTime = new Date(System.currentTimeMillis() - 500);
     String beforeCount =
-        getMonitorAsString(instance, "user-resource-post-successful");
+        getMonitorAsString(scimInstance, "user-resource-post-successful");
     UserResource returnedUser = userEndpoint.create(user);
     String afterCount =
-        getMonitorAsString(instance, "user-resource-post-successful");
+        getMonitorAsString(scimInstance, "user-resource-post-successful");
     Date createTime = returnedUser.getMeta().getCreated();
     Date endTime = new Date(System.currentTimeMillis() + 500);
 
@@ -274,7 +296,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     //Verify what is actually in the Directory
     SearchResultEntry entry =
-      instance.getConnectionPool().getEntry("uid=jdoe," + baseDN, "*", "+");
+      dsInstance.getConnectionPool().getEntry("uid=jdoe," + baseDN, "*", "+");
     assertNotNull(entry);
     assertTrue(entry.hasObjectClass("iNetOrgPerson"));
     assertEquals(entry.getAttributeValue("cn"), "John C. Doe");
@@ -302,10 +324,10 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //Do the create and verify what is returned from the endpoint
     startTime = new Date(System.currentTimeMillis() - 500);
     beforeCount =
-        getMonitorAsString(instance, "group-resource-post-successful");
+        getMonitorAsString(scimInstance, "group-resource-post-successful");
     GroupResource returnedGroup = grpEndpoint.create(group);
     afterCount =
-        getMonitorAsString(instance, "group-resource-post-successful");
+        getMonitorAsString(scimInstance, "group-resource-post-successful");
     createTime = returnedGroup.getMeta().getCreated();
     endTime = new Date(System.currentTimeMillis() + 500);
 
@@ -319,7 +341,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
         Integer.valueOf(afterCount) - 1);
 
     //Verify what is actually in the Directory
-    entry = instance.getConnectionPool().getEntry(
+    entry = dsInstance.getConnectionPool().getEntry(
                         "cn=Engineering," + baseDN, "*", "+");
     assertNotNull(entry);
     assertTrue(entry.hasObjectClass("groupOfUniqueNames"));
@@ -341,7 +363,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   public void testModifyWithPut() throws Exception
   {
     //Add an entry to the Directory
-    instance.addEntry("dn: uid=testModifyWithPut," + baseDN,
+    dsInstance.addEntry("dn: uid=testModifyWithPut," + baseDN,
                       "objectclass: top",
                       "objectclass: person",
                       "objectclass: organizationalPerson",
@@ -383,7 +405,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
 
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry =
-      instance.getConnectionPool().getEntry("uid=testModifyWithPut," + baseDN);
+      dsInstance.getConnectionPool().getEntry(
+          "uid=testModifyWithPut," + baseDN);
     assertNotNull(entry);
     assertTrue(entry.hasObjectClass("inetOrgPerson"));
     assertEquals(entry.getAttributeValue("uid"), "testModifyWithPut");
@@ -397,17 +420,17 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //Make the exact same update again; this should result in no net change to
     //the Directory entry, but should not fail.
     String beforeCount =
-        getMonitorAsString(instance, "user-resource-put-successful");
+        getMonitorAsString(scimInstance, "user-resource-put-successful");
     // returnedUser =
     userEndpoint.update(user);
     String afterCount =
-        getMonitorAsString(instance, "user-resource-put-successful");
+        getMonitorAsString(scimInstance, "user-resource-put-successful");
 
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
 
     beforeCount =
-        getMonitorAsString(instance, "user-resource-put-404");
+        getMonitorAsString(scimInstance, "user-resource-put-404");
     try
     {
       //Try to update an entry that doesn't exist
@@ -422,7 +445,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
       //expected
     }
     afterCount =
-        getMonitorAsString(instance, "user-resource-put-404");
+        getMonitorAsString(scimInstance, "user-resource-put-404");
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
   }
@@ -449,22 +472,22 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   @Test
   public void testDelete() throws Exception
   {
-    instance.getConnectionPool().add(
+    dsInstance.getConnectionPool().add(
            generateUserEntry("testDelete", baseDN, "Test", "User", "password"));
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
     String beforeCount =
-        getMonitorAsString(instance, "user-resource-delete-successful");
+        getMonitorAsString(scimInstance, "user-resource-delete-successful");
     userEndpoint.delete("uid=testDelete," + baseDN);
     String afterCount =
-        getMonitorAsString(instance, "user-resource-delete-successful");
+        getMonitorAsString(scimInstance, "user-resource-delete-successful");
 
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
 
     beforeCount =
-        getMonitorAsString(instance, "user-resource-delete-404");
+        getMonitorAsString(scimInstance, "user-resource-delete-404");
     try
     {
       //Should throw ResourceNotFoundException
@@ -477,7 +500,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
       //expected
     }
     afterCount =
-        getMonitorAsString(instance, "user-resource-delete-404");
+        getMonitorAsString(scimInstance, "user-resource-delete-404");
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
   }
@@ -527,7 +550,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     final String dn = "uid=" + uid + "," + baseDN;
 
     //Add an entry to the Directory
-    instance.addEntry("dn: " + dn,
+    dsInstance.addEntry("dn: " + dn,
                       "objectclass: top",
                       "objectclass: person",
                       "objectclass: organizationalPerson",
@@ -544,11 +567,11 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //Try to retrieve the user via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     String beforeCount =
-        getMonitorAsString(instance, connectionHandler,
+        getMonitorAsString(scimInstance, connectionHandler,
                            "user-resource-get-successful");
     UserResource user = userEndpoint.get(dn);
     String afterCount =
-        getMonitorAsString(instance, connectionHandler,
+        getMonitorAsString(scimInstance, connectionHandler,
                            "user-resource-get-successful");
     assertNotNull(user);
     assertTrue(user.getId().equalsIgnoreCase(dn));
@@ -627,7 +650,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                 new Attribute("title", "Engineer"));
       }
 
-      instance.getConnectionPool().add(e);
+      dsInstance.getConnectionPool().add(e);
     }
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -638,7 +661,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     //
 
     String beforeCount =
-        getMonitorAsString(instance, "user-resource-query-successful");
+        getMonitorAsString(scimInstance, "user-resource-query-successful");
     //Test 'eq' (equals)
     Resources<UserResource> results =
         userEndpoint.query("userName sw 'filterUser' and " +
@@ -713,7 +736,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
       assertTrue(idx < 5);
     }
     String afterCount =
-        getMonitorAsString(instance, "user-resource-query-successful");
+        getMonitorAsString(scimInstance, "user-resource-query-successful");
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 6);
   }
@@ -760,13 +783,13 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     groupOfUniqueNames.setMembers(members);
     groupOfUniqueNames = groupEndpoint.create(groupOfUniqueNames);
 
-    instance.getConnectionPool().add(
+    dsInstance.getConnectionPool().add(
         generateGroupOfNamesEntry("groupOfNames", baseDN,
                                   user1.getId()));
     GroupResource groupOfNames =
         groupEndpoint.get("cn=groupOfNames," + baseDN);
 
-    instance.addEntry(
+    dsInstance.addEntry(
         "dn: cn=groupOfURLs," + baseDN,
         "objectClass: groupOfURLs",
         "cn: groupOfURLs",
@@ -827,7 +850,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     for (int i = 0; i < NUM_USERS; i++)
     {
       final String uid = "paginationUser." + i;
-      instance.getConnectionPool().add(
+      dsInstance.getConnectionPool().add(
           generateUserEntry(uid, baseDN,
                             "Test", "User", "password"));
     }
@@ -856,7 +879,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     for (int i = 0; i < NUM_GROUPS; i++)
     {
       final String cn = "paginationGroup." + i;
-      instance.getConnectionPool().add(
+      dsInstance.getConnectionPool().add(
           generateGroupOfNamesEntry(cn, baseDN, userIDs));
     }
 
@@ -908,7 +931,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
   {
     // Lower the maxResults setting.
     final int maxResults = 1;
-    instance.dsconfig(
+    scimInstance.dsconfig(
         "set-http-servlet-extension-prop",
         "--extension-name", "SCIM",
         "--add", "extension-argument:maxResults=" + maxResults);
@@ -918,7 +941,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     for (int i = 0; i < NUM_USERS; i++)
     {
       final String uid = "maxResultsUser." + i;
-      instance.getConnectionPool().add(
+      dsInstance.getConnectionPool().add(
           generateUserEntry(uid, baseDN, "Test", "User", "password"));
     }
 
@@ -928,7 +951,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     assertEquals(resources.getTotalResults(), maxResults);
 
     //Clean up
-    instance.dsconfig(
+    scimInstance.dsconfig(
         "set-http-servlet-extension-prop",
         "--extension-name", "SCIM",
         "--remove", "extension-argument:maxResults=" + maxResults);
@@ -951,7 +974,7 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
         "<scim-ldap:resources xmlns:" +
         "scim-ldap=\"http://www.unboundid.com/scim-ldap\">",
         "</scim-ldap:resources>");
-    instance.dsconfig(
+    scimInstance.dsconfig(
         "set-http-servlet-extension-prop",
         "--extension-name", "SCIM",
         "--set", "extension-argument:useResourcesFile=" + resourcesFile);
