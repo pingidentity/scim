@@ -94,25 +94,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.1</version>
-                <configuration>
-                  <archive>
-                    <manifestEntries>
-                      <Implementation-Title>${project.name}</Implementation-Title>
-                      <Implementation-Version>${project.version}</Implementation-Version>
-                      <Implementation-Vendor>UnboundID Corp.</Implementation-Vendor>
-                      <Implementation-URL>http://www.unboundid.com</Implementation-URL>
-                      <Extension-Support-Contact>support@unboundid.com</Extension-Support-Contact>
-                      <!-- TODO Put this back in when there is a release version.
-                           The server rejects a version with a SNAPSHOT qualifier -->
-                      <!--<UnboundID-Server-SDK-Version>${unboundid.serversdk.version}</UnboundID-Server-SDK-Version>-->
-                    </manifestEntries>
-                  </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.9</version>
                 <configuration>
@@ -164,6 +145,30 @@
                   </goals>
                 </execution>
               </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-svn-revision-number-plugin</groupId>
+                <artifactId>maven-svn-revision-number-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <entries>
+                        <entry>
+                            <path>${basedir}</path>
+                            <prefix>build.svn</prefix>
+                            <depth>empty</depth>
+                            <reportUnversioned>true</reportUnversioned>
+                            <reportIgnored>false</reportIgnored>
+                            <reportOutOfDate>false</reportOutOfDate>
+                        </entry>
+                    </entries>
+                </configuration>
             </plugin>
 		    <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>

@@ -1,0 +1,73 @@
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
+<assembly
+        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
+    <id>bundle</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.build.directory}</directory>
+            <includes>
+                <include>3RD_PARTY_LICENSES.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>config</outputDirectory>
+            <directory>${project.basedir}/../scim-ri/src/main/assemblies/server/config</directory>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>config</outputDirectory>
+            <directory>${project.basedir}/../scim-ldap/src/main/resources/com/unboundid/scim/ldap</directory>
+            <includes>
+                <include>*.xsd</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>config/update</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/config/update</directory>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <outputDirectory>config/update</outputDirectory>
+            <destName>resources.xml.${build.svn.revision}</destName>
+            <source>${project.basedir}/../scim-ri/src/main/assemblies/server/config/resources.xml</source>
+        </file>
+        <file>
+            <outputDirectory>config/update</outputDirectory>
+            <destName>resources.xsd.${build.svn.revision}</destName>
+            <source>${project.basedir}/../scim-ldap/src/main/resources/com/unboundid/scim/ldap/resources.xsd</source>
+        </file>
+    </files>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <excludes>
+              <!-- Make sure we don't include any jars that the server already has. -->
+              <exclude>com.unboundid.product:ldapsdk</exclude>
+              <exclude>com.unboundid.product.ds:server-sdk</exclude>
+              <exclude>javax.activation:activation</exclude>
+              <exclude>org.eclipse.jetty:jetty-*</exclude>
+              <exclude>org.mortbay.jetty:servlet-api</exclude>
+              <exclude>org.json:json</exclude>
+            </excludes> 
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>.</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <includes>
+              <!--Only include the artifact at the root -->
+              <include>com.unboundid.product.scim:scim-plugin</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
