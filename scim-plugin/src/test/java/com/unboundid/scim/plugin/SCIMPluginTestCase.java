@@ -11,6 +11,7 @@ import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
 import com.unboundid.directory.tests.standalone.TestCaseUtils;
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.client.SCIMEndpoint;
 import com.unboundid.scim.client.SCIMService;
@@ -25,10 +26,12 @@ import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Version;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
+import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientConfig;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -38,6 +41,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,6 +95,15 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
    */
   protected String baseDN;
 
+  /**
+   * The non-secure SCIM port.
+   */
+  protected int scimPort;
+
+  /**
+   * The secure SCIM port.
+   */
+  protected int scimSecurePort;
 
 
   /**
@@ -100,8 +113,8 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
    */
   protected void setupServices() throws Exception
   {
-    int scimPort = TestCaseUtils.getFreePort();
-    int scimSecurePort = TestCaseUtils.getFreePort();
+    scimPort = TestCaseUtils.getFreePort();
+    scimSecurePort = TestCaseUtils.getFreePort();
     configureExtension(scimInstance, scimPort, scimSecurePort);
 
     // Use the external instance trust store as our client trust store.
@@ -128,6 +141,26 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     final URI secureUri = new URI("https", null, scimInstance.getLdapHost(),
                                   scimSecurePort, null, null, null);
     secureService = new SCIMService(secureUri, clientConfig);
+
+    dsInstance.dsconfig(
+        "set-access-control-handler-prop",
+        "--add", "global-aci:" +
+                 "(targetcontrol=\"1.3.6.1.1.13.2 || 1.2.840.113556.1.4.473 " +
+                 "|| 2.16.840.1.113730.3.4.9\")" +
+                 "(version 3.0;" +
+                 "acl \"Authenticated access to controls used by the " +
+                 "SCIM plugin\"; allow (all) userdn=\"ldap:///all\";)",
+        "--add", "global-aci:" +
+                 "(targetattr!=\"userPassword\")" +
+                 "(version 3.0; " +
+                 "acl \"Allow anonymous read access for anyone\"; " +
+                 "allow (read,search,compare) userdn=\"ldap:///anyone\";)",
+        "--add", "global-aci:" +
+                 "(targetattr=\"*\")" +
+                 "(version 3.0; " +
+                 "acl \"Allow users to update their own entries\"; " +
+                 "allow (write) userdn=\"ldap:///self\";)"
+        );
   }
 
 
@@ -1009,4 +1042,57 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
     }
   }
 
+
+
+  /**
+   * Tests HTTP Basic Auth.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testBasicAuth() throws Exception
+  {
+    // Create a new user.
+    final String id = "uid=basicAuthUser," + baseDN;
+    dsInstance.getConnectionPool().add(
+        generateUserEntry(
+            "basicAuthUser", baseDN, "Basic", "User", "password"));
+
+    // Create a client service that authenticates as the user.
+    final URI uri = new URI("http", null, scimInstance.getLdapHost(),
+                            scimPort, null, null, null);
+    final SCIMService basicAuthService = new SCIMService(uri, id, "password");
+
+    // Check that the authenticated user can read its own entry.
+    assertNotNull(basicAuthService.getUserEndpoint().get(id));
+  }
+
+
+
+  /**
+   * Tests HTTP Basic Auth with the wrong credentials.
+   *
+   * @throws ClientAuthenticationException  If the test passes.
+   * @throws LDAPException                  If the test fails.
+   * @throws SCIMException                  If the test fails.
+   * @throws URISyntaxException             If the test fails.
+   */
+  @Test(expectedExceptions = ClientAuthenticationException.class)
+  public void testBasicAuthInvalidCredentials()
+      throws ClientAuthenticationException, LDAPException, SCIMException,
+             URISyntaxException
+  {
+    // Create a new user.
+    final String id = "uid=invalidCredentials," + baseDN;
+    dsInstance.getConnectionPool().add(
+        generateUserEntry(
+            "invalidCredentials", baseDN, "Basic", "User", "password"));
+
+    // Create a client service that authenticates with the wrong password.
+    final URI uri = new URI("http", null, scimInstance.getLdapHost(),
+                            scimPort, null, null, null);
+    final SCIMService basicAuthService = new SCIMService(uri, id, "assword");
+
+    basicAuthService.getUserEndpoint().get(id);
+  }
 }
