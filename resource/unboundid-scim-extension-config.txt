@@ -3,35 +3,72 @@
 #
 
 # This file provides commands to configure the UnboundID Directory Server to run
-# the SCIM plugin extension. This file may be used as a dsconfig batch file.
+# the SCIM servlet extension. This file may be used as a dsconfig batch file.
+# The required minimum version of the Directory Server is 3.2.1.0.
 #
 # The general steps to configure the the Directory Server to run the SCIM
-# plugin extension are as follows:
+# servlet extension are as follows:
 #
-# 1. Copy the extension jar and all its dependencies to lib/extensions/
-# 2. Copy the SCIM schema xsd files to resource/schema/
-# 3. Restart the server so that the jars get loaded.
-# 4. Create the plugin configuration.
-# 5. Create some Virtual List View indexes to support pagination.
-# 6. Stop the server.
-# 6. Build the Virtual List View indexes.
-# 7. Start the server.
-# 8. Configure desired Access Control.
+# 1. Install the SCIM extension bundle with the Directory Server
+#    manage-extension tool.
+# 2. Create a SCIM HTTP servlet extension configuration.
+# 3. Create a HTTP connection handler configuration referencing the servlet
+#    extension.
+# 4. Configure Access Control for the SCIM servlet extension.
+# 5. Optionally, create some Virtual List View indexes to support pagination.
 
 
 #
-# Create the plugin configuration (change the baseDN and port as desired).
+# Create a SCIM HTTP servlet extension configuration.
 #
 
-dsconfig create-plugin --plugin-name "SCIM Plugin" --type third-party \
-  --set enabled:true --set plugin-type:startup \
-  --set extension-class:com.unboundid.scim.ldap.SCIMPlugin \
-  --set extension-argument:useSchemaFile=resource/schema \
-  --set extension-argument:port=8080 \
-  --set extension-argument:baseDN=dc=example,dc=com
+dsconfig create-http-servlet-extension \
+  --extension-name "SCIM" \
+  --type third-party \
+  --set extension-class:com.unboundid.scim.plugin.SCIMServletExtension \
+  --set extension-argument:useResourcesFile=config/scim/resources.xml \
+  --set extension-argument:path=/
 
 #
-# Create some Virtual List View indexes to support pagination.
+# Create a HTTP log publisher.
+#
+
+dsconfig create-log-publisher \
+  --publisher-name "HTTP Common Access" \
+  --type common-log-file-http-operation \
+  --set enabled:true \
+  --set log-file:logs/http-common-access \
+  --set "rotation-policy:24 Hours Time Limit Rotation Policy" \
+  --set "rotation-policy:Size Limit Rotation Policy" \
+  --set "retention-policy:File Count Retention Policy" \
+  --set "retention-policy:Free Disk Space Retention Policy"
+
+#
+# Create a HTTP connection handler referencing the SCIM servlet extension.
+#
+
+dsconfig create-connection-handler \
+  --handler-name "HTTPS" \
+  --type http \
+  --set enabled:true \
+  --set log-file:logs/http-common-access \
+  --set http-servlet-extension:SCIM \
+  --set "http-operation-log-publisher:HTTP Common Access" \
+  --set listen-port:8443
+
+#
+# Add Access Control to allow access to LDAP controls used by the SCIM servlet
+# extension.
+#
+
+dsconfig set-access-control-handler-prop \
+  --add 'global-aci:(targetcontrol="1.3.6.1.1.13.2 || 1.2.840.113556.1.4.473 ||\
+  2.16.840.1.113730.3.4.9")(version 3.0;acl \
+  "Authenticated access to controls used by the SCIM servlet extension"; \
+  allow (all) userdn="ldap:///all";)'
+
+#
+# Optionally, create some Virtual List View indexes to support pagination.
 #
 
 dsconfig create-local-db-vlv-index --backend-name userRoot \
@@ -45,23 +82,17 @@ dsconfig create-local-db-vlv-index --backend-name userRoot \
   --set "sort-order:+sn"
 
 #
-# Command to build the Virtual List View indexes created earlier:
+# Command to build the Virtual List View indexes just created:
+#
 # rebuild-index --baseDN dc=example,dc=com \
 #   --index vlv.ascending-uid --index vlv.ascending-sn
 #
 
-#
-# Add Access Control for demo purposes to allow write access for all
-# authenticated users.
-#
 
-dsconfig set-access-control-handler-prop \
-  --add 'global-aci:(targetattr="*")(version 3.0; acl \
-  "Grant full access for any authenticated user"; \
-  allow (all) userdn="ldap:///all";)'
+#
+# Enable Server SDK Extension debug logging.
+#
+# dsconfig set-log-publisher-prop \
+#   --publisher-name "Server SDK Extension Debug Logger" \
+#   --set enabled:true
 
-dsconfig set-access-control-handler-prop \
-  --add 'global-aci:(targetcontrol="1.3.6.1.1.13.2 || 1.2.840.113556.1.4.473 ||\
-  2.16.840.1.113730.3.4.9")(version 3.0;acl \
-  "Authenticated access to controls used by the SCIM plugin"; \
-  allow (all) userdn="ldap:///all";)'
