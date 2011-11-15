@@ -35,6 +35,18 @@ public class SCIMServletMonitorProvider extends MonitorProvider
 
 
   /**
+   * Default constructor. This is present so that the
+   * GenerateExtensionDocumenatation build tool can call Class.newInstance() on
+   * this class.
+   */
+  public SCIMServletMonitorProvider()
+  {
+    this(null, null);
+  }
+
+
+
+  /**
    * Construct a new instance of the SCIM monitor provider.
    *
    * @param monitorInstanceName  The name that identifies this monitor provider

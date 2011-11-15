@@ -30,6 +30,10 @@
             </excludes>
         </fileSet>
         <fileSet>
+            <outputDirectory>docs</outputDirectory>
+            <directory>${project.build.directory}/docs</directory>
+        </fileSet>
+        <fileSet>
             <outputDirectory>server</outputDirectory>
             <directory>${project.basedir}/src/main/assemblies/server</directory>
             <includes>

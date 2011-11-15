@@ -52,7 +52,6 @@
         <module>scim-ldap</module>
         <module>scim-ri</module>
         <module>scim-plugin</module>
-        <module>scim-client</module>
     </modules>
 
     <build>
@@ -132,7 +131,25 @@
               <version>1.6</version>
               <executions>
                 <execution>
-                  <id>extract-version</id>
+                  <id>copy-javadoc-resources</id>
+                  <phase>prepare-package</phase>
+                  <configuration>
+                    <target>
+                        <property name="javadoc.dir" location="${project.build.directory}/docs/javadoc" />
+                        <mkdir dir="${javadoc.dir}/resources" />
+                        <copy file="${main.basedir}/resource/images/inherit.gif" toDir="${javadoc.dir}/resources" overwrite="true" />
+                    </target>
+                  </configuration>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                </execution>
+                <execution>
+                  <!-- Note: this Ant target will only be run when doing a Maven release
+                             (i.e. running the release plugin), because that's the only
+                             time when ${original.target.dir} will be set.
+                  -->
+                  <id>extract-project-version</id>
                   <phase>deploy</phase>
                   <configuration>
                     <target if="original.target.dir">
@@ -147,28 +164,25 @@
               </executions>
             </plugin>
             <plugin>
-                <groupId>com.google.code.maven-svn-revision-number-plugin</groupId>
-                <artifactId>maven-svn-revision-number-plugin</artifactId>
-                <version>1.6</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.8</version>
                 <executions>
-                    <execution>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                    </execution>
+                  <execution>
+                    <id>generate-javadoc</id>
+                    <phase>prepare-package</phase>
+                    <goals>
+                      <goal>javadoc</goal>
+                    </goals>
+                    <configuration>
+                      <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>                      
+                      <destDir>javadoc</destDir>
+                      <stylesheetfile>${main.basedir}/resource/unboundid-javadoc.css</stylesheetfile>
+                      <linksource>true</linksource>
+                      <quiet>true</quiet>
+                    </configuration>
+                  </execution>
                 </executions>
-                <configuration>
-                    <entries>
-                        <entry>
-                            <path>${basedir}</path>
-                            <prefix>build.svn</prefix>
-                            <depth>empty</depth>
-                            <reportUnversioned>true</reportUnversioned>
-                            <reportIgnored>false</reportIgnored>
-                            <reportOutOfDate>false</reportOutOfDate>
-                        </entry>
-                    </entries>
-                </configuration>
             </plugin>
 		    <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
@@ -218,6 +232,7 @@
                     <licenseOutputText>${project.build.directory}/3RD_PARTY_LICENSES.txt</licenseOutputText>
                     <licenseSummaryXML>${project.build.directory}/licenseSummary.xml</licenseSummaryXML>
                     <lookupTableFile>${main.basedir}/resource/licenses/licenseTable.xml</lookupTableFile>
+                    <quiet>true</quiet>
                   </configuration>
                 </execution>
               </executions>

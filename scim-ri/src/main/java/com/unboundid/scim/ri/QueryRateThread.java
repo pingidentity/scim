@@ -18,10 +18,10 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.client.SCIMEndpoint;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.util.FixedRateBarrier;
 import com.unboundid.util.ValuePattern;

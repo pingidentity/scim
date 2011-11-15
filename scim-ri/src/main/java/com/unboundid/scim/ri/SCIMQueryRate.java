@@ -19,14 +19,14 @@ package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.client.SCIMEndpoint;
-import com.unboundid.scim.client.SCIMService;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.util.ColumnFormatter;
 import com.unboundid.util.CommandLineTool;
 import com.unboundid.util.FixedRateBarrier;

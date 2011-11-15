@@ -16,7 +16,7 @@
     <name>UnboundID SCIM Server Plugin</name>
 
     <properties>
-      <main.basedir>${project.parent.basedir}</main.basedir>
+      <main.basedir>${project.basedir}/..</main.basedir>
     </properties>
 
     <build>
@@ -24,16 +24,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.9</version>
                 <configuration>
                     <skip>true</skip>
-
                     <debugForkedProcess>${debugForkedProcess}</debugForkedProcess>
                     <!-- Setting forkMode to none keeps the surefire tests from continuing to
                         run if you ^C the tests, but it also means that debugForkedProcess
                         cannot be used to debug the tests.
                    <forkMode>none</forkMode> -->
-
                     <environmentVariables>
                         <TERM>xterm</TERM>
                     </environmentVariables>
@@ -43,16 +40,13 @@
                         <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
                         <pluginZipFile>${project.build.directory}/${project.build.finalName}.zip</pluginZipFile>
                     </systemPropertyVariables>
-
                     <properties>
                         <property>
                             <name>listener</name>
                             <value>com.unboundid.directory.tests.standalone.TestListener</value>
                         </property>
                     </properties>
-
                 </configuration>
-
                 <executions>
                     <execution>
                         <id>surefire-it</id>
@@ -85,13 +79,6 @@
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
                         </configuration>
                     </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2-beta-4</version>
-                <executions>
                     <execution>
                         <id>create-extension-bundle</id>
                         <phase>package</phase>
@@ -129,6 +116,44 @@
                     </archive>
                 </configuration>
             </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-antrun-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>generate-docs</id>
+                  <phase>process-classes</phase>
+                  <configuration>
+                      <!-- Generate documentation for the extensions. -->
+                      <target name="generate-extension-docs">
+                        <property name="doc.dir" location="${project.build.directory}/docs" />                       
+                        <delete dir="${doc.dir}" />
+                        <mkdir  dir="${doc.dir}/images" />
+                                            
+                        <copy file="${main.basedir}/resource/unboundid.css" toDir="${doc.dir}" />
+                        
+                        <copy toDir="${doc.dir}/images">
+                          <fileset dir="${main.basedir}/resource/images">
+                            <include  name="**/*" />
+                          </fileset>
+                        </copy>
+                                        
+                        <taskdef name="genExtDocs" className="com.unboundid.buildutils.GenerateExtensionDocumentation">
+                            <classpath>
+                              <path path="${project.build.outputDirectory}" />
+                              <path refId="maven.compile.classpath" />
+                            </classpath>
+                        </taskdef>
+                    
+                        <genExtDocs sourceRoot="${project.build.sourceDirectory}" docRoot="${doc.dir}" />
+                      </target>
+                  </configuration>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -144,6 +169,12 @@
             <version>${unboundid.serversdk.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.unboundid.product.ds</groupId>
+            <artifactId>server-sdk</artifactId>
+            <version>${unboundid.serversdk.version}</version>
+            <classifier>build-utils</classifier>
+        </dependency> 
+        <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-core</artifactId>
             <version>1.0.0-SNAPSHOT</version>
@@ -153,7 +184,7 @@
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-ri</artifactId>
             <version>1.0.0-SNAPSHOT</version>
-        </dependency>
+        </dependency>  
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-client</artifactId>

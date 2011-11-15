@@ -13,17 +13,17 @@
     </parent>
     <artifactId>scim-core</artifactId>
     <packaging>jar</packaging>
-    <name>UnboundID SCIM SDK Core</name>
+    <name>UnboundID SCIM SDK</name>
 
     <properties>
         <!-- Note, the 'scim.build.timestamp' property is set in the parent POM using
              the build-number plugin. -->
-        <build.product.name>UnboundID SCIM SDK for Java</build.product.name>
+        <build.product.name>UnboundID SCIM SDK</build.product.name>
         <build.product.short.name>unboundid-scimsdk</build.product.short.name>
         <build.version>${project.version}</build.version>
         <build.version.package.name>com.unboundid.scim.sdk</build.version.package.name>
         <build.version.package.dir>com/unboundid/scim/sdk</build.version.package.dir>
-        <main.basedir>${project.parent.basedir}</main.basedir>
+        <main.basedir>${project.basedir}/..</main.basedir>
     </properties>
 
     <build>
@@ -47,9 +47,32 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.7</version>
                 <configuration>
                     <headerLocation>config/gpl.sourceheader</headerLocation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-svn-revision-number-plugin</groupId>
+                <artifactId>maven-svn-revision-number-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <entries>
+                        <entry>
+                            <path>${basedir}</path>
+                            <prefix>build.svn</prefix>
+                            <depth>empty</depth>
+                            <reportUnversioned>true</reportUnversioned>
+                            <reportIgnored>false</reportIgnored>
+                            <reportOutOfDate>false</reportOutOfDate>
+                        </entry>
+                    </entries>
                 </configuration>
             </plugin>
             <plugin>
@@ -106,6 +129,21 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>3e3951f</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wink</groupId>
+            <artifactId>wink-common</artifactId>
+            <version>1.1.3-incubating</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wink</groupId>
+            <artifactId>wink-client</artifactId>
+            <version>1.1.3-incubating</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.6.1</version>
         </dependency>
     </dependencies>
 </project>

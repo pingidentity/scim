@@ -19,12 +19,12 @@ package com.unboundid.scim.ri.client;
 
 
 
-import com.unboundid.scim.client.SCIMService;
 import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMService;
 
 import java.net.URI;
 import java.util.ArrayList;

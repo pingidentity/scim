@@ -13,10 +13,10 @@
     </parent>
     <artifactId>scim-ldap</artifactId>
     <packaging>jar</packaging>
-    <name>UnboundID SCIM SDK LDAP</name>
+    <name>UnboundID SCIM LDAP</name>
 
     <properties>
-      <main.basedir>${project.parent.basedir}</main.basedir>
+      <main.basedir>${project.basedir}/..</main.basedir>
     </properties>
 
     <build>
@@ -24,7 +24,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.7</version>
                 <configuration>
                     <headerLocation>config/gpl.sourceheader</headerLocation>
                 </configuration>
