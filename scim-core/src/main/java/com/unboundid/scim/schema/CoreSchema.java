@@ -256,7 +256,7 @@ public class CoreSchema
   private static final AttributeDescriptor TITLE =
       AttributeDescriptor.singularSimple("title",
           AttributeDescriptor.DataType.STRING,
-          "The user’s title, such as “Vice President.”",
+          "The user's title, such as \"Vice President\"",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor USER_TYPE =
       AttributeDescriptor.singularSimple("userType",

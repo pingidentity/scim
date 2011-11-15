@@ -224,9 +224,9 @@ public class UserResource extends BaseResource
   }
 
   /**
-   * Retrieves the user’s title, such as “Vice President”.
+   * Retrieves the user's title, such as "Vice President".
    *
-   * @return The user’s title or <code>null</code> if it is not specified.
+   * @return The user's title or <code>null</code> if it is not specified.
    */
   public String getTitle()
   {
@@ -235,9 +235,9 @@ public class UserResource extends BaseResource
   }
 
   /**
-   * Sets the user’s title, such as “Vice President”.
+   * Sets the user's title, such as "Vice President".
    *
-   * @param title The user’s title.
+   * @param title The user's title.
    * @return this resource instance.
    */
   public UserResource setTitle(final String title)
@@ -609,7 +609,7 @@ public class UserResource extends BaseResource
    * Sets the list of roles for the User.
    *
    * @param roles The list of roles for the User.
-   * @return this resource instance.                 ˜
+   * @return this resource instance.
    */
   public UserResource setRoles(final Collection<Entry<String>> roles)
   {
