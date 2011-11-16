@@ -72,42 +72,42 @@ public final class ConfigurableResourceMapper extends ResourceMapper
    * The ResourceDescriptor of the SCIM resource handled by this resource
    * mapper.
    */
-  private final ResourceDescriptor resourceDescriptor;
+  private ResourceDescriptor resourceDescriptor;
 
   /**
    * The LDAP Search base DN to be used for querying.
    */
-  private final String searchBaseDN;
+  private String searchBaseDN;
 
   /**
    * The LDAP filter to match all resources handled by this resource manager.
    */
-  private final Filter searchFilter;
+  private Filter searchFilter;
 
   /**
    * The LDAP Add parameters.
    */
-  private final LDAPAddParameters addParameters;
+  private LDAPAddParameters addParameters;
 
   /**
    * A DN constructed value for the DN template.
    */
-  private final ConstructedValue dnConstructor;
+  private ConstructedValue dnConstructor;
 
   /**
    * The attribute mappers for this resource mapper.
    */
-  private final Map<AttributeDescriptor, AttributeMapper> attributeMappers;
+  private Map<AttributeDescriptor, AttributeMapper> attributeMappers;
 
   /**
    * The set of LDAP attributes used by this resource mapper.
    */
-  private final Set<String> ldapAttributeTypes;
+  private Set<String> ldapAttributeTypes;
 
   /**
    * The derived attributes for this resource mapper.
    */
-  private final Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
+  private Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
 
   /**
    * The internal AttributeMapper for the Meta object. This allows the
@@ -115,43 +115,50 @@ public final class ConfigurableResourceMapper extends ResourceMapper
    * information, even though there are no explicit mappings for Meta set up in
    * resources.xml.
    */
-  private final AttributeMapper metaAttributeMapper;
+  private AttributeMapper metaAttributeMapper;
 
 
 
   /**
-   * Create a new instance of the resource mapper.
+   * Initialize this resource mapper from the provided information.
    *
    * @param resourceDescriptor The ResourceDescriptor of the SCIM resource
    *                           handled by this resource mapper.
-   *                           resource mapper.
-   * @param searchBaseDN       The LDAP Search base DN.
-   * @param searchFilter       The LDAP Search filter.
-   * @param addParameters      The LDAP Add parameters.
+   * @param searchParameters   The LDAP Search parameters, or {@code null} if
+   *                           there are none defined.
+   * @param addParameters      The LDAP Add parameters, or {@code null} if there
+   *                           are none defined.
    * @param mappers            The attribute mappers for this resource mapper.
    * @param derivedAttributes  The derived attributes for this resource mapper.
    */
-  private ConfigurableResourceMapper(
+  @Override
+  public void initializeMapper(
       final ResourceDescriptor resourceDescriptor,
-      final String searchBaseDN,
-      final String searchFilter,
+      final LDAPSearchParameters searchParameters,
       final LDAPAddParameters addParameters,
       final Collection<AttributeMapper> mappers,
       final Collection<DerivedAttribute> derivedAttributes)
   {
     this.resourceDescriptor  = resourceDescriptor;
     this.addParameters       = addParameters;
-    this.searchBaseDN        = searchBaseDN;
-    this.metaAttributeMapper = createMetaAttributeMapper();
 
-    try
+    if (searchParameters != null)
     {
-      this.searchFilter = Filter.create(searchFilter);
+      this.searchBaseDN = searchParameters.getBaseDN().trim();
+      try
+      {
+        this.searchFilter = Filter.create(searchParameters.getFilter().trim());
+      }
+      catch (LDAPException e)
+      {
+        Debug.debugException(e);
+        throw new IllegalArgumentException(e.getExceptionMessage());
+      }
     }
-    catch (LDAPException e)
+    else
     {
-      Debug.debugException(e);
-      throw new IllegalArgumentException(e.getExceptionMessage());
+      this.searchBaseDN = null;
+      this.searchFilter = null;
     }
 
     if (addParameters != null)
@@ -163,6 +170,8 @@ public final class ConfigurableResourceMapper extends ResourceMapper
     {
       this.dnConstructor = null;
     }
+
+    metaAttributeMapper = createMetaAttributeMapper();
 
     attributeMappers =
         new HashMap<AttributeDescriptor, AttributeMapper>(mappers.size());
@@ -256,36 +265,23 @@ public final class ConfigurableResourceMapper extends ResourceMapper
         }
       }
 
-      String searchBaseDN = null;
-      String searchFilter = null;
-      if (resource.getLDAPSearch() != null)
-      {
-        searchBaseDN = resource.getLDAPSearch().getBaseDN().trim();
-        searchFilter = resource.getLDAPSearch().getFilter().trim();
-      }
-
-      ResourceDescriptor resourceDescriptor =
+      final ResourceDescriptor resourceDescriptor =
           ResourceDescriptor.create(resource.getName(),
               resource.getDescription(), resource.getSchema(),
               resource.getQueryEndpoint(), attributeDescriptors);
-      resourceMappers.add(
-          new ConfigurableResourceMapper(resourceDescriptor,
-                                         searchBaseDN,
-                                         searchFilter,
-                                         resource.getLDAPAdd(),
-                                         attributeMappers,
-                                         derivedAttributes));
+
+      final ResourceMapper resourceMapper =
+          ResourceMapper.create(resource.getMapping());
+      resourceMapper.initializeMapper(resourceDescriptor,
+                                      resource.getLDAPSearch(),
+                                      resource.getLDAPAdd(),
+                                      attributeMappers,
+                                      derivedAttributes);
+
+      resourceMappers.add(resourceMapper);
     }
 
     return resourceMappers;
-  }
-
-
-
-  @Override
-  public void initializeMapper()
-  {
-    // No implementation required.
   }
 
 

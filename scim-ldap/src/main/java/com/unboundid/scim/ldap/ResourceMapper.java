@@ -25,6 +25,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -32,6 +33,7 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SortParameters;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -46,7 +48,7 @@ public abstract class ResourceMapper
   /**
    * Create a new instance of this resource mapper. All resource mappers must
    * provide a default constructor, but any initialization should be done
-   * in the {@link #initializeMapper()} method.
+   * in the {@code initializeMapper()} method.
    */
   protected ResourceMapper()
   {
@@ -56,11 +58,23 @@ public abstract class ResourceMapper
 
 
   /**
-   * Initialize this resource mapper.
+   * Initialize this resource mapper from the provided information.
    *
-   * TODO need a way to provide configuration.
+   * @param resourceDescriptor The ResourceDescriptor of the SCIM resource
+   *                           handled by this resource mapper.
+   * @param searchParameters   The LDAP Search parameters, or {@code null} if
+   *                           there are none defined.
+   * @param addParameters      The LDAP Add parameters, or {@code null} if there
+   *                           are none defined.
+   * @param mappers            The attribute mappers for this resource mapper.
+   * @param derivedAttributes  The derived attributes for this resource mapper.
    */
-  public abstract void initializeMapper();
+  public abstract void initializeMapper(
+      final ResourceDescriptor resourceDescriptor,
+      final LDAPSearchParameters searchParameters,
+      final LDAPAddParameters addParameters,
+      final Collection<AttributeMapper> mappers,
+      final Collection<DerivedAttribute> derivedAttributes);
 
 
 
@@ -231,4 +245,54 @@ public abstract class ResourceMapper
   public abstract SCIMObject toSCIMObject(
       final Entry entry, final SCIMQueryAttributes queryAttributes,
       final LDAPInterface ldapInterface) throws InvalidResourceException;
+
+
+
+  /**
+   * Create a resource mapper from the name of a class that extends the
+   * {@code ResourceMapper} abstract class.
+   *
+   * @param className  The name of a class that extends {@code ResourceMapper}.
+   *
+   * @return  A new instance of the ResourceMapper class.
+   */
+  public static ResourceMapper create(final String className)
+  {
+    if (className == null)
+    {
+      return new ConfigurableResourceMapper();
+    }
+
+    Class clazz;
+    try
+    {
+      clazz = Class.forName(className);
+    }
+    catch (ClassNotFoundException e)
+    {
+      Debug.debugException(e);
+      throw new IllegalArgumentException(
+          "Class '" + className + "' not found", e);
+    }
+
+    final Object object;
+    try
+    {
+      object = clazz.newInstance();
+    }
+    catch (Exception e)
+    {
+      Debug.debugException(e);
+      throw new IllegalArgumentException(
+          "Cannot create instance of class '" + className + "'", e);
+    }
+
+    if (!(object instanceof ResourceMapper))
+    {
+      throw new IllegalArgumentException(
+          "Class '" + className + "' is not a ResourceMapper");
+    }
+
+    return (ResourceMapper)object;
+  }
 }
