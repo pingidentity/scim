@@ -105,8 +105,6 @@
                             <descriptors>
                                 <descriptor>${basedir}/src/main/assemblies/zip.xml</descriptor>
                             </descriptors>
-                            <outputDirectory>${build.package.dir}</outputDirectory>
-                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
                         </configuration>
                     </execution>
                 </executions>

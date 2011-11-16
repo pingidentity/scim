@@ -89,8 +89,6 @@
                             <descriptors>
                                 <descriptor>${basedir}/src/main/assemblies/bundle.xml</descriptor>
                             </descriptors>
-                            <outputDirectory>${build.package.dir}</outputDirectory>
-                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -126,7 +124,7 @@
                   <configuration>
                       <!-- Generate documentation for the extensions. -->
                       <target name="generate-extension-docs">
-                        <property name="doc.dir" location="${project.build.directory}/docs" />                       
+                        <property name="doc.dir" location="${project.reporting.outputDirectory}/extension-docs" />                       
                         <delete dir="${doc.dir}" />
                         <mkdir  dir="${doc.dir}/images" />
                                             

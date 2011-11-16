@@ -21,7 +21,11 @@
         </fileSet>
         <fileSet>
             <outputDirectory>docs</outputDirectory>
-            <directory>${project.build.directory}/docs</directory>
+            <directory>${project.reporting.outputDirectory}/extension-docs</directory>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>docs/javadoc</outputDirectory>
+            <directory>${project.build.directory}/javadoc</directory>
         </fileSet>
         <fileSet>
             <outputDirectory>config</outputDirectory>

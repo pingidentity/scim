@@ -30,8 +30,8 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <outputDirectory>docs</outputDirectory>
-            <directory>${project.build.directory}/docs</directory>
+            <outputDirectory>docs/javadoc</outputDirectory>
+            <directory>${project.build.directory}/javadoc</directory>
         </fileSet>
         <fileSet>
             <outputDirectory>server</outputDirectory>

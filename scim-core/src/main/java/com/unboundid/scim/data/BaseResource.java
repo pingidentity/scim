@@ -33,8 +33,8 @@ import java.util.Collection;
 
 /**
  * This class represents a SCIM resource. It could also be sub-typed for
- * specific resource types (ie. Users or Groups) that provide convince methods
- * for accessing specific attribute values.
+ * specific resource types (ie. Users or Groups) that provide convenience
+ * methods for accessing specific attribute values.
  */
 public class BaseResource implements SCIMResponse
 {

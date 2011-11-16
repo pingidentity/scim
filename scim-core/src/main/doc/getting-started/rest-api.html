@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID SCIM SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="resources/unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="resources/images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID SCIM SDK" id="logo">
+          <img src="resources/images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID SCIM SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID SCIM SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Using the SCIM REST API</h2>
+
+              <p>
+                The starting point for interacting with a SCIM REST endpoint is the
+                <tt>com.unboundid.scim.sdk.SCIMService</tt> class. This class utilizes the
+                <a href="http://incubator.apache.org/wink/" target="blank">Apache Wink</a>
+                libraries for building RESTful web services, and provides a simple API to establish
+                a connection and retrieve the different types of endpoints that are available. There
+                are high-level methods for working with the User, Group, and Schema endpoints,
+                since they are part of the SCIM specification. There are also methods for working with
+                user-defined endpoints and for reading the configuration of the SCIM service provider.
+                Here is a simple example which sets up a connection with basic authentication and
+                indicates that the client prefers to receive responses in JSON format.
+              </p>
+
+<pre>
+URI uri = URI.create("http://localhost:52959");
+SCIMService scimService = new SCIMService(uri, "uid=bjensen,dc=example,dc=com", "pAssw0rd");
+scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+</pre>
+
+              <p>
+                Once you have a <tt>SCIMService</tt> configured, you can retrieve and work with
+                the various SCIM endpoints, using the <tt>com.unboundid.scim.sdk.SCIMEndpoint</tt> class.
+                Here is a simple example of how to print out the phone numbers for a given user:
+              </p>
+ 
+<pre>
+SCIMEndpoint<UserResource> endpoint = scimService.getUserEndpoint();
+UserResource user = endpoint.get("uid=bjensen,dc=example,dc=com");
+Name name = user.getName();
+Collection&lt;Entry&lt;String&gt;&gt; phoneNumbers = user.getPhoneNumbers();
+if(phoneNumbers != null)
+{
+  for(Entry&lt;String&gt; phoneNumber : phoneNumbers)
+  {
+    System.out.println(phoneNumber);
+  }
+}
+</pre>
+
+              <p>
+                The <tt>com.unboundid.scim.sdk</tt> package contains several data
+                types that are useful when working with SCIM resources. Also, the
+                <tt>com.unboundid.scim.sdk.SCIMConstants</tt> class provides several 
+                commonly-used constants such as query parameter names, resource names, and
+                schema endpoint names.
+              </p>
+                
+              <p>
+                The <tt>com.unboundid.scim.sdk.examples</tt> package contains a full client
+                example which demonstrates all the CRUD operations, using the SCIM enterprise
+                schema, and extending the out-of-the-box resource types to provide a custom
+                resource. See <a href="creating-resources.html">Creating Custom Resources</a>
+                for more information on this.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2011 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

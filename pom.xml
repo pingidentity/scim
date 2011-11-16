@@ -135,7 +135,7 @@
                   <phase>prepare-package</phase>
                   <configuration>
                     <target>
-                        <property name="javadoc.dir" location="${project.build.directory}/docs/javadoc" />
+                        <property name="javadoc.dir" location="${project.build.directory}/javadoc" />
                         <mkdir dir="${javadoc.dir}/resources" />
                         <copy file="${main.basedir}/resource/images/inherit.gif" toDir="${javadoc.dir}/resources" overwrite="true" />
                     </target>
@@ -175,7 +175,7 @@
                       <goal>javadoc</goal>
                     </goals>
                     <configuration>
-                      <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>                      
+                      <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
                       <destDir>javadoc</destDir>
                       <stylesheetfile>${main.basedir}/resource/unboundid-javadoc.css</stylesheetfile>
                       <linksource>true</linksource>
