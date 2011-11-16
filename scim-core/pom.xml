@@ -21,28 +21,11 @@
         <build.product.name>UnboundID SCIM SDK</build.product.name>
         <build.product.short.name>unboundid-scimsdk</build.product.short.name>
         <build.version>${project.version}</build.version>
-        <build.version.package.name>com.unboundid.scim.sdk</build.version.package.name>
-        <build.version.package.dir>com/unboundid/scim/sdk</build.version.package.dir>
         <main.basedir>${project.basedir}/..</main.basedir>
+        <filtered.dir>${project.build.genSourceDirectory}/filtered</filtered.dir>
     </properties>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <excludes>
-                    <exclude>version-stub/*</exclude>
-                </excludes>
-            </resource>
-            <resource>
-                <directory>src/main/resources/version-stub</directory>
-                <includes>
-                    <include>*.java</include>
-                </includes>
-                <filtering>true</filtering>
-                <targetPath>${project.build.genSourceDirectory}/${build.version.package.dir}</targetPath>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -57,6 +40,7 @@
                 <version>1.6</version>
                 <executions>
                     <execution>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>revision</goal>
                         </goals>
@@ -76,6 +60,34 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <copy todir="${filtered.dir}">
+                                    <fileset dir="src/main/stubs"/>
+                                    <globmapper from="*.java.stub" to="*.java"/>
+                                    <filterset>
+                                        <filter token="PRODUCT_NAME" value="${build.product.name}"/>
+                                        <filter token="SHORT_NAME" value="${build.product.short.name}"/>
+                                        <filter token="VERSION" value="${build.version}"/>
+                                        <filter token="BUILD_TIMESTAMP" value="${scim.build.timestamp}"/>
+                                        <filter token="SVN_PATH" value="${build.svn.repository}/${build.svn.path}" />
+                                        <filter token="SVN_REVISION" value="${build.svn.revision}"/>
+                                    </filterset>
+                                </copy>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>1.5</version>
@@ -88,7 +100,7 @@
                     </goals>
                     <configuration>
                       <sources>
-                          <source>${project.build.genSourceDirectory}</source>
+                          <source>${filtered.dir}</source>
                       </sources>
                     </configuration>
                   </execution>

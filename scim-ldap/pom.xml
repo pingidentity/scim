@@ -43,7 +43,7 @@
                     <packageName>com.unboundid.scim.ldap</packageName>
                     <clearOutputDir>true</clearOutputDir>
                     <schemaDirectory>src/main/resources/com/unboundid/scim/ldap</schemaDirectory>
-                    <outputDirectory>${project.build.genSourceDirectory}</outputDirectory>
+                    <outputDirectory>${project.build.genSourceDirectory}/jaxb2</outputDirectory>
                 </configuration>
             </plugin>
         </plugins>

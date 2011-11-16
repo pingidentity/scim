@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package ${build.version.package.name};
+package com.unboundid.scim.sdk;
 
 
 
@@ -45,36 +45,33 @@ public final class Version
 
   /**
    * The official full product name for the SCIM SDK.  For this build, the
-   * value is "${build.product.name}".
+   * value is "@PRODUCT_NAME@".
    */
-  public static final String PRODUCT_NAME =
-       "${build.product.name}";
+  public static final String PRODUCT_NAME = "@PRODUCT_NAME@";
 
 
 
   /**
    * The short product name for the SCIM SDK.  This will not have any spaces.
-   * For this build, the value is "${build.product.short.name}".
+   * For this build, the value is "@SHORT_NAME@".
    */
-  public static final String SHORT_NAME =
-       "${build.product.short.name}";
+  public static final String SHORT_NAME = "@SHORT_NAME@";
 
 
 
   /**
    * The version string for the SCIM SDK.
-   * For this build, the value is "${build.version}".
+   * For this build, the value is "@VERSION@".
    */
-  public static final String VERSION =
-       "${build.version}";
+  public static final String VERSION = "@VERSION@";
 
 
 
   /**
    * A timestamp that indicates when this build of the SCIM SDK was generated.
-   * For this build, the value is "${scim.build.timestamp}".
+   * For this build, the value is "@BUILD_TIMESTAMP@".
    */
-  public static final String BUILD_TIMESTAMP = "${scim.build.timestamp}";
+  public static final String BUILD_TIMESTAMP = "@BUILD_TIMESTAMP@";
 
 
 
@@ -82,25 +79,24 @@ public final class Version
    * The Subversion path associated with the build root directory from which
    * this build of the SCIM SDK was generated.  It may be an absolute local
    * filesystem path if the Subversion path isn't available at build time.
-   * For this build, the value is "${build.svn.path}".
+   * For this build, the value is "@SVN_PATH@".
    */
-  public static final String REPOSITORY_PATH =
-       "${build.svn.path}";
+  public static final String REPOSITORY_PATH = "@SVN_PATH@";
 
 
 
   /**
    * The source revision number from which this build of the SCIM SDK was
    * generated.  It may be -1 if the Subversion revision isn't available at
-   * build time.  For this build, the value is ${build.svn.version}.
+   * build time.  For this build, the value is @SVN_REVISION@.
    */
-  public static final long REVISION_NUMBER = ${build.svn.revision};
+  public static final long REVISION_NUMBER = @SVN_REVISION@;
 
 
 
   /**
    * The full version string for the SCIM SDK.  For this build, the value is
-   * "${build.product.name} ${build.version}".
+   * "@PRODUCT_NAME@ @VERSION@".
    */
   public static final String FULL_VERSION_STRING =
        PRODUCT_NAME + ' ' + VERSION;
@@ -110,7 +106,7 @@ public final class Version
   /**
    * The short version string for the SCIM SDK.  This will not have any spaces.
    * For this build, the value is
-   * "${build.product.short.name}-${build.version}".
+   * "@SHORT_NAME@-@VERSION@".
    */
   public static final String SHORT_VERSION_STRING =
        SHORT_NAME + '-' + VERSION;

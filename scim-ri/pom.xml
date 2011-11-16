@@ -23,6 +23,7 @@
         <ds.binddn>cn=Directory Manager</ds.binddn>
         <ds.bindpw>password</ds.bindpw>
         <main.basedir>${project.basedir}/..</main.basedir>
+        <messages.dir>${project.build.genSourceDirectory}/messages</messages.dir>
     </properties>
 
     <build>
@@ -55,7 +56,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${project.build.genSourceDirectory}</source>
+                                <source>${messages.dir}</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -73,7 +74,7 @@
                                 <typedef name="genmsg" classname="com.unboundid.buildtools.messages.GenerateMessages">
                                     <classpath refid="maven.plugin.classpath" />
                                 </typedef>
-                                <genmsg propertiesDir="src/main/resources/messages" generatedSourceDir="${project.build.genSourceDirectory}" />
+                                <genmsg propertiesDir="src/main/resources/messages" generatedSourceDir="${messages.dir}" />
                             </target>
                         </configuration>
                         <goals>
