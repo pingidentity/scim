@@ -26,6 +26,13 @@
     <fileSets>
         <fileSet>
             <outputDirectory>.</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies</directory>
+            <includes>
+                <include>README.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
             <directory>${project.build.directory}</directory>
             <includes>
                 <include>3RD_PARTY_LICENSES.txt</include>
@@ -49,7 +56,6 @@
             <outputDirectory>server</outputDirectory>
             <directory>${project.basedir}/src/main/assemblies/server</directory>
             <includes>
-                <include>*.txt</include>
                 <include>ldif/*</include>
             </includes>
         </fileSet>

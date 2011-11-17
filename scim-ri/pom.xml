@@ -105,6 +105,7 @@
                             <descriptors>
                                 <descriptor>${basedir}/src/main/assemblies/zip.xml</descriptor>
                             </descriptors>
+                            <attach>false</attach>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>

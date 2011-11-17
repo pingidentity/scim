@@ -126,7 +126,7 @@ public class InMemoryServerTool
 
   // The argument used to specify the path to a directory containing XML
   // resource definitions.
-  private FileArgument useResourcesFileArgument;
+  private FileArgument resourceMappingFileArgument;
 
   // The argument used to specify the maximum number of resources returned in
   // a response.
@@ -232,7 +232,7 @@ public class InMemoryServerTool
     accessLogFileArgument          = null;
     ldapAccessLogFileArgument      = null;
     ldifFileArgument               = null;
-    useResourcesFileArgument       = null;
+    resourceMappingFileArgument    = null;
     useLdapSchemaFileArgument      = null;
     portArgument                   = null;
     maxResultsArgument             = null;
@@ -286,12 +286,12 @@ public class InMemoryServerTool
       throw new ArgumentException(e.getExceptionMessage());
     }
 
-    useResourcesFileArgument = new FileArgument(
-        null, "useResourcesFile", true, 1,
+    resourceMappingFileArgument = new FileArgument(
+        null, "resourceMappingFile", true, 1,
         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PATH.get(),
         INFO_MEM_SERVER_TOOL_ARG_DESC_USE_RESOURCES_FILE.get(), true, true,
         false, false);
-    parser.addArgument(useResourcesFileArgument);
+    parser.addArgument(resourceMappingFileArgument);
 
     portArgument = new IntegerArgument('p', "port", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_PORT.get(),
@@ -561,7 +561,7 @@ public class InMemoryServerTool
     }
     serverConfig.setListenPort(listenPort);
 
-    serverConfig.setResourcesFile(useResourcesFileArgument.getValue());
+    serverConfig.setResourcesFile(resourceMappingFileArgument.getValue());
 
     // If an access log file was specified, then create the appropriate log
     // handler.
