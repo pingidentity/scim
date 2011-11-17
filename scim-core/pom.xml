@@ -11,7 +11,7 @@
         <groupId>com.unboundid.product.scim</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>scim-core</artifactId>
+    <artifactId>scim-sdk</artifactId>
     <packaging>jar</packaging>
     <name>UnboundID SCIM SDK</name>
 
@@ -32,31 +32,6 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
                     <headerLocation>config/gpl.sourceheader</headerLocation>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.google.code.maven-svn-revision-number-plugin</groupId>
-                <artifactId>maven-svn-revision-number-plugin</artifactId>
-                <version>1.6</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <entries>
-                        <entry>
-                            <path>${basedir}</path>
-                            <prefix>build.svn</prefix>
-                            <depth>empty</depth>
-                            <reportUnversioned>true</reportUnversioned>
-                            <reportIgnored>false</reportIgnored>
-                            <reportOutOfDate>false</reportOutOfDate>
-                        </entry>
-                    </entries>
                 </configuration>
             </plugin>
             <plugin>
@@ -109,7 +84,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.3.1</version>
                 <executions>
                     <execution>
                         <goals>
@@ -121,7 +95,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2-beta-4</version>
+                <version>2.2.1</version>
                 <executions>
                     <execution>
                         <id>create-zip-archive</id>
@@ -133,6 +107,7 @@
                             <descriptors>
                                 <descriptor>${project.basedir}/src/main/assemblies/zip.xml</descriptor>
                             </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>
                 </executions>

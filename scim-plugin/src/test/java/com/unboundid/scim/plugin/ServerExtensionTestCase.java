@@ -7,6 +7,7 @@ package com.unboundid.scim.plugin;
 
 import com.unboundid.directory.tests.standalone.BaseTestCase;
 import com.unboundid.directory.tests.standalone.ExternalInstance;
+import com.unboundid.directory.tests.standalone.TestCaseUtils;
 import com.unboundid.directory.tests.standalone.util.ZipExtractor;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -48,8 +49,33 @@ public class ServerExtensionTestCase extends BaseTestCase
                                          final File zipFile)
       throws Exception
   {
-    final ZipExtractor extractor = new ZipExtractor(zipFile);
-    extractor.extract(instance.getInstanceRoot());
+    //Extract the extension (if it isn't already there)
+    final File externalInstanceDir =
+                new File(System.getProperty("externalInstanceDir"));
+    final File scimPluginDir = new File(externalInstanceDir, "scim-plugin");
+
+    if(!scimPluginDir.exists())
+    {
+      final ZipExtractor extractor = new ZipExtractor(zipFile);
+      extractor.extract(scimPluginDir);
+    }
+
+    //Get the name of the extension jar
+    String jarName = zipFile.getName().replaceFirst("zip", "jar");
+
+    final File extensionsDir =
+                new File(instance.getInstanceRoot(), "lib/extensions");
+    final File configDir = new File(instance.getInstanceRoot(), "config/scim");
+
+    //Copy the extension jar
+    TestCaseUtils.copyFile(
+            new File(scimPluginDir, jarName), new File(extensionsDir, jarName));
+
+    //Copy the dependency libraries
+    TestCaseUtils.copyDirectory(new File(scimPluginDir, "lib"), extensionsDir);
+
+    //Copy the resources.xml and other config files
+    TestCaseUtils.copyDirectory(new File(scimPluginDir, "config"), configDir);
   }
 
 
@@ -78,7 +104,7 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "extension-class:" +
                  "com.unboundid.scim.plugin.SCIMServletExtension",
         "--set", "extension-argument:" +
-                 "useResourcesFile=config/scim/resources.xml",
+                 "resourceMappingFile=config/scim/resources.xml",
         "--set", "extension-argument:path=/",
         "--set", "extension-argument:debugEnabled");
 

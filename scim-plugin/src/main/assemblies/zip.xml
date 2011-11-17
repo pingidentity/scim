@@ -3,16 +3,11 @@
   ~ All Rights Reserved.
   -->
 
-<!-- 
-  NOTE: This assembly descriptor should be removed as soon as ETAH is updated to make
-        use of the manage-extension tool for installing the extension. From then on,
-        we can use the bundle.xml descriptor.
-  -->
-
 <assembly
-        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1"
+        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>scim-plugin-bundle</id>
     <formats>
         <format>zip</format>
     </formats>
@@ -36,21 +31,42 @@
         </fileSet>
         -->
         <fileSet>
-            <outputDirectory>config/scim</outputDirectory>
-            <directory>${project.basedir}/../scim-ri/src/main/assemblies/server/config</directory>
+            <outputDirectory>docs</outputDirectory>
+            <directory>${project.reporting.outputDirectory}/extension-docs</directory>
         </fileSet>
         <fileSet>
-            <outputDirectory>config/scim</outputDirectory>
-            <directory>${project.basedir}/../scim-ldap/src/main/resources/com/unboundid/scim/ldap</directory>
+            <outputDirectory>docs/javadoc</outputDirectory>
+            <directory>${project.build.directory}/javadoc</directory>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>config</outputDirectory>
+            <directory>${main.basedir}/resource</directory>
             <includes>
-                <include>*.xsd</include>
+                <include>resources.xsd</include>
+                <include>resources.xml</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <outputDirectory>config/update</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/config/update</directory>
+        </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <outputDirectory>config/update</outputDirectory>
+            <destName>resources.xml.${build.svn.revision}</destName>
+            <source>${main.basedir}/resource/resources.xml</source>
+        </file>
+        <file>
+            <outputDirectory>config/update</outputDirectory>
+            <destName>resources.xsd.${build.svn.revision}</destName>
+            <source>${main.basedir}/resource/resources.xsd</source>
+        </file>
+    </files>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>lib/extensions</outputDirectory>
-            <useProjectArtifact>true</useProjectArtifact>
+            <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
             <excludes>
               <!-- Make sure we don't include any jars that the server already has. -->
               <exclude>com.unboundid.product:ldapsdk</exclude>
@@ -59,7 +75,15 @@
               <exclude>org.eclipse.jetty:jetty-*</exclude>
               <exclude>org.mortbay.jetty:servlet-api</exclude>
               <exclude>org.json:json</exclude>
-            </excludes>
+            </excludes> 
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>.</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <includes>
+              <!--Only include the main artifact at the root -->
+              <include>com.unboundid.product.scim:scim-plugin</include>
+            </includes>
         </dependencySet>
     </dependencySets>
 </assembly>

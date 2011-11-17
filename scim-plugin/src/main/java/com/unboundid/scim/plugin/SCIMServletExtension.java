@@ -65,7 +65,7 @@ public final class SCIMServletExtension
    * The name of the argument that will be used to define the resources
    * supported by the SCIM protocol interface.
    */
-  private static final String ARG_NAME_USE_RESOURCES_FILE = "useResourcesFile";
+  private static final String ARG_NAME_RESOURCES_FILE = "resourceMappingFile";
 
   /**
    * The name of the argument that will be used to enable debug logging in the
@@ -198,7 +198,7 @@ public final class SCIMServletExtension
   {
     // This is a required argument.
     parser.addArgument(
-        new FileArgument(null, ARG_NAME_USE_RESOURCES_FILE,
+        new FileArgument(null, ARG_NAME_RESOURCES_FILE,
                          true, 1, "{path}",
                          "The path to an XML file defining the resources " +
                          "supported by the SCIM interface.",
@@ -303,8 +303,8 @@ public final class SCIMServletExtension
          (StringArgument) parser.getNamedArgument(ARG_NAME_PATH);
     final IntegerArgument maxResultsArg =
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
-    final FileArgument useResourcesFileArg =
-         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
+    final FileArgument resourcesFileArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
 
     path = pathArg.getValue();
 
@@ -331,7 +331,7 @@ public final class SCIMServletExtension
     try
     {
       final List<ResourceMapper> mappers =
-          ConfigurableResourceMapper.parse(useResourcesFileArg.getValue());
+          ConfigurableResourceMapper.parse(resourcesFileArg.getValue());
       for (final ResourceMapper resourceMapper : mappers)
       {
         resourceMappers.put(resourceMapper.getResourceDescriptor(),
@@ -521,7 +521,7 @@ public final class SCIMServletExtension
     final StringArgument debugTypeArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
     final FileArgument useResourcesFileArg =
-         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
+         (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
 
     if (debugLevelArg.isPresent())
     {
@@ -640,7 +640,7 @@ public final class SCIMServletExtension
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
 
     final FileArgument useResourcesFileArg =
-         (FileArgument) parser.getNamedArgument(ARG_NAME_USE_RESOURCES_FILE);
+         (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
     try
     {
       final Map<ResourceDescriptor, ResourceMapper> resourceMappers =
@@ -702,7 +702,7 @@ public final class SCIMServletExtension
 
     exampleMap.put(
          Arrays.asList(
-             ARG_NAME_USE_RESOURCES_FILE + "=config/resources.xml"),
+             ARG_NAME_RESOURCES_FILE + "=config/resources.xml"),
          "Create a SCIM servlet that handles resources defined in " +
          "resources.xml.");
 

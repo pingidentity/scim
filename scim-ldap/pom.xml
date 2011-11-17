@@ -42,10 +42,37 @@
                 <configuration>
                     <packageName>com.unboundid.scim.ldap</packageName>
                     <clearOutputDir>true</clearOutputDir>
-                    <schemaDirectory>src/main/resources/com/unboundid/scim/ldap</schemaDirectory>
+                    <schemaDirectory>${main.basedir}/resource</schemaDirectory>
+                    <schemaFiles>resources.xsd</schemaFiles>
                     <outputDirectory>${project.build.genSourceDirectory}/jaxb2</outputDirectory>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+				<version>2.3</version>
+				<executions>
+				    <execution>
+				      <id>copy-xsd</id>
+				      <phase>process-resources</phase>
+				      <goals>
+				         <goal>copy-resources</goal>
+				      </goals>
+				      <configuration>
+				        <overwrite>true</overwrite>
+				        <outputDirectory>${project.build.outputDirectory}/com/unboundid/scim/ldap</outputDirectory>
+				        <resources>
+				          <resource>
+				            <directory>${main.basedir}/resource</directory>
+				            <includes>
+				              <include>*.xsd</include>
+				            </includes>
+				          </resource>
+				        </resources>
+				      </configuration>
+				   </execution>
+			   </executions>
+		    </plugin>
         </plugins>
     </build>
 
@@ -57,13 +84,13 @@
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
-            <artifactId>scim-core</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <artifactId>scim-sdk</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
-            <artifactId>scim-core</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <artifactId>scim-sdk</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
             <classifier>tests</classifier>
         </dependency>

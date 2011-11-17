@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
+<scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
+
+  <!--
+   ! This configuration file serves two purposes.
+   !
+   ! 1. It defines the SCIM Resource Schema. The Resource Schema is
+   !    generated from this configuration file in the forms specified in
+   !    the SCIM protocol.
+   !
+   ! 2. It may also specify a mapping between SCIM and LDAP for the resources.
+   !
+   !-->
+
+  <!-- SCIM User with a mapping to inetOrgPerson -->
+  <resource name="User" schema="urn:scim:schemas:core:1.0">
+
+    <description>TBD</description>
+
+    <queryEndpoint>Users</queryEndpoint>
+
+    <!--
+     ! The following element provides information that is needed to search
+     ! LDAP for User entries.
+     !-->
+    <LDAPSearch>
+      <!-- The LDAP search base DN when querying for resources -->
+      <baseDN>dc=example,dc=com</baseDN>
+      <!-- An LDAP filter to identify LDAP entries representing users. -->
+      <filter>(objectClass=inetOrgPerson)</filter>
+    </LDAPSearch>
+
+    <!--
+     ! The following element provides information that is needed to create
+     ! new User resources in LDAP.
+     !-->
+    <LDAPAdd>
+      <!-- The template for the DN of new entries. -->
+      <!-- SCIM or LDAP attributes may be referenced. -->
+      <DNTemplate>uid={uid},dc=example,dc=com</DNTemplate>
+
+      <!-- Fixed Values to be inserted after the mapping is done. -->
+      <fixedAttribute ldapAttribute="objectClass" onConflict="merge">
+        <fixedValue>top</fixedValue>
+        <fixedValue>person</fixedValue>
+        <fixedValue>organizationalPerson</fixedValue>
+        <fixedValue>inetOrgPerson</fixedValue>
+      </fixedAttribute>
+    </LDAPAdd>
+
+    <!-- These elements define the SCIM attributes and their LDAP mappings. -->
+    <attribute name="userName" readOnly="false" required="true">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="uid"/>
+      </simple>
+    </attribute>
+
+    <attribute name="externalId" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="name" readOnly="false" required="false">
+      <description>TBD</description>
+      <complex>
+        <subAttribute name="formatted" dataType="string">
+          <description>TBD</description>
+          <mapping ldapAttribute="cn"/>
+        </subAttribute>
+        <subAttribute name="familyName" dataType="string">
+          <description>TBD</description>
+          <mapping ldapAttribute="sn"/>
+        </subAttribute>
+        <subAttribute name="middleName" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="givenName" dataType="string">
+          <description>TBD</description>
+          <mapping ldapAttribute="givenName"/>
+        </subAttribute>
+        <subAttribute name="honorificPrefix" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="honorificSuffix" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+      </complex>
+    </attribute>
+
+    <attribute name="displayName" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="displayName"/>
+      </simple>
+    </attribute>
+
+    <attribute name="nickName" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="profileUrl" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="title" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="title"/>
+      </simple>
+    </attribute>
+
+    <attribute name="userType" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="employeeType"/>
+      </simple>
+    </attribute>
+
+    <attribute name="preferredLanguage" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="preferredLanguage"/>
+      </simple>
+    </attribute>
+
+    <attribute name="locale" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="timezone" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="password" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="emails" readOnly="false" required="false">
+      <description>TBD</description>
+      <simplePlural tag="email" dataType="string">
+        <pluralType name="work">
+          <subMapping name="value" ldapAttribute="mail"/>
+        </pluralType>
+        <pluralType name="home"/>
+        <pluralType name="other"/>
+      </simplePlural>
+    </attribute>
+
+    <attribute name="phoneNumbers" readOnly="false" required="false">
+      <description>TBD</description>
+      <simplePlural tag="phoneNumber" dataType="string">
+        <pluralType name="work">
+          <subMapping name="value" ldapAttribute="telephoneNumber"/>
+        </pluralType>
+        <pluralType name="home">
+          <subMapping name="value" ldapAttribute="homePhone"/>
+        </pluralType>
+        <pluralType name="mobile"/>
+        <pluralType name="fax">
+          <subMapping name="value" ldapAttribute="facsimileTelephoneNumber"/>
+        </pluralType>
+        <pluralType name="pager"/>
+        <pluralType name="other"/>
+      </simplePlural>
+    </attribute>
+
+    <attribute name="ims" readOnly="false" required="false">
+      <description>TBD</description>
+      <simplePlural tag="im" dataType="string">
+        <pluralType name="aim"/>
+        <pluralType name="gtalk"/>
+        <pluralType name="icq"/>
+        <pluralType name="xmpp"/>
+        <pluralType name="msn"/>
+        <pluralType name="skype"/>
+        <pluralType name="qq"/>
+        <pluralType name="yahoo"/>
+      </simplePlural>
+    </attribute>
+
+    <attribute name="photos" readOnly="false" required="false">
+      <description>TBD</description>
+      <simplePlural tag="photo" dataType="string">
+        <pluralType name="photo"/>
+        <pluralType name="thumbnail"/>
+      </simplePlural>
+    </attribute>
+
+    <attribute name="addresses" readOnly="false" required="false">
+      <description>TBD</description>
+      <complexPlural tag="address">
+        <subAttribute name="formatted" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="streetAddress" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="locality" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="region" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="postalCode" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+        <subAttribute name="country" dataType="string">
+          <description>TBD</description>
+        </subAttribute>
+
+        <pluralType name="work">
+          <!--
+           ! An attribute mapping can optionally reference a transformation
+           ! to transform the SCIM values to and from LDAP values.
+           ! Transformations may be needed for LDAP attributes with syntax
+           ! Postal Address, Generalized Time and Boolean.
+           !-->
+          <subMapping name="formatted" ldapAttribute="postalAddress"
+                      transform="com.unboundid.scim.ldap.PostalAddressTransformation"/>
+          <subMapping name="streetAddress" ldapAttribute="street"/>
+          <subMapping name="locality" ldapAttribute="l"/>
+          <subMapping name="region" ldapAttribute="st"/>
+          <subMapping name="postalCode" ldapAttribute="postalCode"/>
+        </pluralType>
+        <pluralType name="home">
+          <subMapping name="formatted" ldapAttribute="homePostalAddress"
+                      transform="com.unboundid.scim.ldap.PostalAddressTransformation"/>
+        </pluralType>
+        <pluralType name="other"/>
+      </complexPlural>
+    </attribute>
+
+    <attribute name="groups" readOnly="true" required="false">
+      <description>TBD</description>
+      <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute"/>
+      <simplePlural tag="group" dataType="string"/>
+    </attribute>
+
+    <attribute name="entitlements" readOnly="false" required="false">
+      <description>TBD</description>
+      <simplePlural tag="entitlement" dataType="string"/>
+    </attribute>
+
+    <attribute name="roles" readOnly="false" required="false">
+      <description>TBD</description>
+      <simplePlural tag="role" dataType="string"/>
+    </attribute>
+
+    <!-- SCIM enterprise extension attribute mappings. -->
+
+    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
+               name="employeeNumber" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="employeeNumber"/>
+      </simple>
+    </attribute>
+
+    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
+               name="costCenter" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
+               name="organization" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="o"/>
+      </simple>
+    </attribute>
+
+    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
+               name="division" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="ou"/>
+      </simple>
+    </attribute>
+
+    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
+               name="department" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="departmentNumber"/>
+      </simple>
+    </attribute>
+
+    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
+                      name="manager" readOnly="false" required="false">
+      <description>TBD</description>
+      <complex>
+        <subAttribute name="managerId" dataType="string">
+          <description>TBD</description>
+          <mapping ldapAttribute="manager"/>
+        </subAttribute>
+        <subAttribute name="displayName" dataType="string" readOnly="true" >
+          <description>TBD</description>
+        </subAttribute>
+      </complex>
+    </attribute>
+
+  </resource>
+
+
+  <!--
+   ! SCIM Group with a mapping to the groupOfUniqueNames static group for
+   ! writes and any static or dynamic group for reads.
+   !-->
+  <resource name="Group"
+            schema="urn:scim:schemas:core:1.0">
+
+    <description>TBD</description>
+
+    <queryEndpoint>Groups</queryEndpoint>
+
+    <LDAPSearch>
+      <baseDN>dc=example,dc=com</baseDN>
+      <filter>(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
+    </LDAPSearch>
+
+    <LDAPAdd>
+      <DNTemplate>cn={cn},dc=example,dc=com</DNTemplate>
+
+      <fixedAttribute ldapAttribute="objectClass" onConflict="merge">
+        <fixedValue>top</fixedValue>
+        <fixedValue>groupOfUniqueNames</fixedValue>
+      </fixedAttribute>
+    </LDAPAdd>
+
+    <attribute name="displayName" readOnly="false" required="false">
+      <description>TBD</description>
+      <simple dataType="string">
+        <mapping ldapAttribute="cn"/>
+      </simple>
+    </attribute>
+
+    <attribute name="members" readOnly="false" required="true">
+      <description>TBD</description>
+      <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute"/>
+      <simplePlural tag="member" dataType="string">
+        <pluralType name="User"/>
+        <pluralType name="Group"/>
+        <mapping ldapAttribute="uniqueMember"/>
+      </simplePlural>
+    </attribute>
+
+  </resource>
+
+</scim-ldap:resources>

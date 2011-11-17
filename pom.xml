@@ -55,11 +55,38 @@
     </modules>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                  <artifactId>maven-antrun-plugin</artifactId>
+                  <version>1.6</version>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-assembly-plugin</artifactId>
+                  <version>2.2.1</version>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-checkstyle-plugin</artifactId>
+                  <version>2.7</version>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-surefire-plugin</artifactId>
+                  <version>2.9</version>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-javadoc-plugin</artifactId>
+                  <version>2.8</version>
+                </plugin>
+                <plugin>
+                  <artifactId>maven-jar-plugin</artifactId>
+                  <version>2.3.1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.7</version>
                 <executions>
                     <execution>
                         <id>check-main</id>
@@ -94,7 +121,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.9</version>
                 <configuration>
                     <properties>
                         <property>
@@ -106,6 +132,31 @@
                             <value>com.unboundid.scim.SCIMRITestListener</value>
                         </property>
                     </properties>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-svn-revision-number-plugin</groupId>
+                <artifactId>maven-svn-revision-number-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <entries>
+                        <entry>
+                            <path>${main.basedir}</path>
+                            <prefix>build.svn</prefix>
+                            <depth>empty</depth>
+                            <reportUnversioned>true</reportUnversioned>
+                            <reportIgnored>false</reportIgnored>
+                            <reportOutOfDate>false</reportOutOfDate>
+                        </entry>
+                    </entries>
                 </configuration>
             </plugin>
             <plugin>
@@ -128,7 +179,6 @@
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-antrun-plugin</artifactId>
-              <version>1.6</version>
               <executions>
                 <execution>
                   <id>copy-javadoc-resources</id>
@@ -166,7 +216,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.8</version>
                 <executions>
                   <execution>
                     <id>generate-javadoc</id>
