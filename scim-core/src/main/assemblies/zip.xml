@@ -46,6 +46,13 @@
             </includes>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${project.build.directory}/${project.build.finalName}-sources.jar</source>
+            <destName>sources.jar</destName>
+        </file>
+    </files>
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
