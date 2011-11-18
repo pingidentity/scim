@@ -20,7 +20,13 @@
         <include>${project.build.finalName}.jar</include>
         <include>${project.artifactId}-${project.version}-sources.jar</include>
         <include>${project.artifactId}-${project.version}-javadoc.jar</include>
-        <include>gpg/*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <outputDirectory>/</outputDirectory>
+      <directory>${project.build.directory}/gpg</directory>
+      <includes>
+        <include>*.asc</include>
       </includes>
     </fileSet>
     <fileSet>

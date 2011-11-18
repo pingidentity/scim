@@ -74,28 +74,16 @@
                               <!-- Private GPG key is on x2200-05 (Cent_OS Slave) -->
                               <!-- GPG_PASSPHRASE is an environment variable in Hudson. -->
                               <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                                <arg value="-ab" />
-                                <arg value="--passphrase-fd 0" />
-                                <arg value="--output gpg/pom.xml.asc" />
-                                <arg value="${project.build.directory}/pom.xml" />
+                                <arg line="-ab --passphrase-fd 0 --output gpg/pom.xml.asc ${project.basedir}/src/main/assemblies/pom.xml" />
                               </exec>
                               <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                                <arg value="-ab" />
-                                <arg value="--passphrase-fd 0" />
-                                <arg value="--output gpg/${project.build.finalName}.jar.asc" />
-                                <arg value="${project.build.directory}/${project.build.finalName}.jar" />
+                                <arg line="-ab --passphrase-fd 0 --output gpg/${project.build.finalName}.jar.asc ${project.build.finalName}.jar" />
                               </exec>
                               <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                                <arg value="-ab" />
-                                <arg value="--passphrase-fd 0" />
-                                <arg value="--output gpg/${project.build.finalName}-sources.jar.asc" />
-                                <arg value="${project.build.directory}/${project.build.finalName}-sources.jar" />
+                                <arg line="-ab --passphrase-fd 0 --output gpg/${project.build.finalName}-sources.jar.asc ${project.build.finalName}-sources.jar" />
                               </exec>
                               <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                                <arg value="-ab" />
-                                <arg value="--passphrase-fd 0" />
-                                <arg value="--output gpg/${project.build.finalName}-javadoc.jar.asc" />
-                                <arg value="${project.build.directory}/${project.build.finalName}-javadoc.jar" />
+                                <arg line="-ab --passphrase-fd 0 --output gpg/${project.build.finalName}-javadoc.jar.asc ${project.build.finalName}-javadoc.jar" />
                               </exec>
                             </target>
                          </configuration>
