@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri.wink;
+package com.unboundid.scim.wink;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMBackend;
@@ -42,32 +42,32 @@ import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
 
 /**
  * This class is a Wink dynamic resource implementation for query operations
- * on a SCIM resource where the client requests XML response format in the URL
- * by appending ".xml" on to the endpoint.
+ * on a SCIM resource where the client requests JSON response format in the URL
+ * by appending ".json" on to the endpoint.
  */
-public class XMLQueryResource extends AbstractSCIMResource
+public class JSONQueryResource extends AbstractSCIMResource
 {
   /**
-   * Create a new SCIM wink resource for XML query operations on a
-   * SCIM endpoint.
+   * Create a new SCIM wink resource for XML query operations on a SCIM
+   * endpoint.
    *
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             resource.
    * @param resourceStats       The ResourceStats instance to use.
    * @param backend             The SCIMBackend to use to process requests.
    */
-  public XMLQueryResource(final ResourceDescriptor resourceDescriptor,
-                          final ResourceStats resourceStats,
-                          final SCIMBackend backend)
+  public JSONQueryResource(final ResourceDescriptor resourceDescriptor,
+                           final ResourceStats resourceStats,
+                           final SCIMBackend backend)
   {
-    super(resourceDescriptor.getQueryEndpoint() + ".xml",
-        resourceDescriptor, resourceStats, backend);
+    super(resourceDescriptor.getQueryEndpoint() + ".json",
+          resourceDescriptor, resourceStats, backend);
   }
 
 
 
   /**
-   * Implement the GET operation producing XML format.
+   * Implement the GET operation producing JSON format.
    *
    * @param servletContext   The servlet context of the current request.
    * @param securityContext  The security context of the current request.
@@ -82,26 +82,26 @@ public class XMLQueryResource extends AbstractSCIMResource
    * @return  The response to the request.
    */
   @GET
-  @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlGet(@Context final ServletContext servletContext,
-                           @Context final SecurityContext securityContext,
-                           @Context final HttpHeaders headers,
-                           @Context final UriInfo uriInfo,
-                           @QueryParam(QUERY_PARAMETER_FILTER)
-                           final String filterString,
-                           @QueryParam(QUERY_PARAMETER_SORT_BY)
-                           final String sortBy,
-                           @QueryParam(QUERY_PARAMETER_SORT_ORDER)
-                           final String sortOrder,
-                           @QueryParam(QUERY_PARAMETER_PAGE_START_INDEX)
-                           final String pageStartIndex,
-                           @QueryParam(QUERY_PARAMETER_PAGE_SIZE)
-                           final String pageSize)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doJsonGet(@Context final ServletContext servletContext,
+                            @Context final SecurityContext securityContext,
+                            @Context final HttpHeaders headers,
+                            @Context final UriInfo uriInfo,
+                            @QueryParam(QUERY_PARAMETER_FILTER)
+                            final String filterString,
+                            @QueryParam(QUERY_PARAMETER_SORT_BY)
+                            final String sortBy,
+                            @QueryParam(QUERY_PARAMETER_SORT_ORDER)
+                            final String sortOrder,
+                            @QueryParam(QUERY_PARAMETER_PAGE_START_INDEX)
+                            final String pageStartIndex,
+                            @QueryParam(QUERY_PARAMETER_PAGE_SIZE)
+                            final String pageSize)
   {
     final RequestContext requestContext =
         new RequestContext(servletContext, securityContext, headers, uriInfo);
 
-    return getUsers(requestContext, MediaType.APPLICATION_XML_TYPE,
+    return getUsers(requestContext, MediaType.APPLICATION_JSON_TYPE,
                     filterString, sortBy, sortOrder, pageStartIndex, pageSize);
   }
 

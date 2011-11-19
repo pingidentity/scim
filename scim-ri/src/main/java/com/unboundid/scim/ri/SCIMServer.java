@@ -18,7 +18,7 @@
 package com.unboundid.scim.ri;
 
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
-import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;

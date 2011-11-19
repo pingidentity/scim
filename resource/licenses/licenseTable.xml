@@ -9,7 +9,7 @@
        <LICENSE index="1">
          <GROUPID>javax.xml.bind</GROUPID>
          <ARTIFACTID>jaxb-api</ARTIFACTID>
-         <VERSION>2.1</VERSION>
+         <VERSION>2.2</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
        <LICENSE index="2">
@@ -21,7 +21,7 @@
        <LICENSE index="3">
          <GROUPID>com.sun.xml.bind</GROUPID>
          <ARTIFACTID>jaxb-impl</ARTIFACTID>
-         <VERSION>2.1.3</VERSION>
+         <VERSION>2.2.1.1</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:gpl-v2-classpath-license:txt:license:2.0</LICENSE_COORDINATES>
        </LICENSE>
        <LICENSE index="4">
@@ -47,6 +47,12 @@
          <ARTIFACTID>jcl-over-slf4j</ARTIFACTID>
          <VERSION>1.6.1</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="8">
+         <GROUPID>javax.servlet</GROUPID>
+         <ARTIFACTID>servlet-api</ARTIFACTID>
+         <VERSION>2.4</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
       
        <!-- Below are the licenses for Jetty artifacts. --> 

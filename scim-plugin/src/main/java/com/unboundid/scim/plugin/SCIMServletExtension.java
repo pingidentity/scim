@@ -13,10 +13,9 @@ import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.ldap.ConfigurableResourceMapper;
+import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
-import com.unboundid.scim.ri.LDAPBackend;
-import com.unboundid.scim.ri.LDAPLoginService;
-import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
@@ -390,7 +389,7 @@ public final class SCIMServletExtension
     {
       final ServletContextHandler contextHandler =
           (ServletContextHandler)server.getHandler();
-      final LoginService loginService = new LDAPLoginService(backend);
+      final LoginService loginService = new SCIMLoginService(backend);
       server.addBean(loginService);
 
       // TODO: Potential conflict with other servlet security handlers.

@@ -211,7 +211,9 @@ public final class ConfigurableResourceMapper extends ResourceMapper
   {
     final ObjectFactory factory = new ObjectFactory();
     final String packageName = factory.getClass().getPackage().getName();
-    final JAXBContext context = JAXBContext.newInstance(packageName);
+    // Use the class loader that loaded this class to find the JAXB classes.
+    final JAXBContext context = JAXBContext.newInstance(packageName,
+        ConfigurableResourceMapper.class.getClassLoader());
 
     final Unmarshaller unmarshaller = context.createUnmarshaller();
     final URL url = ResourcesDefinition.class.getResource("resources.xsd");

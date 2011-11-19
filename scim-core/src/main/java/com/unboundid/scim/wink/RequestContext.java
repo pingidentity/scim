@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri.wink;
+package com.unboundid.scim.wink;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.HttpHeaders;

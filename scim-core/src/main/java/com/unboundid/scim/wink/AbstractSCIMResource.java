@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri.wink;
+package com.unboundid.scim.wink;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Marshaller;
@@ -37,7 +37,6 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.SortParameters;
 import org.apache.wink.common.AbstractDynamicResource;
-import org.eclipse.jetty.http.HttpStatus;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -521,7 +520,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     try {
       backend.deleteResource(deleteResourceRequest);
       // Build the response.
-      responseBuilder = Response.status(HttpStatus.OK_200);
+      responseBuilder = Response.status(Response.Status.OK);
       resourceStats.incrementStat(ResourceStats.DELETE_OK);
     } catch (SCIMException e) {
       // Build the response.

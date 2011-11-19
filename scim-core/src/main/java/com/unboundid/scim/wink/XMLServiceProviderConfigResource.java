@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri.wink;
+package com.unboundid.scim.wink;
 
 import com.unboundid.scim.data.ServiceProviderConfig;
 
@@ -32,10 +32,10 @@ import static com.unboundid.scim.sdk.SCIMConstants.
 
 /**
  * This class is a JAX-RS resource for the SCIM Service Provider Configuration
- * where the response format is specified in the URL to be JSON.
+ * where the response format is specified in the URL to be XML.
  */
-@Path(RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG + ".json")
-public class JSONServiceProviderConfigResource extends AbstractStaticResource
+@Path(RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG + ".xml")
+public class XMLServiceProviderConfigResource extends AbstractStaticResource
 {
   private final SCIMApplication application;
   private final ResourceStats resourceStats;
@@ -47,25 +47,25 @@ public class JSONServiceProviderConfigResource extends AbstractStaticResource
    *                       resource.
    * @param resourceStats  The ResourceStats instance to use.
    */
-  public JSONServiceProviderConfigResource(final SCIMApplication application,
-                                           final ResourceStats resourceStats) {
+  public XMLServiceProviderConfigResource(final SCIMApplication application,
+                                       final ResourceStats resourceStats) {
     this.application = application;
     this.resourceStats = resourceStats;
   }
 
   /**
-   * Implement the GET operation to fetch the configuration in JSON format.
+   * Implement the GET operation to fetch the configuration in XML format.
    *
    * @return  The response to the request.
    */
   @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response doJsonGet()
+  @Produces(MediaType.APPLICATION_XML)
+  public Response doXmlGet()
   {
     final ServiceProviderConfig config = application.getServiceProviderConfig();
     Response.ResponseBuilder builder = Response.ok();
 
-    setResponseEntity(builder, MediaType.APPLICATION_JSON_TYPE, config);
+    setResponseEntity(builder, MediaType.APPLICATION_XML_TYPE, config);
     resourceStats.incrementStat(ResourceStats.GET_RESPONSE_XML);
     resourceStats.incrementStat(ResourceStats.GET_OK);
     return builder.build();

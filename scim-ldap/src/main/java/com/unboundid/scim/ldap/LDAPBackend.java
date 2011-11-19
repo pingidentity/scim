@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri;
+package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.AddRequest;
 import com.unboundid.ldap.sdk.Attribute;
@@ -64,7 +64,6 @@ import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
-import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.sdk.UnsupportedOperationException;
 import com.unboundid.util.StaticUtils;
 

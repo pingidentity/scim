@@ -69,11 +69,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <excludes>
               <!-- Make sure we don't include any jars that the server already has. -->
-              <exclude>com.unboundid.product:ldapsdk</exclude>
-              <exclude>com.unboundid.product.ds:server-sdk</exclude>
               <exclude>javax.activation:activation</exclude>
-              <exclude>org.eclipse.jetty:jetty-*</exclude>
-              <exclude>org.mortbay.jetty:servlet-api</exclude>
               <exclude>org.json:json</exclude>
             </excludes> 
         </dependencySet>

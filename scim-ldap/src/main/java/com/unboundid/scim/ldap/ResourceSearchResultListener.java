@@ -15,14 +15,13 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri;
+package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.scim.data.BaseResource;
-import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -91,8 +90,6 @@ public class ResourceSearchResultListener implements SearchResultListener
                                       final int maxResults)
       throws SCIMException
   {
-    final SCIMServer scimServer = SCIMServer.getInstance();
-
     this.resourceMapper =
         backend.getResourceMapper(request.getResourceDescriptor());
     this.request        = request;

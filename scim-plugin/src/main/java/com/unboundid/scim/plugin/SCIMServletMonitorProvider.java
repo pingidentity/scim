@@ -7,8 +7,8 @@ package com.unboundid.scim.plugin;
 
 import com.unboundid.directory.sdk.common.api.MonitorProvider;
 import com.unboundid.ldap.sdk.Attribute;
-import com.unboundid.scim.ri.wink.ResourceStats;
-import com.unboundid.scim.ri.wink.SCIMApplication;
+import com.unboundid.scim.wink.ResourceStats;
+import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.scim.sdk.Version;
 
 import java.util.ArrayList;

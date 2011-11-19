@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri.wink;
+package com.unboundid.scim.wink;
 
 import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.BulkConfig;
@@ -25,7 +25,7 @@ import com.unboundid.scim.data.FilterConfig;
 import com.unboundid.scim.data.PatchConfig;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.SortConfig;
-import com.unboundid.scim.ri.ResourceSchemaBackend;
+import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMBackend;

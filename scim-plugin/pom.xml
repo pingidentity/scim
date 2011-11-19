@@ -145,29 +145,60 @@
             <groupId>com.unboundid.product</groupId>
             <artifactId>ldapsdk</artifactId>
             <version>${unboundid.ldapsdk.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.ds</groupId>
             <artifactId>server-sdk</artifactId>
             <version>${unboundid.serversdk.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.ds</groupId>
             <artifactId>server-sdk</artifactId>
             <version>${unboundid.serversdk.version}</version>
             <classifier>build-utils</classifier>
-        </dependency> 
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>8.0.4.v20111024</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>8.0.4.v20111024</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-security</artifactId>
+            <version>8.0.4.v20111024</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-http</artifactId>
+            <version>8.0.4.v20111024</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-sdk</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- This shouldn't depend on the RI... -->
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
-            <artifactId>scim-ri</artifactId>
+            <artifactId>scim-ldap</artifactId>
             <version>${project.version}</version>
-        </dependency>  
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wink</groupId>
+            <artifactId>wink-server</artifactId>
+            <version>1.1.3-incubating</version>
+        </dependency>
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
@@ -179,6 +210,24 @@
             <artifactId>standalone-ds-test-harness</artifactId>
             <version>0.8-SNAPSHOT</version>
             <classifier>sources</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wink</groupId>
+            <artifactId>wink-client-apache-httpclient</artifactId>
+            <version>1.1.3-incubating</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.1.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.6.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

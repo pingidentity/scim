@@ -15,24 +15,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri;
+package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.DeleteResourceRequest;
-import com.unboundid.scim.sdk.GetResourceRequest;
-import com.unboundid.scim.sdk.GetResourcesRequest;
-import com.unboundid.scim.sdk.PostResourceRequest;
-import com.unboundid.scim.sdk.PutResourceRequest;
-import com.unboundid.scim.sdk.ResourceNotFoundException;
-import com.unboundid.scim.sdk.ResourceReturningRequest;
-import com.unboundid.scim.sdk.Resources;
-import com.unboundid.scim.sdk.SCIMBackend;
-import com.unboundid.scim.sdk.SCIMConstants;
-import com.unboundid.scim.sdk.SCIMException;
-import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.UnsupportedOperationException;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
