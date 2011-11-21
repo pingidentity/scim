@@ -43,8 +43,8 @@
                 from which all SCIM resources are derived is called <tt>BaseResource</tt>. There are
                 <tt>UserResource</tt> and <tt>GroupResource</tt> classes provided, but users can
                 create any type of resource by simply sub-classing <tt>BaseResource</tt> and providing
-                any methods specific to that type of resource. Here is an example of defining a "Device"
-                resource:
+                any methods specific to that type of resource. Here is an example of defining a
+                "Device" resource:
               </p>
 
 <pre>
@@ -73,7 +73,23 @@ public class DeviceResource extends BaseResource
   }
     
   /**
-   * Retrieves the vendor name of this device.
+   * Sets the vendor name for this device.
+   */
+   public void setVendorName(String vendorName)
+   {
+     try
+     {
+       setSingularAttributeValue("urn:com:example:device:1.0", "vendorName",
+                     AttributeValueResolver.STRING_RESOLVER, vendorName);
+     }
+     catch(InvalidResourceException e)
+     {
+       Debug.debugException(e);
+     }
+   }
+    
+  /**
+   * Retrieves the vendor name for this device.
    *
    * @return The vendor name of this device.
    */
@@ -118,6 +134,82 @@ SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(devi
                  At this point, you have a SCIMEndpoint for your custom resource type,
                  with which you can perform queries or add, modify, and delete resources.
                </p>
+              
+               <h2>Custom Attributes</h2>
+               
+               <p>
+                There are a set of low-level classes (e.g. SCIMObject, SCIMAttribute, SCIMAttributeValue, etc...)
+                that represent the SCIM data model. These classes are bound to higher-level classes by the
+                use of <tt>com.unboundid.scim.data.ResourceFactory</tt> and <tt>com.unboundid.scim.data.AttributeValueResolver</tt>.
+                The SCIM SDK includes AttributeValueResolvers for all simple and complex attribute types
+                defined in the SCIM core schema. You can also implement your own custom AttributeValueResolver
+                to handle custom attributes exposed by your service provider.
+              </p>
+              
+              <p>
+                BaseResource (and all subclasses) are backed by these lower-level SCIM data classes.
+                AttributeValueResolver converts Java objects that represent attribute values to/from the
+                <com.unboundid.scim.sdk.SCIMAttribute</tt> class. Convenience methods are added by
+                subclasses of BaseResource so that attributes can be retrieved by schema URN and
+                attribute name, and then converted by an AttributeResolver to its Java object.
+              </p>
+           
+              <p>
+                As an example, supposed the Device resource (from above) had a complex attribute called
+                "SupportedFormats" to determine which types multi-media formats were supported by the device.
+                You would likely define a SupportedFormats class to represent this attribute type, and in that
+                class you would create an AttributeValueResolver as follows:
+              </p>
+               
+<pre>
+public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_RESOLVER =
+          new AttributeValueResolver<SupportedFormats>() {
+
+            public SupportedFormats toInstance(final SCIMAttributeValue value) {
+              return new SupportedFormats(
+                  value.getSingularSubAttributeValue("supportsAudio", BOOLEAN_RESOLVER),
+                  value.getSingularSubAttributeValue("supportsPhoto", BOOLEAN_RESOLVER),
+                  value.getSingularSubAttributeValue("supportsVideo", BOOLEAN_RESOLVER));
+            }
+    
+            public SCIMAttributeValue fromInstance(
+                final AttributeDescriptor attributeDescriptor,
+                final SupportedFormats value) throws InvalidResourceException {
+              final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(3);
+    
+              if (value.supportsAudio != null)
+              {
+                subAttributes.add(
+                    SCIMAttribute.createSingularAttribute(
+                        attributeDescriptor.getSubAttribute("supportsAudio"),
+                        SCIMAttributeValue.createBooleanValue(value.supportsAudio)));
+              }
+    
+              if (value.supportsPhoto != null)
+              {
+                subAttributes.add(
+                    SCIMAttribute.createSingularAttribute(
+                        attributeDescriptor.getSubAttribute("supportsPhoto"),
+                        SCIMAttributeValue.createBooleanValue(value.supportsPhoto)));
+              }
+              
+              if (value.supportsVideo != null)
+              {
+                subAttributes.add(
+                    SCIMAttribute.createSingularAttribute(
+                        attributeDescriptor.getSubAttribute("supportsVideo"),
+                        SCIMAttributeValue.createBooleanValue(value.supportsVideo)));
+              }
+              
+              return SCIMAttributeValue.createComplexValue(subAttributes);
+            }
+          };
+</pre>
+
+              <p>
+                The <tt>com.unboundid.scim.data.Manager</tt> class is another good example
+                of how this works.
+              </p>
               
             </td>
           </tr>
