@@ -53,7 +53,7 @@
 				<version>2.3</version>
 				<executions>
 				    <execution>
-				      <id>copy-xsd</id>
+				      <id>copy-resources-xsd</id>
 				      <phase>process-resources</phase>
 				      <goals>
 				         <goal>copy-resources</goal>
@@ -71,6 +71,25 @@
 				        </resources>
 				      </configuration>
 				   </execution>
+				   <execution>
+                      <id>copy-resources-xml</id>
+                      <phase>process-resources</phase>
+                      <goals>
+                         <goal>copy-resources</goal>
+                      </goals>
+                      <configuration>
+                        <overwrite>true</overwrite>
+                        <outputDirectory>${project.build.testOutputDirectory}/com/unboundid/scim/ldap</outputDirectory>
+                        <resources>
+                          <resource>
+                            <directory>${main.basedir}/resource</directory>
+                            <includes>
+                              <include>resources.xml</include>
+                            </includes>
+                          </resource>
+                        </resources>
+                      </configuration>
+                   </execution>
 			   </executions>
 		    </plugin>
         </plugins>
@@ -80,7 +99,7 @@
         <dependency>
             <groupId>com.unboundid.product</groupId>
             <artifactId>ldapsdk</artifactId>
-            <version>${unboundid.ldapsdk.version}</version>
+            <version>2.2.1-se-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
@@ -91,6 +110,7 @@
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
             <version>1.1.1</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>

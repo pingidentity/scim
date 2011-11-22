@@ -16,9 +16,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
         <project.build.genSourceDirectory>${project.build.directory}/generated-sources</project.build.genSourceDirectory>
-        <!-- Note that SCIM-RI overrides this and uses the Standard Edition of LDAP SDK. If
-             you change this, consider changing that as well. -->
-        <unboundid.ldapsdk.version>2.2.1-ce-SNAPSHOT</unboundid.ldapsdk.version>
         <unboundid.serversdk.version>3.2.1.0-SNAPSHOT</unboundid.serversdk.version>
         <main.basedir>${project.basedir}</main.basedir>
     </properties>
