@@ -22,77 +22,44 @@
 # Create a SCIM HTTP servlet extension configuration.
 #
 
-dsconfig create-http-servlet-extension \
-  --extension-name "SCIM" \
-  --type third-party \
-  --set extension-class:com.unboundid.scim.plugin.SCIMServletExtension \
-  --set extension-argument:resourceMappingFile=config/scim/resources.xml \
-  --set extension-argument:path=/
+dsconfig create-http-servlet-extension --extension-name "SCIM" --type third-party --set extension-class:com.unboundid.scim.plugin.SCIMServletExtension --set extension-argument:resourceMappingFile=config/scim/resources.xml --set extension-argument:path=/
 
 #
 # Create a HTTP log publisher.
 #
 
-dsconfig create-log-publisher \
-  --publisher-name "HTTP Common Access" \
-  --type common-log-file-http-operation \
-  --set enabled:true \
-  --set log-file:logs/http-common-access \
-  --set "rotation-policy:24 Hours Time Limit Rotation Policy" \
-  --set "rotation-policy:Size Limit Rotation Policy" \
-  --set "retention-policy:File Count Retention Policy" \
-  --set "retention-policy:Free Disk Space Retention Policy"
+dsconfig create-log-publisher --publisher-name "HTTP Common Access" --type common-log-file-http-operation --set enabled:true --set log-file:logs/http-common-access --set "rotation-policy:24 Hours Time Limit Rotation Policy" --set "rotation-policy:Size Limit Rotation Policy" --set "retention-policy:File Count Retention Policy" --set "retention-policy:Free Disk Space Retention Policy"
 
 #
 # Create a HTTP connection handler referencing the SCIM servlet extension.
 #
 
-dsconfig create-connection-handler \
-  --handler-name "HTTPS" \
-  --type http \
-  --set enabled:true \
-  --set log-file:logs/http-common-access \
-  --set http-servlet-extension:SCIM \
-  --set "http-operation-log-publisher:HTTP Common Access" \
-  --set listen-port:8443
+dsconfig create-connection-handler --handler-name "HTTPS" --type http --set enabled:true --set http-servlet-extension:SCIM --set "http-operation-log-publisher:HTTP Common Access" --set listen-port:8443 --set use-ssl:true --set key-manager-provider:JKS --set trust-manager-provider:JKS
 
 #
 # Add Access Control to allow access to LDAP controls used by the SCIM servlet
 # extension.
 #
 
-dsconfig set-access-control-handler-prop \
-  --add 'global-aci:(targetcontrol="1.3.6.1.1.13.2 || 1.2.840.113556.1.4.473 ||\
-  2.16.840.1.113730.3.4.9")(version 3.0;acl \
-  "Authenticated access to controls used by the SCIM servlet extension"; \
-  allow (all) userdn="ldap:///all";)'
+dsconfig set-access-control-handler-prop --add 'global-aci:(targetcontrol="1.3.6.1.1.13.2 || 1.2.840.113556.1.4.473 || 2.16.840.1.113730.3.4.9")(version 3.0;acl "Authenticated access to controls used by the SCIM servlet extension"; allow (all) userdn="ldap:///all";)'
 
 #
 # Optionally, create some Virtual List View indexes to support pagination.
 #
 
-dsconfig create-local-db-vlv-index --backend-name userRoot \
-  --index-name ascending-uid --set base-dn:dc=example,dc=com \
-  --set scope:whole-subtree --set "filter:(objectclass=inetorgperson)" \
-  --set "sort-order:+uid"
+dsconfig create-local-db-vlv-index --backend-name userRoot --index-name ascending-uid --set base-dn:dc=example,dc=com --set scope:whole-subtree --set "filter:(objectclass=inetorgperson)" --set "sort-order:+uid"
 
-dsconfig create-local-db-vlv-index --backend-name userRoot \
-  --index-name ascending-sn --set base-dn:dc=example,dc=com \
-  --set scope:whole-subtree --set "filter:(objectclass=inetorgperson)" \
-  --set "sort-order:+sn"
+dsconfig create-local-db-vlv-index --backend-name userRoot --index-name ascending-sn --set base-dn:dc=example,dc=com --set scope:whole-subtree --set "filter:(objectclass=inetorgperson)" --set "sort-order:+sn"
 
 #
 # Command to build the Virtual List View indexes just created:
 #
-# rebuild-index --baseDN dc=example,dc=com \
-#   --index vlv.ascending-uid --index vlv.ascending-sn
+# rebuild-index --baseDN dc=example,dc=com --index vlv.ascending-uid --index vlv.ascending-sn
 #
 
 
 #
 # Enable Server SDK Extension debug logging.
 #
-# dsconfig set-log-publisher-prop \
-#   --publisher-name "Server SDK Extension Debug Logger" \
-#   --set enabled:true
+# dsconfig set-log-publisher-prop --publisher-name "Server SDK Extension Debug Logger" --set enabled:true
 
