@@ -61,7 +61,7 @@
       <xs:element name="attribute" type="AttributeDefinition"
                   minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
     <xs:attribute name="schema" type="xs:string" use="required"/>
     <xs:attribute name="mapping" type="xs:string"/>
   </xs:complexType>
@@ -78,7 +78,7 @@
         <xs:element name="complexPlural" type="ComplexPluralAttributeDefinition"/>
       </xs:choice>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
     <xs:attribute name="schema" type="xs:string"/>
     <xs:attribute name="readOnly" type="xs:boolean" default="false"/>
     <xs:attribute name="required" type="xs:boolean" default="false"/>
@@ -111,7 +111,7 @@
       <xs:element name="mapping" type="AttributeMapping"
                   minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
-    <xs:attribute name="tag" type="xs:string" use="required"/>
+    <xs:attribute name="tag" type="xs:Name" use="required"/>
     <xs:attribute name="dataType" type="DataType" use="required"/>
     <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
   </xs:complexType>
@@ -123,7 +123,7 @@
       <xs:element name="pluralType" type="PluralType"
                   minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="tag" type="xs:string" use="required"/>
+    <xs:attribute name="tag" type="xs:Name" use="required"/>
   </xs:complexType>
 
   <xs:complexType name="SubAttributeDefinition">
@@ -132,7 +132,7 @@
       <xs:element name="mapping" type="AttributeMapping"
                   minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
     <xs:attribute name="readOnly" type="xs:boolean" default="false"/>
     <xs:attribute name="required" type="xs:boolean" default="false"/>
     <xs:attribute name="dataType" type="DataType" use="required"/>
@@ -144,7 +144,7 @@
       <xs:element name="subMapping" type="SubAttributeMapping"
                   minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
   </xs:complexType>
 
   <xs:complexType name="AttributeMapping">
@@ -153,7 +153,7 @@
   </xs:complexType>
 
   <xs:complexType name="SubAttributeMapping">
-    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
     <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
     <xs:attribute name="transform" type="xs:string"/>
   </xs:complexType>
