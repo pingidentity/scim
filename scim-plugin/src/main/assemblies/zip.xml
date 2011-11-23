@@ -76,7 +76,7 @@
             <excludes>
               <!-- Make sure we don't include any jars that the server already has. -->
               <exclude>javax.activation:activation</exclude>
-              <exclude>org.json:json</exclude>
+              <exclude>com.unboundid.components:json</exclude>
             </excludes>
         </dependencySet>
         <dependencySet>
