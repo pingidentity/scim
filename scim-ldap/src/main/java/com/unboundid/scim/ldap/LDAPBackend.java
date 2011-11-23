@@ -260,7 +260,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new ServerErrorException(e.getMessage());
+      throw toSCIMException(e);
     }
   }
 
@@ -397,7 +397,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new ServerErrorException(e.getMessage());
+      throw toSCIMException(e);
     }
   }
 
@@ -480,7 +480,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new ServerErrorException(e.getMessage());
+      throw toSCIMException(e);
     }
   }
 
@@ -523,7 +523,7 @@ public abstract class LDAPBackend
         throw new ResourceNotFoundException(
             "Resource " + request.getResourceID() + " not found");
       }
-      throw new ServerErrorException(e.getMessage());
+      throw toSCIMException(e);
     }
   }
 
@@ -602,7 +602,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new ServerErrorException(e.getMessage());
+      throw toSCIMException(e);
     }
   }
 
@@ -898,5 +898,33 @@ public abstract class LDAPBackend
       l |= (bytes[i] & 0xFF);
     }
     return new Date(l);
+  }
+
+
+
+  /**
+   * Translate an LDAP exception to a SCIM exception.
+   *
+   * @param e  The LDAP exception to be translated.
+   *
+   * @return  The SCIM exception.
+   */
+  private SCIMException toSCIMException(final LDAPException e)
+  {
+    switch (e.getResultCode().intValue())
+    {
+      case ResultCode.INVALID_ATTRIBUTE_SYNTAX_INT_VALUE:
+      case ResultCode.INVALID_DN_SYNTAX_INT_VALUE:
+        return SCIMException.createException(400, e.getMessage());
+
+      case ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE:
+        return SCIMException.createException(403, e.getMessage());
+
+      case ResultCode.NO_SUCH_OBJECT_INT_VALUE:
+        return SCIMException.createException(404, e.getMessage());
+
+      default:
+        return SCIMException.createException(500, e.getMessage());
+    }
   }
 }

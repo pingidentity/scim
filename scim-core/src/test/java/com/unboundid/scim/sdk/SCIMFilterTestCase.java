@@ -96,9 +96,12 @@ public class SCIMFilterTestCase
    * Tests the {@code parse} method with a valid filter string.
    *
    * @param  filterString  The string representation of the filter to parse.
+   *
+   * @throws Exception  If the test fails.
    */
   @Test(dataProvider = "testValidFilterStrings")
   public void testParseValidFilter(final String filterString)
+      throws Exception
   {
     final SCIMFilter filter = SCIMFilter.parse(filterString);
 //    System.out.println("Parse filter string: " + filterString);

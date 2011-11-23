@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.sdk;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
 
 
@@ -67,10 +68,23 @@ public class FilterParser
    * Parse the filter provided in the constructor.
    *
    * @return  A parsed SCIM filter.
+   *
+   * @throws  SCIMException  If the filter string could not be parsed.
    */
   public SCIMFilter parse()
+      throws SCIMException
   {
-    return readFilter();
+    try
+    {
+      return readFilter();
+    }
+    catch (IllegalArgumentException e)
+    {
+      Debug.debugException(e);
+      throw SCIMException.createException(
+          400, MessageFormat.format("Invalid filter ''{0}'': {1}",
+                                    filterString, e.getMessage()));
+    }
   }
 
 

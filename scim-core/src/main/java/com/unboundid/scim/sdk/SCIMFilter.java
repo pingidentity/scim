@@ -92,8 +92,11 @@ public class SCIMFilter
    * @param filterString  The string representation of the filter expression.
    *
    * @return  The parsed filter.
+   *
+   * @throws  SCIMException  If the filter string could not be parsed.
    */
   public static SCIMFilter parse(final String filterString)
+      throws SCIMException
   {
     final FilterParser parser = new FilterParser(filterString);
 
