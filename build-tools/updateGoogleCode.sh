@@ -18,7 +18,7 @@ svn checkout $COMMON_GOOGLE_OPTS --trust-server-cert https://scimsdk.googlecode.
 cd scimsdk
 
 CURRENT_REVISION=`cat .ubid-revision`
-LATEST_REVISION=`svn info https://unboundid-svn.cvsdude.com/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
+LATEST_REVISION=`svn info --username $CVSDUDE_USERNAME --password $CVSDUDE_PASSWORD https://unboundid-svn.cvsdude.com/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
 echo "Google Code revision is $CURRENT_REVISION."
 echo "Latest CVSDude revision is $LATEST_REVISION."
 echo
