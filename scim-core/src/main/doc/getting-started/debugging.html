@@ -61,6 +61,14 @@ fileHandler.setLevel(Level.WARNING);
 logger.addHandler(fileHandler);
 </pre>
               
+              <p>
+                You can use that same <tt>Debug</tt> class to do any logging from within
+                your application code. There is a generic <tt>debug()</tt> method which can be used
+                in any context, and it has an overloaded version which accepts a <tt>Throwable</tt>
+                as the last parameter. Using this in your exception handlers will make it
+                much easier to track down problems.
+              </p>
+              
             </td>
           </tr>
         </table>

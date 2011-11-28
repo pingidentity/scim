@@ -109,8 +109,7 @@ public class DeviceResource extends BaseResource
                 but it also provides the mechanism for obtaining a <tt>SCIMEndpoint</tt> from
                 the service provider which represents your custom resource type. This
                 is done by passing the ResourceFactory into the
-                <tt>SCIMService.getEndpoint(ResourceDescriptor resourceDescriptor,
-                 ResourceFactory<R> resourceFactory)</tt> method.
+                <tt>SCIMService.getEndpoint(ResourceDescriptor, ResourceFactory&lt;R&gt;)</tt> method.
                 An example is shown below:  
               </p>
             
@@ -147,9 +146,9 @@ SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(devi
               </p>
               
               <p>
-                BaseResource (and all subclasses) are backed by these lower-level SCIM data classes.
-                AttributeValueResolver converts Java objects that represent attribute values to/from the
-                <com.unboundid.scim.sdk.SCIMAttribute</tt> class. Convenience methods are added by
+                <tt>BaseResource</tt> (and all subclasses) are backed by these lower-level SCIM data classes.
+                <tt>AttributeValueResolver</tt> converts Java objects that represent attribute values to/from the
+                <tt>com.unboundid.scim.sdk.SCIMAttribute</tt> class. Convenience methods are added by
                 subclasses of BaseResource so that attributes can be retrieved by schema URN and
                 attribute name, and then converted by an AttributeResolver to its Java object.
               </p>
