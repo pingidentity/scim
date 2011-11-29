@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.plugin;
+package com.unboundid.scim.extension;
 
 import com.unboundid.scim.sdk.SCIMBackend;
 import org.eclipse.jetty.security.MappedLoginService;

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.plugin;
+package com.unboundid.scim.extension;
 
 import com.unboundid.directory.sdk.common.types.RegisteredMonitorProvider;
 import com.unboundid.directory.sdk.http.api.HTTPServletExtension;

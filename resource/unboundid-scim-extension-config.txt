@@ -22,7 +22,7 @@
 # Create a SCIM HTTP servlet extension configuration.
 #
 
-dsconfig create-http-servlet-extension --extension-name "SCIM" --type third-party --set extension-class:com.unboundid.scim.plugin.SCIMServletExtension --set extension-argument:resourceMappingFile=config/scim/resources.xml --set extension-argument:path=/
+dsconfig create-http-servlet-extension --extension-name "SCIM" --type third-party --set extension-class:com.unboundid.scim.extension.SCIMServletExtension --set extension-argument:resourceMappingFile=config/scim/resources.xml --set extension-argument:path=/
 
 #
 # Create a HTTP log publisher.

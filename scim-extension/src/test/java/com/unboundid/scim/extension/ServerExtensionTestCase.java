@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.plugin;
+package com.unboundid.scim.extension;
 
 import com.unboundid.directory.tests.standalone.BaseTestCase;
 import com.unboundid.directory.tests.standalone.ExternalInstance;
@@ -32,7 +32,7 @@ import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
 
 /**
- * Base class for all scim-plugin test cases.
+ * Base class for all scim-extension test cases.
  */
 public class ServerExtensionTestCase extends BaseTestCase
 {
@@ -52,12 +52,13 @@ public class ServerExtensionTestCase extends BaseTestCase
     //Extract the extension (if it isn't already there)
     final File externalInstanceDir =
                 new File(System.getProperty("externalInstanceDir"));
-    final File scimPluginDir = new File(externalInstanceDir, "scim-plugin");
+    final File scimExtensionDir =
+        new File(externalInstanceDir, "scim-extension");
 
-    if(!scimPluginDir.exists())
+    if(!scimExtensionDir.exists())
     {
       final ZipExtractor extractor = new ZipExtractor(zipFile);
-      extractor.extract(scimPluginDir);
+      extractor.extract(scimExtensionDir);
     }
 
     //Get the name of the extension jar
@@ -69,13 +70,16 @@ public class ServerExtensionTestCase extends BaseTestCase
 
     //Copy the extension jar
     TestCaseUtils.copyFile(
-            new File(scimPluginDir, jarName), new File(extensionsDir, jarName));
+            new File(scimExtensionDir, jarName),
+            new File(extensionsDir, jarName));
 
     //Copy the dependency libraries
-    TestCaseUtils.copyDirectory(new File(scimPluginDir, "lib"), extensionsDir);
+    TestCaseUtils.copyDirectory(new File(scimExtensionDir, "lib"),
+                                extensionsDir);
 
     //Copy the resources.xml and other config files
-    TestCaseUtils.copyDirectory(new File(scimPluginDir, "config"), configDir);
+    TestCaseUtils.copyDirectory(new File(scimExtensionDir, "config"),
+                                configDir);
   }
 
 
@@ -102,7 +106,7 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--extension-name", "SCIM",
         "--type", "third-party",
         "--set", "extension-class:" +
-                 "com.unboundid.scim.plugin.SCIMServletExtension",
+                 "com.unboundid.scim.extension.SCIMServletExtension",
         "--set", "extension-argument:" +
                  "resourceMappingFile=config/scim/resources.xml",
         "--set", "extension-argument:path=/",

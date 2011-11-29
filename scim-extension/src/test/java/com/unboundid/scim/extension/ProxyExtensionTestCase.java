@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.plugin;
+package com.unboundid.scim.extension;
 
 import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
@@ -19,10 +19,10 @@ import java.io.File;
 
 /**
  * Test coverage for the SCIM server extension running in the Proxy Server.
- * The test methods are inherited from the SCIMPluginTestCase.
+ * The test methods are inherited from the SCIMExtensionTestCase.
  */
 @Test(sequential = true)
-public class ProxyPluginTestCase extends SCIMPluginTestCase
+public class ProxyExtensionTestCase extends SCIMExtensionTestCase
 {
   /**
    * The Proxy Server external instance.
@@ -50,8 +50,9 @@ public class ProxyPluginTestCase extends SCIMPluginTestCase
                            "--generateSelfSignedCertificate",
                            "--doNotStart");
 
-    final File pluginZipFile = new File(System.getProperty("pluginZipFile"));
-    installExtension(proxyInstance, pluginZipFile);
+    final File extensionZipFile =
+        new File(System.getProperty("extensionZipFile"));
+    installExtension(proxyInstance, extensionZipFile);
 
     dsInstance.startInstance();
     dsInstance.addBaseEntry();

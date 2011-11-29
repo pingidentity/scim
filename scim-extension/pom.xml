@@ -11,7 +11,7 @@
         <groupId>com.unboundid.product.scim</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>scim-plugin</artifactId>
+    <artifactId>scim-extension</artifactId>
     <packaging>jar</packaging>
     <name>UnboundID SCIM Server Plugin</name>
 
@@ -38,7 +38,7 @@
                         <serverInstanceVersion>3.2.1.0-SNAPSHOT</serverInstanceVersion>
                         <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                         <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
-                        <pluginZipFile>${project.build.directory}/${project.build.finalName}.zip</pluginZipFile>
+                        <extensionZipFile>${project.build.directory}/${project.build.finalName}.zip</extensionZipFile>
                     </systemPropertyVariables>
                     <properties>
                         <property>
@@ -108,25 +108,25 @@
                   <configuration>
                       <!-- Generate documentation for the extensions. -->
                       <target name="generate-extension-docs">
-                        <property name="doc.dir" location="${project.reporting.outputDirectory}/extension-docs" />                       
+                        <property name="doc.dir" location="${project.reporting.outputDirectory}/extension-docs" />
                         <delete dir="${doc.dir}" />
                         <mkdir  dir="${doc.dir}/images" />
-                                            
+
                         <copy file="${main.basedir}/resource/unboundid.css" toDir="${doc.dir}" />
-                        
+
                         <copy toDir="${doc.dir}/images">
                           <fileset dir="${main.basedir}/resource/images">
                             <include  name="**/*" />
                           </fileset>
                         </copy>
-                                        
+
                         <taskdef name="genExtDocs" className="com.unboundid.buildutils.GenerateExtensionDocumentation">
                             <classpath>
                               <path path="${project.build.outputDirectory}" />
                               <path refId="maven.compile.classpath" />
                             </classpath>
                         </taskdef>
-                    
+
                         <genExtDocs sourceRoot="${project.build.sourceDirectory}" docRoot="${doc.dir}" />
                       </target>
                   </configuration>

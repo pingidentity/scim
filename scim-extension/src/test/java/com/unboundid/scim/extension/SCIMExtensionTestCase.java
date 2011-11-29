@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package com.unboundid.scim.plugin;
+package com.unboundid.scim.extension;
 
 import com.unboundid.directory.tests.standalone.DirectoryInstance;
 import com.unboundid.directory.tests.standalone.ExternalInstance;
@@ -68,7 +68,7 @@ import static org.testng.Assert.fail;
  * extension to be tested in the Proxy Server.
  */
 @Test(sequential = true)
-public class SCIMPluginTestCase extends ServerExtensionTestCase
+public class SCIMExtensionTestCase extends ServerExtensionTestCase
 {
   /**
    * The Directory Server external instance.
@@ -182,8 +182,9 @@ public class SCIMPluginTestCase extends ServerExtensionTestCase
                       "--generateSelfSignedCertificate",
                       "--doNotStart");
 
-    final File pluginZipFile = new File(System.getProperty("pluginZipFile"));
-    installExtension(dsInstance, pluginZipFile);
+    final File extensionZipFile =
+        new File(System.getProperty("extensionZipFile"));
+    installExtension(dsInstance, extensionZipFile);
 
     dsInstance.startInstance();
     dsInstance.addBaseEntry();
