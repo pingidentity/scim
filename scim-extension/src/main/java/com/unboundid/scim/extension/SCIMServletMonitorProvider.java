@@ -10,6 +10,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.scim.wink.ResourceStats;
 import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.scim.sdk.Version;
+import com.unboundid.util.InternalUseOnly;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.Map;
 /**
  * This class implements a monitor provider for the SCIM plugin.
  */
+@InternalUseOnly
 public class SCIMServletMonitorProvider extends MonitorProvider
 {
   /**
