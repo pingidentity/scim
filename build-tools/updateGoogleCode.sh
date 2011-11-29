@@ -44,8 +44,8 @@ do
     #Handle Resources
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/resource resource
 
-    #Handle SCIM-Core
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-core/src scim-core/src
+    #Handle SCIM-SDK
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-sdk/src scim-sdk/src
 
     #Handle SCIM-LDAP
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-ldap/src scim-ldap/src

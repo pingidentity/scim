@@ -45,7 +45,7 @@
 
     <modules>
         <module>build-tools</module>
-        <module>scim-core</module>
+        <module>scim-sdk</module>
         <module>scim-ldap</module>
         <module>scim-ri</module>
         <module>scim-extension</module>
