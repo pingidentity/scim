@@ -94,6 +94,22 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-javadoc</id>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                           <sourcepath>${project.build.sourceDirectory}:${main.basedir}/scim-ldap/src/main/java</sourcepath>
+                        </configuration>
+                        <goals>
+                            <goal>javadoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.2.1</version>
                 <executions>
