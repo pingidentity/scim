@@ -61,9 +61,9 @@ scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
                 the various SCIM endpoints, using the <tt>com.unboundid.scim.sdk.SCIMEndpoint</tt> class.
                 Here is a simple example of how to print out the phone numbers for a given user:
               </p>
- 
+
 <pre>
-SCIMEndpoint<UserResource> endpoint = scimService.getUserEndpoint();
+SCIMEndpoint&lt;UserResource&gt; endpoint = scimService.getUserEndpoint();
 UserResource user = endpoint.get("uid=bjensen,dc=example,dc=com");
 Name name = user.getName();
 Collection&lt;Entry&lt;String&gt;&gt; phoneNumbers = user.getPhoneNumbers();
@@ -79,11 +79,11 @@ if(phoneNumbers != null)
               <p>
                 The <tt>com.unboundid.scim.sdk</tt> package contains several data
                 types that are useful when working with SCIM resources. Also, the
-                <tt>com.unboundid.scim.sdk.SCIMConstants</tt> class provides several 
+                <tt>com.unboundid.scim.sdk.SCIMConstants</tt> class provides several
                 commonly-used constants such as query parameter names, resource names, and
                 schema endpoint names.
               </p>
-                
+
               <p>
                 The <tt>com.unboundid.scim.sdk.examples</tt> package contains a full client
                 example which demonstrates all the CRUD operations, using the SCIM enterprise
