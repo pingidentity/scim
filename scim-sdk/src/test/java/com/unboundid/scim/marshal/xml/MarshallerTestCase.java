@@ -23,7 +23,6 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
-import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
@@ -61,7 +60,6 @@ public class MarshallerTestCase
   public void testMarshal()
     throws Exception
   {
-    final Context context = Context.instance();
     final File testXML = File.createTempFile("test-", ".xml");
     testXML.deleteOnExit();
 
@@ -114,12 +112,12 @@ public class MarshallerTestCase
         "department", AttributeValueResolver.STRING_RESOLVER,"Sales");
 
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    final Marshaller marshaller = context.marshaller();
+    final Marshaller marshaller = new XmlMarshaller();
     marshaller.marshal(user1, outputStream);
     outputStream.close();
     InputStream inputStream =
         new ByteArrayInputStream(outputStream.toByteArray());
-    final Unmarshaller unmarshaller = context.unmarshaller();
+    final Unmarshaller unmarshaller = new XmlUnmarshaller();
     final BaseResource resource = unmarshaller.unmarshal(inputStream,
         CoreSchema.USER_DESCRIPTOR, BaseResource.BASE_RESOURCE_FACTORY);
     final SCIMObject user2 = resource.getScimObject();

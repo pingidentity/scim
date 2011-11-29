@@ -23,9 +23,10 @@ import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
-import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.marshal.xml.XmlMarshaller;
+import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -156,8 +157,7 @@ public class UserResourceMapperTestCase
 
     final ResourceDescriptor userResourceDescriptor =
         CoreSchema.USER_DESCRIPTOR;
-    final Context context = Context.instance();
-    final Unmarshaller unmarshaller = context.unmarshaller();
+    final Unmarshaller unmarshaller = new XmlUnmarshaller();
     final SCIMObject user = unmarshaller.unmarshal(testXML,
         userResourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY).
         getScimObject();
@@ -221,8 +221,7 @@ public class UserResourceMapperTestCase
       object.addAttribute(a);
     }
 
-    final Context context = Context.instance();
-    final Marshaller marshaller = context.marshaller();
+    final Marshaller marshaller = new XmlMarshaller();
     final OutputStream outputStream = new ByteArrayOutputStream();
     marshaller.marshal(BaseResource.BASE_RESOURCE_FACTORY.createResource(
         userResourceDescriptor, object), outputStream);

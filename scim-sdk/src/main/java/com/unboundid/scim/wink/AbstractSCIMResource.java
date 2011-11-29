@@ -20,6 +20,10 @@ package com.unboundid.scim.wink;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.marshal.json.JsonMarshaller;
+import com.unboundid.scim.marshal.json.JsonUnmarshaller;
+import com.unboundid.scim.marshal.xml.XmlMarshaller;
+import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
@@ -349,20 +353,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                             final MediaType produceMediaType,
                             final InputStream inputStream)
   {
-    final com.unboundid.scim.marshal.Context marshalContext =
-        com.unboundid.scim.marshal.Context.instance();
-
     final Unmarshaller unmarshaller;
     if (consumeMediaType.equals(MediaType.APPLICATION_JSON_TYPE))
     {
-      unmarshaller = marshalContext.unmarshaller(
-          com.unboundid.scim.marshal.Context.Format.Json);
+      unmarshaller = new JsonUnmarshaller();
       resourceStats.incrementStat(ResourceStats.POST_CONTENT_JSON);
     }
     else
     {
-      unmarshaller = marshalContext.unmarshaller(
-          com.unboundid.scim.marshal.Context.Format.Xml);
+      unmarshaller = new XmlUnmarshaller();
       resourceStats.incrementStat(ResourceStats.POST_CONTENT_XML);
     }
 
@@ -434,20 +433,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                            final String userID,
                            final InputStream inputStream)
   {
-    final com.unboundid.scim.marshal.Context marshalContext =
-        com.unboundid.scim.marshal.Context.instance();
-
     final Unmarshaller unmarshaller;
     if (consumeMediaType.equals(MediaType.APPLICATION_JSON_TYPE))
     {
-      unmarshaller = marshalContext.unmarshaller(
-          com.unboundid.scim.marshal.Context.Format.Json);
+      unmarshaller = new JsonUnmarshaller();
       resourceStats.incrementStat(ResourceStats.PUT_CONTENT_JSON);
     }
     else
     {
-      unmarshaller = marshalContext.unmarshaller(
-          com.unboundid.scim.marshal.Context.Format.Xml);
+      unmarshaller = new XmlUnmarshaller();
       resourceStats.incrementStat(ResourceStats.PUT_CONTENT_XML);
     }
 
@@ -545,19 +539,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                                  final MediaType mediaType,
                                  final SCIMResponse scimResponse)
   {
-    final com.unboundid.scim.marshal.Context marshalContext =
-        com.unboundid.scim.marshal.Context.instance();
     final Marshaller marshaller;
     builder.type(mediaType);
     if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE))
     {
-      marshaller = marshalContext.marshaller(
-          com.unboundid.scim.marshal.Context.Format.Json);
+      marshaller = new JsonMarshaller();
     }
     else
     {
-      marshaller = marshalContext.marshaller(
-          com.unboundid.scim.marshal.Context.Format.Xml);
+      marshaller = new XmlMarshaller();
     }
 
     final StreamingOutput output = new StreamingOutput()

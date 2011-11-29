@@ -20,9 +20,12 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.data.BaseResource;
-import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.marshal.json.JsonMarshaller;
+import com.unboundid.scim.marshal.json.JsonUnmarshaller;
+import com.unboundid.scim.marshal.xml.XmlMarshaller;
+import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.RestClient;
@@ -82,27 +85,22 @@ public class SCIMEndpoint<R extends BaseResource>
     this.overrides[1] = scimService.isOverridePatch();
     this.overrides[2] = scimService.isOverrideDelete();
 
-    final Context marshalContext = Context.instance();
     if (scimService.getContentType().equals(MediaType.APPLICATION_JSON_TYPE))
     {
-      this.marshaller = marshalContext.marshaller(
-          com.unboundid.scim.marshal.Context.Format.Json);
+      this.marshaller = new JsonMarshaller();
     }
     else
     {
-      this.marshaller = marshalContext.marshaller(
-          com.unboundid.scim.marshal.Context.Format.Xml);
+      this.marshaller = new XmlMarshaller();
     }
 
     if(scimService.getAcceptType().equals(MediaType.APPLICATION_JSON_TYPE))
     {
-      this.unmarshaller = marshalContext.unmarshaller(
-          com.unboundid.scim.marshal.Context.Format.Json);
+      this.unmarshaller = new JsonUnmarshaller();
     }
     else
     {
-      this.unmarshaller = marshalContext.unmarshaller(
-          com.unboundid.scim.marshal.Context.Format.Xml);
+      this.unmarshaller = new XmlUnmarshaller();
     }
   }
 

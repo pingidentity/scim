@@ -19,7 +19,6 @@ package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.marshal.Context;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -57,7 +56,7 @@ public class XmlMarshaller implements Marshaller
     final String resourceSchemaURI =
         resource.getResourceDescriptor().getSchema();
 
-    xmlStreamWriter.writeStartElement(Context.DEFAULT_SCHEMA_PREFIX,
+    xmlStreamWriter.writeStartElement(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
         resource.getResourceDescriptor().getName(), resourceSchemaURI);
 
     int i = 1;
@@ -65,7 +64,7 @@ public class XmlMarshaller implements Marshaller
         resource.getResourceDescriptor().getAttributeSchemas())
     {
       final String prefix = schemaURI.equals(resourceSchemaURI) ?
-          Context.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
+          SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
       xmlStreamWriter.setPrefix(prefix, schemaURI);
       xmlStreamWriter.writeNamespace(prefix, schemaURI);
     }
@@ -89,12 +88,12 @@ public class XmlMarshaller implements Marshaller
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
 
-    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
+    xmlStreamWriter.setPrefix(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
         SCIMConstants.SCHEMA_URI_CORE);
     xmlStreamWriter.setPrefix("xsi", xsiURI);
     xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
         "Response");
-    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
+    xmlStreamWriter.writeNamespace(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
         SCIMConstants.SCHEMA_URI_CORE);
     xmlStreamWriter.writeNamespace("xsi", xsiURI);
 
@@ -137,12 +136,12 @@ public class XmlMarshaller implements Marshaller
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
 
-    xmlStreamWriter.setPrefix(Context.DEFAULT_SCHEMA_PREFIX,
+    xmlStreamWriter.setPrefix(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
         SCIMConstants.SCHEMA_URI_CORE);
     xmlStreamWriter.setPrefix("xsi", xsiURI);
     xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
         "Response");
-    xmlStreamWriter.writeNamespace(Context.DEFAULT_SCHEMA_PREFIX,
+    xmlStreamWriter.writeNamespace(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
         SCIMConstants.SCHEMA_URI_CORE);
     xmlStreamWriter.writeNamespace("xsi", xsiURI);
 
@@ -174,13 +173,13 @@ public class XmlMarshaller implements Marshaller
           resource.getResourceDescriptor().getAttributeSchemas())
       {
         final String prefix = schemaURI.equals(resourceSchemaURI) ?
-          Context.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
+          SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
         xmlStreamWriter.setPrefix(prefix, schemaURI);
         xmlStreamWriter.writeNamespace(prefix, schemaURI);
       }
 
       xmlStreamWriter.writeAttribute(xsiURI, "type",
-          Context.DEFAULT_SCHEMA_PREFIX + ':' +
+          SCIMConstants.DEFAULT_SCHEMA_PREFIX + ':' +
               resource.getResourceDescriptor().getName());
 
       // Write the resource attributes first in the order defined by the

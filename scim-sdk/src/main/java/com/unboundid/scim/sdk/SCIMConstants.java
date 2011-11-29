@@ -29,6 +29,10 @@ public final class SCIMConstants
    * The SCIM name for the schemas attribute.
    */
   public static final String SCHEMAS_ATTRIBUTE_NAME = "schemas";
+  /**
+   * The namespace label associated with the default schema.
+   */
+  public static final String DEFAULT_SCHEMA_PREFIX = "scim";
 
   /**
    * Prevent this class from being instantiated.

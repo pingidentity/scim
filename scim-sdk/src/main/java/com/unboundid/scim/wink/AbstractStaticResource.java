@@ -18,6 +18,8 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.marshal.json.JsonMarshaller;
+import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMResponse;
 
@@ -47,19 +49,15 @@ public class AbstractStaticResource
                                    final MediaType mediaType,
                                    final SCIMResponse scimResponse)
   {
-    final com.unboundid.scim.marshal.Context marshalContext =
-        com.unboundid.scim.marshal.Context.instance();
     final Marshaller marshaller;
     builder.type(mediaType);
     if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE))
     {
-      marshaller = marshalContext.marshaller(
-          com.unboundid.scim.marshal.Context.Format.Json);
+      marshaller = new JsonMarshaller();
     }
     else
     {
-      marshaller = marshalContext.marshaller(
-          com.unboundid.scim.marshal.Context.Format.Xml);
+      marshaller = new XmlMarshaller();
     }
 
     final StreamingOutput output = new StreamingOutput()
