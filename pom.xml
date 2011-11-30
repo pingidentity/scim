@@ -16,6 +16,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
         <project.build.genSourceDirectory>${project.build.directory}/generated-sources</project.build.genSourceDirectory>
+      <!-- When the Server SDK becomes a release version, make sure to change
+           the value of UnboundID-Server-SDK-Version in the scim-extension pom
+           -->
         <unboundid.serversdk.version>3.2.1.0-SNAPSHOT</unboundid.serversdk.version>
         <main.basedir>${project.basedir}</main.basedir>
     </properties>
