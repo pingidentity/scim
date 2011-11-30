@@ -139,6 +139,42 @@ public class SCIMService
         ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
   }
 
+  /**
+   * Retrieves the ResourceDescriptor for the specified resource from the
+   * SCIM service provider.
+   *
+   * @param resourceName The name of the resource.
+   * @param schema The schema URN of the resource or <code>null</code>
+   *        to match only based on the name of the resource.
+   * @return The ResourceDescriptor for the specified resource or
+   *         <code>null</code> if none are found.
+   * @throws SCIMException If the ResourceDescriptor could not be read.
+   */
+  public ResourceDescriptor getResourceDescriptor(final String resourceName,
+                                                  final String schema)
+      throws SCIMException
+  {
+    final SCIMEndpoint<ResourceDescriptor> endpoint =
+        getResourceSchemaEndpoint();
+    String filter = "name eq '" + resourceName + "'";
+    if(schema != null)
+    {
+      filter += " and schema eq '" + schema + "'";
+    }
+    final Resources<ResourceDescriptor> resources = endpoint.query(filter);
+    if(resources.getTotalResults() == 0)
+    {
+      return null;
+    }
+    if(resources.getTotalResults() > 1)
+    {
+      throw new InvalidResourceException(
+          "The service provider returned multiple resource descriptors " +
+              "with resource name '" + resourceName);
+    }
+    return resources.iterator().next();
+  }
+
 
 
   /**

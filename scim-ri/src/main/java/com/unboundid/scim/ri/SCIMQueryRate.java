@@ -23,7 +23,6 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
-import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMService;
@@ -752,16 +751,14 @@ public class SCIMQueryRate
     final ResourceDescriptor resourceDescriptor;
     try
     {
-      final Resources<ResourceDescriptor> resources =
-          service.getResourceSchemaEndpoint().query(
-              "name eq '" + resourceName.getValue() + "'");
-      if(resources.getTotalResults() == 0)
+      resourceDescriptor =
+        service.getResourceDescriptor(resourceName.getValue(), null);
+      if(resourceDescriptor == null)
       {
         throw new ResourceNotFoundException("Resource " +
             resourceName.getValue() +
             " is not defined by the service provider");
       }
-      resourceDescriptor = resources.iterator().next();
     }
     catch (SCIMException e)
     {

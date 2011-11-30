@@ -109,6 +109,10 @@ public class SCIMServerTestCase
         schemaEndpoint.get(SCHEMA_URI_CORE +
                            SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
                            "User");
+    // Make sure the convenience method works and returns the
+    // same descriptor.
+    assertEquals(userDescriptor,
+        service.getResourceDescriptor("User", SCHEMA_URI_CORE));
     assertEquals(userDescriptor.getName(), "User");
     assertNotNull(userDescriptor.getDescription());
     assertEquals(userDescriptor.getSchema(), SCHEMA_URI_CORE);
@@ -119,6 +123,10 @@ public class SCIMServerTestCase
         schemaEndpoint.get(SCHEMA_URI_CORE +
                            SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
                            "Group");
+    // Make sure the convenience method works and returns the
+    // same descriptor.
+    assertEquals(groupDescriptor,
+        service.getResourceDescriptor("Group", SCHEMA_URI_CORE));
     assertEquals(groupDescriptor.getName(), "Group");
     assertNotNull(groupDescriptor.getDescription());
     assertEquals(groupDescriptor.getSchema(), SCHEMA_URI_CORE);
