@@ -7,8 +7,6 @@ package com.unboundid.scim.extension;
 
 import com.unboundid.directory.tests.standalone.BaseTestCase;
 import com.unboundid.directory.tests.standalone.ExternalInstance;
-import com.unboundid.directory.tests.standalone.TestCaseUtils;
-import com.unboundid.directory.tests.standalone.util.ZipExtractor;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
 import org.apache.http.auth.AuthScope;
@@ -25,7 +23,6 @@ import org.apache.wink.client.ApacheHttpClientConfig;
 import org.apache.wink.client.ClientConfig;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
 
 import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
@@ -36,54 +33,6 @@ import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
  */
 public class ServerExtensionTestCase extends BaseTestCase
 {
-  /**
-   * Install a server extension in an external instance.
-   *
-   * @param instance  The external instance where the extension is to be
-   *                  installed.
-   * @param zipFile   The extension zip file.
-   *
-   * @throws Exception  If the extension could not be installed.
-   */
-  protected static void installExtension(final ExternalInstance instance,
-                                         final File zipFile)
-      throws Exception
-  {
-    //Extract the extension (if it isn't already there)
-    final File externalInstanceDir =
-                new File(System.getProperty("externalInstanceDir"));
-    final File scimExtensionDir =
-        new File(externalInstanceDir, "scim-extension");
-
-    if(!scimExtensionDir.exists())
-    {
-      final ZipExtractor extractor = new ZipExtractor(zipFile);
-      extractor.extract(scimExtensionDir);
-    }
-
-    //Get the name of the extension jar
-    String jarName = zipFile.getName().replaceFirst("zip", "jar");
-
-    final File extensionsDir =
-                new File(instance.getInstanceRoot(), "lib/extensions");
-    final File configDir = new File(instance.getInstanceRoot(), "config/scim");
-
-    //Copy the extension jar
-    TestCaseUtils.copyFile(
-            new File(scimExtensionDir, jarName),
-            new File(extensionsDir, jarName));
-
-    //Copy the dependency libraries
-    TestCaseUtils.copyDirectory(new File(scimExtensionDir, "lib"),
-                                extensionsDir);
-
-    //Copy the resources.xml and other config files
-    TestCaseUtils.copyDirectory(new File(scimExtensionDir, "config"),
-                                configDir);
-  }
-
-
-
   /**
    * Configure the SCIM extension.
    *
@@ -108,7 +57,8 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "extension-class:" +
                  "com.unboundid.scim.extension.SCIMServletExtension",
         "--set", "extension-argument:" +
-                 "resourceMappingFile=config/scim/resources.xml",
+                 "resourceMappingFile=extensions/" +
+                 "com.unboundid.scim-extension/config/resources.xml",
         "--set", "extension-argument:path=/",
         "--set", "extension-argument:debugEnabled");
 

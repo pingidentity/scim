@@ -184,7 +184,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     final File extensionZipFile =
         new File(System.getProperty("extensionZipFile"));
-    installExtension(dsInstance, extensionZipFile);
+    dsInstance.installExtension(extensionZipFile);
 
     dsInstance.startInstance();
     dsInstance.addBaseEntry();

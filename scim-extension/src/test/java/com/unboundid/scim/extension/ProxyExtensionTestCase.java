@@ -52,7 +52,7 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
 
     final File extensionZipFile =
         new File(System.getProperty("extensionZipFile"));
-    installExtension(proxyInstance, extensionZipFile);
+    proxyInstance.installExtension(extensionZipFile);
 
     dsInstance.startInstance();
     dsInstance.addBaseEntry();
