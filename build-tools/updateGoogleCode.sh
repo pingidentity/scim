@@ -25,7 +25,7 @@ echo
 
 for ((IDX=CURRENT_REVISION+1; IDX <= LATEST_REVISION; IDX++))
 do
-    STATUS=`svn status`
+    STATUS=`svn status | grep -v -E '^(\?)'`
     if [[ -n "$STATUS" ]] && [[ "$1" != "--dry-run" ]]
     then
       echo "SVN status indicates that the workspace is dirty:"
@@ -53,7 +53,7 @@ do
     #Handle SCIM-RI
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-ri/src scim-ri/src
 
-    STATUS=`svn status`
+    STATUS=`svn status | grep -v -E '^(\?)'`
     if [[ -z "$STATUS" ]]
     then
       #If 'svn status' is empty, there is nothing to commit, so move on to the next revision.
@@ -66,7 +66,7 @@ do
       echo
       echo "Merged revision $IDX, now running tests..."
       echo
-      $M2_HOME/bin/mvn clean integration-test > maven-output.$IDX.txt
+      $M2_HOME/bin/mvn clean verify > maven-output.$IDX.txt
       EXIT_CODE=$?
       if [[ $EXIT_CODE -eq 0 ]]
       then
@@ -88,11 +88,12 @@ do
     #Update state file (.ubid-revision)
     echo $LATEST_REVISION > .ubid-revision
 
-    # Commit the changes back to Google Code
+
     echo -e "Merged revision $IDX from the UnboundID repository." > commit-message.$IDX.txt
     echo -e "$LOG_MESSAGE" >> commit-message.$IDX.txt
     if [[ "$1" != "--dry-run" ]]
-	then
+    then
+      #Commit the changes back to Google Code
       svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS
     fi
 done
