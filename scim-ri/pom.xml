@@ -123,7 +123,7 @@
                             <descriptors>
                                 <descriptor>${basedir}/src/main/assemblies/zip.xml</descriptor>
                             </descriptors>
-                            <attach>false</attach>
+                            <attach>true</attach>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>
