@@ -42,7 +42,10 @@ do
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/config config
 
     #Handle Resources
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/resource resource
+    if [[ -z "$SKIP_RESOURCE_FOLDER" ]]
+    then
+      svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/resource resource
+    fi
 
     #Handle SCIM-SDK
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-sdk/src scim-sdk/src
@@ -86,8 +89,7 @@ do
     LOG_MESSAGE=`svn log -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk`
 
     #Update state file (.ubid-revision)
-    echo $LATEST_REVISION > .ubid-revision
-
+    echo -n $IDX > .ubid-revision
 
     echo -e "Merged revision $IDX from the UnboundID repository." > commit-message.$IDX.txt
     echo -e "$LOG_MESSAGE" >> commit-message.$IDX.txt
