@@ -25,12 +25,12 @@
  * types include:
  * <BR><BR>
  * <ul>
- *   <li>{@link Transformation} - For altering the values of mapped
- *   attribute</li>
- *   <li>{@link DerivedAttribute} - For generating the value of a read-only
- *   SCIM attribute</li>
- *   <li>{@link ResourceMapper} - For overriding the behaviour of any
- *   part of the mapping process</li>
+ *   <li>{@link com.unboundid.scim.ldap.Transformation} - For altering the
+ *   values of mapped attribute</li>
+ *   <li>{@link com.unboundid.scim.ldap.DerivedAttribute} - For generating the
+ *   value of a read-only SCIM attribute</li>
+ *   <li>{@link com.unboundid.scim.ldap.ResourceMapper} - For overriding the
+ *   behaviour of any part of the mapping process</li>
  * </ul>
  */
 package com.unboundid.scim.ldap;
