@@ -17,6 +17,9 @@
 
 package com.unboundid.scim.sdk;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -392,32 +395,14 @@ public class SCIMFilter
 
         if (quoteFilterValue)
         {
-          builder.append('\'');
-          for (int i = 0; i < filterValue.length(); i++)
+          try
           {
-            final char c = filterValue.charAt(i);
-            switch (c)
-            {
-              case '\'':
-              case '\\':
-                builder.append('\\');
-                builder.append(c);
-                break;
-
-              case '\n':
-                builder.append("\\n");
-                break;
-
-              case '\t':
-                builder.append("\\t");
-                break;
-
-              default:
-                builder.append(c);
-                break;
-            }
+            builder.append(JSONObject.valueToString(filterValue));
           }
-          builder.append('\'');
+          catch (JSONException e)
+          {
+            Debug.debugException(e);
+          }
         }
         else
         {

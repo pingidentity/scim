@@ -46,23 +46,23 @@
                 Here is a simple example showing how to determine whether the
                 service provider supports the 'Device' resource:
               </p>
-            
+
 <pre>
-ResourceDescriptor descriptor = scimService.getResourceDescriptor("Device");
+ResourceDescriptor descriptor = scimService.getResourceDescriptor("Device", null);
 if(descriptor != null)
 {
   //The 'Device' resource is supported.
 }
-                
+
 //Here is another way of doing the same thing
 SCIMEndpoint&lt;ResourceDescriptor&gt; schemasEndpoint = scimService.getResourceSchemaEndpoint();
-Resources&lt;ResourceDescriptor&gt; descriptors = schemasEndpoint.query("name eq 'Device'");
+Resources&lt;ResourceDescriptor&gt; descriptors = schemasEndpoint.query("name eq \"Device\"");
 if(descriptors.getTotalResults() &gt; 0)
 {
   //The 'Device' resource is supported.
-} 
+}
 </pre>
-              
+
               <p>
                 There are also <tt>ResourceDescriptor</tt> and <tt>AttributeDescriptor</tt>
                 objects in the <tt>com.unboundid.scim.sdk.schema</tt> package, which allow you
@@ -70,7 +70,7 @@ if(descriptors.getTotalResults() &gt; 0)
                 the specific schema for an attribute (for example, the data type of the attribute,
                 whether it is a required attribute, etc).
               </p>
-              
+
             </td>
           </tr>
         </table>

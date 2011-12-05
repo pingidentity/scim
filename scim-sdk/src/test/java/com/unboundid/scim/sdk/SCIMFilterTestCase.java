@@ -20,6 +20,8 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.SCIMTestCase;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 
@@ -40,21 +42,22 @@ public class SCIMFilterTestCase
   {
     return new Object[][]
     {
-        new Object[] { "userName Eq 'john'" },
-        new Object[] { "Username eq 'john'" },
-        new Object[] { "userName eq 'bjensen'" },
-        new Object[] { "userName co 'jensen'" },
-        new Object[] { "userName sw 'J'" },
+        new Object[] { "userName Eq \"john\"" },
+        new Object[] { "Username eq \"john\"" },
+        new Object[] { "userName eq \"bjensen\"" },
+        new Object[] { "userName co \"jensen\"" },
+        new Object[] { "userName sw \"J\"" },
         new Object[] { "title pr" },
-        new Object[] { "meta.lastModified gt '2011-05-13T04:42:34Z'" },
-        new Object[] { "meta.lastModified ge '2011-05-13T04:42:34Z'" },
-        new Object[] { "meta.lastModified lt '2011-05-13T04:42:34Z'" },
-        new Object[] { "meta.lastModified le '2011-05-13T04:42:34Z'" },
-        new Object[] { " title  pr  and  userType  eq  'Employee' " },
-        new Object[] { "title pr or userType eq 'Intern'" },
-        new Object[] { "userType eq 'Employee' and (email co 'example.com' " +
-                       "or email co 'example.org')" },
-        new Object[] { "userName co '\\'\\n\\t\\\\'" },
+        new Object[] { "meta.lastModified gt \"2011-05-13T04:42:34Z\"" },
+        new Object[] { "meta.lastModified ge \"2011-05-13T04:42:34Z\"" },
+        new Object[] { "meta.lastModified lt \"2011-05-13T04:42:34Z\"" },
+        new Object[] { "meta.lastModified le \"2011-05-13T04:42:34Z\"" },
+        new Object[] { " title  pr  and  userType  eq  \"Employee\" " },
+        new Object[] { "title pr or userType eq \"Intern\"" },
+        new Object[] { "userType eq \"Employee\" and " +
+                       "(email co \"example.com\" " +
+                       "or email co \"example.org\")" },
+        new Object[] { "userName co \"\\ufe00\\\"\\n\\t\\\\\"" },
         new Object[] { "urn:extension:members eq 25" },
         new Object[] { "urn:extension:isActive eq true" },
         new Object[] { "urn:extension:isActive eq false" },
@@ -79,14 +82,16 @@ public class SCIMFilterTestCase
       new Object[] { "()" },
       new Object[] { "foo" },
       new Object[] { "( title pr ) eq " },
-      new Object[] { "username pr bjensen" },
-      new Object[] { "meta.lastModified lte '2011-05-13T04:42:34Z'" },
+      new Object[] { "username pr \"bjensen\"" },
+      new Object[] { "meta.lastModified lte \"2011-05-13T04:42:34Z\"" },
       new Object[] { "username eq" },
-      new Object[] { "title pr and userType eq 'Employee' eq" },
-      new Object[] { "userName eq 'bjensen" },
-      new Object[] { "userName eq 'bjensen\\'" },
-      new Object[] { "userName eq '\\a'" },
+      new Object[] { "title pr and userType eq \"Employee\" eq" },
+      new Object[] { "userName eq 'bjensen'" },
+      new Object[] { "userName eq \"bjensen" },
+      new Object[] { "userName eq \"bjensen\\" },
+      new Object[] { "userName eq \"\\a\"" },
       new Object[] { "userName eq bjensen" },
+      new Object[] { "userName co \"\\ufe\" or userName co \"a\""},
     };
   }
 
@@ -132,4 +137,43 @@ public class SCIMFilterTestCase
 //      System.out.println("Error message: " + e.getMessage());
     }
   }
+
+
+
+  /**
+   * Tests that the {@code parse} method observes operator precedence rules.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testOperatorPrecedence()
+      throws Exception
+  {
+    SCIMFilter filter =
+        SCIMFilter.parse("title pr and email pr or userType pr");
+    assertEquals(filter.getFilterType(), SCIMFilterType.OR);
+    assertEquals(filter.getFilterComponents().get(0).getFilterType(),
+                 SCIMFilterType.AND);
+
+    filter =
+        SCIMFilter.parse("title pr or email pr and userType pr");
+    assertEquals(filter.getFilterType(), SCIMFilterType.OR);
+    assertEquals(filter.getFilterComponents().get(1).getFilterType(),
+                 SCIMFilterType.AND);
+
+    filter =
+        SCIMFilter.parse("title pr and (email pr or userType pr)");
+    assertEquals(filter.getFilterType(), SCIMFilterType.AND);
+    assertEquals(filter.getFilterComponents().get(1).getFilterType(),
+                 SCIMFilterType.OR);
+
+    filter =
+        SCIMFilter.parse("(title pr or email pr) and userType pr");
+    assertEquals(filter.getFilterType(), SCIMFilterType.AND);
+    assertEquals(filter.getFilterComponents().get(0).getFilterType(),
+                 SCIMFilterType.OR);
+  }
+
+
+
 }

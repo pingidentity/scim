@@ -156,10 +156,10 @@ public class SCIMService
   {
     final SCIMEndpoint<ResourceDescriptor> endpoint =
         getResourceSchemaEndpoint();
-    String filter = "name eq '" + resourceName + "'";
+    String filter = "name eq \"" + resourceName + "\"";
     if(schema != null)
     {
-      filter += " and schema eq '" + schema + "'";
+      filter += " and schema eq \"" + schema + "\"";
     }
     final Resources<ResourceDescriptor> resources = endpoint.query(filter);
     if(resources.getTotalResults() == 0)

@@ -134,7 +134,7 @@ public class SCIMServerTestCase
     assertTrue(groupDescriptor.getAttributes().size() > 0);
 
     Iterator<ResourceDescriptor> iterator =
-        schemaEndpoint.query("name eq 'User'").iterator();
+        schemaEndpoint.query("name eq \"User\"").iterator();
     assertTrue(iterator.hasNext());
     assertEquals(iterator.next().getName(), "User");
     assertFalse(iterator.hasNext());
@@ -536,35 +536,35 @@ public class SCIMServerTestCase
       // assertNotNull(endpoint.get(u.getMeta().getLocation().toString()));
     }
 
-    resources = endpoint.query("id eq 'uid=user.1,dc=example,dc=com'");
+    resources = endpoint.query("id eq \"uid=user.1,dc=example,dc=com\"");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("userName eq 'user.1'");
+    resources = endpoint.query("userName eq \"user.1\"");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("USERNAME eq 'User.1'");
+    resources = endpoint.query("USERNAME eq \"User.1\"");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("userName sw 'user'");
+    resources = endpoint.query("userName sw \"user\"");
     assertEquals(resources.getTotalResults(), 2);
 
-    resources = endpoint.query("userName co '1'");
+    resources = endpoint.query("userName co \"1\"");
     assertEquals(resources.getTotalResults(), 1);
 
     resources = endpoint.query("userName pr");
     assertEquals(resources.getTotalResults(), 2);
 
-    resources = endpoint.query("name.formatted eq 'User One'");
+    resources = endpoint.query("name.formatted eq \"User One\"");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("emails eq 'user.1@example.com'");
+    resources = endpoint.query("emails eq \"user.1@example.com\"");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("addresses.locality eq 'Austin'");
+    resources = endpoint.query("addresses.locality eq \"Austin\"");
     assertEquals(resources.getTotalResults(), 1);
 
     // Fetch selected attributes.
-    resources = endpoint.query("addresses.LOCALITY eq 'Austin'",
+    resources = endpoint.query("addresses.LOCALITY eq \"Austin\"",
                                null, null,
                                "USERNAME", "name.FORMATTED",
                                "addresses.postalCode",

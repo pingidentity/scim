@@ -698,8 +698,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         getMonitorAsString(scimInstance, "user-resource-query-successful");
     //Test 'eq' (equals)
     Resources<UserResource> results =
-        userEndpoint.query("userName sw 'filterUser' and " +
-                               "emails eq 'filterUser.6@example.com'");
+        userEndpoint.query("userName sw \"filterUser\" and " +
+                               "emails eq \"filterUser.6@example.com\"");
     assertEquals(results.getTotalResults(), 1);
     Iterator<UserResource> iter = results.iterator();
     UserResource user = iter.next();
@@ -708,8 +708,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Test 'co' (contains)
     results =
-      userEndpoint.query("userName sw 'filterUser' and " +
-                             "emails co 'User.4@example'");
+      userEndpoint.query("userName sw \"filterUser\" and " +
+                             "emails co \"User.4@example\"");
     assertEquals(results.getTotalResults(), 1);
     iter = results.iterator();
     user = iter.next();
@@ -718,7 +718,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Test 'sw' (starts with)
     results =
-      userEndpoint.query("userName sw 'filterUser' and title sw 'Eng'");
+      userEndpoint.query("userName sw \"filterUser\" and title sw \"Eng\"");
     assertEquals(results.getTotalResults(), 3);
     iter = results.iterator();
     while(iter.hasNext())
@@ -731,7 +731,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     }
 
     //Test 'pr' (present)
-    results = userEndpoint.query("userName sw 'filterUser' and emails pr");
+    results = userEndpoint.query("userName sw \"filterUser\" and emails pr");
     assertEquals(results.getTotalResults(), 5);
     iter = results.iterator();
     while(iter.hasNext())
@@ -745,8 +745,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //Test 'gt' (greater than)
     Date halfwayDate = new Date(halfwayTime);
     String formattedTime = formatter.format(halfwayDate);
-    results = userEndpoint.query("userName sw 'filterUser' and " +
-                                 "meta.created gt '" + formattedTime + "'");
+    results = userEndpoint.query("userName sw \"filterUser\" and " +
+                                 "meta.created gt \"" + formattedTime + "\"");
     assertEquals(results.getTotalResults(), 5);
     iter = results.iterator();
     while(iter.hasNext())
@@ -758,8 +758,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     }
 
     //Test 'lt' (less than)
-    results = userEndpoint.query("userName sw 'filterUser' and " +
-                                 "meta.created lt '" + formattedTime + "'");
+    results = userEndpoint.query("userName sw \"filterUser\" and " +
+                                 "meta.created lt \"" + formattedTime + "\"");
     assertEquals(results.getTotalResults(), 5);
     iter = results.iterator();
     while(iter.hasNext())
@@ -896,7 +896,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
     {
       final Resources<UserResource> resources =
-          userEndpoint.query("userName sw 'paginationUser'", null,
+          userEndpoint.query("userName sw \"paginationUser\"", null,
                              new PageParameters(startIndex, pageSize));
       assertEquals(resources.getTotalResults(), NUM_USERS);
       assertEquals(resources.getStartIndex(), startIndex);
@@ -925,7 +925,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     for (long startIndex = 1; startIndex <= NUM_GROUPS; startIndex += pageSize)
     {
       final Resources<GroupResource> resources =
-        groupEndpoint.query("displayName sw 'paginationGroup'",
+        groupEndpoint.query("displayName sw \"paginationGroup\"",
           new SortParameters("displayName", "ascending"),
           new PageParameters(startIndex, pageSize));
 
@@ -945,7 +945,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     // Attempt to fetch resources from a non-existent page.
     final long startIndex = NUM_GROUPS + 1;
     final Resources<GroupResource> resources =
-        groupEndpoint.query("displayName sw 'paginationGroup'",
+        groupEndpoint.query("displayName sw \"paginationGroup\"",
           new SortParameters("displayName", "ascending"),
           new PageParameters(startIndex, pageSize));
     assertEquals(resources.getTotalResults(), NUM_GROUPS);

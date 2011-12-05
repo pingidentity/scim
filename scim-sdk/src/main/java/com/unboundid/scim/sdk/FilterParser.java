@@ -17,8 +17,13 @@
 
 package com.unboundid.scim.sdk;
 
+import org.json.JSONObject;
+
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
 
 
 
@@ -46,6 +51,172 @@ public class FilterParser
    * The position marking the first character of the previous word or value.
    */
   private int markPos;
+
+
+
+  /**
+   * Base class for expression stack nodes. The expression stack is needed to
+   * employ the shunting-yard algorithm to parse the filter expression.
+   */
+  class Node
+  {
+    private final int pos;
+
+
+
+    /**
+     * Create a new node.
+     *
+     * @param pos  The position of the node in the filter string.
+     */
+    public Node(final int pos)
+    {
+      this.pos = pos;
+    }
+
+
+
+    /**
+     * Retrieve the position of the node in the filter string.
+     * @return  The position of the node in the filter string.
+     */
+    public int getPos()
+    {
+      return pos;
+    }
+  }
+
+
+
+  /**
+   * A node representing a filter component.
+   */
+  class FilterNode extends Node
+  {
+    private final SCIMFilter filterComponent;
+
+
+
+    /**
+     * Create a new filter component node.
+     *
+     * @param filterComponent  The filter component.
+     * @param pos              The position of the node in the filter string.
+     */
+    public FilterNode(final SCIMFilter filterComponent,
+                      final int pos)
+    {
+      super(pos);
+      this.filterComponent = filterComponent;
+    }
+
+
+
+    /**
+     * Retrieve the filter component.
+     *
+     * @return  The filter component.
+     */
+    public SCIMFilter getFilterComponent()
+    {
+      return filterComponent;
+    }
+
+
+
+    @Override
+    public String toString()
+    {
+      return "FilterNode{" +
+             "filterComponent=" + filterComponent +
+             "} " + super.toString();
+    }
+  }
+
+
+
+  /**
+   * A node representing a logical operator.
+   */
+  class OperatorNode extends Node
+  {
+    private final SCIMFilterType filterType;
+
+    /**
+     * Create a new logical operator node.
+     *
+     * @param filterType   The type of operator, either SCIMFilterType.AND or
+     *                     SCIMFilterType.OR.
+     * @param pos          The position of the node in the filter string.
+     */
+    public OperatorNode(final SCIMFilterType filterType,
+                        final int pos)
+    {
+      super(pos);
+      this.filterType = filterType;
+    }
+
+
+
+    /**
+     * Retrieve the type of operator.
+     *
+     * @return  The type of operator, either SCIMFilterType.AND or
+     *          SCIMFilterType.OR.
+     */
+    public SCIMFilterType getFilterType()
+    {
+      return filterType;
+    }
+
+
+
+    /**
+     * Retrieve the precedence of the operator.
+     *
+     * @return  The precedence of the operator.
+     */
+    public int getPrecedence()
+    {
+      switch (filterType)
+      {
+        case AND:
+          return 2;
+
+        case OR:
+        default:
+          return 1;
+      }
+    }
+
+
+
+    @Override
+    public String toString()
+    {
+      return "OperatorNode{" +
+             "filterType=" + filterType +
+             "} " + super.toString();
+    }
+  }
+
+
+
+  /**
+   * A node representing an opening parenthesis.
+   */
+  class LeftParenthesisNode extends Node
+  {
+    /**
+     * Create a new opening parenthesis node.
+     *
+     * @param pos  The position of the parenthesis in the filter string.
+     */
+    public LeftParenthesisNode(final int pos)
+    {
+      super(pos);
+    }
+  }
 
 
 
@@ -78,7 +249,7 @@ public class FilterParser
     {
       return readFilter();
     }
-    catch (IllegalArgumentException e)
+    catch (Exception e)
     {
       Debug.debugException(e);
       throw SCIMException.createException(
@@ -90,11 +261,16 @@ public class FilterParser
 
 
   /**
-   * Read a filter component at the current position.
+   * Read a filter component at the current position. A filter component is
+   * <pre>
+   * attribute attribute-operator [value]
+   * </pre>
+   * Most attribute operators require a value but 'pr' (presence) requires
+   * no value.
    *
-   * @return  The filter component.
+   * @return  The parsed filter component.
    */
-  private SCIMFilter readFilter()
+  private SCIMFilter readFilterComponent()
   {
     String word = readWord();
     if (word == null)
@@ -103,30 +279,6 @@ public class FilterParser
           "End of input at position %d but expected a filter expression",
           markPos);
       throw new IllegalArgumentException(msg);
-    }
-
-    if (word.equals("("))
-    {
-      final int openPos = markPos;
-      final SCIMFilter filter = readFilter();
-
-      final String closeParen = readWord();
-      if (closeParen == null || !closeParen.equals(")"))
-      {
-        final String msg = String.format(
-            "Expected closing parenthesis at position %d to match " +
-            "opening parenthesis at position %d", currentPos, openPos);
-        throw new IllegalArgumentException(msg);
-      }
-
-      if (!endOfInput())
-      {
-        final String msg = String.format(
-            "Unexpected additional characters at position %d", currentPos);
-        throw new IllegalArgumentException(msg);
-      }
-
-      return filter;
     }
 
     final AttributePath filterAttribute;
@@ -210,47 +362,151 @@ public class FilterParser
       filterValue = null;
     }
 
-    final SCIMFilter filter =
-        new SCIMFilter(filterType, filterAttribute,
-                       filterValue != null ? filterValue.toString() : null,
-                       (filterValue != null) && (filterValue instanceof String),
-                       null);
+    return new SCIMFilter(
+        filterType, filterAttribute,
+        filterValue != null ? filterValue.toString() : null,
+        (filterValue != null) && (filterValue instanceof String),
+        null);
+  }
 
-    final String nextWord = readWord();
-    if (nextWord != null)
+
+
+  /**
+   * Read a filter expression.
+   *
+   * @return  The SCIM filter.
+   */
+  private SCIMFilter readFilter()
+  {
+    final Stack<Node> expressionStack = new Stack<Node>();
+
+    // Employ the shunting-yard algorithm to parse into reverse polish notation,
+    // where the operands are filter components and the operators are the
+    // logical AND and OR operators. This algorithm ensures that operator
+    // precedence and parentheses are respected.
+    final List<Node> reversePolish = new ArrayList<Node>();
+    for (String word = readWord(); word != null; word = readWord())
     {
-      if (nextWord.equalsIgnoreCase("and"))
+      if (word.equalsIgnoreCase("and") || word.equalsIgnoreCase("or"))
       {
-        final SCIMFilter filter2 = readFilter();
-        return SCIMFilter.createAndFilter(Arrays.asList(filter, filter2));
+        final OperatorNode currentOperator;
+        if (word.equalsIgnoreCase("and"))
+        {
+          currentOperator = new OperatorNode(SCIMFilterType.AND, markPos);
+        }
+        else
+        {
+          currentOperator = new OperatorNode(SCIMFilterType.OR, markPos);
+        }
+        while (!expressionStack.empty() &&
+               (expressionStack.peek() instanceof OperatorNode))
+        {
+          final OperatorNode previousOperator =
+              (OperatorNode)expressionStack.peek();
+          if (previousOperator.getPrecedence() <
+              currentOperator.getPrecedence())
+          {
+            break;
+          }
+          reversePolish.add(expressionStack.pop());
+        }
+        expressionStack.push(currentOperator);
       }
-      else if (nextWord.equalsIgnoreCase("or"))
+      else if (word.equals("("))
       {
-        final SCIMFilter filter2 = readFilter();
-        return SCIMFilter.createOrFilter(Arrays.asList(filter, filter2));
+        expressionStack.push(new LeftParenthesisNode(markPos));
       }
-      else if (nextWord.equals(")"))
+      else if (word.equals(")"))
       {
-        rewind();
+        while (!expressionStack.empty() &&
+               !(expressionStack.peek() instanceof LeftParenthesisNode))
+        {
+          reversePolish.add(expressionStack.pop());
+        }
+        if (expressionStack.empty())
+        {
+          final String msg =
+              String.format("No opening parenthesis matching closing " +
+                            "parenthesis at position %d", markPos);
+          throw new IllegalArgumentException(msg);
+        }
+        expressionStack.pop();
       }
       else
       {
-        final String msg = String.format(
-            "Unexpected characters '%s' at position %d", nextWord, markPos);
-        throw new IllegalArgumentException(msg);
+        rewind();
+        final int pos = currentPos;
+        final SCIMFilter filterComponent = readFilterComponent();
+        reversePolish.add(new FilterNode(filterComponent, pos));
       }
     }
 
-    return filter;
+    while  (!expressionStack.empty())
+    {
+      final Node node = expressionStack.pop();
+      if (node instanceof LeftParenthesisNode)
+      {
+        final String msg =
+            String.format("No closing parenthesis matching opening " +
+                          "parenthesis at position %d", node.getPos());
+        throw new IllegalArgumentException(msg);
+      }
+      reversePolish.add(node);
+    }
+
+    // Evaluate the reverse polish notation to create a single complex filter.
+    final Stack<FilterNode> filterStack = new Stack<FilterNode>();
+    for (final Node node : reversePolish)
+    {
+      if (node instanceof OperatorNode)
+      {
+        final FilterNode rightOperand = filterStack.pop();
+        final FilterNode leftOperand = filterStack.pop();
+
+        final OperatorNode operatorNode = (OperatorNode)node;
+        if (operatorNode.getFilterType().equals(SCIMFilterType.AND))
+        {
+          final SCIMFilter filter = SCIMFilter.createAndFilter(
+              Arrays.asList(leftOperand.getFilterComponent(),
+                            rightOperand.getFilterComponent()));
+          filterStack.push(new FilterNode(filter, leftOperand.getPos()));
+        }
+        else
+        {
+          final SCIMFilter filter = SCIMFilter.createOrFilter(
+              Arrays.asList(leftOperand.getFilterComponent(),
+                            rightOperand.getFilterComponent()));
+          filterStack.push(new FilterNode(filter, leftOperand.getPos()));
+        }
+      }
+      else
+      {
+        filterStack.push((FilterNode)node);
+      }
+    }
+
+    if (filterStack.size() == 0)
+    {
+      final String msg = String.format("Empty filter expression");
+      throw new IllegalArgumentException(msg);
+    }
+    else if (filterStack.size() > 1)
+    {
+      final String msg = String.format(
+          "Unexpected characters at position %d", expressionStack.get(1).pos);
+      throw new IllegalArgumentException(msg);
+    }
+
+    return filterStack.get(0).filterComponent;
   }
 
 
 
   /**
    * Read a word at the current position. A word is a consecutive sequence of
-   * non-space characters, or an opening or closing parenthesis. Whitespace
-   * before and after the word is consumed. The start of the word is saved
-   * in {@code markPos}.
+   * characters terminated by whitespace or a parenthesis, or a single opening
+   * or closing parenthesis. Whitespace before and after the word is consumed.
+   * The start of the word is saved in {@code markPos}.
    *
    * @return The word at the current position, or {@code null} if the end of
    *         the input has been reached.
@@ -268,7 +524,10 @@ public class FilterParser
       {
         case '(':
         case ')':
-          currentPos++;
+          if (currentPos == markPos)
+          {
+            currentPos++;
+          }
           break loop;
 
         case ' ':
@@ -305,14 +564,16 @@ public class FilterParser
 
   /**
    * Read a value at the current position. A value can be a number, or a
-   * boolean value (the words true or false), or a string value in single
-   * quotes. Whitespace before and after the value is consumed. The start of
-   * the value is saved in {@code markPos}.
+   * boolean value (the words true or false), or a string value in double
+   * quotes, using the same syntax as for JSON values. Whitespace before and
+   * after the value is consumed. The start of the value is saved in
+   * {@code markPos}.
    *
-   * @return The value at the current position, or {@code null} if the end of
-   *         the input has been reached.
+   * @return A Boolean, Double, Integer, Long or String representing the value
+   *         at the current position, or {@code null} if the end of the input
+   *         has already been reached.
    */
-  private Object readValue()
+  public Object readValue()
   {
     skipWhitespace();
     markPos = currentPos;
@@ -322,7 +583,7 @@ public class FilterParser
       return null;
     }
 
-    if (filterString.charAt(currentPos) == '\'')
+    if (filterString.charAt(currentPos) == '"')
     {
       currentPos++;
 
@@ -345,15 +606,39 @@ public class FilterParser
             currentPos++;
             switch (escapeChar)
             {
+              case '"':
+              case '/':
               case '\'':
               case '\\':
                 builder.append(escapeChar);
                 break;
+              case 'b':
+                builder.append('\b');
+                break;
+              case 'f':
+                builder.append('\f');
+                break;
               case 'n':
                 builder.append('\n');
                 break;
+              case 'r':
+                builder.append('\r');
+                break;
               case 't':
                 builder.append('\t');
+                break;
+              case 'u':
+                if (currentPos + 4 > endPos)
+                {
+                  final String msg = String.format(
+                      "End of input in a string value that began at " +
+                      "position %d", markPos);
+                  throw new IllegalArgumentException(msg);
+                }
+                final String hexChars =
+                    filterString.substring(currentPos, currentPos + 4);
+                builder.append((char)Integer.parseInt(hexChars, 16));
+                currentPos += 4;
                 break;
               default:
                 final String msg = String.format(
@@ -363,7 +648,7 @@ public class FilterParser
             }
             break;
 
-          case '\'':
+          case '"':
             currentPos++;
             skipWhitespace();
             return builder.toString();
@@ -389,9 +674,13 @@ public class FilterParser
         switch (c)
         {
           case ' ':
+          case '(':
+          case ')':
             break loop;
 
+          case '+':
           case '-':
+          case '.':
           case '0':
           case '1':
           case '2':
@@ -458,7 +747,6 @@ public class FilterParser
             currentPos++;
             break;
 
-          case '.':
           case '/':
           case ':':
           case ';':
@@ -487,34 +775,18 @@ public class FilterParser
         }
       }
 
-      final String value = filterString.substring(markPos, currentPos);
-
+      final String s = filterString.substring(markPos, currentPos);
       skipWhitespace();
+      final Object value = JSONObject.stringToValue(s);
 
-      if (value.equalsIgnoreCase("true"))
+      if (value.equals(JSONObject.NULL) || value instanceof String)
       {
-        return Boolean.TRUE;
+        final String msg = String.format(
+            "Invalid filter value beginning at position %d", markPos);
+        throw new IllegalArgumentException(msg);
       }
-      else if (value.equalsIgnoreCase("false"))
-      {
-        return Boolean.FALSE;
-      }
-      else
-      {
-        try
-        {
-          return Long.valueOf(value);
-        }
-        catch (NumberFormatException e)
-        {
-          Debug.debugException(e);
-          final String msg = String.format(
-              "Invalid filter value '%s' at position %d. Expected a string " +
-              "in quotes, a number or a boolean value (true,false)",
-              value, markPos);
-          throw new IllegalArgumentException(msg);
-        }
-      }
+
+      return value;
     }
   }
 

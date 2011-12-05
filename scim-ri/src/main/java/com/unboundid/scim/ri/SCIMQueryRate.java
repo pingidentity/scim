@@ -499,7 +499,7 @@ public class SCIMQueryRate
       "--authID", "admin",
       "--authPassword", "password",
       "--xml",
-      "--filter", "userName eq 'user.[1-1000000]'",
+      "--filter", "userName eq \"user.[1-1000000]\"",
       "--attribute", "userName",
       "--attribute", "name",
       "--numThreads", "8"
