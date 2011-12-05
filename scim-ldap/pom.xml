@@ -92,6 +92,98 @@
                    </execution>
 			   </executions>
 		    </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-source-plugin</artifactId>
+              <executions>
+                <execution>
+                  <!-- A jar of the project sources is required for publishing to
+                       Maven Central. -->
+                  <goals>
+                    <goal>jar</goal>
+                  </goals>
+                  <configuration>
+                    <archive>
+                      <addMavenDescriptor>false</addMavenDescriptor>
+                    </archive>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+		    <plugin>
+		      <groupId>org.apache.maven.plugins</groupId>
+		      <artifactId>maven-antrun-plugin</artifactId>
+		      <executions>
+		        <execution>
+                  <!-- We can't use the maven-gpg-plugin for this because it only signs the actual project artifacts.
+                       Also, gpg can only sign one file at a time, so we have to run the command four times. -->
+                  <id>sign-artifacts</id>
+                  <phase>verify</phase>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                  <configuration>
+                    <target if="gpg.sign">
+                      <mkdir dir="${project.build.directory}/gpg" />
+                      <!-- Private GPG key is on x2200-05 (Cent_OS Slave) -->
+                      <!-- GPG_PASSPHRASE is an environment variable in Hudson. -->
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/pom.xml.asc ${project.basedir}/src/main/assemblies/pom.xml" />
+                      </exec>
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/${project.build.finalName}.jar.asc ${project.build.finalName}.jar" />
+                      </exec>
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/${project.build.finalName}-sources.jar.asc ${project.build.finalName}-sources.jar" />
+                      </exec>
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/${project.build.finalName}-javadoc.jar.asc ${project.build.finalName}-javadoc.jar" />
+                      </exec>
+                    </target>
+                  </configuration>
+                </execution>
+		      </executions>
+		    </plugin>
+		    <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2.1</version>
+                <executions>
+                    <execution>
+                    <!-- We use an assembly instead of the maven-javadoc-plugin to
+                         create the javadoc jar (required for publishing to Maven Central)
+                         because we have copied in certain resources to the javadoc directory.
+                         See the SCIM-Parent POM for more info. -->
+                        <id>create-javadoc-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/assemblies/javadoc.xml</descriptor>
+                            </descriptors>
+                            <attach>false</attach>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-sonatype-bundle</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/assemblies/sonatype-bundle.xml</descriptor>
+                            </descriptors>
+                            <attach>false</attach>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>sonatype-bundle</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
