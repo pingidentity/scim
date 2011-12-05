@@ -49,7 +49,7 @@ import java.util.List;
 
 
 /**
- * This class provides test coverage for the {@link ConfigurableResourceMapper}.
+ * This class provides test coverage for the {@link ResourceMapper}.
  */
 public class UserResourceMapperTestCase
     extends SCIMTestCase
@@ -238,7 +238,7 @@ public class UserResourceMapperTestCase
   private ResourceMapper getUserResourceMapper()
       throws Exception
   {
-    List<ResourceMapper> mappers = ConfigurableResourceMapper.parse(
+    List<ResourceMapper> mappers = ResourceMapper.parse(
         getResourceFile("/com/unboundid/scim/ldap/resources.xml"));
     for (final ResourceMapper m : mappers)
     {

@@ -17,7 +17,6 @@
 
 package com.unboundid.scim.ri;
 
-import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
@@ -179,7 +178,7 @@ public class SCIMServer
     if (serverConfig.getResourcesFile() != null)
     {
       final List<ResourceMapper> mappers =
-          ConfigurableResourceMapper.parse(serverConfig.getResourcesFile());
+          ResourceMapper.parse(serverConfig.getResourcesFile());
       for (final ResourceMapper resourceMapper : mappers)
       {
         resourceMappers.put(resourceMapper.getResourceDescriptor(),
@@ -207,7 +206,7 @@ public class SCIMServer
 
     try
     {
-      ConfigurableResourceMapper.parse(serverConfig.getResourcesFile());
+      ResourceMapper.parse(serverConfig.getResourcesFile());
     }
     catch (Exception e)
     {

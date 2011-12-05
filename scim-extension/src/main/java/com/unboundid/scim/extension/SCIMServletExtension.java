@@ -12,7 +12,6 @@ import com.unboundid.directory.sdk.http.types.HTTPServerContext;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.scim.ldap.ConfigurableResourceMapper;
 import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.wink.SCIMApplication;
@@ -330,7 +329,7 @@ public final class SCIMServletExtension
     try
     {
       final List<ResourceMapper> mappers =
-          ConfigurableResourceMapper.parse(resourcesFileArg.getValue());
+          ResourceMapper.parse(resourcesFileArg.getValue());
       for (final ResourceMapper resourceMapper : mappers)
       {
         resourceMappers.put(resourceMapper.getResourceDescriptor(),
@@ -557,7 +556,7 @@ public final class SCIMServletExtension
 
     try
     {
-      ConfigurableResourceMapper.parse(useResourcesFileArg.getValue());
+      ResourceMapper.parse(useResourcesFileArg.getValue());
     }
     catch (Exception e)
     {
@@ -645,7 +644,7 @@ public final class SCIMServletExtension
       final Map<ResourceDescriptor, ResourceMapper> resourceMappers =
           new HashMap<ResourceDescriptor, ResourceMapper>();
       final List<ResourceMapper> mappers =
-          ConfigurableResourceMapper.parse(useResourcesFileArg.getValue());
+          ResourceMapper.parse(useResourcesFileArg.getValue());
       for (final ResourceMapper resourceMapper : mappers)
       {
         resourceMappers.put(resourceMapper.getResourceDescriptor(),

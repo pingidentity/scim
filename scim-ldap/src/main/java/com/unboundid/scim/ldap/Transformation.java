@@ -23,11 +23,31 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;
 
-
-
 /**
- * An abstract class defining an interface for transforming SCIM values to
- * LDAP values and vice-versa.
+ * Attribute mapping transformations may be used to alter the value of mapped
+ * attributes. Transformations may be performed on an SCIM attribute value
+ * when mapping SCIM resources to LDAP entries and vice versa. When no
+ * transformation class is specified in the resources configuration file,
+ * the DefaultTransformation implementation is used. It will simply return
+ * the value as is without any alterations.
+ * <BR><BR>
+ * Transformations are often useful when the syntax of an attribute is different
+ * between SCIM and LDAP. The LDAP <tt>GeneralizedTime</tt> attribute syntax is
+ * a good example where transformations are necessary when mapping those
+ * attributes.
+ * <BR><BR>
+ * To use a custom transformation class, use the <tt>transform</tt> attribute to
+ * specify the implementation class in any <tt>mapping</tt> or
+ * <tt>subMapping</tt> configuration elements. For example:
+ * <BR><BR>
+ * <PRE>
+ * &lt;subMapping name=&quot;formatted&quot;
+ *  ldapAttribute=&quot;postalAddress&quot;
+ *  transform=&quot;com.unboundid.scim.ldap.PostalAddressTransformation&quot;
+ * &#47;&gt;
+ * </PRE>
+ * <BR><BR>
+ * This API is volatile and could change in future releases.
  */
 public abstract class Transformation
 {
@@ -49,7 +69,8 @@ public abstract class Transformation
     Class clazz;
     try
     {
-      clazz = Class.forName(className);
+      clazz = Class.forName(className, true,
+          Transformation.class.getClassLoader());
     }
     catch (ClassNotFoundException e)
     {

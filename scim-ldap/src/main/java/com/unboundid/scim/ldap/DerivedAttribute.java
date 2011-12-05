@@ -29,12 +29,30 @@ import java.util.Set;
 
 
 /**
- * This class defines an API for deriving the value of a read-only SCIM
- * attribute from information in LDAP entries anywhere in the DIT. This is
- * used to implement the groups attribute in User resources when the directory
- * server does not provide the isMemberOf LDAP attribute. It can also be used to
- * implement the members attribute in Group resources for UnboundID dynamic
- * groups.
+ * Attribute derivations may be used to derive the value of a read-only
+ * SCIM attribute from any attribute of the LDAP entry representing the SCIM
+ * resource and/or information from other entries anywhere in the DIT.
+ * Implementations may perform any number of LDAP operations through the
+ * {@link com.unboundid.ldap.sdk.LDAPInterface} API.
+ * <BR><BR>
+ * This is used to implement the groups SCIM attribute in User resources when
+ * the directory server does not provide the isMemberOf LDAP attribute. It can
+ * also be used to implement the members SCIM attribute in Group resources for
+ * UnboundID dynamic groups.
+ * <BR><BR>
+ * To use a custom derivation class, include a <tt>derivation</tt> element with
+ * the <tt>javaClass</tt> attribute inside a <tt>attribute</tt> element. For
+ * example:
+ * <BR><BR>
+ * <PRE>
+ * &lt;attribute name=&quot;exampleAttribute&quot;&gt;
+ *   &lt;description&gt;Example Attribute&lt;&#47description&gt;
+ *   &lt;derivation javaClass=&quot;com.example.ExampleDerivedAttr&quot;&#47&gt;
+ *   &lt;simplePlural tag=&quot;group&quot; dataType=&quot;string&quot;/&gt;
+ * &lt;&#47attribute&gt;
+ * </PRE>
+ * <BR><BR>
+ * This API is volatile and could change in future releases.
  */
 public abstract class DerivedAttribute
 {
@@ -52,7 +70,8 @@ public abstract class DerivedAttribute
     Class clazz;
     try
     {
-      clazz = Class.forName(className);
+      clazz = Class.forName(className, true,
+          DerivedAttribute.class.getClassLoader());
     }
     catch (ClassNotFoundException e)
     {

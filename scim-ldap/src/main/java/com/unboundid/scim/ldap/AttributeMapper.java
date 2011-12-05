@@ -45,7 +45,7 @@ public abstract class AttributeMapper
   /**
    * The SCIM attribute type that is mapped by this attribute mapper.
    */
-  private AttributeDescriptor attributeDescriptor;
+  private final AttributeDescriptor attributeDescriptor;
 
 
 
