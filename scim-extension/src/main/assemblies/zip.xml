@@ -44,7 +44,7 @@
             <includes>
                 <include>resources.xsd</include>
                 <include>resources.xml</include>
-                <include>unboundid-scim-extension-config.txt</include>
+                <include>scim-extension-config.dsconfig</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -65,8 +65,8 @@
         </file>
         <file>
             <outputDirectory>config/update</outputDirectory>
-            <destName>unboundid-scim-extension-config.txt.${build.svn.revision}</destName>
-            <source>${main.basedir}/resource/unboundid-scim-extension-config.txt</source>
+            <destName>scim-extension-config.dsconfig.${build.svn.revision}</destName>
+            <source>${main.basedir}/resource/scim-extension-config.dsconfig</source>
         </file>
     </files>
     <dependencySets>
