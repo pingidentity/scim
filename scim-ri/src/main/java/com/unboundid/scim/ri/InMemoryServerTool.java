@@ -71,8 +71,8 @@ import static com.unboundid.scim.ri.RIMessages.*;
  *       server.</LI>
  *   <LI>"--useResourcesFile {path}" -- specifies the path to an XML file
  *       containing resource definitions to use for the SCIM server.</LI>
- *   <LI>"-u {baseURI}" or "--baseURI {baseURI}" -- specifies a base URI to use
- *       for the SCIM server.  If no base URI is specified, then the default
+ *   <LI>""--contextPath {path}" -- specifies a context path to use
+ *       for the SCIM server.  If no context path is specified, then the default
  *       value '/' is used.</LI>
  *   <LI>"-b {baseDN}" or "--baseDN {baseDN}" -- specifies a base DN to use for
  *       the LDAP server.  If no base DN is specified, then the default value
@@ -101,8 +101,8 @@ import static com.unboundid.scim.ri.RIMessages.*;
 public class InMemoryServerTool
     extends CommandLineTool
 {
-  // The argument used to specify the base URIs to use for the SCIM server.
-  private StringArgument baseURIArgument;
+  // The argument used to specify the context path to use for the SCIM server.
+  private StringArgument contextPathArgument;
 
   // The argument used to specify the base DNs to use for the LDAP server.
   private DNArgument baseDNArgument;
@@ -227,7 +227,7 @@ public class InMemoryServerTool
 
     scimServer                     = null;
     directoryServer                = null;
-    baseURIArgument                = null;
+    contextPathArgument            = null;
     baseDNArgument                 = null;
     accessLogFileArgument          = null;
     ldapAccessLogFileArgument      = null;
@@ -306,11 +306,11 @@ public class InMemoryServerTool
             INFO_MEM_SERVER_TOOL_ARG_DESC_MAX_RESULTS.get(),
             1, Integer.MAX_VALUE, 100);
 
-    baseURIArgument = new StringArgument('u', "baseURI", false, 1,
-         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_BASE_URI.get(),
-         INFO_MEM_SERVER_TOOL_ARG_DESC_BASE_URI.get(),
+    contextPathArgument = new StringArgument(null, "contextPath", false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_CONTEXT_PATH.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_CONTEXT_PATH.get(),
          Arrays.asList("/"));
-    parser.addArgument(baseURIArgument);
+    parser.addArgument(contextPathArgument);
 
     ldapPortArgument = new IntegerArgument(null, "ldapPort", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_LDAP_PORT.get(),
@@ -504,13 +504,13 @@ public class InMemoryServerTool
       return ResultCode.LOCAL_ERROR;
     }
 
-    final String baseURI = baseURIArgument.getValue();
+    final String contextPath = contextPathArgument.getValue();
     final SCIMBackend backend =
         new InMemoryLDAPBackend(scimServer.getResourceMappers(),
                                 directoryServer);
     backend.getConfig().setMaxResults(maxResultsArgument.getValue());
 
-    scimServer.registerBackend(baseURI, backend);
+    scimServer.registerBackend(contextPath, backend);
 
     // Start the server.
     try
@@ -705,7 +705,7 @@ public class InMemoryServerTool
     final String[] example2Args =
     {
       "--useResourcesFile", "config/resources.xml",
-      "--baseURI", "scim",
+      "--contextPath", "scim",
       "--port", "8181",
       "--ldifFile", "test.ldif"
     };

@@ -96,8 +96,8 @@ import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
  *   <LI>"-p {port}" or "--port {port}" -- Specifies the port number of the
  *       SCIM server.  If this isn't specified, then a default port of 80
  *       will be used.</LI>
- *   <LI>"-u {baseURI}" or "--baseURI {baseURI}" -- specifies the base URI of
- *       the SCIM server.  If no base URI is specified, then the default
+ *   <LI>"--contextPath {path}" -- specifies the context path of
+ *       the SCIM server.  If no context path is specified, then the default
  *       value '/' is used.</LI>
  *   <LI>"--authID {userName}" -- Specifies the authentication ID to use when
  *       authenticating using basic auth.</LI>
@@ -150,7 +150,7 @@ public class SCIMQueryRate
   private IntegerArgument port;
   private StringArgument  authID;
   private StringArgument  authPassword;
-  private StringArgument baseURI;
+  private StringArgument  contextPath;
   private StringArgument  host;
   private BooleanArgument trustAll;
   private BooleanArgument useSSL;
@@ -317,11 +317,11 @@ public class SCIMQueryRate
     parser.addArgument(port);
 
 
-    baseURI = new StringArgument(null, "baseURI", false, 1,
-         INFO_QUERY_TOOL_ARG_PLACEHOLDER_BASE_URI.get(),
-         INFO_QUERY_TOOL_ARG_DESC_BASE_URI.get(),
+    contextPath = new StringArgument(null, "contextPath", false, 1,
+         INFO_QUERY_TOOL_ARG_PLACEHOLDER_CONTEXT_PATH.get(),
+         INFO_QUERY_TOOL_ARG_DESC_CONTEXT_PATH.get(),
          Arrays.asList("/"));
-    parser.addArgument(baseURI);
+    parser.addArgument(contextPath);
 
 
     authID = new StringArgument(
@@ -753,13 +753,13 @@ public class SCIMQueryRate
     try
     {
       final String path;
-      if (baseURI.getValue().startsWith("/"))
+      if (contextPath.getValue().startsWith("/"))
       {
-        path = baseURI.getValue();
+        path = contextPath.getValue();
       }
       else
       {
-        path = "/" + baseURI.getValue();
+        path = "/" + contextPath.getValue();
       }
       uri = new URI(schemeName, null, host.getValue(), port.getValue(),
                     path, null, null);

@@ -93,7 +93,7 @@ public final class SCIMServletExtension
    * The name of the argument that will be used to specify the path that will be
    * used to access the servlet.
    */
-  private static final String ARG_NAME_PATH = "path";
+  private static final String ARG_NAME_CONTEXT_PATH = "contextPath";
 
   /**
    * The servlet that has been created.
@@ -101,9 +101,9 @@ public final class SCIMServletExtension
   private volatile RestServlet servlet;
 
   /**
-   * The path that will be used for the servlet.
+   * The context path that will be used for the servlet.
    */
-  private volatile String path;
+  private volatile String contextPath;
 
   /**
    * The backend that will handle the SCIM requests.
@@ -136,7 +136,7 @@ public final class SCIMServletExtension
   public SCIMServletExtension()
   {
     servlet         = null;
-    path            = null;
+    contextPath     = null;
     backend         = null;
     application     = null;
     serverContext   = null;
@@ -204,14 +204,14 @@ public final class SCIMServletExtension
 
     // This argument has a default.
     parser.addArgument(
-        new StringArgument(null, ARG_NAME_PATH,
+        new StringArgument(null, ARG_NAME_CONTEXT_PATH,
                            true, 1, "{path}",
-                           "The path to use to access the SCIM interface. If " +
-                           "no path is specified then the default value" +
-                           "'/' is used. Note that changes to this argument " +
-                           "will only take effect if the associated HTTP " +
-                           "connection handler (or the entire server) is " +
-                           "stopped and re-started.", "/"));
+                           "The context path to use to access the SCIM " +
+                           "interface. If no path is specified then the " +
+                           "default value'/' is used. Note that changes to " +
+                           "this argument will only take effect if the " +
+                           "associated HTTP connection handler (or the " +
+                           "entire server) is stopped and re-started.", "/"));
 
     // Debug log arguments.
     parser.addArgument(
@@ -297,14 +297,14 @@ public final class SCIMServletExtension
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_LEVEL);
     final StringArgument debugTypeArg =
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
-    final StringArgument pathArg =
-         (StringArgument) parser.getNamedArgument(ARG_NAME_PATH);
+    final StringArgument contextPathArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_CONTEXT_PATH);
     final IntegerArgument maxResultsArg =
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
     final FileArgument resourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
 
-    path = pathArg.getValue();
+    contextPath = contextPathArg.getValue();
 
     final Properties properties = new Properties();
     properties.setProperty(Debug.PROPERTY_DEBUG_ENABLED,
@@ -454,13 +454,13 @@ public final class SCIMServletExtension
   private String getNormalizedPath()
   {
     final String normalizedPath;
-    if (!path.endsWith("/"))
+    if (!contextPath.endsWith("/"))
     {
-      normalizedPath = path + "/";
+      normalizedPath = contextPath + "/";
     }
     else
     {
-      normalizedPath = path;
+      normalizedPath = contextPath;
     }
 
     return normalizedPath;
@@ -483,7 +483,7 @@ public final class SCIMServletExtension
     serverContext.deregisterMonitorProvider(monitorProvider);
 
     servlet         = null;
-    path            = null;
+    contextPath     = null;
     backend         = null;
     application     = null;
     serverContext   = null;
@@ -601,13 +601,13 @@ public final class SCIMServletExtension
 
     // The path will not change dynamically.  If a different path was given,
     // then report that as a required administrative action.
-    final StringArgument pathArg =
-         (StringArgument) parser.getNamedArgument(ARG_NAME_PATH);
-    if (! path.equals(pathArg.getValue()))
+    final StringArgument contextPathArg =
+         (StringArgument) parser.getNamedArgument(ARG_NAME_CONTEXT_PATH);
+    if (! contextPath.equals(contextPathArg.getValue()))
     {
-      adminActionsRequired.add("Changes to the servlet path will not take " +
-           "effect until the HTTP connection handler (or entire server) is " +
-           "restarted.");
+      adminActionsRequired.add("Changes to the servlet context path will not" +
+           "take effect until the HTTP connection handler (or entire " +
+           "server) is restarted.");
     }
 
     final BooleanArgument debugEnabledArg =

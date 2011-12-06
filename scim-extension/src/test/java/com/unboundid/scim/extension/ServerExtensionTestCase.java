@@ -59,7 +59,7 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "extension-argument:" +
                  "resourceMappingFile=extensions/" +
                  "com.unboundid.scim-extension/config/resources.xml",
-        "--set", "extension-argument:path=/",
+        "--set", "extension-argument:contextPath=/",
         "--set", "extension-argument:debugEnabled");
 
     instance.dsconfig(
