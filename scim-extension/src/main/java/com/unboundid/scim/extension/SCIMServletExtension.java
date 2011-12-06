@@ -244,6 +244,23 @@ public final class SCIMServletExtension
 
 
   /**
+   * Retrieves a map of initialization parameters that should be provided to the
+   * servlet when it is initialized.
+   *
+   * @return  A map of initialization parameters that should be provided to the
+   *          servlet when it is initialized, or an empty map if no
+   *          initialization parameters are needed.
+   */
+  @Override
+  public Map<String,String> getServletInitParameters()
+  {
+    return Collections.singletonMap("propertiesLocation",
+        "com/unboundid/scim/wink/wink-scim.properties");
+  }
+
+
+
+  /**
    * Retrieves the order in which the servlet should be started.  A value
    * greater than or equal to zero guarantees that the servlet will be started
    * as soon as the servlet engine has been started, in order of ascending
@@ -346,12 +363,6 @@ public final class SCIMServletExtension
 
     backend = new ServerContextBackend(resourceMappers, serverContext);
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
-
-    // Set Wink system properties.
-    System.setProperty("wink.httpMethodOverrideHeaders",
-                       "X-HTTP-Method-Override");
-    System.setProperty("wink.response.defaultCharset",
-                       "true");
 
     // Create the Wink JAX-RS servlet.
     servlet = new RestServlet();

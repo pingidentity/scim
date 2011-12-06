@@ -306,13 +306,11 @@ public class SCIMServer
       security.setServer(server);
 
       // JAX-RS implementation using Apache Wink.
-      System.setProperty("wink.httpMethodOverrideHeaders",
-                         "X-HTTP-Method-Override");
-      System.setProperty("wink.response.defaultCharset",
-                         "true");
       final ServletHolder winkServletHolder =
           new ServletHolder(RestServlet.class);
       winkServletHolder.setInitOrder(1);
+      winkServletHolder.setInitParameter("propertiesLocation",
+          "com/unboundid/scim/wink/wink-scim.properties");
       contextHandler.addServlet(winkServletHolder, "/*");
       // For now, v1 is the only supported API version.
       contextHandler.addServlet(winkServletHolder, "/v1/*");
