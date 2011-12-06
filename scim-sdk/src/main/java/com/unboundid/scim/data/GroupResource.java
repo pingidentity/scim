@@ -102,7 +102,7 @@ public class GroupResource extends BaseResource
    */
   public Collection<Entry<String>> getMembers()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "members", Entry.STRINGS_RESOLVER);
   }
 
@@ -115,7 +115,7 @@ public class GroupResource extends BaseResource
   public GroupResource setMembers(final Collection<Entry<String>> members)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "members",
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE, "members",
           Entry.STRINGS_RESOLVER, members);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...

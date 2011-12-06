@@ -30,24 +30,23 @@ import javax.xml.bind.DatatypeConverter;
 
 /**
  * This class represents a Simple Cloud Identity Management (SCIM) attribute.
- * Attributes are categorized as either Singular (those that may take only a
- * single value), or Plural (those that may take multiple values). This class
- * allows for the following kinds of attributes.
+ * Attributes are categorized as either single-valued or multi-valued. This
+ * class allows for the following kinds of attributes.
  *
  * <ol>
- * <li>Singular simple type (String, Boolean, DateTime, Integer or Binary).
+ * <li>Simple type (String, Boolean, DateTime, Integer or Binary).
  *     An example is the 'userName' attribute in the core schema.</li>
  *
- * <li>Singular complex type. An example is the 'name' attribute in the core
+ * <li>Complex type. An example is the 'name' attribute in the core
  *     schema.</li>
  *
- * <li>Plural simple type. The only example is the 'schemas' attribute, which
- *     is used in JSON representation but not in XML representation.</li>
+ * <li>Multi-valued simple type. Represented using multi-valued complex values,
+ *     because the values may have 'type' and 'primary' sub-attributes to
+ *     distinguish each primitive value. Examples of this are the 'emails' and
+ *     'photos' attributes in the core schema.</li>
  *
- * <li>Plural complex type. Examples are the 'emails' attribute and the
- *     'addresses' attribute. Although each value of 'emails' is a string, it
- *     is complex by virtue of the standard 'type' and 'primary'
- *     sub-attributes.</li>
+ * <li>Multi-valued complex type. An examples is the 'addresses' attribute in
+ *     the core schema.</li>
  * </ol>
  *
  */
@@ -59,74 +58,38 @@ public final class SCIMAttribute
   private final AttributeDescriptor attributeDescriptor;
 
   /**
-   * The single value of this attribute, or {@code null} if this attribute is
-   * a plural attribute.
+   * The value(s) of this attribute.
    */
-  private final SCIMAttributeValue singleValue;
-
-  /**
-   * The plural values of this attribute, or {@code null} if this attribute is
-   * a singular attribute.
-   */
-  private final SCIMAttributeValue[] pluralValues;
+  private final SCIMAttributeValue[] values;
 
 
   /**
    * Create a new instance of an attribute.
    *
    * @param descriptor    The mapping descriptor of this value.
-   * @param singleValue   The single value of this attribute, or {@code null}
-   *                      if this attribute is a plural attribute.
-   * @param pluralValues  The plural values of this attribute, or empty if this
-   *                      attribute is a singular attribute.
+   * @param values        The value(s) of this attribute.
    */
   private SCIMAttribute(final AttributeDescriptor descriptor,
-                        final SCIMAttributeValue singleValue,
-                        final SCIMAttributeValue ... pluralValues)
+                        final SCIMAttributeValue ... values)
   {
     this.attributeDescriptor = descriptor;
-    this.singleValue = singleValue;
-    if (singleValue == null)
-    {
-      this.pluralValues = pluralValues;
-    }
-    else
-    {
-      this.pluralValues = null;
-    }
+    this.values = values;
   }
 
 
 
   /**
-   * Create a singular attribute.
-   *
-   * @param descriptor The mapping descriptor of this attribute.
-   * @param value      The value of this attribute.
-   *
-   * @return  A new singular attribute.
-   */
-  public static SCIMAttribute createSingularAttribute(
-     final AttributeDescriptor descriptor, final SCIMAttributeValue value)
-  {
-    return new SCIMAttribute(descriptor, value);
-  }
-
-
-
-  /**
-   * Create a plural attribute.
+   * Create an attribute.
    *
    * @param descriptor   The mapping descriptor for this attribute.
-   * @param values       The values of this attribute.
+   * @param values       The value(s) of this attribute.
    *
-   * @return  A new plural attribute.
+   * @return  A new attribute.
    */
-  public static SCIMAttribute createPluralAttribute(
-      final AttributeDescriptor descriptor,
-      final SCIMAttributeValue ... values)
+  public static SCIMAttribute create(
+      final AttributeDescriptor descriptor, final SCIMAttributeValue... values)
   {
-    return new SCIMAttribute(descriptor, null, values);
+    return new SCIMAttribute(descriptor, values);
   }
 
 
@@ -157,44 +120,27 @@ public final class SCIMAttribute
 
 
   /**
-   * Indicates whether this attribute is singular or plural. This method
-   * determines which of the {@link #getSingularValue()} or
-   * {@link #getPluralValues()} methods may be used.
+   * Retrieves the value of this attribute. This method should only be
+   * called if the attribute is single valued.
    *
-   * @return {@code true} if this attribute is a plural attribute, or {@code
-   *         false} if this attribute is a singular attribute.
+   * @return  The value of this attribute.
    */
-  public boolean isPlural()
+  public SCIMAttributeValue getValue()
   {
-    return singleValue == null;
+    return values[0];
   }
 
 
 
   /**
-   * Retrieves the singular value of this attribute. This method should only be
-   * called if the {@link #isPlural()} method returns {@code false}.
+   * Retrieves the values of this attribute. This method should only be
+   * called if the attribute is multi-valued.
    *
-   * @return  The singular value of this attribute, or {@code null} if this
-   *          attribute is a plural attribute.
+   * @return  The values of this attribute.
    */
-  public SCIMAttributeValue getSingularValue()
+  public SCIMAttributeValue[] getValues()
   {
-    return singleValue;
-  }
-
-
-
-  /**
-   * Retrieves the plural values of this attribute. This method should only be
-   * called if the {@link #isPlural()} method returns {@code true}.
-   *
-   * @return  The plural values of this attribute, or {@code null} if this
-   *          attribute is a singular attribute.
-   */
-  public SCIMAttributeValue[] getPluralValues()
-  {
-    return pluralValues;
+    return values;
   }
 
   /**
@@ -262,9 +208,9 @@ public final class SCIMAttribute
       return false;
     }
 
-    if (isPlural())
+    if (attributeDescriptor.isMultiValued())
     {
-      for (final SCIMAttributeValue v : getPluralValues())
+      for (final SCIMAttributeValue v : getValues())
       {
         if (v.isComplex())
         {
@@ -295,7 +241,7 @@ public final class SCIMAttribute
     }
     else
     {
-      final SCIMAttributeValue v = getSingularValue();
+      final SCIMAttributeValue v = getValue();
       if (v.isComplex())
       {
         if (subAttributeName != null)
@@ -679,11 +625,7 @@ public final class SCIMAttribute
     if (!attributeDescriptor.equals(that.attributeDescriptor)) {
       return false;
     }
-    if (!Arrays.equals(pluralValues, that.pluralValues)) {
-      return false;
-    }
-    if (singleValue != null ? !singleValue.equals(that.singleValue) :
-        that.singleValue != null) {
+    if (!Arrays.equals(values, that.values)) {
       return false;
     }
 
@@ -693,9 +635,8 @@ public final class SCIMAttribute
   @Override
   public int hashCode() {
     int result = attributeDescriptor.hashCode();
-    result = 31 * result + (singleValue != null ? singleValue.hashCode() : 0);
-    result = 31 * result + (pluralValues != null ?
-        Arrays.hashCode(pluralValues) : 0);
+    result = 31 * result + (values != null ?
+        Arrays.hashCode(values) : 0);
     return result;
   }
 
@@ -705,16 +646,8 @@ public final class SCIMAttribute
     final StringBuilder sb = new StringBuilder();
     sb.append("SCIMAttribute");
     sb.append("{attributeDescriptor=").append(attributeDescriptor);
-    if (singleValue != null)
-    {
-      sb.append(", singleValue=").append(singleValue);
-    }
-    else
-    {
-      sb.append(", pluralValues=").append(
-          pluralValues == null ? "null" :
-          Arrays.asList(pluralValues).toString());
-    }
+    sb.append(", values=").append(values == null ? "null" :
+        Arrays.asList(values).toString());
     sb.append('}');
     return sb.toString();
   }

@@ -193,9 +193,9 @@ public class XmlMarshaller implements Marshaller
                       attributeDescriptor.getName());
           if (a != null)
           {
-            if (a.isPlural())
+            if (a.getAttributeDescriptor().isMultiValued())
             {
-              writePluralAttribute(a, xmlStreamWriter);
+              writeMultiValuedAttribute(a, xmlStreamWriter);
             }
             else
             {
@@ -215,9 +215,9 @@ public class XmlMarshaller implements Marshaller
           for (final SCIMAttribute a :
               resource.getScimObject().getAttributes(schemaURI))
           {
-            if (a.isPlural())
+            if (a.getAttributeDescriptor().isMultiValued())
             {
-              writePluralAttribute(a, xmlStreamWriter);
+              writeMultiValuedAttribute(a, xmlStreamWriter);
             }
             else
             {
@@ -264,9 +264,9 @@ public class XmlMarshaller implements Marshaller
               attributeDescriptor.getSchema(), attributeDescriptor.getName());
       if (a != null)
       {
-        if (a.isPlural())
+        if (a.getAttributeDescriptor().isMultiValued())
         {
-          writePluralAttribute(a, xmlStreamWriter);
+          writeMultiValuedAttribute(a, xmlStreamWriter);
         }
         else
         {
@@ -286,9 +286,9 @@ public class XmlMarshaller implements Marshaller
         for (final SCIMAttribute a :
             resource.getScimObject().getAttributes(schemaURI))
         {
-          if (a.isPlural())
+          if (a.getAttributeDescriptor().isMultiValued())
           {
-            writePluralAttribute(a, xmlStreamWriter);
+            writeMultiValuedAttribute(a, xmlStreamWriter);
           }
           else
           {
@@ -304,22 +304,22 @@ public class XmlMarshaller implements Marshaller
 
 
   /**
-   * Write a plural attribute to an XML stream.
+   * Write a multi-valued attribute to an XML stream.
    *
    * @param scimAttribute   The attribute to be written.
    * @param xmlStreamWriter The stream to which the attribute should be
    *                        written.
    * @throws XMLStreamException If the attribute could not be written.
    */
-  private void writePluralAttribute(final SCIMAttribute scimAttribute,
-                                    final XMLStreamWriter xmlStreamWriter)
+  private void writeMultiValuedAttribute(final SCIMAttribute scimAttribute,
+                                         final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException
   {
-    final SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
+    final SCIMAttributeValue[] values = scimAttribute.getValues();
 
     writeStartElement(scimAttribute, xmlStreamWriter);
 
-    for (final SCIMAttributeValue pluralValue : pluralValues)
+    for (final SCIMAttributeValue value : values)
     {
       writeSingularStartElement(scimAttribute, xmlStreamWriter);
 
@@ -327,12 +327,12 @@ public class XmlMarshaller implements Marshaller
       for (final AttributeDescriptor descriptor :
           scimAttribute.getAttributeDescriptor().getSubAttributes())
       {
-        final SCIMAttribute a = pluralValue.getAttribute(descriptor.getName());
+        final SCIMAttribute a = value.getAttribute(descriptor.getName());
         if (a != null)
         {
-          if (a.isPlural())
+          if (a.getAttributeDescriptor().isMultiValued())
           {
-            writePluralAttribute(a, xmlStreamWriter);
+            writeMultiValuedAttribute(a, xmlStreamWriter);
           }
           else
           {
@@ -366,7 +366,7 @@ public class XmlMarshaller implements Marshaller
 
     writeStartElement(scimAttribute, xmlStreamWriter);
 
-    final SCIMAttributeValue val = scimAttribute.getSingularValue();
+    final SCIMAttributeValue val = scimAttribute.getValue();
 
     if (val.isComplex())
     {
@@ -384,7 +384,7 @@ public class XmlMarshaller implements Marshaller
     else
     {
       final String stringValue =
-          scimAttribute.getSingularValue().getStringValue();
+          scimAttribute.getValue().getStringValue();
       xmlStreamWriter.writeCharacters(stringValue);
     }
 

@@ -379,6 +379,68 @@ public class UserResource extends BaseResource
   }
 
   /**
+   * Retrieves the User's administrative status.
+   *
+   * @return <code>true</code> if the User's administrative status is active or
+   *         <code>false</code> otherwise.
+   */
+  public boolean isActive()
+  {
+    return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+        "active", AttributeValueResolver.BOOLEAN_RESOLVER);
+  }
+
+  /**
+   * Sets the User's administrative status.
+   *
+   * @param active The User's administrative status.
+   * @return this resource instance.
+   */
+  public UserResource setActive(final boolean active)
+  {
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "active", AttributeValueResolver.BOOLEAN_RESOLVER, active);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  /**
+   * Retrieves the User's clear text password. This is intended to be used as a
+   * means to specify an initial password when creating a new User or to reset
+   * an existing User's password. This will never be returned by the service
+   * provider.
+   *
+   * @return The User's clear text password.
+   */
+  public String getPassword()
+  {
+    return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+        "password", AttributeValueResolver.STRING_RESOLVER);
+  }
+
+  /**
+   * Sets the User's clear text password.
+   *
+   * @param password The User's clear text password
+   * @return this resource instance.
+   */
+  public UserResource setPassword(final String password)
+  {
+    try {
+      setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+          "password", AttributeValueResolver.STRING_RESOLVER, password);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  /**
    * Retrieves the E-mail addresses for the User.
    *
    * @return The E-mail addresses for the User or <code>null</code> if it is
@@ -386,7 +448,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getEmails()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "emails", Entry.STRINGS_RESOLVER);
   }
 
@@ -399,7 +461,7 @@ public class UserResource extends BaseResource
   public UserResource setEmails(final Collection<Entry<String>> emails)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "emails", Entry.STRINGS_RESOLVER, emails);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -416,7 +478,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getPhoneNumbers()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "phoneNumbers", Entry.STRINGS_RESOLVER);
   }
 
@@ -430,7 +492,7 @@ public class UserResource extends BaseResource
       final Collection<Entry<String>> phoneNumbers)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "phoneNumbers", Entry.STRINGS_RESOLVER, phoneNumbers);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -447,7 +509,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getIms()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "ims", Entry.STRINGS_RESOLVER);
   }
 
@@ -460,7 +522,7 @@ public class UserResource extends BaseResource
   public UserResource setIms(final Collection<Entry<String>> ims)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "ims", Entry.STRINGS_RESOLVER, ims);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -477,7 +539,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getPhotos()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "photos", Entry.STRINGS_RESOLVER);
   }
 
@@ -490,7 +552,7 @@ public class UserResource extends BaseResource
   public UserResource setPhotos(final Collection<Entry<String>> photos)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "photos", Entry.STRINGS_RESOLVER, photos);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -507,7 +569,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Address> getAddresses()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "addresses", Address.ADDRESS_RESOLVER);
   }
 
@@ -520,7 +582,7 @@ public class UserResource extends BaseResource
   public UserResource setAddresses(final Collection<Address> addresses)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "addresses", Address.ADDRESS_RESOLVER, addresses);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -537,7 +599,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getGroups()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "groups", Entry.STRINGS_RESOLVER);
   }
 
@@ -550,7 +612,7 @@ public class UserResource extends BaseResource
   public UserResource setGroups(final Collection<Entry<String>> groups)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "groups", Entry.STRINGS_RESOLVER, groups);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -569,7 +631,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getEntitlements()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "entitlements", Entry.STRINGS_RESOLVER);
   }
 
@@ -583,7 +645,7 @@ public class UserResource extends BaseResource
       final Collection<Entry<String>> entitlements)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "entitlements", Entry.STRINGS_RESOLVER, entitlements);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
@@ -601,7 +663,7 @@ public class UserResource extends BaseResource
    */
   public Collection<Entry<String>> getRoles()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "roles", Entry.STRINGS_RESOLVER);
   }
 
@@ -614,7 +676,7 @@ public class UserResource extends BaseResource
   public UserResource setRoles(final Collection<Entry<String>> roles)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "roles", Entry.STRINGS_RESOLVER, roles);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...

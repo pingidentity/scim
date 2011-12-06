@@ -50,7 +50,7 @@ public class ETagConfig
         @Override
         public ETagConfig toInstance(final SCIMAttributeValue value) {
           return new ETagConfig(
-              value.getSingularSubAttributeValue("supported",
+              value.getSubAttributeValue("supported",
                   BOOLEAN_RESOLVER));
         }
 
@@ -69,10 +69,10 @@ public class ETagConfig
           final AttributeDescriptor supportedDescriptor =
               attributeDescriptor.getSubAttribute("supported");
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   supportedDescriptor,
                   BOOLEAN_RESOLVER.fromInstance(supportedDescriptor,
-                                                value.supported)));
+                      value.supported)));
 
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }

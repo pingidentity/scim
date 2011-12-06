@@ -188,7 +188,7 @@ public class ResourceDescriptor extends BaseResource
    */
   public Collection<AttributeDescriptor> getAttributes()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER);
   }
 
@@ -204,7 +204,7 @@ public class ResourceDescriptor extends BaseResource
       final Collection<AttributeDescriptor> attributes)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER,
           attributes);
     } catch (InvalidResourceException e) {
@@ -280,10 +280,10 @@ public class ResourceDescriptor extends BaseResource
    *
    * @return The Resource's HTTP addressable endpoint relative to the Base URL.
    */
-  public String getQueryEndpoint()
+  public String getEndpoint()
   {
     return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-        "queryEndpoint", AttributeValueResolver.STRING_RESOLVER);
+        "endpoint", AttributeValueResolver.STRING_RESOLVER);
   }
 
 
@@ -291,16 +291,15 @@ public class ResourceDescriptor extends BaseResource
    * Sets the Resource's HTTP addressable endpoint relative to the
    * Base URL.
    *
-   * @param queryEndpoint The Resource's HTTP addressable endpoint relative to
-   *                      the Base URL.
+   * @param endpoint The Resource's HTTP addressable endpoint relative to
+   *                 the Base URL.
    * @return this ResourceDescriptor.
    */
-  private ResourceDescriptor setQueryEndpoint(final String queryEndpoint)
+  private ResourceDescriptor setEndpoint(final String endpoint)
   {
     try {
       setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
-          "queryEndpoint", AttributeValueResolver.STRING_RESOLVER,
-          queryEndpoint);
+          "endpoint", AttributeValueResolver.STRING_RESOLVER, endpoint);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
       throw new RuntimeException(e);
@@ -389,7 +388,7 @@ public class ResourceDescriptor extends BaseResource
         "name='" + getName() + '\'' +
         ", description='" + getDescription() +
         ", schema='" + getSchema() + '\'' +
-        ", queryEndpoint='" + getQueryEndpoint() + '\'' +
+        ", endpoint='" + getEndpoint() + '\'' +
         ", attributes=" + getAttributes() +
         '}';
   }
@@ -402,21 +401,21 @@ public class ResourceDescriptor extends BaseResource
    * @param name The addressable Resource endpoint name.
    * @param description The Resource's human readable description.
    * @param schema The Resource's associated schema URN
-   * @param queryEndpoint The Resource's HTTP addressable endpoint relative
-   *                      to the Base URL.
+   * @param endpoint The Resource's HTTP addressable endpoint relative
+   *                 to the Base URL.
    * @param attributes Specifies the set of associated Resource attributes.
    * @return The newly constructed resource descriptor.
    */
   public static ResourceDescriptor create(
       final String name, final String description, final String schema,
-      final String queryEndpoint, final AttributeDescriptor... attributes)
+      final String endpoint, final AttributeDescriptor... attributes)
   {
     ResourceDescriptor resourceDescriptor =
       new ResourceDescriptor(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR);
     resourceDescriptor.setName(name);
     resourceDescriptor.setDescription(description);
     resourceDescriptor.setSchema(schema);
-    resourceDescriptor.setQueryEndpoint(queryEndpoint);
+    resourceDescriptor.setEndpoint(endpoint);
     resourceDescriptor.setAttributes(
         CoreSchema.addCommonResourceAttributes(attributes));
 

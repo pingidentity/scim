@@ -60,7 +60,7 @@ public class XMLQueryResource extends AbstractSCIMResource
                           final ResourceStats resourceStats,
                           final SCIMBackend backend)
   {
-    super(resourceDescriptor.getQueryEndpoint() + ".xml",
+    super(resourceDescriptor.getEndpoint() + ".xml",
         resourceDescriptor, resourceStats, backend);
   }
 

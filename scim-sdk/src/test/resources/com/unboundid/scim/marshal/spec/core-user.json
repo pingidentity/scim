@@ -97,5 +97,6 @@
         "value":"00300000005N98YT1",
         "type":"US Employees"
     }
-]
+    ],
+    "roles":["Employee","Accounting","Web"]
 }

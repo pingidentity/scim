@@ -105,7 +105,7 @@ public class JsonUnmarshaller implements Unmarshaller
       if (jsonAttribute != null)
       {
         scimObject.addAttribute(
-            createAttribute(attributeDescriptor, jsonAttribute));
+            create(attributeDescriptor, jsonAttribute));
       }
     }
 
@@ -133,7 +133,7 @@ public class JsonUnmarshaller implements Unmarshaller
                   resourceDescriptor.getAttribute(schema, attributeName);
               final Object jsonAttribute = schemaAttrs.get(attributeName);
               scimObject.addAttribute(
-                  createAttribute(attributeDescriptor, jsonAttribute));
+                  create(attributeDescriptor, jsonAttribute));
             }
           }
         }
@@ -236,41 +236,52 @@ public class JsonUnmarshaller implements Unmarshaller
       final Object jsonAttribute,
       final AttributeDescriptor attributeDescriptor)
   {
-    return SCIMAttribute.createSingularAttribute(attributeDescriptor,
+    return SCIMAttribute.create(attributeDescriptor,
         SCIMAttributeValue.createStringValue(jsonAttribute.toString()));
   }
 
 
 
   /**
-   * Parse a plural attribute from its representation as a JSON Object.
+   * Parse a multi-valued attribute from its representation as a JSON Object.
    *
    * @param jsonAttribute       The JSON object representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
    *
    * @return The parsed attribute.
    *
-   * @throws org.json.JSONException Thrown if error creating plural attribute.
+   * @throws JSONException Thrown if error creating multi-valued attribute.
    * @throws InvalidResourceException if a schema error occurs.
    */
-  private SCIMAttribute createPluralAttribute(
+  private SCIMAttribute createMutiValuedAttribute(
       final JSONArray jsonAttribute,
       final AttributeDescriptor attributeDescriptor)
       throws JSONException, InvalidResourceException
   {
-    final List<SCIMAttributeValue> pluralScimAttributes =
+    final List<SCIMAttributeValue> values =
         new ArrayList<SCIMAttributeValue>(jsonAttribute.length());
 
     for (int i = 0; i < jsonAttribute.length(); i++)
     {
-      final JSONObject jsonObject = jsonAttribute.getJSONObject(i);
-      pluralScimAttributes.add(
-          createComplexAttribute(jsonObject, attributeDescriptor));
+      Object o = jsonAttribute.get(i);
+      SCIMAttributeValue value;
+      if(o instanceof JSONObject)
+      {
+        value = createComplexAttribute((JSONObject) o, attributeDescriptor);
+      }
+      else
+      {
+        SCIMAttribute subAttr = SCIMAttribute.create(
+            attributeDescriptor.getSubAttribute("value"),
+            SCIMAttributeValue.createStringValue(o.toString()));
+        value = SCIMAttributeValue.createComplexValue(subAttr);
+      }
+      values.add(value);
     }
     SCIMAttributeValue[] vals =
-        new SCIMAttributeValue[pluralScimAttributes.size()];
-    vals = pluralScimAttributes.toArray(vals);
-    return SCIMAttribute.createPluralAttribute(attributeDescriptor, vals);
+        new SCIMAttributeValue[values.size()];
+    vals = values.toArray(vals);
+    return SCIMAttribute.create(attributeDescriptor, vals);
   }
 
 
@@ -302,11 +313,11 @@ public class JsonUnmarshaller implements Unmarshaller
       if (subAttribute != null)
       {
         SCIMAttribute childAttr;
-        // Allow plural sub-attribute as the resource schema needs this.
-        if (subAttribute.isPlural())
+        // Allow multi-valued sub-attribute as the resource schema needs this.
+        if (subAttribute.isMultiValued())
         {
           final JSONArray o = jsonAttribute.getJSONArray(key);
-          childAttr = createPluralAttribute(o, subAttribute);
+          childAttr = createMutiValuedAttribute(o, subAttribute);
         }
         else
         {
@@ -333,17 +344,17 @@ public class JsonUnmarshaller implements Unmarshaller
    * @throws JSONException If the JSON object is not valid.
    * @throws InvalidResourceException If a schema error occurs.
    */
-  private SCIMAttribute createAttribute(
+  private SCIMAttribute create(
       final AttributeDescriptor descriptor, final Object jsonAttribute)
       throws JSONException, InvalidResourceException
   {
-    if (descriptor.isPlural())
+    if (descriptor.isMultiValued())
     {
-      return createPluralAttribute((JSONArray) jsonAttribute, descriptor);
+      return createMutiValuedAttribute((JSONArray) jsonAttribute, descriptor);
     }
     else if (descriptor.getDataType() == AttributeDescriptor.DataType.COMPLEX)
     {
-      return SCIMAttribute.createSingularAttribute(
+      return SCIMAttribute.create(
           descriptor,
           createComplexAttribute((JSONObject) jsonAttribute, descriptor));
     }

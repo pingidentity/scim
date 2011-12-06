@@ -60,7 +60,7 @@ public class JSONQueryResource extends AbstractSCIMResource
                            final ResourceStats resourceStats,
                            final SCIMBackend backend)
   {
-    super(resourceDescriptor.getQueryEndpoint() + ".json",
+    super(resourceDescriptor.getEndpoint() + ".json",
           resourceDescriptor, resourceStats, backend);
   }
 

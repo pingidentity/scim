@@ -66,7 +66,7 @@ public class SCIMResource extends AbstractSCIMResource
                       final ResourceStats resourceStats,
                       final SCIMBackend backend)
   {
-    super(resourceDescriptor.getQueryEndpoint(), resourceDescriptor,
+    super(resourceDescriptor.getEndpoint(), resourceDescriptor,
           resourceStats, backend);
   }
 

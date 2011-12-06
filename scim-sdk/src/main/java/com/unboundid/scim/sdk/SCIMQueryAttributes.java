@@ -237,12 +237,12 @@ public class SCIMQueryAttributes
       return attribute;
     }
 
-    if (attribute.isPlural())
+    if (attribute.getAttributeDescriptor().isMultiValued())
     {
       final ArrayList<SCIMAttributeValue> values =
           new ArrayList<SCIMAttributeValue>();
 
-      for (final SCIMAttributeValue v : attribute.getPluralValues())
+      for (final SCIMAttributeValue v : attribute.getValues())
       {
         final ArrayList<SCIMAttribute> subAttributes =
             new ArrayList<SCIMAttribute>();
@@ -257,7 +257,7 @@ public class SCIMQueryAttributes
         values.add(SCIMAttributeValue.createComplexValue(subAttributes));
       }
 
-      return SCIMAttribute.createPluralAttribute(
+      return SCIMAttribute.create(
           descriptor, values.toArray(new SCIMAttributeValue[values.size()]));
     }
     else
@@ -267,14 +267,14 @@ public class SCIMQueryAttributes
       for (final AttributeDescriptor d : subDescriptors)
       {
         final SCIMAttribute subAttribute =
-            attribute.getSingularValue().getAttribute(d.getName());
+            attribute.getValue().getAttribute(d.getName());
         if (subAttribute != null)
         {
           subAttributes.add(subAttribute);
         }
       }
-      return SCIMAttribute.createSingularAttribute(
-          descriptor, SCIMAttributeValue.createComplexValue(subAttributes));
+      return SCIMAttribute.create(descriptor,
+          SCIMAttributeValue.createComplexValue(subAttributes));
     }
   }
 }

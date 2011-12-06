@@ -283,7 +283,7 @@ public class ServiceProviderConfig extends BaseResource
    */
   public Collection<AuthenticationScheme> getAuthenticationSchemes()
   {
-    return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "authenticationSchemes",
         AuthenticationScheme.AUTHENTICATION_SCHEME_RESOLVER);
   }
@@ -298,7 +298,7 @@ public class ServiceProviderConfig extends BaseResource
       final Collection<AuthenticationScheme> authenticationSchemes)
   {
     try {
-      setPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+      setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "authenticationSchemes",
           AuthenticationScheme.AUTHENTICATION_SCHEME_RESOLVER,
           authenticationSchemes);

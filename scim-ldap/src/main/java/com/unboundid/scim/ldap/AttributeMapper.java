@@ -191,59 +191,64 @@ public abstract class AttributeMapper
       return new ComplexSingularAttributeMapper(attributeDescriptor,
                                                 transformations);
     }
-    else if (attributeDefinition.getSimplePlural() != null)
+    else if (attributeDefinition.getSimpleMultiValued() != null)
     {
-      final SimplePluralAttributeDefinition simplePluralDefinition =
-          attributeDefinition.getSimplePlural();
+      final SimpleMultiValuedAttributeDefinition simpleMultiValuedDefinition =
+          attributeDefinition.getSimpleMultiValued();
 
-      final List<PluralValueMapper> pluralMappers =
-          new ArrayList<PluralValueMapper>();
-      for (final PluralType pluralType : simplePluralDefinition.getPluralType())
+      final List<CanonicalValueMapper> canonicalValueMappers =
+          new ArrayList<CanonicalValueMapper>();
+      for (final CanonicalValue CanonicalValue :
+          simpleMultiValuedDefinition.getCanonicalValue())
       {
-        final PluralValueMapper m = PluralValueMapper.create(pluralType);
+        final CanonicalValueMapper m =
+            CanonicalValueMapper.create(CanonicalValue);
         if (m != null)
         {
-          pluralMappers.add(m);
+          canonicalValueMappers.add(m);
         }
       }
 
-      if (simplePluralDefinition.getMapping() != null)
+      if (simpleMultiValuedDefinition.getMapping() != null)
       {
-        pluralMappers.add(PluralValueMapper.create(
-            simplePluralDefinition.getMapping()));
+        canonicalValueMappers.add(CanonicalValueMapper.create(
+            simpleMultiValuedDefinition.getMapping()));
       }
 
-      if (pluralMappers.isEmpty())
+      if (canonicalValueMappers.isEmpty())
       {
         return null;
       }
 
-      return new PluralAttributeMapper(attributeDescriptor, pluralMappers);
+      return new MultiValuedAttributeMapper(attributeDescriptor,
+          canonicalValueMappers);
     }
-    else if (attributeDefinition.getComplexPlural() != null)
+    else if (attributeDefinition.getComplexMultiValued() != null)
     {
-      final ComplexPluralAttributeDefinition complexPluralDefinition =
-          attributeDefinition.getComplexPlural();
+      final ComplexMultiValuedAttributeDefinition complexMultiValuedDefinition =
+          attributeDefinition.getComplexMultiValued();
 
-      final List<PluralValueMapper> pluralMappers =
-          new ArrayList<PluralValueMapper>();
+      final List<CanonicalValueMapper> canonicalValueMappers =
+          new ArrayList<CanonicalValueMapper>();
 
-      for (final PluralType pluralType :
-          complexPluralDefinition.getPluralType())
+      for (final CanonicalValue CanonicalValue :
+          complexMultiValuedDefinition.getCanonicalValue())
       {
-        final PluralValueMapper m = PluralValueMapper.create(pluralType);
+        final CanonicalValueMapper m =
+            CanonicalValueMapper.create(CanonicalValue);
         if (m != null)
         {
-          pluralMappers.add(m);
+          canonicalValueMappers.add(m);
         }
       }
 
-      if (pluralMappers.isEmpty())
+      if (canonicalValueMappers.isEmpty())
       {
         return null;
       }
 
-      return new PluralAttributeMapper(attributeDescriptor, pluralMappers);
+      return new MultiValuedAttributeMapper(attributeDescriptor,
+          canonicalValueMappers);
     }
     else
     {

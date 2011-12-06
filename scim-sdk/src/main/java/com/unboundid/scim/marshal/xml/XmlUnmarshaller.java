@@ -128,14 +128,14 @@ public class XmlUnmarshaller implements Unmarshaller
           resourceDescriptor.getAttribute(namespaceURI, element.getLocalName());
 
       final SCIMAttribute attr;
-      if (attributeDescriptor.isPlural())
+      if (attributeDescriptor.isMultiValued())
       {
-        attr = createPluralAttribute(element, attributeDescriptor);
+        attr = createMultiValuedAttribute(element, attributeDescriptor);
       }
       else if (attributeDescriptor.getDataType() ==
           AttributeDescriptor.DataType.COMPLEX)
       {
-        attr = SCIMAttribute.createSingularAttribute(attributeDescriptor,
+        attr = SCIMAttribute.create(attributeDescriptor,
             createComplexAttribute(element, attributeDescriptor));
       }
       else
@@ -276,14 +276,14 @@ public class XmlUnmarshaller implements Unmarshaller
       final Node node,
       final AttributeDescriptor attributeDescriptor)
   {
-    return SCIMAttribute.createSingularAttribute(attributeDescriptor,
+    return SCIMAttribute.create(attributeDescriptor,
         SCIMAttributeValue.createStringValue(node.getTextContent()));
   }
 
 
 
   /**
-   * Parse a plural attribute from its representation as a DOM node.
+   * Parse a multi-valued attribute from its representation as a DOM node.
    *
    * @param node                The DOM node representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
@@ -291,27 +291,27 @@ public class XmlUnmarshaller implements Unmarshaller
    * @return The parsed attribute.
    * @throws InvalidResourceException if an error occurs.
    */
-  private SCIMAttribute createPluralAttribute(
+  private SCIMAttribute createMultiValuedAttribute(
       final Node node, final AttributeDescriptor attributeDescriptor)
       throws InvalidResourceException
   {
-    final NodeList pluralAttributes = node.getChildNodes();
-    final List<SCIMAttributeValue> pluralScimAttributes =
-        new ArrayList<SCIMAttributeValue>(pluralAttributes.getLength());
-    for (int i = 0; i < pluralAttributes.getLength(); i++)
+    final NodeList attributes = node.getChildNodes();
+    final List<SCIMAttributeValue> values =
+        new ArrayList<SCIMAttributeValue>(attributes.getLength());
+    for (int i = 0; i < attributes.getLength(); i++)
     {
-      final Node pluralAttribute = pluralAttributes.item(i);
-      if (pluralAttribute.getNodeType() != Node.ELEMENT_NODE)
+      final Node attribute = attributes.item(i);
+      if (attribute.getNodeType() != Node.ELEMENT_NODE)
       {
         continue;
       }
-      pluralScimAttributes.add(
-          createComplexAttribute(pluralAttribute, attributeDescriptor));
+      values.add(
+          createComplexAttribute(attribute, attributeDescriptor));
     }
     SCIMAttributeValue[] vals =
-        new SCIMAttributeValue[pluralScimAttributes.size()];
-    vals = pluralScimAttributes.toArray(vals);
-    return SCIMAttribute.createPluralAttribute(attributeDescriptor, vals);
+        new SCIMAttributeValue[values.size()];
+    vals = values.toArray(vals);
+    return SCIMAttribute.create(attributeDescriptor, vals);
   }
 
 
@@ -340,10 +340,10 @@ public class XmlUnmarshaller implements Unmarshaller
         SCIMAttribute childAttr;
         AttributeDescriptor subAttribute =
             attributeDescriptor.getSubAttribute(item1.getNodeName());
-        // Allow plural sub-attribute as the resource schema needs this.
-        if(subAttribute.isPlural())
+        // Allow multi-valued sub-attribute as the resource schema needs this.
+        if(subAttribute.isMultiValued())
         {
-          childAttr = createPluralAttribute(item1, subAttribute);
+          childAttr = createMultiValuedAttribute(item1, subAttribute);
         }
         else
         {

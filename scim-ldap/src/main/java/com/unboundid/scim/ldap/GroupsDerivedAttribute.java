@@ -106,7 +106,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
           final String groupID = groupDN.toNormalizedString();
 
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   getAttributeDescriptor().getSubAttribute("value"),
                   SCIMAttributeValue.createStringValue(groupID)));
 
@@ -123,7 +123,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
           if (groupDisplayName != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     getAttributeDescriptor().getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue(groupDisplayName)));
           }
@@ -156,7 +156,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
               new ArrayList<SCIMAttribute>();
 
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   getAttributeDescriptor().getSubAttribute("value"),
                   SCIMAttributeValue.createStringValue(groupID)));
 
@@ -165,7 +165,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
           if (groupDisplayName != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     getAttributeDescriptor().getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue(groupDisplayName)));
           }
@@ -188,7 +188,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
     }
     else
     {
-      return SCIMAttribute.createPluralAttribute(
+      return SCIMAttribute.create(
           getAttributeDescriptor(),
           values.toArray(new SCIMAttributeValue[values.size()]));
     }

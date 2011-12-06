@@ -56,96 +56,91 @@ public class SCIMAttributeTestCase
     final UUID uuid = UUID.randomUUID();
 
     final SCIMAttribute userID =
-        SCIMAttribute.createSingularAttribute(
+        SCIMAttribute.create(
             CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "id"),
             SCIMAttributeValue.createStringValue(uuid.toString()));
     assertEquals(userID.getSchema(), coreSchema);
     assertEquals(userID.getName(), "id");
-    assertFalse(userID.isPlural());
-    assertNull(userID.getPluralValues());
-    assertNotNull(userID.getSingularValue());
-    assertFalse(userID.getSingularValue().isComplex());
-    assertNull(userID.getSingularValue().getAttribute("wrong"));
-    assertEquals(userID.getSingularValue().getStringValue(), uuid.toString());
+    assertFalse(userID.getValues().length > 1);
+    assertNotNull(userID.getValue());
+    assertFalse(userID.getValue().isComplex());
+    assertNull(userID.getValue().getAttribute("wrong"));
+    assertEquals(userID.getValue().getStringValue(), uuid.toString());
 
     AttributeDescriptor nameDescriptor =
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "name");
     final SCIMAttribute name =
-        SCIMAttribute.createSingularAttribute(nameDescriptor,
+        SCIMAttribute.create(nameDescriptor,
             SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     nameDescriptor.getSubAttribute("formatted"),
                     SCIMAttributeValue.createStringValue(
                         "Ms. Barbara J Jensen III")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     nameDescriptor.getSubAttribute("familyName"),
                     SCIMAttributeValue.createStringValue("Jensen")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     nameDescriptor.getSubAttribute("givenName"),
                     SCIMAttributeValue.createStringValue("Barbara")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     nameDescriptor.getSubAttribute("middleName"),
                     SCIMAttributeValue.createStringValue("Jane")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     nameDescriptor.getSubAttribute("honorificPrefix"),
                     SCIMAttributeValue.createStringValue("Ms.")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     nameDescriptor.getSubAttribute("honorificSuffix"),
                     SCIMAttributeValue.createStringValue("III"))));
     assertEquals(name.getSchema(), coreSchema);
     assertEquals(name.getName(), "name");
-    assertFalse(name.isPlural());
-    assertNull(name.getPluralValues());
-    assertNotNull(name.getSingularValue());
-    assertTrue(name.getSingularValue().isComplex());
-    assertEquals(name.getSingularValue().getAttributes().size(), 6);
-    assertEquals(name.getSingularValue().getAttribute("formatted").
-        getSingularValue().getStringValue(), "Ms. Barbara J Jensen III");
-    assertEquals(name.getSingularValue().getAttribute("familyName").
-        getSingularValue().getStringValue(), "Jensen");
-    assertEquals(name.getSingularValue().getAttribute("FAMILYNAME").
-        getSingularValue().getStringValue(), "Jensen");
-    assertEquals(name.getSingularValue().getAttribute("givenName").
-        getSingularValue().getStringValue(), "Barbara");
-    assertEquals(name.getSingularValue().getAttribute("middleName").
-        getSingularValue().getStringValue(), "Jane");
-    assertEquals(name.getSingularValue().getAttribute("honorificPrefix").
-        getSingularValue().getStringValue(), "Ms.");
-    assertEquals(name.getSingularValue().getAttribute("honorificSuffix").
-        getSingularValue().getStringValue(), "III");
+    assertFalse(name.getValues().length > 1);
+    assertNotNull(name.getValue());
+    assertTrue(name.getValue().isComplex());
+    assertEquals(name.getValue().getAttributes().size(), 6);
+    assertEquals(name.getValue().getAttribute("formatted").
+        getValue().getStringValue(), "Ms. Barbara J Jensen III");
+    assertEquals(name.getValue().getAttribute("familyName").
+        getValue().getStringValue(), "Jensen");
+    assertEquals(name.getValue().getAttribute("FAMILYNAME").
+        getValue().getStringValue(), "Jensen");
+    assertEquals(name.getValue().getAttribute("givenName").
+        getValue().getStringValue(), "Barbara");
+    assertEquals(name.getValue().getAttribute("middleName").
+        getValue().getStringValue(), "Jane");
+    assertEquals(name.getValue().getAttribute("honorificPrefix").
+        getValue().getStringValue(), "Ms.");
+    assertEquals(name.getValue().getAttribute("honorificSuffix").
+        getValue().getStringValue(), "III");
 
     AttributeDescriptor emailsDescriptor =
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "emails");
     final List<SCIMAttribute> emailAttrs = new ArrayList<SCIMAttribute>();
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
+    emailAttrs.add(SCIMAttribute.create(
         emailsDescriptor.getSubAttribute("value"),
         SCIMAttributeValue.createStringValue(
             "bjensen@example.com")));
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
+    emailAttrs.add(SCIMAttribute.create(
         emailsDescriptor.getSubAttribute("type"),
         SCIMAttributeValue.createStringValue("work")));
-    emailAttrs.add(SCIMAttribute.createSingularAttribute(
+    emailAttrs.add(SCIMAttribute.create(
         emailsDescriptor.getSubAttribute("primary"),
         SCIMAttributeValue.createBooleanValue(true)));
     final SCIMAttribute emails =
-        SCIMAttribute.createPluralAttribute(
+        SCIMAttribute.create(
             emailsDescriptor,
             SCIMAttributeValue.createComplexValue(emailAttrs));
     assertEquals(emails.getName(), "emails");
-    assertTrue(emails.isPlural());
-    assertNotNull(emails.getPluralValues());
-    assertNull(emails.getSingularValue());
-    assertEquals(emails.getPluralValues().length, 1);
+    assertEquals(emails.getValues().length, 1);
     assertEquals(
-        emails.getPluralValues()[0].getAttribute("value").getSingularValue().
+        emails.getValues()[0].getAttribute("value").getValue().
             getStringValue(),
         "bjensen@example.com");
     assertEquals(
-        emails.getPluralValues()[0].getAttribute("type").getSingularValue().
+        emails.getValues()[0].getAttribute("type").getValue().
             getStringValue(),
         "work");
     assertEquals(
-        emails.getPluralValues()[0].getAttribute("primary").getSingularValue().
+        emails.getValues()[0].getAttribute("primary").getValue().
             getBooleanValue(),
         Boolean.TRUE);
 
@@ -153,24 +148,23 @@ public class SCIMAttributeTestCase
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "meta");
     final Date date = new Date(System.currentTimeMillis());
     final SCIMAttribute meta =
-        SCIMAttribute.createSingularAttribute(
+        SCIMAttribute.create(
             metaDescriptor,
             SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     metaDescriptor.getSubAttribute("created"),
                     SCIMAttributeValue.createDateValue(date)),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     metaDescriptor.getSubAttribute("lastModified"),
                     SCIMAttributeValue.createDateValue(date))));
     assertEquals(meta.getName(), "meta");
-    assertFalse(meta.isPlural());
-    assertNull(meta.getPluralValues());
-    assertNotNull(meta.getSingularValue());
-    assertTrue(meta.getSingularValue().isComplex());
-    assertEquals(meta.getSingularValue().getAttribute("created").
-        getSingularValue().getDateValue(), date);
-    assertEquals(meta.getSingularValue().getAttribute("lastModified").
-        getSingularValue().getDateValue(), date);
+    assertFalse(meta.getValues().length > 1);
+    assertNotNull(meta.getValue());
+    assertTrue(meta.getValue().isComplex());
+    assertEquals(meta.getValue().getAttribute("created").
+        getValue().getDateValue(), date);
+    assertEquals(meta.getValue().getAttribute("lastModified").
+        getValue().getDateValue(), date);
   }
 
 
@@ -186,16 +180,16 @@ public class SCIMAttributeTestCase
         "http://myextension";
 
     final AttributeDescriptor descriptor =
-        AttributeDescriptor.singularSimple("a",
+        AttributeDescriptor.simple("a",
             AttributeDescriptor.DataType.COMPLEX, "description", customSchema,
             false, false, false);
 
     try
     {
       SCIMAttributeValue.createComplexValue(
-          SCIMAttribute.createSingularAttribute(
+          SCIMAttribute.create(
               descriptor, SCIMAttributeValue.createStringValue("1")),
-          SCIMAttribute.createSingularAttribute(
+          SCIMAttribute.create(
               descriptor, SCIMAttributeValue.createStringValue("2")));
       fail("Expected creation of a complex value containing a duplicate " +
            "attribute to throw an exception");
@@ -208,9 +202,9 @@ public class SCIMAttributeTestCase
     try
     {
       final List<SCIMAttribute> attrs = new ArrayList<SCIMAttribute>();
-      attrs.add(SCIMAttribute.createSingularAttribute(
+      attrs.add(SCIMAttribute.create(
           descriptor, SCIMAttributeValue.createStringValue("1")));
-      attrs.add(SCIMAttribute.createSingularAttribute(
+      attrs.add(SCIMAttribute.create(
           descriptor, SCIMAttributeValue.createStringValue("2")));
       SCIMAttributeValue.createComplexValue(attrs);
       fail("Expected creation of a complex value containing a duplicate " +

@@ -27,7 +27,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Represents a standard value of a plural attribute.
+ * Represents a standard value of a multi-valued attribute.
  *
  * @param <T> The value type.
  */
@@ -46,13 +46,13 @@ public final class Entry<T>
         @Override
         public Entry<String> toInstance(final SCIMAttributeValue value) {
           String v =
-              value.getSingularSubAttributeValue("value", STRING_RESOLVER);
+              value.getSubAttributeValue("value", STRING_RESOLVER);
           String t =
-              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+              value.getSubAttributeValue("type", STRING_RESOLVER);
           Boolean p =
-              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+              value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
-              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+              value.getSubAttributeValue("display", STRING_RESOLVER);
 
 
           return new Entry<String>(v, t, p == null ? false : p, d);
@@ -71,7 +71,7 @@ public final class Entry<T>
           if (value.value != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createStringValue(value.value)));
           }
@@ -79,7 +79,7 @@ public final class Entry<T>
           if (value.primary)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
@@ -87,7 +87,7 @@ public final class Entry<T>
           if (value.type != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
@@ -95,7 +95,7 @@ public final class Entry<T>
           if(value.display != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue(value.display)));
           }
@@ -117,13 +117,13 @@ public final class Entry<T>
         @Override
         public Entry<Boolean> toInstance(final SCIMAttributeValue value) {
           Boolean v =
-              value.getSingularSubAttributeValue("value", BOOLEAN_RESOLVER);
+              value.getSubAttributeValue("value", BOOLEAN_RESOLVER);
           String t =
-              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+              value.getSubAttributeValue("type", STRING_RESOLVER);
           Boolean p =
-              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+              value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
-              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+              value.getSubAttributeValue("display", STRING_RESOLVER);
 
 
           return new Entry<Boolean>(v, t, p == null ? false : p, d);
@@ -142,7 +142,7 @@ public final class Entry<T>
           if (value.value != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createBooleanValue(value.value)));
           }
@@ -150,7 +150,7 @@ public final class Entry<T>
           if (value.primary)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
@@ -158,7 +158,7 @@ public final class Entry<T>
           if (value.type != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
@@ -166,7 +166,7 @@ public final class Entry<T>
           if(value.display != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue(value.display)));
           }
@@ -188,13 +188,13 @@ public final class Entry<T>
         @Override
         public Entry<byte[]> toInstance(final SCIMAttributeValue value) {
           byte[] v =
-              value.getSingularSubAttributeValue("value", BINARY_RESOLVER);
+              value.getSubAttributeValue("value", BINARY_RESOLVER);
           String t =
-              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+              value.getSubAttributeValue("type", STRING_RESOLVER);
           Boolean p =
-              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+              value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
-              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+              value.getSubAttributeValue("display", STRING_RESOLVER);
 
 
           return new Entry<byte[]>(v, t, p == null ? false : p, d);
@@ -213,7 +213,7 @@ public final class Entry<T>
           if (value.value != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createBinaryValue(value.value)));
           }
@@ -221,7 +221,7 @@ public final class Entry<T>
           if (value.primary)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
@@ -229,7 +229,7 @@ public final class Entry<T>
           if (value.type != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
@@ -237,7 +237,7 @@ public final class Entry<T>
           if(value.display != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue(value.display)));
           }
@@ -259,13 +259,13 @@ public final class Entry<T>
         @Override
         public Entry<Date> toInstance(final SCIMAttributeValue value) {
           Date v =
-              value.getSingularSubAttributeValue("value", DATE_RESOLVER);
+              value.getSubAttributeValue("value", DATE_RESOLVER);
           String t =
-              value.getSingularSubAttributeValue("type", STRING_RESOLVER);
+              value.getSubAttributeValue("type", STRING_RESOLVER);
           Boolean p =
-              value.getSingularSubAttributeValue("primary", BOOLEAN_RESOLVER);
+              value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
-              value.getSingularSubAttributeValue("display", STRING_RESOLVER);
+              value.getSubAttributeValue("display", STRING_RESOLVER);
 
 
           return new Entry<Date>(v, t, p == null ? false : p, d);
@@ -284,7 +284,7 @@ public final class Entry<T>
           if (value.value != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createDateValue(value.value)));
           }
@@ -292,7 +292,7 @@ public final class Entry<T>
           if (value.primary)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }
@@ -300,7 +300,7 @@ public final class Entry<T>
           if (value.type != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
@@ -308,7 +308,7 @@ public final class Entry<T>
           if(value.display != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue(value.display)));
           }
@@ -341,8 +341,8 @@ public final class Entry<T>
    * @param type The type of attribute for this instance, usually used to
    *             label the preferred function of the given resource.
    * @param primary A Boolean value indicating whether this instance of the
-   *                Plural Attribute is the primary or preferred value of for
-   *                this attribute.
+   *                multi-valued Attribute is the primary or preferred value of
+   *                for this attribute.
    */
   public Entry(final T value, final String type, final boolean primary) {
     this.value = value;
@@ -357,8 +357,8 @@ public final class Entry<T>
    * @param type The type of attribute for this instance, usually used to
    *             label the preferred function of the given resource.
    * @param primary A Boolean value indicating whether this instance of the
-   *                Plural Attribute is the primary or preferred value of for
-   *                this attribute.
+   *                multi-valued Attribute is the primary or preferred value of
+   *                for this attribute.
    * @param display A human readable name, primarily used for display purposes
    *                where the value is an opaque or complex type such as an id.
    */
@@ -371,10 +371,10 @@ public final class Entry<T>
   }
 
   /**
-   * Whether this instance of the Plural Attribute is the primary or
+   * Whether this instance of the multi-valued Attribute is the primary or
    * preferred value of for this attribute.
    *
-   * @return <code>true</code> if this instance of the Plural Attribute is
+   * @return <code>true</code> if this instance of the multi-valued Attribute is
    *         the primary or preferred value of for this attribute or
    *         <code>false</code> otherwise
    */
@@ -383,12 +383,12 @@ public final class Entry<T>
   }
 
   /**
-   * Sets whether this instance of the Plural Attribute is the primary or
+   * Sets whether this instance of the multi-valued Attribute is the primary or
    * preferred value of for this attribute.
    *
-   * @param primary <code>true</code> if this instance of the Plural Attribute
-   *                is the primary or preferred value of for this attribute or
-   *                <code>false</code> otherwise
+   * @param primary <code>true</code> if this instance of the multi-valued
+   *                Attribute is the primary or preferred value of for this
+   *                attribute or <code>false</code> otherwise.
    */
   public void setPrimary(final boolean primary) {
     this.primary = primary;

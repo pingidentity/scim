@@ -51,23 +51,23 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue name1Attr =
         SCIMAttributeValue.createComplexValue(
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 nameDescriptor.getSubAttribute("formatted"),
                 SCIMAttributeValue.createStringValue(
                     "Ms. Barbara Jane Jensen III")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 nameDescriptor.getSubAttribute("familyName"),
                 SCIMAttributeValue.createStringValue("Jensen")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 nameDescriptor.getSubAttribute("givenName"),
                 SCIMAttributeValue.createStringValue("Barbara")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 nameDescriptor.getSubAttribute("middleName"),
                 SCIMAttributeValue.createStringValue("Jane")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 nameDescriptor.getSubAttribute("honorificPrefix"),
                 SCIMAttributeValue.createStringValue("Ms.")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 nameDescriptor.getSubAttribute("honorificSuffix"),
                 SCIMAttributeValue.createStringValue("III")));
 
@@ -107,30 +107,30 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue address1Attr =
         SCIMAttributeValue.createComplexValue(
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("formatted"),
                 SCIMAttributeValue.createStringValue(
                     "100 Universal City Plaza\nHollywood, CA 91608 USA")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("streetAddress"),
                 SCIMAttributeValue.createStringValue(
                     "100 Universal City Plaza")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("locality"),
                 SCIMAttributeValue.createStringValue("Hollywood")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("region"),
                 SCIMAttributeValue.createStringValue("CA")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("postalCode"),
                 SCIMAttributeValue.createStringValue("91608")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("country"),
                 SCIMAttributeValue.createStringValue("USA")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("type"),
                 SCIMAttributeValue.createStringValue("work")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 addressDescriptor.getSubAttribute("primary"),
                 SCIMAttributeValue.createBooleanValue(true)));
 
@@ -164,10 +164,10 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue meta1Attr =
         SCIMAttributeValue.createComplexValue(
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 metaDescriptor.getSubAttribute("created"),
                 SCIMAttributeValue.createDateValue(date)),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 metaDescriptor.getSubAttribute("lastModified"),
                 SCIMAttributeValue.createDateValue(date)));
 
@@ -199,10 +199,10 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue manager1Attr =
         SCIMAttributeValue.createComplexValue(
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 managerDescriptor.getSubAttribute("managerId"),
                 SCIMAttributeValue.createStringValue("id1")),
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 managerDescriptor.getSubAttribute("displayName"),
                 SCIMAttributeValue.createStringValue("Bob")));
 
@@ -235,16 +235,16 @@ public class DataTestCase extends SCIMTestCase
 
     final SCIMAttributeValue entry1Attr =
         SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     emailsDescriptor.getSubAttribute("value"),
                     SCIMAttributeValue.createStringValue("test@test.com")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     emailsDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue("work")),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     emailsDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(true)),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     emailsDescriptor.getSubAttribute("display"),
                     SCIMAttributeValue.createStringValue("display")));
 

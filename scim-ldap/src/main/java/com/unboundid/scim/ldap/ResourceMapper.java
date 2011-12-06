@@ -224,7 +224,7 @@ public class ResourceMapper
       final ResourceDescriptor resourceDescriptor =
           ResourceDescriptor.create(resource.getName(),
               resource.getDescription(), resource.getSchema(),
-              resource.getQueryEndpoint(), attributeDescriptors);
+              resource.getEndpoint(), attributeDescriptors);
 
       final ResourceMapper resourceMapper =
           create(resource.getMapping());
@@ -270,7 +270,7 @@ public class ResourceMapper
       final SimpleAttributeDefinition simpleDefinition =
           attributeDefinition.getSimple();
 
-      return AttributeDescriptor.singularSimple(
+      return AttributeDescriptor.simple(
           attributeDefinition.getName(),
           AttributeDescriptor.DataType.parse(
               simpleDefinition.getDataType().value()),
@@ -292,18 +292,18 @@ public class ResourceMapper
       for (final SubAttributeDefinition subAttributeDefinition :
           complexDefinition.getSubAttribute())
       {
-          subAttributes[i++] = AttributeDescriptor.singularSimple(
-                  subAttributeDefinition.getName(),
-                  AttributeDescriptor.DataType.parse(
-                      subAttributeDefinition.getDataType().value()),
-                  subAttributeDefinition.getDescription(),
-                  schema,
-                  subAttributeDefinition.isReadOnly(),
-                  subAttributeDefinition.isRequired(),
-                  subAttributeDefinition.isCaseExact());
+          subAttributes[i++] = AttributeDescriptor.simple(
+              subAttributeDefinition.getName(),
+              AttributeDescriptor.DataType.parse(
+                  subAttributeDefinition.getDataType().value()),
+              subAttributeDefinition.getDescription(),
+              schema,
+              subAttributeDefinition.isReadOnly(),
+              subAttributeDefinition.isRequired(),
+              subAttributeDefinition.isCaseExact());
       }
 
-      return AttributeDescriptor.singularComplex(
+      return AttributeDescriptor.complex(
           attributeDefinition.getName(),
           attributeDefinition.getDescription(),
           schema,
@@ -311,79 +311,80 @@ public class ResourceMapper
           attributeDefinition.isRequired(),
           subAttributes);
     }
-    else if (attributeDefinition.getSimplePlural() != null)
+    else if (attributeDefinition.getSimpleMultiValued() != null)
     {
-      final SimplePluralAttributeDefinition simplePluralDefinition =
-          attributeDefinition.getSimplePlural();
+      final SimpleMultiValuedAttributeDefinition simpleMultiValuedDefinition =
+          attributeDefinition.getSimpleMultiValued();
 
-      final String[] pluralTypes =
-          new String[simplePluralDefinition.getPluralType().size()];
+      final String[] CanonicalValues =
+          new String[simpleMultiValuedDefinition.getCanonicalValue().size()];
 
       int i = 0;
-      for (final PluralType pluralType : simplePluralDefinition.getPluralType())
+      for (final CanonicalValue CanonicalValue :
+          simpleMultiValuedDefinition.getCanonicalValue())
       {
-        pluralTypes[i++] = pluralType.getName();
+        CanonicalValues[i++] = CanonicalValue.getName();
       }
 
-      return AttributeDescriptor.pluralSimple(
+      return AttributeDescriptor.simpleMultiValued(
           attributeDefinition.getName(),
           AttributeDescriptor.DataType.parse(
-              simplePluralDefinition.getDataType().value()),
+              simpleMultiValuedDefinition.getDataType().value()),
           attributeDefinition.getDescription(),
           schema,
           attributeDefinition.isReadOnly(),
           attributeDefinition.isRequired(),
-          simplePluralDefinition.isCaseExact(),
-          pluralTypes);
+          simpleMultiValuedDefinition.isCaseExact(),
+          CanonicalValues);
     }
-    else if (attributeDefinition.getComplexPlural() != null)
+    else if (attributeDefinition.getComplexMultiValued() != null)
     {
-      final ComplexPluralAttributeDefinition complexPluralDefinition =
-          attributeDefinition.getComplexPlural();
+      final ComplexMultiValuedAttributeDefinition complexMultiValuedDefinition =
+          attributeDefinition.getComplexMultiValued();
 
-      final String[] pluralTypes =
-          new String[complexPluralDefinition.getPluralType().size()];
+      final String[] CanonicalValues =
+          new String[complexMultiValuedDefinition.getCanonicalValue().size()];
 
       int i = 0;
-      for (final PluralType pluralType :
-          complexPluralDefinition.getPluralType())
+      for (final CanonicalValue CanonicalValue :
+          complexMultiValuedDefinition.getCanonicalValue())
       {
-        pluralTypes[i++] = pluralType.getName();
+        CanonicalValues[i++] = CanonicalValue.getName();
       }
 
       final AttributeDescriptor[] subAttributes =
           new AttributeDescriptor[
-              complexPluralDefinition.getSubAttribute().size()];
+              complexMultiValuedDefinition.getSubAttribute().size()];
 
       i = 0;
       for (final SubAttributeDefinition subAttributeDefinition :
-          complexPluralDefinition.getSubAttribute())
+          complexMultiValuedDefinition.getSubAttribute())
       {
-          subAttributes[i++] = AttributeDescriptor.singularSimple(
-                  subAttributeDefinition.getName(),
-                  AttributeDescriptor.DataType.parse(
-                      subAttributeDefinition.getDataType().value()),
-                  subAttributeDefinition.getDescription(),
-                  schema,
-                  subAttributeDefinition.isReadOnly(),
-                  subAttributeDefinition.isRequired(),
-                  subAttributeDefinition.isCaseExact());
+          subAttributes[i++] = AttributeDescriptor.simple(
+              subAttributeDefinition.getName(),
+              AttributeDescriptor.DataType.parse(
+                  subAttributeDefinition.getDataType().value()),
+              subAttributeDefinition.getDescription(),
+              schema,
+              subAttributeDefinition.isReadOnly(),
+              subAttributeDefinition.isRequired(),
+              subAttributeDefinition.isCaseExact());
       }
-      return AttributeDescriptor.pluralComplex(
+      return AttributeDescriptor.complexMultiValued(
           attributeDefinition.getName(),
           attributeDefinition.getDescription(),
           schema,
           attributeDefinition.isReadOnly(),
           attributeDefinition.isRequired(),
-          pluralTypes, subAttributes);
+          CanonicalValues, subAttributes);
     }
     else
     {
       final SCIMException e =
           new ServerErrorException(
               "Attribute definition '" + attributeDefinition.getName() +
-              "' does not have a simple, complex, simplePlural or " +
-              "complexPlural element");
+              "' does not have a simple, complex, simpleMultiValued or " +
+              "complexMultiValued element");
       Debug.debugCodingError(e);
       throw e;
     }

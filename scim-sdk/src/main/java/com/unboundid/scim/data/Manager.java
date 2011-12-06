@@ -43,9 +43,9 @@ public class Manager
          */
         public Manager toInstance(final SCIMAttributeValue value) {
           return new Manager(
-              value.getSingularSubAttributeValue("managerId",
+              value.getSubAttributeValue("managerId",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("displayName",
+              value.getSubAttributeValue("displayName",
                   STRING_RESOLVER));
         }
 
@@ -61,7 +61,7 @@ public class Manager
           if (value.managerId != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("managerId"),
                     SCIMAttributeValue.createStringValue(value.managerId)));
           }
@@ -69,7 +69,7 @@ public class Manager
           if (value.displayName != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     attributeDescriptor.getSubAttribute("displayName"),
                     SCIMAttributeValue.createStringValue(value.displayName)));
           }

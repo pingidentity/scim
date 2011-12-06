@@ -276,7 +276,7 @@ public abstract class LDAPBackend
     {
       throw new UnsupportedOperationException(
           "The requested operation is not supported on resource end-point '" +
-              request.getResourceDescriptor().getQueryEndpoint() + "'");
+              request.getResourceDescriptor().getEndpoint() + "'");
     }
 
     try
@@ -701,7 +701,7 @@ public abstract class LDAPBackend
     }
 
     final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
-    uriBuilder.path(resource.getResourceDescriptor().getQueryEndpoint());
+    uriBuilder.path(resource.getResourceDescriptor().getEndpoint());
     uriBuilder.path(entry.getDN());
 
     resource.setMeta(new Meta(createDate, modifyDate,

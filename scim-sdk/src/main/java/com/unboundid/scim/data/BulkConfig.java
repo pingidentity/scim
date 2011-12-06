@@ -52,11 +52,11 @@ public class BulkConfig
         @Override
         public BulkConfig toInstance(final SCIMAttributeValue value) {
           return new BulkConfig(
-              value.getSingularSubAttributeValue("supported",
+              value.getSubAttributeValue("supported",
                   BOOLEAN_RESOLVER),
-              value.getSingularSubAttributeValue("maxOperations",
+              value.getSubAttributeValue("maxOperations",
                   INTEGER_RESOLVER),
-              value.getSingularSubAttributeValue("maxPayloadSize",
+              value.getSubAttributeValue("maxPayloadSize",
                   INTEGER_RESOLVER));
         }
 
@@ -75,26 +75,26 @@ public class BulkConfig
           final AttributeDescriptor supportedDescriptor =
               attributeDescriptor.getSubAttribute("supported");
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   supportedDescriptor,
                   BOOLEAN_RESOLVER.fromInstance(supportedDescriptor,
-                                                value.supported)));
+                      value.supported)));
 
           final AttributeDescriptor maxOperationsDescriptor =
               attributeDescriptor.getSubAttribute("maxOperations");
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   maxOperationsDescriptor,
                   INTEGER_RESOLVER.fromInstance(maxOperationsDescriptor,
-                                                value.maxOperations)));
+                      value.maxOperations)));
 
           final AttributeDescriptor maxPayloadSizeDescriptor =
               attributeDescriptor.getSubAttribute("maxPayloadSize");
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   maxPayloadSizeDescriptor,
                   INTEGER_RESOLVER.fromInstance(maxPayloadSizeDescriptor,
-                                                value.maxPayloadSize)));
+                      value.maxPayloadSize)));
 
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }

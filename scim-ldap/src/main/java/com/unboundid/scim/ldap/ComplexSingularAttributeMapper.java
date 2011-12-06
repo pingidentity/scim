@@ -191,7 +191,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
                                 getAttributeDescriptor().getName());
     if (scimAttribute != null)
     {
-      final SCIMAttributeValue value = scimAttribute.getSingularValue();
+      final SCIMAttributeValue value = scimAttribute.getValue();
 
       for (final SubAttributeTransformation sat : map.values())
       {
@@ -205,7 +205,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
           final AttributeDescriptor subDescriptor =
               getAttributeDescriptor().getSubAttribute(scimType);
           final ASN1OctetString v = at.getTransformation().toLDAPValue(
-              subDescriptor, subAttribute.getSingularValue().getValue());
+              subDescriptor, subAttribute.getValue().getValue());
           attributes.add(new Attribute(ldapType, v));
         }
       }
@@ -235,7 +235,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
           final SimpleValue simpleValue =
               at.getTransformation().toSCIMValue(subDescriptor, rawValues[0]);
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   subDescriptor, new SCIMAttributeValue(simpleValue)));
         }
       }
@@ -248,7 +248,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
 
     final SCIMAttributeValue complexValue =
         SCIMAttributeValue.createComplexValue(subAttributes);
-    return SCIMAttribute.createSingularAttribute(getAttributeDescriptor(),
+    return SCIMAttribute.create(getAttributeDescriptor(),
         complexValue);
   }
 }

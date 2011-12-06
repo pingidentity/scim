@@ -135,7 +135,7 @@ public final class SCIMAttributeValue
   }
 
   /**
-   * Retrieves the value of a singular sub-attribute.
+   * Retrieves the value of a sub-attribute.
    *
    * @param <T>          The type of the resolved instance representing the
    *                     value of sub-attribute.
@@ -145,13 +145,13 @@ public final class SCIMAttributeValue
    * @return             The resolved instance representing the value of
    *                     sub-attribute.
    */
-  public <T> T getSingularSubAttributeValue(final String name,
-      final AttributeValueResolver<T> resolver)
+  public <T> T getSubAttributeValue(final String name,
+                                    final AttributeValueResolver<T> resolver)
   {
     SCIMAttribute attribute = getAttribute(name);
     if(attribute != null)
     {
-      SCIMAttributeValue v = attribute.getSingularValue();
+      SCIMAttributeValue v = attribute.getValue();
       if(v != null)
       {
         return resolver.toInstance(v);
@@ -161,7 +161,7 @@ public final class SCIMAttributeValue
   }
 
   /**
-   * Retrieves the value of a plural sub-attribute value.
+   * Retrieves the value of a multi-valued sub-attribute value.
    *
    * @param <T>    The type of the resolved instance representing the value of
    *               sub-attribute.
@@ -171,13 +171,13 @@ public final class SCIMAttributeValue
    * @return The collection of resolved value instances or <code>null</code> if
    *         the specified attribute does not exist.
    */
-  public <T> Collection<T> getPluralAttributeValue(final String name,
-      final AttributeValueResolver<T> resolver)
+  public <T> Collection<T> getAttributeValues(
+      final String name, final AttributeValueResolver<T> resolver)
   {
     SCIMAttribute attribute = getAttribute(name);
     if(attribute != null)
     {
-      SCIMAttributeValue[] values = attribute.getPluralValues();
+      SCIMAttributeValue[] values = attribute.getValues();
       if(values != null)
       {
         Collection<T> entries = new ArrayList<T>(values.length);

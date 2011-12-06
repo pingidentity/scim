@@ -209,7 +209,7 @@ public class BaseResource implements SCIMResponse
     SCIMAttribute attribute = scimObject.getAttribute(schema, name);
     if(attribute != null)
     {
-      SCIMAttributeValue value = attribute.getSingularValue();
+      SCIMAttributeValue value = attribute.getValue();
       if(value != null)
       {
         return resolver.toInstance(value);
@@ -245,13 +245,13 @@ public class BaseResource implements SCIMResponse
     AttributeDescriptor attributeDescriptor =
         getResourceDescriptor().getAttribute(schema, name);
 
-    scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
+    scimObject.setAttribute(SCIMAttribute.create(
         attributeDescriptor, resolver.fromInstance(attributeDescriptor,
         value)));
   }
 
   /**
-   * Retrieves a plural attribute value.
+   * Retrieves a multi-valued attribute value.
    *
    * @param <T>    The type of the resolved instance representing the value of
    *               sub-attribute.
@@ -262,14 +262,14 @@ public class BaseResource implements SCIMResponse
    * @return The collection of resolved value instances or <code>null</code> if
    *         the specified attribute does not exist.
    */
-  public <T> Collection<T> getPluralAttributeValue(
+  public <T> Collection<T> getAttributeValues(
       final String schema, final String name,
       final AttributeValueResolver<T> resolver)
   {
     SCIMAttribute attribute = scimObject.getAttribute(schema, name);
     if(attribute != null)
     {
-      SCIMAttributeValue[] values = attribute.getPluralValues();
+      SCIMAttributeValue[] values = attribute.getValues();
       if(values != null)
       {
         Collection<T> entries = new ArrayList<T>(values.length);
@@ -284,7 +284,7 @@ public class BaseResource implements SCIMResponse
   }
 
   /**
-   * Sets a plural attribute value.
+   * Sets a multi-valued attribute value.
    *
    * @param <T>    The type of the resolved instance representing the value of
    *               sub-attribute.
@@ -296,7 +296,7 @@ public class BaseResource implements SCIMResponse
    * @throws InvalidResourceException if the attribute is not defined by the
    *                                  resource.
    */
-  public <T> void setPluralAttributeValue(
+  public <T> void setAttributeValues(
       final String schema, final String name,
       final AttributeValueResolver<T> resolver, final Collection<T> values)
       throws InvalidResourceException
@@ -319,7 +319,7 @@ public class BaseResource implements SCIMResponse
     }
 
     scimObject.setAttribute(
-        SCIMAttribute.createPluralAttribute(attributeDescriptor, entries));
+        SCIMAttribute.create(attributeDescriptor, entries));
   }
 
   /**

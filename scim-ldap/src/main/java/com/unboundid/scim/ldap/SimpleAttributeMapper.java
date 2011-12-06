@@ -186,7 +186,7 @@ public class SimpleAttributeMapper extends AttributeMapper
       final ASN1OctetString ldapValue =
           attributeTransformation.getTransformation().toLDAPValue(
               getAttributeDescriptor(),
-              scimAttribute.getSingularValue().getValue());
+              scimAttribute.getValue().getValue());
       attributes.add(new Attribute(ldapAttributeType, ldapValue));
     }
   }
@@ -206,7 +206,7 @@ public class SimpleAttributeMapper extends AttributeMapper
         final SimpleValue simpleValue =
             attributeTransformation.getTransformation().toSCIMValue(
                 getAttributeDescriptor(), rawValues[0]);
-        return SCIMAttribute.createSingularAttribute(
+        return SCIMAttribute.create(
             getAttributeDescriptor(), new SCIMAttributeValue(simpleValue));
       }
     }

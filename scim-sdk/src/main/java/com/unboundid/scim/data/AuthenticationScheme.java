@@ -40,18 +40,18 @@ public class AuthenticationScheme
       new AttributeValueResolver<AuthenticationScheme>()
       {
         public AuthenticationScheme toInstance(final SCIMAttributeValue value) {
-          Boolean p = value.getSingularSubAttributeValue("primary",
-                  BOOLEAN_RESOLVER);
+          Boolean p = value.getSubAttributeValue("primary",
+              BOOLEAN_RESOLVER);
           return new AuthenticationScheme(
-              value.getSingularSubAttributeValue("name",
+              value.getSubAttributeValue("name",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("description",
+              value.getSubAttributeValue("description",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("specUrl",
+              value.getSubAttributeValue("specUrl",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("documentationUrl",
+              value.getSubAttributeValue("documentationUrl",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("type",
+              value.getSubAttributeValue("type",
                   STRING_RESOLVER),
               p == null ? false : p);
         }
@@ -67,7 +67,7 @@ public class AuthenticationScheme
           if (value.type != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
@@ -75,7 +75,7 @@ public class AuthenticationScheme
           if (value.name != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("name"),
                     SCIMAttributeValue.createStringValue(value.name)));
           }
@@ -83,7 +83,7 @@ public class AuthenticationScheme
           if (value.description != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("description"),
                     SCIMAttributeValue.createStringValue(value.description)));
           }
@@ -91,7 +91,7 @@ public class AuthenticationScheme
           if (value.specUrl != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("specUrl"),
                     SCIMAttributeValue.createStringValue(value.specUrl)));
           }
@@ -99,7 +99,7 @@ public class AuthenticationScheme
           if (value.documentationUrl != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("documentationUrl"),
                     SCIMAttributeValue.createStringValue(
                         value.documentationUrl)));
@@ -108,7 +108,7 @@ public class AuthenticationScheme
           if (value.primary)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }

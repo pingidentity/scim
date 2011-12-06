@@ -51,9 +51,9 @@ public class FilterConfig
         @Override
         public FilterConfig toInstance(final SCIMAttributeValue value) {
           return new FilterConfig(
-              value.getSingularSubAttributeValue("supported",
+              value.getSubAttributeValue("supported",
                   BOOLEAN_RESOLVER),
-              value.getSingularSubAttributeValue("maxResults",
+              value.getSubAttributeValue("maxResults",
                   INTEGER_RESOLVER));
         }
 
@@ -72,18 +72,18 @@ public class FilterConfig
           final AttributeDescriptor supportedDescriptor =
               attributeDescriptor.getSubAttribute("supported");
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   supportedDescriptor,
                   BOOLEAN_RESOLVER.fromInstance(supportedDescriptor,
-                                                value.supported)));
+                      value.supported)));
 
           final AttributeDescriptor maxResultsDescriptor =
               attributeDescriptor.getSubAttribute("maxResults");
           subAttributes.add(
-              SCIMAttribute.createSingularAttribute(
+              SCIMAttribute.create(
                   maxResultsDescriptor,
                   INTEGER_RESOLVER.fromInstance(maxResultsDescriptor,
-                                                value.maxResults)));
+                      value.maxResults)));
 
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }

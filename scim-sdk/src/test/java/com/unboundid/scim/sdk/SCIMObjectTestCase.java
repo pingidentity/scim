@@ -58,11 +58,11 @@ public class SCIMObjectTestCase
         "http://myextension";
 
     final SCIMAttribute userID =
-        SCIMAttribute.createSingularAttribute(
+        SCIMAttribute.create(
             CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "id"),
             SCIMAttributeValue.createStringValue(uuid.toString()));
 
-    final SCIMAttribute name = SCIMAttribute.createSingularAttribute(
+    final SCIMAttribute name = SCIMAttribute.create(
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "name"),
         Name.NAME_RESOLVER.fromInstance(
             CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "name"),
@@ -72,7 +72,7 @@ public class SCIMObjectTestCase
     final AttributeDescriptor emailsDescriptor =
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "emails");
     final SCIMAttribute emails =
-        SCIMAttribute.createPluralAttribute(emailsDescriptor,
+        SCIMAttribute.create(emailsDescriptor,
             Entry.STRINGS_RESOLVER.fromInstance(emailsDescriptor,
                 new Entry<String>("bjensen@example.com", "work", true)),
             Entry.STRINGS_RESOLVER.fromInstance(emailsDescriptor,
@@ -82,17 +82,17 @@ public class SCIMObjectTestCase
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "meta");
     final Date date = new Date(System.currentTimeMillis());
     final SCIMAttribute meta =
-        SCIMAttribute.createSingularAttribute(metaDescriptor,
-          SCIMAttributeValue.createComplexValue(
-                SCIMAttribute.createSingularAttribute(
+        SCIMAttribute.create(metaDescriptor,
+            SCIMAttributeValue.createComplexValue(
+                SCIMAttribute.create(
                     metaDescriptor.getSubAttribute("created"),
                     SCIMAttributeValue.createDateValue(date)),
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     metaDescriptor.getSubAttribute("lastModified"),
                     SCIMAttributeValue.createDateValue(date))));
 
     final SCIMAttribute employeeNumber =
-        SCIMAttribute.createSingularAttribute(
+        SCIMAttribute.create(
             CoreSchema.USER_DESCRIPTOR.getAttribute(enterpriseUserSchema,
                 "employeeNumber"),
             SCIMAttributeValue.createStringValue("1000001"));

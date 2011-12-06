@@ -43,15 +43,15 @@ public class Meta
          */
         @Override
         public Meta toInstance(final SCIMAttributeValue value) {
-          String l = value.getSingularSubAttributeValue("location",
+          String l = value.getSubAttributeValue("location",
               STRING_RESOLVER);
           return new Meta(
-              value.getSingularSubAttributeValue("created",
+              value.getSubAttributeValue("created",
                   DATE_RESOLVER),
-              value.getSingularSubAttributeValue("lastModified",
+              value.getSubAttributeValue("lastModified",
                   DATE_RESOLVER),
               l == null ? null : URI.create(l),
-              value.getSingularSubAttributeValue("version",
+              value.getSubAttributeValue("version",
                   STRING_RESOLVER));
         }
 
@@ -69,7 +69,7 @@ public class Meta
           {
             AttributeDescriptor subAttributeDescriptor =
                 attributeDescriptor.getSubAttribute("created");
-            attributes.add(SCIMAttribute.createSingularAttribute(
+            attributes.add(SCIMAttribute.create(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createDateValue(value.created)));
           }
@@ -77,7 +77,7 @@ public class Meta
           {
             AttributeDescriptor subAttributeDescriptor =
                 attributeDescriptor.getSubAttribute("lastModified");
-            attributes.add(SCIMAttribute.createSingularAttribute(
+            attributes.add(SCIMAttribute.create(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createDateValue(value.lastModified)));
           }
@@ -85,7 +85,7 @@ public class Meta
           {
             AttributeDescriptor subAttributeDescriptor =
                 attributeDescriptor.getSubAttribute("location");
-            attributes.add(SCIMAttribute.createSingularAttribute(
+            attributes.add(SCIMAttribute.create(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createStringValue(
                     value.location.toString())));
@@ -94,7 +94,7 @@ public class Meta
           {
             AttributeDescriptor subAttributeDescriptor =
                 attributeDescriptor.getSubAttribute("version");
-            attributes.add(SCIMAttribute.createSingularAttribute(
+            attributes.add(SCIMAttribute.create(
                 subAttributeDescriptor,
                 SCIMAttributeValue.createStringValue(value.version)));
           }

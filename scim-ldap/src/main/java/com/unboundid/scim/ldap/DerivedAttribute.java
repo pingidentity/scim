@@ -48,7 +48,7 @@ import java.util.Set;
  * &lt;attribute name=&quot;exampleAttribute&quot;&gt;
  *   &lt;description&gt;Example Attribute&lt;&#47description&gt;
  *   &lt;derivation javaClass=&quot;com.example.ExampleDerivedAttr&quot;&#47&gt;
- *   &lt;simplePlural tag=&quot;group&quot; dataType=&quot;string&quot;/&gt;
+ *   &lt;simpleMultiValued tag=&quot;attr&quot; dataType=&quot;string&quot;/&gt;
  * &lt;&#47attribute&gt;
  * </PRE>
  * <BR><BR>

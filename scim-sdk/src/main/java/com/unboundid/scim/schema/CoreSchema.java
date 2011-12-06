@@ -35,75 +35,73 @@ import java.util.List;
 public class CoreSchema
 {
   //// 3.  SCIM Schema Structure ////
-  private static final AttributeDescriptor PLURAL_TYPE =
-      AttributeDescriptor.singularSimple("type",
+  private static final AttributeDescriptor MULTIVALUED_TYPE =
+      AttributeDescriptor.simple("type",
           AttributeDescriptor.DataType.STRING,
-          "The type of attribute for this instance, usually used to label " +
-              "the preferred function of this instance of the Plural Attribute",
+          "A label indicating the attribute's function; e.g., \"work\" or " +
+              "\"home\"",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
-  private static final AttributeDescriptor PLURAL_PRIMARY =
-      AttributeDescriptor.singularSimple("primary",
+  private static final AttributeDescriptor MULTIVALUED_PRIMARY =
+      AttributeDescriptor.simple("primary",
           AttributeDescriptor.DataType.BOOLEAN,
-          "A Boolean value indicating whether this instance of the Plural " +
-              "Attribute is the primary or preferred value of this " +
-              "attribute",
+          "A Boolean value indicating the 'primary' or preferred attribute " +
+              "value for this attribute",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
-  private static final AttributeDescriptor PLURAL_DISPLAY =
-      AttributeDescriptor.singularSimple("display",
+  private static final AttributeDescriptor MULTIVALUED_DISPLAY =
+      AttributeDescriptor.simple("display",
           AttributeDescriptor.DataType.STRING,
-          "A human readable name, primarily used for display purposes where " +
-              "the value is an opaque or complex type such as an id",
+          "A human readable name, primarily used for display purposes",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
-  private static final AttributeDescriptor PLURAL_OPERATION =
-      AttributeDescriptor.singularSimple("operation",
+  private static final AttributeDescriptor MULTIVALUED_OPERATION =
+      AttributeDescriptor.simple("operation",
           AttributeDescriptor.DataType.STRING,
-          "The operation to perform on the plural attribute during a " +
+          "The operation to perform on the multi-valued attribute during a " +
               "PATCH request",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
 
   /**
-   * Creates the default sub-attributes for simple plural attributes
+   * Creates the default sub-attributes for multi-valued attributes
    * of the given type. This will include the type, primary, display and
    * operation attributes.
    *
-   * @param dataType The type of the plural attribute.
-   * @return The default sub-attributes for simple plural attributes.
+   * @param dataType The type of the attribute.
+   * @return The default sub-attributes for multi-valued attributes.
    */
-  static List<AttributeDescriptor> createCommonPluralSubAttributes(
+  static List<AttributeDescriptor> createCommonMultiValuedSubAttributes(
       final AttributeDescriptor.DataType dataType)
   {
      final AttributeDescriptor value =
-      AttributeDescriptor.singularSimple("value", dataType,
+      AttributeDescriptor.simple("value", dataType,
           "The attribute's significant value",
           SCIMConstants.SCHEMA_URI_CORE, false, true, false);
     List<AttributeDescriptor> subAttributes =
         new ArrayList<AttributeDescriptor>(5);
     subAttributes.add(value);
-    subAttributes.add(PLURAL_TYPE);
-    subAttributes.add(PLURAL_PRIMARY);
-    subAttributes.add(PLURAL_DISPLAY);
-    subAttributes.add(PLURAL_OPERATION);
+    subAttributes.add(MULTIVALUED_TYPE);
+    subAttributes.add(MULTIVALUED_PRIMARY);
+    subAttributes.add(MULTIVALUED_DISPLAY);
+    subAttributes.add(MULTIVALUED_OPERATION);
     return subAttributes;
   }
 
   /**
-   * Adds the default sub-attributes for complex plural attributes. This
+   * Adds the default sub-attributes for multi-valued attributes. This
    * will include the type, primary, display and operation attributes.
    *
    * @param subAttributes  A list specifying the sub attributes of the complex
    *                       attribute.
-   * @return The default sub-attributes for complex plural attributes.
+   * @return The default sub-attributes for multi-valued attributes.
    */
-  static List<AttributeDescriptor> addCommonPluralSubAttributes(
+  static List<AttributeDescriptor> addCommonMultiValuedSubAttributes(
       final AttributeDescriptor... subAttributes)
   {
     List<AttributeDescriptor> subAttributeList =
         new ArrayList<AttributeDescriptor>(subAttributes.length + 5);
     subAttributeList.addAll(Arrays.asList(subAttributes));
-    subAttributeList.add(PLURAL_TYPE);
-    subAttributeList.add(PLURAL_PRIMARY);
-    subAttributeList.add(PLURAL_DISPLAY);
-    subAttributeList.add(PLURAL_OPERATION);
+    subAttributeList.add(MULTIVALUED_TYPE);
+    subAttributeList.add(MULTIVALUED_PRIMARY);
+    subAttributeList.add(MULTIVALUED_DISPLAY);
+    subAttributeList.add(MULTIVALUED_OPERATION);
     return subAttributeList;
   }
 
@@ -133,13 +131,13 @@ public class CoreSchema
 
   //// 5.1.  Common Schema Attributes ////
   private static final AttributeDescriptor ID =
-      AttributeDescriptor.singularSimple("id",
+      AttributeDescriptor.simple("id",
           AttributeDescriptor.DataType.STRING,
           "Unique identifier for the SCIM Resource as defined by the " +
               "Service Provider",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor EXTERNAL_ID =
-      AttributeDescriptor.singularSimple("externalId",
+      AttributeDescriptor.simple("externalId",
           AttributeDescriptor.DataType.STRING,
           "Unique identifier for the Resource as defined by the " +
               "Service Consumer",
@@ -147,34 +145,34 @@ public class CoreSchema
 
 
   private static final AttributeDescriptor META_CREATED =
-      AttributeDescriptor.singularSimple("created",
+      AttributeDescriptor.simple("created",
           AttributeDescriptor.DataType.DATETIME,
           "The DateTime the Resource was added to the Service Provider",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META_LAST_MODIFIED =
-      AttributeDescriptor.singularSimple("lastModified",
+      AttributeDescriptor.simple("lastModified",
           AttributeDescriptor.DataType.DATETIME,
           "The most recent DateTime the details of this Resource were " +
               "updated at the Service Provider",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META_LOCATION =
-      AttributeDescriptor.singularSimple("location",
+      AttributeDescriptor.simple("location",
           AttributeDescriptor.DataType.STRING,
           "The URI of the Resource being returned",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META_VERSION =
-      AttributeDescriptor.singularSimple("version",
+      AttributeDescriptor.simple("version",
           AttributeDescriptor.DataType.STRING,
           "The version of the Resource being returned",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META_ATTRIBUTES =
-      AttributeDescriptor.singularSimple("attributes",
+      AttributeDescriptor.simple("attributes",
           AttributeDescriptor.DataType.STRING,
           "The names of the attributes to remove from the Resource during a " +
               "PATCH operation",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META =
-      AttributeDescriptor.singularComplex("meta",
+      AttributeDescriptor.complex("meta",
           "A complex type containing metadata about the resource",
           SCIMConstants.SCHEMA_URI_CORE, false, false, META_CREATED,
           META_LAST_MODIFIED, META_LOCATION, META_VERSION, META_ATTRIBUTES);
@@ -183,185 +181,202 @@ public class CoreSchema
   //// 6.1.  Singular Attributes ////
 
   private static final AttributeDescriptor USER_NAME =
-      AttributeDescriptor.singularSimple("userName",
+      AttributeDescriptor.simple("userName",
           AttributeDescriptor.DataType.STRING,
           "Unique identifier for the User, typically used by the user to " +
-              "directly authenticate to the service provider",
+              "directly authenticate to the Service Provider",
           SCIMConstants.SCHEMA_URI_CORE, false, true, false);
 
   private static final AttributeDescriptor NAME_FORMATTED =
-      AttributeDescriptor.singularSimple("formatted",
+      AttributeDescriptor.simple("formatted",
           AttributeDescriptor.DataType.STRING,
           "The full name, including all middle names, titles, and suffixes " +
               "as appropriate, formatted for display (e.g. Ms. Barbara Jane " +
               "Jensen, III.)",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NAME_FAMILY_NAME =
-      AttributeDescriptor.singularSimple("familyName",
+      AttributeDescriptor.simple("familyName",
           AttributeDescriptor.DataType.STRING,
           "The family name of the User, or \"Last Name\" in most Western " +
               "languages (e.g. Jensen given the full name Ms. Barbara Jane " +
               "Jensen, III.)",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NAME_GIVEN_NAME =
-      AttributeDescriptor.singularSimple("givenName",
+      AttributeDescriptor.simple("givenName",
           AttributeDescriptor.DataType.STRING,
           "The given name of the User, or \"First Name\" in most Western " +
               "languages (e.g. Barbara given the full name Ms. Barbara Jane " +
               "Jensen, III.)",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NAME_MIDDLE_NAME =
-      AttributeDescriptor.singularSimple("middleName",
+      AttributeDescriptor.simple("middleName",
           AttributeDescriptor.DataType.STRING,
           "The middle name(s) of the User (e.g. Jane given the full name Ms. " +
               "Barbara Jane Jensen, III.)",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NAME_HONORIFIC_PREFIX =
-      AttributeDescriptor.singularSimple("honorificPrefix",
+      AttributeDescriptor.simple("honorificPrefix",
           AttributeDescriptor.DataType.STRING,
           "The honorific prefix(es) of the User, or \"Title\" in most " +
               "Western languages (e.g. Ms. given the full name Ms. Barbara " +
               "Jane Jensen, III.)",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NAME_HONORIFIC_SUFFIX =
-      AttributeDescriptor.singularSimple("honorificSuffix",
+      AttributeDescriptor.simple("honorificSuffix",
           AttributeDescriptor.DataType.STRING,
           "The honorific suffix(es) of the User, or \"Suffix\" in most " +
               "Western languages (e.g. III. given the full name Ms. Barbara " +
               "Jane Jensen, III.)",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NAME =
-      AttributeDescriptor.singularComplex("name",
+      AttributeDescriptor.complex("name",
           "The components of the User's real name",
           SCIMConstants.SCHEMA_URI_CORE, false, false, NAME_FORMATTED,
           NAME_FAMILY_NAME, NAME_GIVEN_NAME, NAME_MIDDLE_NAME,
           NAME_HONORIFIC_PREFIX, NAME_HONORIFIC_SUFFIX);
 
   private static final AttributeDescriptor DISPLAY_NAME =
-      AttributeDescriptor.singularSimple("displayName",
+      AttributeDescriptor.simple("displayName",
           AttributeDescriptor.DataType.STRING,
           "The name of the User, suitable for display to end-users",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor NICK_NAME =
-      AttributeDescriptor.singularSimple("nickName",
+      AttributeDescriptor.simple("nickName",
           AttributeDescriptor.DataType.STRING,
           "The casual way to address the user in real life, e.g. \"Bob\" or " +
               "\"Bobby\" instead of \"Robert\"",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor PROFILE_URL =
-      AttributeDescriptor.singularSimple("profileUrl",
+      AttributeDescriptor.simple("profileUrl",
           AttributeDescriptor.DataType.STRING,
           "URL to a page representing the User's online profile",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor TITLE =
-      AttributeDescriptor.singularSimple("title",
+      AttributeDescriptor.simple("title",
           AttributeDescriptor.DataType.STRING,
-          "The user's title, such as \"Vice President\"",
+          "The User's title, such as \"Vice President\"",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor USER_TYPE =
-      AttributeDescriptor.singularSimple("userType",
+      AttributeDescriptor.simple("userType",
           AttributeDescriptor.DataType.STRING,
-          "Used to identify the organization to user relationship",
+          "The organization-to-user relationship",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor PREFERRED_LANGUAGE =
-      AttributeDescriptor.singularSimple("preferredLanguage",
+      AttributeDescriptor.simple("preferredLanguage",
           AttributeDescriptor.DataType.STRING,
-          "Used to indicate a User's preferred written or spoken language",
+          "The User's preferred written or spoken language. Generally used " +
+              "for selecting a localized User interface.  Valid values are " +
+              "concatenation of the ISO 639-1 two letter language code, an " +
+              "underscore, and the ISO 3166-1 2 letter country code; e.g., " +
+              "specifies the language English and country US",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor LOCALE =
-      AttributeDescriptor.singularSimple("locale",
+      AttributeDescriptor.simple("locale",
           AttributeDescriptor.DataType.STRING,
           "Used to indicate the User's default location for purposes of " +
               "localizing items such as currency, date time format, " +
-              "numerical representations, etc",
+              "ISO 639-1 two letter language code an underscore, and the " +
+              "ISO 3166-1 2 letter country code; e.g., 'en_US' specifies the " +
+              "language English and country US",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor TIMEZONE =
-      AttributeDescriptor.singularSimple("timezone",
+      AttributeDescriptor.simple("timezone",
           AttributeDescriptor.DataType.STRING,
-          "The User's time zone in the public-domain time zone database format",
+          "The User's time zone in the \"Olson\" timezone database format; " +
+              "e.g.,'America/Los_Angeles'",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ACTIVE =
-      AttributeDescriptor.singularSimple("active",
+      AttributeDescriptor.simple("active",
           AttributeDescriptor.DataType.BOOLEAN,
           "A Boolean value indicating the User's administrative status",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
+  private static final AttributeDescriptor PASSWORD =
+      AttributeDescriptor.simple("password",
+          AttributeDescriptor.DataType.STRING,
+          "The User's clear text password. This attribute is intended to be " +
+              "used as a means to specify an initial password when creating " +
+              "a new User or to reset an existing User's password. This " +
+              "value will never be returned by a Service Provider in any form",
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false);
 
-  //// 6.2.  Plural Attributes ////
+  //// 6.2. Multi-valued Attributes ////
 
   private static final AttributeDescriptor EMAILS =
-      AttributeDescriptor.pluralSimple("emails",
+      AttributeDescriptor.simpleMultiValued("emails",
           AttributeDescriptor.DataType.STRING,
           "E-mail addresses for the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor PHONE_NUMBERS =
-      AttributeDescriptor.pluralSimple("phoneNumbers",
+      AttributeDescriptor.simpleMultiValued("phoneNumbers",
           AttributeDescriptor.DataType.STRING,
           "Phone numbers for the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor IMS =
-      AttributeDescriptor.pluralSimple("ims",
+      AttributeDescriptor.simpleMultiValued("ims",
           AttributeDescriptor.DataType.STRING,
           "Instant messaging address for the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor PHOTOS =
-      AttributeDescriptor.pluralSimple("photos",
+      AttributeDescriptor.simpleMultiValued("photos",
           AttributeDescriptor.DataType.STRING,
-          "URL of a photo of the User",
+          "URL of photos of the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
 
   private static final AttributeDescriptor ADDRESS_FORMATTED =
-      AttributeDescriptor.singularSimple("formatted",
+      AttributeDescriptor.simple("formatted",
           AttributeDescriptor.DataType.STRING,
           "The full mailing address, formatted for display or use with a " +
-              "mailing label.",
+              "mailing label",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESS_STREET_ADDRESS =
-      AttributeDescriptor.singularSimple("streetAddress",
+      AttributeDescriptor.simple("streetAddress",
           AttributeDescriptor.DataType.STRING,
           "The full street address component, which may include house " +
               "number, street name, P.O. box, and multi-line extended street " +
-              "address information.",
+              "address information",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESS_LOCALITY =
-      AttributeDescriptor.singularSimple("locality",
+      AttributeDescriptor.simple("locality",
           AttributeDescriptor.DataType.STRING,
           "The city or locality component",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESS_REGION =
-      AttributeDescriptor.singularSimple("region",
+      AttributeDescriptor.simple("region",
           AttributeDescriptor.DataType.STRING,
           "The state or region component",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESS_POSTAL_CODE =
-      AttributeDescriptor.singularSimple("postalCode",
+      AttributeDescriptor.simple("postalCode",
           AttributeDescriptor.DataType.STRING,
           "The zipcode or postal code component",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESS_COUNTRY =
-      AttributeDescriptor.singularSimple("country",
+      AttributeDescriptor.simple("country",
           AttributeDescriptor.DataType.STRING,
           "The country name component",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESSES =
-      AttributeDescriptor.pluralComplex("addresses",
+      AttributeDescriptor.complexMultiValued("addresses",
           "A physical mailing address for this User",
-          SCIMConstants.SCHEMA_URI_CORE, true, false, null,
+          SCIMConstants.SCHEMA_URI_CORE, true, false,
+          new String[]{"work", "home", "other"},
           ADDRESS_FORMATTED, ADDRESS_STREET_ADDRESS, ADDRESS_LOCALITY,
           ADDRESS_REGION, ADDRESS_POSTAL_CODE, ADDRESS_COUNTRY);
 
   private static final AttributeDescriptor GROUPS =
-      AttributeDescriptor.pluralSimple("groups",
+      AttributeDescriptor.simpleMultiValued("groups",
           AttributeDescriptor.DataType.STRING,
           "A list of groups that the user belongs to",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ENTITLEMENTS =
-      AttributeDescriptor.pluralSimple("entitlements",
+      AttributeDescriptor.simpleMultiValued("entitlements",
           AttributeDescriptor.DataType.STRING,
           "A list of entitlements for the User that represent a thing the " +
-              "User has",
+              "User has. That is, an entitlement is an additional right to a " +
+              "thing, object or service",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ROLES =
-      AttributeDescriptor.pluralSimple("entitlements",
+      AttributeDescriptor.simpleMultiValued("roles",
           AttributeDescriptor.DataType.STRING,
           "A list of roles for the User that collectively represent who the " +
               "User is",
@@ -370,57 +385,57 @@ public class CoreSchema
   //// 7.  SCIM Enterprise User Schema Extension ////
 
   private static final AttributeDescriptor EMPLOYEE_NUMBER =
-      AttributeDescriptor.singularSimple("employeeNumber",
+      AttributeDescriptor.simple("employeeNumber",
           AttributeDescriptor.DataType.STRING,
           "Numeric or alphanumeric identifier assigned to a person, " +
               "typically based on order of hire or association with an " +
               "organization",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
   private static final AttributeDescriptor COST_CENTER =
-      AttributeDescriptor.singularSimple("costCenter",
+      AttributeDescriptor.simple("costCenter",
           AttributeDescriptor.DataType.STRING,
           "Identifies the name of a cost center",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
   private static final AttributeDescriptor ORGANIZATION =
-      AttributeDescriptor.singularSimple("organization",
+      AttributeDescriptor.simple("organization",
           AttributeDescriptor.DataType.STRING,
           "Identifies the name of an organization",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
   private static final AttributeDescriptor DIVISION =
-      AttributeDescriptor.singularSimple("division",
+      AttributeDescriptor.simple("division",
           AttributeDescriptor.DataType.STRING,
-          "dentifies the name of a division",
+          "Identifies the name of a division",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
   private static final AttributeDescriptor DEPARTMENT =
-      AttributeDescriptor.singularSimple("department",
+      AttributeDescriptor.simple("department",
           AttributeDescriptor.DataType.STRING,
           "Identifies the name of a department",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
 
   private static final AttributeDescriptor MANAGER_ID =
-      AttributeDescriptor.singularSimple("managerId",
+      AttributeDescriptor.simple("managerId",
           AttributeDescriptor.DataType.STRING,
           "The id of the SCIM resource representing the User's manager",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
   private static final AttributeDescriptor MANAGER_DISPLAY_NAME =
-      AttributeDescriptor.singularSimple("displayName",
+      AttributeDescriptor.simple("displayName",
           AttributeDescriptor.DataType.STRING,
           "The displayName of the User's manager",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
   private static final AttributeDescriptor MANAGER =
-      AttributeDescriptor.singularComplex("manager", "The User's manager",
+      AttributeDescriptor.complex("manager", "The User's manager",
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false,
           MANAGER_ID, MANAGER_DISPLAY_NAME);
 
   //// 8.  SCIM Group Schema ////
 
   private static final AttributeDescriptor GROUP_DISPLAY_NAME =
-      AttributeDescriptor.singularSimple("displayName",
+      AttributeDescriptor.simple("displayName",
           AttributeDescriptor.DataType.STRING,
           "A human readable name for the Group",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor MEMBERS =
-      AttributeDescriptor.pluralSimple("members",
+      AttributeDescriptor.simpleMultiValued("members",
           AttributeDescriptor.DataType.STRING,
           "A list of members of the Group",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false,
@@ -429,210 +444,212 @@ public class CoreSchema
   //// 9.  Service Provider Configuration Schema ////
 
   private static final AttributeDescriptor CONFIG_DOCUMENTATION_URL =
-      AttributeDescriptor.singularSimple("documentationUrl",
+      AttributeDescriptor.simple("documentationUrl",
           AttributeDescriptor.DataType.STRING,
           "An HTTP addressable URL pointing to the Service Provider's human " +
-          "consumable help documentation",
+              "consumable help documentation",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
   private static final AttributeDescriptor PATCH_SUPPORTED =
-      AttributeDescriptor.singularSimple("supported",
+      AttributeDescriptor.simple("supported",
           AttributeDescriptor.DataType.BOOLEAN,
           "Boolean value specifying whether the PATCH operation is supported",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor BULK_SUPPORTED =
-      AttributeDescriptor.singularSimple("supported",
+      AttributeDescriptor.simple("supported",
           AttributeDescriptor.DataType.BOOLEAN,
           "Boolean value specifying whether the BULK operation is supported",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor BULK_MAX_OPERATIONS =
-      AttributeDescriptor.singularSimple("maxOperations",
+      AttributeDescriptor.simple("maxOperations",
           AttributeDescriptor.DataType.INTEGER,
           "An integer value specifying the maximum number of resource " +
-          "operations in a BULK operation",
+              "operations in a BULK operation",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor BULK_MAX_PAYLOAD_SIZE =
-      AttributeDescriptor.singularSimple("maxPayloadSize",
+      AttributeDescriptor.simple("maxPayloadSize",
           AttributeDescriptor.DataType.INTEGER,
           "An integer value specifying the maximum payload size in bytes " +
-          "of a BULK operation",
+              "of a BULK operation",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor FILTER_SUPPORTED =
-      AttributeDescriptor.singularSimple("supported",
+      AttributeDescriptor.simple("supported",
           AttributeDescriptor.DataType.BOOLEAN,
           "Boolean value specifying whether the BULK operation is supported",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor FILTER_MAX_RESULTS =
-      AttributeDescriptor.singularSimple("maxResults",
+      AttributeDescriptor.simple("maxResults",
           AttributeDescriptor.DataType.INTEGER,
           "Integer value specifying the maximum number of Resources returned " +
-          "in a response",
+              "in a response",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor CHANGE_PASSWORD_SUPPORTED =
-      AttributeDescriptor.singularSimple("supported",
+      AttributeDescriptor.simple("supported",
           AttributeDescriptor.DataType.BOOLEAN,
           "Boolean value specifying whether the Change Password operation " +
-          "is supported",
+              "is supported",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor SORT_SUPPORTED =
-      AttributeDescriptor.singularSimple("supported",
+      AttributeDescriptor.simple("supported",
           AttributeDescriptor.DataType.BOOLEAN,
           "Boolean value specifying whether sorting is supported",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor ETAG_SUPPORTED =
-      AttributeDescriptor.singularSimple("supported",
+      AttributeDescriptor.simple("supported",
           AttributeDescriptor.DataType.BOOLEAN,
           "Boolean value specifying whether Etag resource versions are " +
-          "supported",
+              "supported",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor AUTH_SCHEME_NAME =
-      AttributeDescriptor.singularSimple("name",
+      AttributeDescriptor.simple("name",
           AttributeDescriptor.DataType.STRING,
           "The common authentication scheme name.",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor AUTH_SCHEME_DESCRIPTION =
-      AttributeDescriptor.singularSimple("description",
+      AttributeDescriptor.simple("description",
           AttributeDescriptor.DataType.STRING,
           "A description of the Authentication Scheme.",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor AUTH_SCHEME_SPEC_URL =
-      AttributeDescriptor.singularSimple("specUrl",
+      AttributeDescriptor.simple("specUrl",
           AttributeDescriptor.DataType.STRING,
           "A HTTP addressable URL pointing to the Authentication Scheme's " +
-          "specification.",
+              "specification.",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
   private static final AttributeDescriptor AUTH_SCHEME_DOCUMENTATION_URL =
-      AttributeDescriptor.singularSimple("documentationUrl",
+      AttributeDescriptor.simple("documentationUrl",
           AttributeDescriptor.DataType.STRING,
           "A HTTP addressable URL pointing to the Authentication Scheme's " +
-          "usage documentation.",
+              "usage documentation.",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
   private static final AttributeDescriptor PATCH_CONFIG =
-      AttributeDescriptor.singularComplex(
+      AttributeDescriptor.complex(
           "patch",
           "A complex type that specifies PATCH configuration options",
           SCIMConstants.SCHEMA_URI_CORE, true, true,
           PATCH_SUPPORTED);
   private static final AttributeDescriptor BULK_CONFIG =
-      AttributeDescriptor.singularComplex(
+      AttributeDescriptor.complex(
           "bulk",
           "A complex type that specifies BULK configuration options",
           SCIMConstants.SCHEMA_URI_CORE, true, true,
           BULK_SUPPORTED, BULK_MAX_OPERATIONS, BULK_MAX_PAYLOAD_SIZE);
   private static final AttributeDescriptor FILTER_CONFIG =
-      AttributeDescriptor.singularComplex(
+      AttributeDescriptor.complex(
           "filter",
           "A complex type that specifies Filter configuration options",
           SCIMConstants.SCHEMA_URI_CORE, true, true,
           FILTER_SUPPORTED, FILTER_MAX_RESULTS);
   private static final AttributeDescriptor CHANGE_PASSWORD_CONFIG =
-      AttributeDescriptor.singularComplex("changePassword",
+      AttributeDescriptor.complex("changePassword",
           "A complex type that specifies Change Password configuration options",
           SCIMConstants.SCHEMA_URI_CORE, true, true,
           CHANGE_PASSWORD_SUPPORTED);
   private static final AttributeDescriptor SORT_CONFIG =
-      AttributeDescriptor.singularComplex("sort",
+      AttributeDescriptor.complex("sort",
           "A complex type that specifies Sort configuration options",
           SCIMConstants.SCHEMA_URI_CORE, true, true,
           SORT_SUPPORTED);
   private static final AttributeDescriptor ETAG_CONFIG =
-      AttributeDescriptor.singularComplex("etag",
+      AttributeDescriptor.complex("etag",
           "A complex type that specifies Etag configuration options",
           SCIMConstants.SCHEMA_URI_CORE, true, true,
           ETAG_SUPPORTED);
   private static final AttributeDescriptor AUTH_SCHEMES =
-      AttributeDescriptor.pluralComplex("authenticationSchemes",
+      AttributeDescriptor.complexMultiValued("authenticationSchemes",
           "A complex type that specifies supported Authentication Scheme " +
-          "properties.",
-          SCIMConstants.SCHEMA_URI_CORE, true, true, null,
+              "properties.",
+          SCIMConstants.SCHEMA_URI_CORE, true, true,
+          new String[]{"OAuth", "OAuth2", "HttpBasic", "httpDigest"},
           AUTH_SCHEME_NAME, AUTH_SCHEME_DESCRIPTION, AUTH_SCHEME_SPEC_URL,
           AUTH_SCHEME_DOCUMENTATION_URL);
 
   //// 10.  Resource Schema ////
 
   private static final AttributeDescriptor RESOURCE_NAME =
-      AttributeDescriptor.singularSimple("name",
+      AttributeDescriptor.simple("name",
           AttributeDescriptor.DataType.STRING,
           "The addressable Resource endpoint name",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor RESOURCE_DESCRIPTION =
-      AttributeDescriptor.singularSimple("description",
+      AttributeDescriptor.simple("description",
           AttributeDescriptor.DataType.STRING,
           "The Resource's human readable description",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor RESOURCE_SCHEMA =
-      AttributeDescriptor.singularSimple("schema",
+      AttributeDescriptor.simple("schema",
           AttributeDescriptor.DataType.STRING,
           "The Resource's associated schema URN",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
-  private static final AttributeDescriptor RESOURCE_QUERY_ENDPOINT =
-      AttributeDescriptor.singularSimple("queryEndpoint",
+  private static final AttributeDescriptor RESOURCE_ENDPOINT =
+      AttributeDescriptor.simple("endpoint",
           AttributeDescriptor.DataType.STRING,
           "The Resource's HTTP addressable query endpoint relative to the " +
               "Base URL",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
 
   private static final AttributeDescriptor ATTRIBUTES_NAME =
-      AttributeDescriptor.singularSimple("name",
+      AttributeDescriptor.simple("name",
           AttributeDescriptor.DataType.STRING,
           "The attribute's name", SCIMConstants.SCHEMA_URI_CORE,
           true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_TYPE =
-      AttributeDescriptor.singularSimple("type",
+      AttributeDescriptor.simple("type",
           AttributeDescriptor.DataType.STRING,
           "The attribute's data type", SCIMConstants.SCHEMA_URI_CORE,
           true, true, false);
-  private static final AttributeDescriptor ATTRIBUTES_PLURAL =
-      AttributeDescriptor.singularSimple("plural",
+  private static final AttributeDescriptor ATTRIBUTES_MULTIVALUED =
+      AttributeDescriptor.simple("multiValued",
           AttributeDescriptor.DataType.BOOLEAN,
-          "Specifies if the attribute is a plural",
+          "Boolean value indicating the attribute's plurality",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_DESCRIPTION =
-      AttributeDescriptor.singularSimple("description",
+      AttributeDescriptor.simple("description",
           AttributeDescriptor.DataType.STRING,
           "The attribute's human readable description",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_SCHEMA =
-      AttributeDescriptor.singularSimple("schema",
+      AttributeDescriptor.simple("schema",
           AttributeDescriptor.DataType.STRING,
           "The attribute's associated schema", SCIMConstants.SCHEMA_URI_CORE,
           true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_READ_ONLY =
-      AttributeDescriptor.singularSimple("readOnly",
+      AttributeDescriptor.simple("readOnly",
           AttributeDescriptor.DataType.BOOLEAN,
           "A Boolean value that specifies if the attribute is mutable",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_REQUIRED =
-      AttributeDescriptor.singularSimple("required",
+      AttributeDescriptor.simple("required",
           AttributeDescriptor.DataType.BOOLEAN,
           "A Boolean value that specifies if the attribute is required",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_CASE_EXACT =
-      AttributeDescriptor.singularSimple("caseExact",
+      AttributeDescriptor.simple("caseExact",
           AttributeDescriptor.DataType.BOOLEAN,
           "A Boolean value that specifies if the string attribute is case " +
               "sensitive",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
 
   private static final AttributeDescriptor RESOURCE_SUB_ATTRIBUTES =
-      AttributeDescriptor.pluralComplex("subAttributes",
+      AttributeDescriptor.complexMultiValued("subAttributes",
           "A list specifying the contained attributes",
-          SCIMConstants.SCHEMA_URI_CORE, true, false, null,
+          SCIMConstants.SCHEMA_URI_CORE, true, false, (String[]) null,
           ATTRIBUTES_NAME, ATTRIBUTES_TYPE, ATTRIBUTES_DESCRIPTION,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT);
-  private static final AttributeDescriptor RESOURCE_PLURAL_TYPES =
-      AttributeDescriptor.pluralSimple("pluralTypes",
+  private static final AttributeDescriptor RESOURCE_CANONICAL_VALUES =
+      AttributeDescriptor.simpleMultiValued("canonicalValues",
           AttributeDescriptor.DataType.STRING,
-          "A list of canonical type values",
+          "A collection of canonical values",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
 
   private static final AttributeDescriptor RESOURCE_ATTRIBUTES =
-      AttributeDescriptor.pluralComplex("attributes",
+      AttributeDescriptor.complexMultiValued("attributes",
           "A complex type that specifies the set of associated " +
               "Resource attributes", SCIMConstants.SCHEMA_URI_CORE, true,
-          true, null, ATTRIBUTES_NAME, ATTRIBUTES_TYPE,
+          true, (String[]) null, ATTRIBUTES_NAME, ATTRIBUTES_TYPE,
           ATTRIBUTES_DESCRIPTION, ATTRIBUTES_SCHEMA,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT,
-          ATTRIBUTES_PLURAL, RESOURCE_SUB_ATTRIBUTES, RESOURCE_PLURAL_TYPES);
+          ATTRIBUTES_MULTIVALUED, RESOURCE_SUB_ATTRIBUTES,
+          RESOURCE_CANONICAL_VALUES);
 
   private static final AttributeDescriptor.AttributeDescriptorResolver
         NESTING_ATTRIBUTES_RESOLVER =
@@ -640,18 +657,18 @@ public class CoreSchema
   static
   {
     SCIMObject scimObject = new SCIMObject();
-    scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
+    scimObject.setAttribute(SCIMAttribute.create(
         RESOURCE_NAME, SCIMAttributeValue.createStringValue(
         SCIMConstants.RESOURCE_NAME_SCHEMA)));
-    scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
+    scimObject.setAttribute(SCIMAttribute.create(
         RESOURCE_DESCRIPTION, SCIMAttributeValue.createStringValue(
         "The Resource schema specifies the Attribute(s) and meta-data that " +
             "constitute a Resource")));
-    scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
+    scimObject.setAttribute(SCIMAttribute.create(
         RESOURCE_SCHEMA, SCIMAttributeValue.createStringValue(
         SCIMConstants.SCHEMA_URI_CORE)));
-    scimObject.setAttribute(SCIMAttribute.createSingularAttribute(
-        RESOURCE_QUERY_ENDPOINT, SCIMAttributeValue.createStringValue(
+    scimObject.setAttribute(SCIMAttribute.create(
+        RESOURCE_ENDPOINT, SCIMAttributeValue.createStringValue(
         SCIMConstants.RESOURCE_ENDPOINT_SCHEMAS)));
 
     SCIMAttributeValue[] entries = new SCIMAttributeValue[8];
@@ -671,7 +688,7 @@ public class CoreSchema
       entries[5] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
           fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_SCHEMA);
       entries[6] = AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER.
-          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_QUERY_ENDPOINT);
+          fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_ENDPOINT);
       entries[7] = NESTING_ATTRIBUTES_RESOLVER.
           fromInstance(RESOURCE_ATTRIBUTES, RESOURCE_ATTRIBUTES);
     }
@@ -682,7 +699,7 @@ public class CoreSchema
     }
 
     scimObject.setAttribute(
-        SCIMAttribute.createPluralAttribute(RESOURCE_ATTRIBUTES, entries));
+        SCIMAttribute.create(RESOURCE_ATTRIBUTES, entries));
 
 
     RESOURCE_SCHEMA_DESCRIPTOR = new ResourceDescriptor(null, scimObject)
@@ -694,7 +711,7 @@ public class CoreSchema
 
       @Override
       public Collection<AttributeDescriptor> getAttributes() {
-        return getPluralAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
+        return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
             "attributes", NESTING_ATTRIBUTES_RESOLVER);
       }
     };
@@ -728,20 +745,20 @@ public class CoreSchema
    */
   public static final ResourceDescriptor USER_DESCRIPTOR =
       ResourceDescriptor.create(SCIMConstants.RESOURCE_NAME_USER,
-          "SCIM provides a schema for representing Users",
+          "SCIM core resource for representing users",
           SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_USERS,
           USER_NAME, NAME, DISPLAY_NAME, NICK_NAME, PROFILE_URL, TITLE,
-          USER_TYPE, PREFERRED_LANGUAGE, LOCALE, TIMEZONE, ACTIVE, EMAILS,
-          PHONE_NUMBERS, IMS, PHOTOS, ADDRESSES, GROUPS, ENTITLEMENTS, ROLES,
-          EMPLOYEE_NUMBER, COST_CENTER, ORGANIZATION, DIVISION, DEPARTMENT,
-          MANAGER);
+          USER_TYPE, PREFERRED_LANGUAGE, LOCALE, TIMEZONE, ACTIVE, PASSWORD,
+          EMAILS, PHONE_NUMBERS, IMS, PHOTOS, ADDRESSES, GROUPS, ENTITLEMENTS,
+          ROLES, EMPLOYEE_NUMBER, COST_CENTER, ORGANIZATION, DIVISION,
+          DEPARTMENT, MANAGER);
 
   /**
    * The SCIM Group Schema.
    */
   public static final ResourceDescriptor GROUP_DESCRIPTOR =
       ResourceDescriptor.create(SCIMConstants.RESOURCE_NAME_GROUP,
-          "SCIM provides a schema for representing groups",
+          "SCIM core resource for representing groups",
           SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_GROUPS,
           GROUP_DISPLAY_NAME, MEMBERS);
 

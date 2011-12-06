@@ -151,7 +151,7 @@ public class SCIMEndpoint<R extends BaseResource>
       throws SCIMException
   {
     final UriBuilder uriBuilder = UriBuilder.fromUri(scimService.getBaseURL());
-    uriBuilder.path(resourceDescriptor.getQueryEndpoint());
+    uriBuilder.path(resourceDescriptor.getEndpoint());
 
     // The ServiceProviderConfig is a special case where the id is not
     // specified.
@@ -238,7 +238,7 @@ public class SCIMEndpoint<R extends BaseResource>
   {
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
-            resourceDescriptor.getQueryEndpoint()).build();
+            resourceDescriptor.getEndpoint()).build();
     org.apache.wink.client.Resource clientResource = client.resource(uri);
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
@@ -325,7 +325,7 @@ public class SCIMEndpoint<R extends BaseResource>
 
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
-            resourceDescriptor.getQueryEndpoint()).build();
+            resourceDescriptor.getEndpoint()).build();
     org.apache.wink.client.Resource clientResource = client.resource(uri);
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
@@ -411,7 +411,7 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
-            resourceDescriptor.getQueryEndpoint()).path(id).build();
+            resourceDescriptor.getEndpoint()).path(id).build();
     org.apache.wink.client.Resource clientResource = client.resource(uri);
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
@@ -501,7 +501,7 @@ public class SCIMEndpoint<R extends BaseResource>
   {
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
-            resourceDescriptor.getQueryEndpoint()).path(id).build();
+            resourceDescriptor.getEndpoint()).path(id).build();
     org.apache.wink.client.Resource clientResource = client.resource(uri);
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);

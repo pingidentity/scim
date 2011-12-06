@@ -116,28 +116,28 @@ public final class AttributeDescriptor {
       final List<SCIMAttribute> attributes =
           new ArrayList<SCIMAttribute>(6);
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("name"),
           SCIMAttributeValue.createStringValue(value.getName())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("type"),
           SCIMAttributeValue.createStringValue(
               value.getDataType().toString())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("description"),
           SCIMAttributeValue.createStringValue(value.getDescription())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("readOnly"),
           SCIMAttributeValue.createBooleanValue(value.isReadOnly())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("required"),
           SCIMAttributeValue.createBooleanValue(value.isRequired())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("caseExact"),
           SCIMAttributeValue.createBooleanValue(value.isCaseExact())));
 
@@ -150,19 +150,19 @@ public final class AttributeDescriptor {
     @Override
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
       return new AttributeDescriptor(
-          value.getSingularSubAttributeValue("name",
+          value.getSubAttributeValue("name",
               AttributeValueResolver.STRING_RESOLVER),
-          DataType.parse(value.getSingularSubAttributeValue("type",
+          DataType.parse(value.getSubAttributeValue("type",
               AttributeValueResolver.STRING_RESOLVER)),
           false,
-          value.getSingularSubAttributeValue("description",
+          value.getSubAttributeValue("description",
               AttributeValueResolver.STRING_RESOLVER),
           schema,
-          value.getSingularSubAttributeValue("readOnly",
+          value.getSubAttributeValue("readOnly",
               AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSingularSubAttributeValue("required",
+          value.getSubAttributeValue("required",
               AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSingularSubAttributeValue("caseExact",
+          value.getSubAttributeValue("caseExact",
               AttributeValueResolver.BOOLEAN_RESOLVER),
           null, null);
     }
@@ -195,30 +195,30 @@ public final class AttributeDescriptor {
      */
     @Override
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
-      String schemaValue = value.getSingularSubAttributeValue("schema",
+      String schemaValue = value.getSubAttributeValue("schema",
           AttributeValueResolver.STRING_RESOLVER);
       return new AttributeDescriptor(
-          value.getSingularSubAttributeValue("name",
+          value.getSubAttributeValue("name",
               AttributeValueResolver.STRING_RESOLVER),
-          DataType.parse(value.getSingularSubAttributeValue("type",
+          DataType.parse(value.getSubAttributeValue("type",
               AttributeValueResolver.STRING_RESOLVER)),
-          value.getSingularSubAttributeValue("plural",
+          value.getSubAttributeValue("multiValued",
               AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSingularSubAttributeValue("description",
+          value.getSubAttributeValue("description",
               AttributeValueResolver.STRING_RESOLVER),
           schemaValue,
-          value.getSingularSubAttributeValue("readOnly",
+          value.getSubAttributeValue("readOnly",
               AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSingularSubAttributeValue("required",
+          value.getSubAttributeValue("required",
               AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSingularSubAttributeValue("caseExact",
+          value.getSubAttributeValue("caseExact",
               AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getPluralAttributeValue("pluralTypes",
+          value.getAttributeValues("canonicalValues",
               Entry.STRINGS_RESOLVER),
-          value.getPluralAttributeValue(
+          value.getAttributeValues(
               allowNesting ? "attributes" : "subAttributes",
               allowNesting ? this :
-              new SubAttributeDescriptorResolver(schemaValue)));
+                  new SubAttributeDescriptorResolver(schemaValue)));
     }
 
     /**
@@ -232,53 +232,53 @@ public final class AttributeDescriptor {
       final List<SCIMAttribute> attributes =
           new ArrayList<SCIMAttribute>(10);
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("name"),
           SCIMAttributeValue.createStringValue(value.getName())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("type"),
           SCIMAttributeValue.createStringValue(
               value.getDataType().toString())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
-          attributeDescriptor.getSubAttribute("plural"),
-          SCIMAttributeValue.createBooleanValue(value.isPlural())));
+      attributes.add(SCIMAttribute.create(
+          attributeDescriptor.getSubAttribute("multiValued"),
+          SCIMAttributeValue.createBooleanValue(value.isMultiValued())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("description"),
           SCIMAttributeValue.createStringValue(value.getDescription())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("schema"),
           SCIMAttributeValue.createStringValue(value.getSchema())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("readOnly"),
           SCIMAttributeValue.createBooleanValue(value.isReadOnly())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("required"),
           SCIMAttributeValue.createBooleanValue(value.isRequired())));
 
-      attributes.add(SCIMAttribute.createSingularAttribute(
+      attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("caseExact"),
           SCIMAttributeValue.createBooleanValue(value.isCaseExact())));
 
-      if(value.getPluralTypes() != null)
+      if(value.getCanonicalValues() != null)
       {
-        final AttributeDescriptor pluralTypesAttributeDescriptor =
-            attributeDescriptor.getSubAttribute("pluralTypes");
-        final SCIMAttributeValue[] pluralTypeValues =
-            new SCIMAttributeValue[value.getPluralTypes().size()];
+        final AttributeDescriptor canonicalValuesAttributeDescriptor =
+            attributeDescriptor.getSubAttribute("canonicalValues");
+        final SCIMAttributeValue[] canonicalValues =
+            new SCIMAttributeValue[value.getCanonicalValues().size()];
         int i = 0;
-        for(Entry<String> pluralType : value.getPluralTypes())
+        for(Entry<String> canonicalValue : value.getCanonicalValues())
         {
-          pluralTypeValues[i++] = Entry.STRINGS_RESOLVER.fromInstance(
-              pluralTypesAttributeDescriptor,pluralType);
+          canonicalValues[i++] = Entry.STRINGS_RESOLVER.fromInstance(
+              canonicalValuesAttributeDescriptor, canonicalValue);
         }
-        attributes.add(SCIMAttribute.createPluralAttribute(
-            pluralTypesAttributeDescriptor, pluralTypeValues));
+        attributes.add(SCIMAttribute.create(
+            canonicalValuesAttributeDescriptor, canonicalValues));
       }
 
       if(value.getSubAttributes() != null)
@@ -295,7 +295,7 @@ public final class AttributeDescriptor {
               new SubAttributeDescriptorResolver(value.getSchema())).
               fromInstance(subAttributesDescriptor, subAttribute);
         }
-        attributes.add(SCIMAttribute.createPluralAttribute(
+        attributes.add(SCIMAttribute.create(
             subAttributesDescriptor, subAttributeValues));
       }
 
@@ -313,7 +313,7 @@ public final class AttributeDescriptor {
 
   private final boolean required;
 
-  private final boolean plural;
+  private final boolean multiValued;
 
   private final boolean caseExact;
 
@@ -321,38 +321,39 @@ public final class AttributeDescriptor {
 
   private final Map<String, AttributeDescriptor> subAttributes;
 
-  private final Collection<Entry<String>> pluralTypes;
+  private final Collection<Entry<String>> canonicalValues;
 
   /**
    * Construct a new AttributeDescriptor instance with the provided info.
    *
    * @param name         The attribute's name.
    * @param dataType     The attribute's data type.
-   * @param plural       Whether the attribute is plural.
+   * @param multiValued       Whether the attribute is multiValued.
    * @param description  The attribute's human readable description.
    * @param schema       The attribute's associated schema.
    * @param readOnly     Whether the attribute is mutable.
    * @param required     Whether the attribute is required.
    * @param caseExact    Whether the string attribute is case sensitive.
-   * @param pluralTypes  A list of canonical type values.
+   * @param canonicalValues  A list of canonical type values.
    * @param subAttributes  A list specifying the contained attributes.
    */
   private AttributeDescriptor(final String name, final DataType dataType,
-                              final boolean plural, final String description,
-                              final String schema, final boolean readOnly,
-                              final boolean required, final boolean caseExact,
-                              final Collection<Entry<String>> pluralTypes,
+                              final boolean multiValued,
+                              final String description, final String schema,
+                              final boolean readOnly, final boolean required,
+                              final boolean caseExact,
+                              final Collection<Entry<String>> canonicalValues,
                             final Collection<AttributeDescriptor> subAttributes)
   {
     this.name = name;
     this.dataType = dataType;
-    this.plural = plural;
+    this.multiValued = multiValued;
     this.description = description;
     this.schema = schema;
     this.readOnly = readOnly;
     this.required = required;
     this.caseExact = caseExact;
-    this.pluralTypes = pluralTypes;
+    this.canonicalValues = canonicalValues;
 
     if(subAttributes != null)
     {
@@ -395,12 +396,12 @@ public final class AttributeDescriptor {
   }
 
   /**
-   * Indicates whether the attribute is a plural attribute.
+   * Indicates whether the attribute is a multi-valued attribute.
    *
-   * @return {@code true} if the attribute is plural.
+   * @return {@code true} if the attribute is multi-valued.
    */
-  public boolean isPlural() {
-    return plural;
+  public boolean isMultiValued() {
+    return multiValued;
   }
 
   /**
@@ -447,11 +448,12 @@ public final class AttributeDescriptor {
    * Retrieves a list of canonical type values.
    *
    * @return A list of canonical type values or <code>null</code> if the
-   *         attribute is not a plural attribute or if they are not specified.
+   *         attribute is not a multi-valued attribute or if they are not
+   *         specified.
    */
-  public Collection<Entry<String>> getPluralTypes()
+  public Collection<Entry<String>> getCanonicalValues()
   {
-    return pluralTypes;
+    return canonicalValues;
   }
 
 
@@ -518,7 +520,7 @@ public final class AttributeDescriptor {
         "schema='" + getSchema() + '\'' +
         ", name='" + getName() + '\'' +
         ", description='" + getDescription() + '\'' +
-        ", plural=" + isPlural() +
+        ", multiValued=" + isMultiValued() +
         ", dataType=" + getDataType() +
         ", isRequired=" + isRequired() +
         ", isReadOnly=" + isReadOnly() +
@@ -570,7 +572,7 @@ public final class AttributeDescriptor {
   }
 
   /**
-   * Create a new singular simple attribute descriptor with the provided
+   * Create a new simple attribute descriptor with the provided
    * information.
    *
    * @param name         The attribute's name.
@@ -583,7 +585,7 @@ public final class AttributeDescriptor {
    * @return             A new singular simple attribute descriptor with the
    *                     provided information.
    */
-  public static AttributeDescriptor singularSimple(
+  public static AttributeDescriptor simple(
       final String name, final DataType dataType, final String description,
       final String schema, final boolean readOnly, final boolean required,
       final boolean caseExact)
@@ -593,7 +595,7 @@ public final class AttributeDescriptor {
   }
 
   /**
-   * Create a new singular complex attribute descriptor with the provided
+   * Create a new complex attribute descriptor with the provided
    * information.
    *
    * @param name           The attribute's name.
@@ -605,7 +607,7 @@ public final class AttributeDescriptor {
    * @return               A new singular complex attribute descriptor with the
    *                       provided information.
    */
-  public static AttributeDescriptor singularComplex(
+  public static AttributeDescriptor complex(
       final String name, final String description, final String schema,
       final boolean readOnly, final boolean required,
       final AttributeDescriptor... subAttributes)
@@ -615,77 +617,78 @@ public final class AttributeDescriptor {
   }
 
   /**
-   * Create a new plural simple attribute descriptor with the provided
+   * Create a new multi-valued simple attribute descriptor with the provided
    * information.
    *
-   * @param name         The attribute's name.
-   * @param dataType     The attribute's data type.
-   * @param description  The attribute's human readable description.
-   * @param schema       The attribute's associated schema.
-   * @param readOnly     Whether the attribute is mutable.
-   * @param required     Whether the attribute is required.
-   * @param caseExact    Whether the string attribute is case sensitive.
-   * @param pluralTypes  A list of canonical type values.
-   * @return             A new singular simple attribute descriptor with the
-   *                     provided information.
+   * @param name             The attribute's name.
+   * @param dataType         The attribute's data type.
+   * @param description      The attribute's human readable description.
+   * @param schema           The attribute's associated schema.
+   * @param readOnly         Whether the attribute is mutable.
+   * @param required         Whether the attribute is required.
+   * @param caseExact        Whether the string attribute is case sensitive.
+   * @param canonicalValues  A list of canonical type values.
+   * @return                 A new singular simple attribute descriptor with the
+   *                         provided information.
    */
-  public static AttributeDescriptor pluralSimple(
+  public static AttributeDescriptor simpleMultiValued(
       final String name, final DataType dataType, final String description,
       final String schema, final boolean readOnly, final boolean required,
-      final boolean caseExact, final String... pluralTypes)
+      final boolean caseExact, final String... canonicalValues)
   {
-    final Collection<Entry<String>> pluralTypeEntries;
-    if(pluralTypes != null)
+    final Collection<Entry<String>> typeEntries;
+    if(canonicalValues != null)
     {
-      pluralTypeEntries = new ArrayList<Entry<String>>(pluralTypes.length);
-      for(String pluralType : pluralTypes)
+      typeEntries = new ArrayList<Entry<String>>(canonicalValues.length);
+      for(String canonicalValue : canonicalValues)
       {
-        pluralTypeEntries.add(new Entry<String>(pluralType, null, false));
+        typeEntries.add(new Entry<String>(canonicalValue, null, false));
       }
     }
     else
     {
-      pluralTypeEntries = null;
+      typeEntries = null;
     }
     return new AttributeDescriptor(name, dataType, true, description, schema,
-        readOnly, required, caseExact, pluralTypeEntries,
-        CoreSchema.createCommonPluralSubAttributes(dataType));
+        readOnly, required, caseExact, typeEntries,
+        CoreSchema.createCommonMultiValuedSubAttributes(dataType));
   }
 
   /**
-   * Create a new singular complex attribute descriptor with the provided
+   * Create a new multi-valued complex attribute descriptor with the provided
    * information.
    *
-   * @param name           The attribute's name.
-   * @param description    The attribute's human readable description.
-   * @param schema         The attribute's associated schema.
-   * @param readOnly       Whether the attribute is mutable.
-   * @param required       Whether the attribute is required.
-   * @param pluralTypes  A list of canonical type values.
-   * @param subAttributes  A list specifying the contained attributes.
-   * @return               A new singular complex attribute descriptor with the
-   *                       provided information.
+   * @param name             The attribute's name.
+   * @param description      The attribute's human readable description.
+   * @param schema           The attribute's associated schema.
+   * @param readOnly         Whether the attribute is mutable.
+   * @param required         Whether the attribute is required.
+   * @param canonicalValues  A list of canonical type values.
+   * @param subAttributes    A list specifying the contained attributes.
+   * @return                 A new singular complex attribute descriptor with
+   *                         the provided information.
    */
-  public static AttributeDescriptor pluralComplex(
+  public static AttributeDescriptor complexMultiValued(
       final String name, final String description, final String schema,
       final boolean readOnly, final boolean required,
-      final String[] pluralTypes, final AttributeDescriptor... subAttributes)
+      final String[] canonicalValues,
+      final AttributeDescriptor... subAttributes)
   {
-    final Collection<Entry<String>> pluralTypeEntries;
-    if(pluralTypes != null)
+    final Collection<Entry<String>> typeEntries;
+    if(canonicalValues != null)
     {
-      pluralTypeEntries = new ArrayList<Entry<String>>(pluralTypes.length);
-      for(String pluralType : pluralTypes)
+      typeEntries = new ArrayList<Entry<String>>(canonicalValues.length);
+      for(String canonicalValue : canonicalValues)
       {
-        pluralTypeEntries.add(new Entry<String>(pluralType, null, false));
+        typeEntries.add(new Entry<String>(canonicalValue, null, false));
       }
     }
     else
     {
-      pluralTypeEntries = null;
+      typeEntries = null;
     }
     return new AttributeDescriptor(name, DataType.COMPLEX, true, description,
-        schema, readOnly, required, false, pluralTypeEntries,
-        CoreSchema.addCommonPluralSubAttributes(subAttributes));
+        schema, readOnly, required, false, typeEntries,
+        CoreSchema.addCommonMultiValuedSubAttributes(subAttributes));
   }
 }

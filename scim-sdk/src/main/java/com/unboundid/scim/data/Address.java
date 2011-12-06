@@ -38,22 +38,22 @@ public class Address
       new AttributeValueResolver<Address>()
       {
         public Address toInstance(final SCIMAttributeValue value) {
-          Boolean p = value.getSingularSubAttributeValue("primary",
-                  BOOLEAN_RESOLVER);
+          Boolean p = value.getSubAttributeValue("primary",
+              BOOLEAN_RESOLVER);
           return new Address(
-              value.getSingularSubAttributeValue("formatted",
+              value.getSubAttributeValue("formatted",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("streetAddress",
+              value.getSubAttributeValue("streetAddress",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("locality",
+              value.getSubAttributeValue("locality",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("region",
+              value.getSubAttributeValue("region",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("postalCode",
+              value.getSubAttributeValue("postalCode",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("country",
+              value.getSubAttributeValue("country",
                   STRING_RESOLVER),
-              value.getSingularSubAttributeValue("type",
+              value.getSubAttributeValue("type",
                   STRING_RESOLVER),
               p == null ? false : p);
         }
@@ -68,7 +68,7 @@ public class Address
           if (value.type != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("type"),
                     SCIMAttributeValue.createStringValue(value.type)));
           }
@@ -76,7 +76,7 @@ public class Address
           if (value.formatted != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("formatted"),
                     SCIMAttributeValue.createStringValue(value.formatted)));
           }
@@ -84,7 +84,7 @@ public class Address
           if (value.streetAddress != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("streetAddress"),
                     SCIMAttributeValue.createStringValue(value.streetAddress)));
           }
@@ -92,7 +92,7 @@ public class Address
           if (value.locality != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("locality"),
                     SCIMAttributeValue.createStringValue(value.locality)));
           }
@@ -100,7 +100,7 @@ public class Address
           if (value.region != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("region"),
                     SCIMAttributeValue.createStringValue(value.region)));
           }
@@ -108,7 +108,7 @@ public class Address
           if (value.postalCode != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("postalCode"),
                     SCIMAttributeValue.createStringValue(value.postalCode)));
           }
@@ -116,7 +116,7 @@ public class Address
           if (value.country != null)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("country"),
                     SCIMAttributeValue.createStringValue(value.country)));
           }
@@ -124,7 +124,7 @@ public class Address
           if (value.primary)
           {
             subAttributes.add(
-                SCIMAttribute.createSingularAttribute(
+                SCIMAttribute.create(
                     addressDescriptor.getSubAttribute("primary"),
                     SCIMAttributeValue.createBooleanValue(value.primary)));
           }

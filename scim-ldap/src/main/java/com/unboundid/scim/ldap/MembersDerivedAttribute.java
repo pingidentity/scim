@@ -158,7 +158,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
             new ArrayList<SCIMAttribute>();
 
         subAttributes.add(
-            SCIMAttribute.createSingularAttribute(
+            SCIMAttribute.create(
                 getAttributeDescriptor().getSubAttribute("value"),
                 SCIMAttributeValue.createStringValue(userID)));
 
@@ -172,7 +172,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
     }
     else
     {
-      return SCIMAttribute.createPluralAttribute(
+      return SCIMAttribute.create(
           getAttributeDescriptor(),
           values.toArray(new SCIMAttributeValue[values.size()]));
     }

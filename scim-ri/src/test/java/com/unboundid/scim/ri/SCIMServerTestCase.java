@@ -116,7 +116,7 @@ public class SCIMServerTestCase
     assertEquals(userDescriptor.getName(), "User");
     assertNotNull(userDescriptor.getDescription());
     assertEquals(userDescriptor.getSchema(), SCHEMA_URI_CORE);
-    assertEquals(userDescriptor.getQueryEndpoint(), "Users");
+    assertEquals(userDescriptor.getEndpoint(), "Users");
     assertTrue(userDescriptor.getAttributes().size() > 0);
 
     final ResourceDescriptor groupDescriptor =
@@ -130,7 +130,7 @@ public class SCIMServerTestCase
     assertEquals(groupDescriptor.getName(), "Group");
     assertNotNull(groupDescriptor.getDescription());
     assertEquals(groupDescriptor.getSchema(), SCHEMA_URI_CORE);
-    assertEquals(groupDescriptor.getQueryEndpoint(), "Groups");
+    assertEquals(groupDescriptor.getEndpoint(), "Groups");
     assertTrue(groupDescriptor.getAttributes().size() > 0);
 
     Iterator<ResourceDescriptor> iterator =

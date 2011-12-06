@@ -838,7 +838,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(user1.getGroups().size(), 3,
                  "User has the wrong number of groups");
     final ArrayList<String> groups = new ArrayList<String>();
-    // TODO cannot access display name in plurals
+    // TODO cannot access display name in multi-valued attributes
 //    final ArrayList<String> displayNames = new ArrayList<String>();
     for (final Entry<String> groupEntry : user1.getGroups())
     {

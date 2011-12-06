@@ -95,9 +95,9 @@ public class JsonMarshaller implements Marshaller
     for (final SCIMAttribute attribute : resource.getScimObject()
         .getAttributes(SCIMConstants.SCHEMA_URI_CORE))
     {
-      if (attribute.isPlural())
+      if (attribute.getAttributeDescriptor().isMultiValued())
       {
-        this.writePluralAttribute(attribute, jsonWriter);
+        this.writeMultiValuedAttribute(attribute, jsonWriter);
       }
       else
       {
@@ -115,9 +115,9 @@ public class JsonMarshaller implements Marshaller
         for (SCIMAttribute attribute :
             resource.getScimObject().getAttributes(schema))
         {
-          if (attribute.isPlural())
+          if (attribute.getAttributeDescriptor().isMultiValued())
           {
-            this.writePluralAttribute(attribute, jsonWriter);
+            this.writeMultiValuedAttribute(attribute, jsonWriter);
           }
           else
           {
@@ -229,29 +229,29 @@ public class JsonMarshaller implements Marshaller
 
 
   /**
-   * Write a plural attribute to an XML stream.
+   * Write a multi-valued attribute to an XML stream.
    *
    * @param scimAttribute The attribute to be written.
    * @param jsonWriter    Output to write the attribute to.
    *
-   * @throws org.json.JSONException Thrown if error writing to output.
+   * @throws JSONException Thrown if error writing to output.
    */
-  private void writePluralAttribute(final SCIMAttribute scimAttribute,
-                                    final JSONWriter jsonWriter)
+  private void writeMultiValuedAttribute(final SCIMAttribute scimAttribute,
+                                         final JSONWriter jsonWriter)
       throws JSONException
   {
 
-    SCIMAttributeValue[] pluralValues = scimAttribute.getPluralValues();
+    SCIMAttributeValue[] values = scimAttribute.getValues();
     jsonWriter.key(scimAttribute.getName());
     jsonWriter.array();
-    for (SCIMAttributeValue pluralValue : pluralValues)
+    for (SCIMAttributeValue value : values)
     {
       jsonWriter.object();
-      for (SCIMAttribute attribute : pluralValue.getAttributes().values())
+      for (SCIMAttribute attribute : value.getAttributes().values())
       {
-        if (attribute.isPlural())
+        if (attribute.getAttributeDescriptor().isMultiValued())
         {
-          this.writePluralAttribute(attribute, jsonWriter);
+          this.writeMultiValuedAttribute(attribute, jsonWriter);
         }
         else
         {
@@ -278,7 +278,7 @@ public class JsonMarshaller implements Marshaller
       throws JSONException
   {
     jsonWriter.key(scimAttribute.getName());
-    SCIMAttributeValue val = scimAttribute.getSingularValue();
+    SCIMAttributeValue val = scimAttribute.getValue();
     if (val.isComplex())
     {
       jsonWriter.object();
