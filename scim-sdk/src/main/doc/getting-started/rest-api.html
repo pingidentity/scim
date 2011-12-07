@@ -57,6 +57,38 @@ scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
 </pre>
 
               <p>
+                Creating a <tt>SCIMService</tt> capable of SSL communication is
+                somewhat more involved. Here is an example that configures the SCIM
+                client with the
+                <a href="http://hc.apache.org/httpcomponents-client-ga/" target="blank">Apache HttpClient</a>
+                library. This example also uses UnboundID LDAP SDK
+                <tt>com.unboundid.util.ssl</tt>
+                classes to help create a <tt>SSLSocketFactory</tt>.
+              </p>
+
+<pre>
+TrustManager trustManager = new TrustStoreTrustManager(new File("truststore"), "trustst0re-pAssw0rd", "JKS", true);
+SSLUtil sslUtil = new SSLUtil(null, trustManager);
+
+SSLSocketFactory sslSocketFactory = new SSLSocketFactory(sslUtil.createSSLContext());
+Scheme httpsScheme = new Scheme("https", 443, sslSocketFactory);
+Scheme httpScheme = new Scheme("http", 80, PlainSocketFactory.getSocketFactory());
+SchemeRegistry schemeRegistry = new SchemeRegistry();
+schemeRegistry.register(httpScheme);
+schemeRegistry.register(httpsScheme);
+
+HttpParams params = new BasicHttpParams();
+params.setBooleanParameter(SO_REUSEADDR, true);
+DefaultHttpClient.setDefaultHttpParams(params);
+ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager(schemeRegistry);
+DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+httpClient.getCredentialsProvider().setCredentials(new AuthScope("localhost", -1), new UsernamePasswordCredentials("uid=bjensen,dc=example,dc=com", "pAssw0rd"));
+
+URI secureUri = URI.create("https://localhost:52443");
+SCIMService secureScimService = new SCIMService(secureUri, new ApacheHttpClientConfig(httpClient));
+</pre>
+
+              <p>
                 Once you have a <tt>SCIMService</tt> configured, you can retrieve and work with
                 the various SCIM endpoints, using the <tt>com.unboundid.scim.sdk.SCIMEndpoint</tt> class.
                 Here is a simple example of how to print out the phone numbers for a given user:
