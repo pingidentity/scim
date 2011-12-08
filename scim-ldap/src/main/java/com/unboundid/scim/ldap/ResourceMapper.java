@@ -731,7 +731,7 @@ public class ResourceMapper
       return null;
     }
 
-    return attributeMapper.toLDAPSortAttributeType(sortParameters);
+    return attributeMapper.toLDAPSortControl(sortParameters);
   }
 
 

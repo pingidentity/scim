@@ -123,7 +123,7 @@ public abstract class AttributeMapper
    * @throws InvalidResourceException if the SCIM attribute cannot be used in
    *                                  sort parameters.
    */
-  public abstract ServerSideSortRequestControl toLDAPSortAttributeType(
+  public abstract ServerSideSortRequestControl toLDAPSortControl(
       SortParameters sortParameters) throws InvalidResourceException;
 
 

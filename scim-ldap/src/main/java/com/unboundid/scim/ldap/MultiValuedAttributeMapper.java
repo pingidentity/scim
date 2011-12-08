@@ -246,7 +246,7 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
 
   @Override
-  public ServerSideSortRequestControl toLDAPSortAttributeType(
+  public ServerSideSortRequestControl toLDAPSortControl(
       final SortParameters sortParameters)
       throws InvalidResourceException
   {
