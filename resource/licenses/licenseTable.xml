@@ -22,7 +22,7 @@
          <GROUPID>com.sun.xml.bind</GROUPID>
          <ARTIFACTID>jaxb-impl</ARTIFACTID>
          <VERSION>2.2.1.1</VERSION>
-         <LICENSE_COORDINATES>com.unboundid.build.licenses:gpl-v2-classpath-license:txt:license:2.0</LICENSE_COORDINATES>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
        <LICENSE index="5">
          <GROUPID>org.slf4j</GROUPID>
