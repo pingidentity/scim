@@ -21,6 +21,8 @@ import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -29,6 +31,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SortParameters;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,6 +98,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
 
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
+      throws InvalidResourceException
   {
     final SCIMFilterType type = filter.getFilterType();
 
@@ -107,14 +111,17 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
              filter.getFilterAttribute().getSubAttributeName();
       if(subAttributeName == null)
       {
-        return Filter.createORFilter(); //match nothing
+        throw new InvalidResourceException(filter.getFilterAttribute() +
+            " must be a path to a sub-attribute");
       }
 
       final SubAttributeTransformation subAttributeTransformation =
                                               map.get(subAttributeName);
       if(subAttributeTransformation == null)
       {
-        return Filter.createORFilter(); //match nothing
+       // Make sure the sub-attribute is defined.
+        getAttributeDescriptor().getSubAttribute(subAttributeName);
+        return null; //match nothing
       }
 
       final AttributeTransformation attributeTransformation =
@@ -128,26 +135,15 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
         ldapFilterValue = t.toLDAPFilterValue(filter.getFilterValue());
       }
     }
-
-    List<SCIMFilter> components = filter.getFilterComponents();
-    List<Filter> ldapComponents = new ArrayList<Filter>();
+    else
+    {
+      // We don't have to worry about AND and OR filter types since they are
+      // handled earlier by the resource mapper.
+      throw new RuntimeException("Invalid filter type: " + type);
+    }
 
     switch(type)
     {
-      case AND:
-        for(SCIMFilter component : components)
-        {
-          Filter f = toLDAPFilter(component);
-          ldapComponents.add(f);
-        }
-        return Filter.createANDFilter(ldapComponents);
-      case OR:
-        for(SCIMFilter component : components)
-        {
-          Filter f = toLDAPFilter(component);
-          ldapComponents.add(f);
-        }
-        return Filter.createORFilter(ldapComponents);
       case EQUALITY:
         return Filter.createEqualityFilter(ldapAttributeType, ldapFilterValue);
       case CONTAINS:
@@ -175,9 +171,53 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
 
 
   @Override
-  public String toLDAPSortAttributeType()
+  public ServerSideSortRequestControl toLDAPSortAttributeType(
+      final SortParameters sortParameters)
+      throws InvalidResourceException
   {
-    return null;
+    final String subAttributeName =
+        sortParameters.getSortBy().getSubAttributeName();
+    if(subAttributeName == null)
+    {
+      throw new InvalidResourceException("Cannot sort by attribute because " +
+          sortParameters.getSortBy() + " must be a path to a sub-attribute");
+    }
+
+    final SubAttributeTransformation subAttributeTransformation =
+        map.get(subAttributeName);
+    if(subAttributeTransformation == null)
+    {
+      // Make sure the sub-attribute is defined.
+      getAttributeDescriptor().getSubAttribute(subAttributeName);
+      return null; //sort by nothing
+    }
+
+    final AttributeTransformation attributeTransformation =
+        subAttributeTransformation.getAttributeTransformation();
+    if(attributeTransformation.getTransformation()
+        instanceof DefaultTransformation)
+    {
+      final AttributeDescriptor subAttributeDescriptor =
+          getAttributeDescriptor().getSubAttribute(subAttributeName);
+      final boolean reverseOrder = !sortParameters.isAscendingOrder();
+      if(subAttributeDescriptor.getDataType() ==
+          AttributeDescriptor.DataType.STRING)
+      {
+        return new ServerSideSortRequestControl(
+            new SortKey(attributeTransformation.getLdapAttribute(),
+                subAttributeDescriptor.isCaseExact() ?
+                    CASE_EXACT_OMR_OID : CASE_IGNORE_OMR_OID, reverseOrder));
+      }
+      return new ServerSideSortRequestControl(
+          new SortKey(attributeTransformation.getLdapAttribute(),
+              reverseOrder));
+    }
+    else
+    {
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy() + " because it is mapped with custom " +
+          "transformations");
+    }
   }
 
 

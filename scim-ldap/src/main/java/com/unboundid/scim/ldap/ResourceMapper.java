@@ -24,8 +24,6 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.Modification;
-import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
-import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
@@ -658,15 +656,14 @@ public class ResourceMapper
    * @param filter  The SCIM filter to be mapped, or {@code null} if no filter
    *                parameters were provided.
    *
-   * @return  An LDAP filter.
+   * @return  An LDAP filter or {@code null} if the SCIM filter could not be
+   *          mapped and will not match anything.
+   * @throws InvalidResourceException if the filter contains an undefined
+   *                                  attribute.
    */
   public Filter toLDAPFilter(final SCIMFilter filter)
+      throws InvalidResourceException
   {
-    if (searchFilter == null)
-    {
-      return null;
-    }
-
     if (filter == null)
     {
       return searchFilter;
@@ -676,11 +673,15 @@ public class ResourceMapper
 
     if (filterComponent == null)
     {
-      return searchFilter;
+      return null;
+    }
+    else if(searchFilter != null)
+    {
+      return Filter.createANDFilter(filterComponent, searchFilter);
     }
     else
     {
-      return Filter.createANDFilter(filterComponent, searchFilter);
+      return filterComponent;
     }
   }
 
@@ -703,8 +704,10 @@ public class ResourceMapper
    * @param sortParameters  The SCIM sort parameters to be mapped.
    *
    * @return  An LDAP sort control.
+   * @throws InvalidResourceException if the sort parameters are invalid.
    */
   public Control toLDAPSortControl(final SortParameters sortParameters)
+      throws InvalidResourceException
   {
     final AttributePath attributePath = sortParameters.getSortBy();
     AttributeMapper attributeMapper = null;
@@ -723,15 +726,12 @@ public class ResourceMapper
     }
     if (attributeMapper == null)
     {
-      throw new RuntimeException("Cannot sort by attribute " +
-                                 attributePath);
+      resourceDescriptor.getAttribute(attributePath.getAttributeSchema(),
+          attributePath.getAttributeName());
+      return null;
     }
 
-    final String ldapAttribute = attributeMapper.toLDAPSortAttributeType();
-
-    final boolean reverseOrder = !sortParameters.isAscendingOrder();
-    return new ServerSideSortRequestControl(
-        new SortKey(ldapAttribute, reverseOrder));
+    return attributeMapper.toLDAPSortAttributeType(sortParameters);
   }
 
 
@@ -907,10 +907,12 @@ public class ResourceMapper
    * @param filter  The SCIM filter component to be mapped.
    *
    * @return  The LDAP filter component, or {@code null} if the filter
-   *          component could not be mapped.
+   *          component could not be mapped and will not match anything.
+   * @throws InvalidResourceException if the filter contains an undefined
+   *                                  attribute.
    */
   private Filter toLDAPFilterComponent(final SCIMFilter filter)
-  {
+      throws InvalidResourceException {
     final SCIMFilterType filterType = filter.getFilterType();
 
     switch (filterType)
@@ -923,6 +925,11 @@ public class ResourceMapper
           if (filterComponent != null)
           {
             andFilterComponents.add(filterComponent);
+          }
+          else
+          {
+            // AND nothing is still nothing
+            return null;
           }
         }
         return Filter.createANDFilter(andFilterComponents);
@@ -937,7 +944,7 @@ public class ResourceMapper
             orFilterComponents.add(filterComponent);
           }
         }
-        return Filter.createANDFilter(orFilterComponents);
+        return Filter.createORFilter(orFilterComponents);
 
       default:
         final AttributePath filterAttribute = filter.getFilterAttribute();
@@ -966,6 +973,12 @@ public class ResourceMapper
         if (attributeMapper != null)
         {
           return attributeMapper.toLDAPFilter(filter);
+        }
+        else
+        {
+          // Throw an error if this is an undefined attribute.
+          resourceDescriptor.getAttribute(filterAttribute.getAttributeSchema(),
+              filterAttribute.getAttributeName());
         }
         break;
     }

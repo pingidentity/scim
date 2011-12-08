@@ -21,18 +21,20 @@ import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SortParameters;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 
@@ -92,31 +94,10 @@ public class SimpleAttributeMapper extends AttributeMapper
       filterValue = null;
     }
 
-    List<SCIMFilter> components = filter.getFilterComponents();
-    List<Filter> ldapComponents = new ArrayList<Filter>();
-
     switch (filterType)
     {
-      case AND:
-      {
-        for(SCIMFilter component : components)
-        {
-          Filter f = toLDAPFilter(component);
-          ldapComponents.add(f);
-        }
-        return Filter.createANDFilter(ldapComponents);
-      }
-
-      case OR:
-      {
-        for(SCIMFilter component : components)
-        {
-          Filter f = toLDAPFilter(component);
-          ldapComponents.add(f);
-        }
-        return Filter.createORFilter(ldapComponents);
-      }
-
+      // We don't have to worry about AND and OR filter types since they are
+      // handled earlier by the resource mapper.
       case EQUALITY:
       {
         return Filter.createEqualityFilter(ldapAttributeType, filterValue);
@@ -166,9 +147,32 @@ public class SimpleAttributeMapper extends AttributeMapper
 
 
   @Override
-  public String toLDAPSortAttributeType()
+  public ServerSideSortRequestControl toLDAPSortAttributeType(
+      final SortParameters sortParameters)
+      throws InvalidResourceException
   {
-    return attributeTransformation.getLdapAttribute();
+    if(attributeTransformation.getTransformation()
+        instanceof DefaultTransformation)
+    {
+      final boolean reverseOrder = !sortParameters.isAscendingOrder();
+      if(getAttributeDescriptor().getDataType() ==
+          AttributeDescriptor.DataType.STRING)
+      {
+        return new ServerSideSortRequestControl(
+            new SortKey(attributeTransformation.getLdapAttribute(),
+                getAttributeDescriptor().isCaseExact() ?
+                CASE_EXACT_OMR_OID : CASE_IGNORE_OMR_OID, reverseOrder));
+      }
+      return new ServerSideSortRequestControl(
+          new SortKey(attributeTransformation.getLdapAttribute(),
+              reverseOrder));
+    }
+    else
+    {
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy() + " because it is mapped with custom " +
+          "transformations");
+    }
   }
 
 

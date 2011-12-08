@@ -18,7 +18,10 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Name;
@@ -29,14 +32,21 @@ import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.SCIMTestCase;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
+
+import com.unboundid.scim.sdk.SortParameters;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static com.unboundid.util.LDAPTestUtils.generateUserEntry;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -225,6 +235,237 @@ public class UserResourceMapperTestCase
     final OutputStream outputStream = new ByteArrayOutputStream();
     marshaller.marshal(BaseResource.BASE_RESOURCE_FACTORY.createResource(
         userResourceDescriptor, object), outputStream);
+  }
+
+
+
+  /**
+   * Verify that filter mapping is working correctly.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testFilterMappings()
+      throws Exception
+  {
+    final ResourceMapper mapper = getUserResourceMapper();
+
+    Filter filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("userName eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_EQUALITY);
+    assertEquals(filter.getAttributeName(), "uid");
+    assertEquals(filter.getAssertionValue(), "test");
+
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("name.formatted lt \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_LESS_OR_EQUAL);
+    assertEquals(filter.getAttributeName(), "cn");
+    assertEquals(filter.getAssertionValue(), "test");
+
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("name.familyName ge \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_GREATER_OR_EQUAL);
+    assertEquals(filter.getAttributeName(), "sn");
+    assertEquals(filter.getAssertionValue(), "test");
+
+    // No mapping for name.middleName so we should get match nothing
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("name.middleName eq \"test\""));
+    assertNull(filter);
+
+    filter = mapper.toLDAPFilter(SCIMFilter.parse("name.givenName pr"));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_PRESENCE);
+    assertEquals(filter.getAttributeName(), "givenName");
+    assertNull(filter.getAssertionValue());
+
+    filter = mapper.toLDAPFilter(SCIMFilter.parse("emails eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_EQUALITY);
+    assertEquals(filter.getAttributeName(), "mail");
+    assertEquals(filter.getAssertionValue(), "test");
+
+    filter = mapper.toLDAPFilter(SCIMFilter.parse("phoneNumbers eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
+    assertEquals(filter.getComponents().length, 3);
+    assertEquals(filter.getComponents()[0].getAttributeName(),
+        "telephoneNumber");
+    assertEquals(filter.getComponents()[0].getAssertionValue(), "test");
+    assertEquals(filter.getComponents()[1].getAttributeName(),
+        "homePhone");
+    assertEquals(filter.getComponents()[1].getAssertionValue(), "test");
+    assertEquals(filter.getComponents()[2].getAttributeName(),
+        "facsimileTelephoneNumber");
+    assertEquals(filter.getComponents()[2].getAssertionValue(), "test");
+
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("addresses.formatted eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
+    assertEquals(filter.getComponents().length, 2);
+    assertEquals(filter.getComponents()[0].getAttributeName(),
+        "postalAddress");
+    assertEquals(filter.getComponents()[0].getAssertionValue(), "test");
+    assertEquals(filter.getComponents()[1].getAttributeName(),
+        "homePostalAddress");
+    assertEquals(filter.getComponents()[1].getAssertionValue(), "test");
+
+    filter = mapper.toLDAPFilter(SCIMFilter.parse(
+            "name.formatted eq \"test\" and userName eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    assertEquals(filter.getComponents().length, 2);
+
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("name.formatted eq \"test\" or userName eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
+    assertEquals(filter.getComponents().length, 2);
+
+    // Attributes in the filter w/o mapping and results in match nothing should
+    // be correctly short-circuited when there is an AND
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse(
+            "name.middleName eq \"test\" and userName eq \"test\""));
+    assertNull(filter);
+
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse(
+            "name.middleName eq \"test\" or userName eq \"test\""));
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
+    assertEquals(filter.getComponents().length, 1);
+  }
+
+  /**
+   * Provider for invalid filters.
+   *
+   * @return A set of invalid filters.
+   * @throws SCIMException if an error occurs while parsing the filter string.
+   */
+  @DataProvider(name = "invalidFilters")
+  public Object[][] invalidFilters() throws SCIMException {
+    return new Object[][] {
+        {SCIMFilter.parse("name.invalid eq \"test\"")},
+        {SCIMFilter.parse("invalid eq \"test\"")},
+        // Addresses is a complex multi-valued attribute w/o a value mapping so
+        // it should fail.
+        {SCIMFilter.parse("addresses eq \"test\"")},
+        {SCIMFilter.parse("name eq \"test\"")},
+        {SCIMFilter.parse("name.invalid eq \"test\" or userName eq \"test\"")}
+    };
+  }
+
+  /**
+   * Verify that filter mapping is working correctly.
+   *
+   * @param filter the invalid filter to test.
+   * @throws Exception  If the test fails.
+   */
+  @Test(dataProvider = "invalidFilters",
+      expectedExceptions = InvalidResourceException.class)
+  public void testInvalidFilterMappings(SCIMFilter filter)
+      throws Exception
+  {
+    final ResourceMapper mapper = getUserResourceMapper();
+
+    mapper.toLDAPFilter(filter);
+  }
+
+
+
+  /**
+   * Verify that sort parameter mapping is working correctly.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testSortParameterMappings()
+      throws Exception
+  {
+    final ResourceMapper mapper = getUserResourceMapper();
+
+    Control control = mapper.toLDAPSortControl(
+        new SortParameters("userName", "ascending"));
+    ServerSideSortRequestControl sss = (ServerSideSortRequestControl) control;
+    assertEquals(sss.getSortKeys().length, 1);
+    assertEquals(sss.getSortKeys()[0].getAttributeName(), "uid");
+    assertEquals(sss.getSortKeys()[0].getMatchingRuleID(), "2.5.13.3");
+    assertEquals(sss.getSortKeys()[0].reverseOrder(), false);
+
+    control = mapper.toLDAPSortControl(
+        new SortParameters("name.formatted", "descending"));
+    sss = (ServerSideSortRequestControl) control;
+    assertEquals(sss.getSortKeys().length, 1);
+    assertEquals(sss.getSortKeys()[0].getAttributeName(), "cn");
+    assertEquals(sss.getSortKeys()[0].getMatchingRuleID(), "2.5.13.3");
+    assertEquals(sss.getSortKeys()[0].reverseOrder(), true);
+
+    control = mapper.toLDAPSortControl(
+        new SortParameters("name.middleName", "ascending"));
+    assertNull(control);
+
+    control = mapper.toLDAPSortControl(
+        new SortParameters("phoneNumbers", "ascending"));
+    sss = (ServerSideSortRequestControl) control;
+    assertEquals(sss.getSortKeys().length, 1);
+    assertEquals(sss.getSortKeys()[0].getAttributeName(), "telephoneNumber");
+
+    control = mapper.toLDAPSortControl(
+        new SortParameters("addresses.locality", "ascending"));
+    sss = (ServerSideSortRequestControl) control;
+    assertEquals(sss.getSortKeys().length, 1);
+    assertEquals(sss.getSortKeys()[0].getAttributeName(), "l");
+
+  }
+
+  /**
+   * Provider for invalid sort parameters.
+   *
+   * @return A set of invalid sort parameters.
+   */
+  @DataProvider(name = "invalidSortParameters")
+  public Object[][] invalidSortParameters()  {
+    return new Object[][] {
+        {new SortParameters("name.invalid", "ascending")},
+        {new SortParameters("invalid", "ascending")},
+        // Addresses is a complex multi-valued attribute w/o a value mapping so
+        // it should fail.
+        {new SortParameters("addresses", "ascending")},
+        {new SortParameters("name", "ascending")},
+        // Addresses.formatted uses a custom transformation
+        {new SortParameters("addresses.formatted", "ascending")}
+    };
+  }
+
+  /**
+   * Verify that sort parameter mapping is working correctly.
+   *
+   * @param sortParameters the invalid sort parameter.
+   * @throws Exception  If the test fails.
+   */
+  @Test(dataProvider = "invalidSortParameters",
+      expectedExceptions = InvalidResourceException.class)
+  public void testInvalidSortParameterMappings(SortParameters sortParameters)
+      throws Exception
+  {
+    final ResourceMapper mapper = getUserResourceMapper();
+
+    mapper.toLDAPSortControl(sortParameters);
   }
 
 

@@ -45,6 +45,7 @@ import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
@@ -318,8 +319,24 @@ public abstract class LDAPBackend
 
       if (searchRequest == null)
       {
-        // Map the SCIM filter to an LDAP filter.
-        final Filter filter = resourceMapper.toLDAPFilter(scimFilter);
+        final Filter filter;
+        try
+        {
+          // Map the SCIM filter to an LDAP filter.
+          filter = resourceMapper.toLDAPFilter(scimFilter);
+        }
+        catch(InvalidResourceException ire)
+        {
+          throw new InvalidResourceException("Invalid filter: " +
+              ire.getLocalizedMessage(), ire);
+        }
+
+        if(filter == null)
+        {
+          // Match nothing... Just return an empty resources set.
+          List<BaseResource> emptyList = Collections.emptyList();
+          return new Resources<BaseResource>(emptyList);
+        }
 
         // The LDAP filter results will still need to be filtered using the
         // SCIM filter, so we need to request all the filter attributes.
@@ -337,8 +354,19 @@ public abstract class LDAPBackend
       final SortParameters sortParameters = request.getSortParameters();
       if (sortParameters != null)
       {
-        searchRequest.addControl(
-            resourceMapper.toLDAPSortControl(sortParameters));
+        try
+        {
+          Control control = resourceMapper.toLDAPSortControl(sortParameters);
+          if(control != null)
+          {
+            searchRequest.addControl(control);
+          }
+        }
+        catch(InvalidResourceException ire)
+        {
+          throw new InvalidResourceException("Invalid sort parameters: " +
+              ire.getLocalizedMessage(), ire);
+        }
       }
 
       // Use the VLV control to perform pagination.
@@ -361,7 +389,8 @@ public abstract class LDAPBackend
                 0, count-1, 0, null, true));
 
         // VLV requires a sort control.
-        if (sortParameters == null)
+        if (!searchRequest.hasControl(
+            ServerSideSortRequestControl.SERVER_SIDE_SORT_REQUEST_OID))
         {
           searchRequest.addControl(
               new ServerSideSortRequestControl(new SortKey("uid"))); // TODO

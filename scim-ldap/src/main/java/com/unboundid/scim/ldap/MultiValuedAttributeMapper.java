@@ -21,6 +21,8 @@ import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -29,6 +31,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SortParameters;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,6 +105,7 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
+      throws InvalidResourceException
   {
     final SCIMFilterType type = filter.getFilterType();
 
@@ -134,7 +138,8 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
       if (selectedTransformations.isEmpty())
       {
-        return Filter.createORFilter(); //match nothing
+        getAttributeDescriptor().getSubAttribute(subAttributeName);
+        return null; //match nothing
       }
 
       ldapFilterTypes = new ArrayList<String>(selectedTransformations.size());
@@ -160,27 +165,9 @@ public class MultiValuedAttributeMapper extends AttributeMapper
     }
     else
     {
-      final List<SCIMFilter> components = filter.getFilterComponents();
-      final List<Filter> ldapComponents = new ArrayList<Filter>();
-      switch(type)
-      {
-        case AND:
-          for(SCIMFilter component : components)
-          {
-            Filter f = toLDAPFilter(component);
-            ldapComponents.add(f);
-          }
-          return Filter.createANDFilter(ldapComponents);
-        case OR:
-          for(SCIMFilter component : components)
-          {
-            Filter f = toLDAPFilter(component);
-            ldapComponents.add(f);
-          }
-          return Filter.createORFilter(ldapComponents);
-        default:
-          throw new RuntimeException("Invalid filter type: " + type);
-      }
+      // We don't have to worry about AND and OR filter types since they are
+      // handled earlier by the resource mapper.
+      throw new RuntimeException("Invalid filter type: " + type);
     }
 
     final List<Filter> filterComponents =
@@ -259,9 +246,68 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
 
   @Override
-  public String toLDAPSortAttributeType()
+  public ServerSideSortRequestControl toLDAPSortAttributeType(
+      final SortParameters sortParameters)
+      throws InvalidResourceException
   {
-    return null;
+    String subAttributeName = sortParameters.getSortBy().getSubAttributeName();
+    if (subAttributeName == null)
+    {
+      subAttributeName = "value";
+    }
+
+    SubAttributeTransformation selectedTransformation = null;
+    for (final CanonicalValueMapper canonicalValueMapper :
+        valueMappers.values())
+    {
+      for (final SubAttributeTransformation sat :
+          canonicalValueMapper.getTransformations())
+      {
+        if (sat.getSubAttribute().equalsIgnoreCase(subAttributeName))
+        {
+          selectedTransformation = sat;
+          break;
+        }
+      }
+      if(selectedTransformation != null)
+      {
+        break;
+      }
+    }
+
+    if (selectedTransformation == null)
+    {
+      // Make sure the sub-attribute is defined
+      getAttributeDescriptor().getSubAttribute(subAttributeName);
+      return null; //sort by nothing
+    }
+
+    final AttributeTransformation attributeTransformation =
+        selectedTransformation.getAttributeTransformation();
+    if(attributeTransformation.getTransformation()
+        instanceof DefaultTransformation)
+    {
+      final AttributeDescriptor subAttributeDescriptor =
+          getAttributeDescriptor().getSubAttribute(subAttributeName);
+      final boolean reverseOrder = !sortParameters.isAscendingOrder();
+      if(subAttributeDescriptor.getDataType() ==
+          AttributeDescriptor.DataType.STRING)
+      {
+        return new ServerSideSortRequestControl(
+            new SortKey(attributeTransformation.getLdapAttribute(),
+                subAttributeDescriptor.isCaseExact() ?
+                    CASE_EXACT_OMR_OID : CASE_IGNORE_OMR_OID, reverseOrder));
+      }
+      return new ServerSideSortRequestControl(
+          new SortKey(attributeTransformation.getLdapAttribute(),
+              reverseOrder));
+    }
+    else
+    {
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy() + " because it is mapped with custom " +
+          "transformations");
+    }
   }
 
 

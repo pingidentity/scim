@@ -20,11 +20,13 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.SortParameters;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +44,16 @@ import java.util.Set;
  */
 public abstract class AttributeMapper
 {
+  /**
+   * OID of caseExactOrderingMatch.
+   */
+  protected static final String CASE_EXACT_OMR_OID = "2.5.13.6";
+
+  /**
+   * OID for caseIgnoreOrderingMatch.
+   */
+  protected static final String CASE_IGNORE_OMR_OID = "2.5.13.3";
+
   /**
    * The SCIM attribute type that is mapped by this attribute mapper.
    */
@@ -90,9 +102,13 @@ public abstract class AttributeMapper
    *                SCIM attribute that is mapped by this attribute mapper,
    *                or one of its sub-attributes.
    *
-   * @return  An LDAP filter.
+   * @return  An LDAP filter or <code>null</code>if the SCIM filter could not
+   *          be mapped and will not match anything.
+   * @throws InvalidResourceException if the SCIM filter contains an undefined
+   *                                  attribute.
    */
-  public abstract Filter toLDAPFilter(final SCIMFilter filter);
+  public abstract Filter toLDAPFilter(final SCIMFilter filter)
+      throws InvalidResourceException;
 
 
 
@@ -101,12 +117,14 @@ public abstract class AttributeMapper
    * used as a sort key when the SCIM attribute type has been specified in
    * sort parameters.
    *
-   * @return  The LDAP attribute type that should be used as a sort key when
-   *          the SCIM attribute type has been specified in sort parameters.
-   *          The method returns {@code null} if the SCIM attribute type
-   *          cannot be used in sort parameters.
+   * @return  The mapped server side sort request control or {@code null} if
+   *          the SCIM attribute type cannot be mapped.
+   * @param sortParameters The SCIM sort parameters to be mapped.
+   * @throws InvalidResourceException if the SCIM attribute cannot be used in
+   *                                  sort parameters.
    */
-  public abstract String toLDAPSortAttributeType();
+  public abstract ServerSideSortRequestControl toLDAPSortAttributeType(
+      SortParameters sortParameters) throws InvalidResourceException;
 
 
 
