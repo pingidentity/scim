@@ -57,6 +57,10 @@ public final class AttributeDescriptor {
      */
     DATETIME,
     /**
+     * Decimal data type.
+     */
+    DECIMAL,
+    /**
      * Integer data type.
      */
     INTEGER,

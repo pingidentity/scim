@@ -45,6 +45,7 @@ public class DefaultTransformation extends Transformation
       case DATETIME:
       case STRING:
       case BOOLEAN:
+      case DECIMAL:
       case INTEGER:
       default:
         return new SimpleValue(byteString.stringValue());
@@ -68,6 +69,7 @@ public class DefaultTransformation extends Transformation
       case DATETIME:
       case STRING:
       case BOOLEAN:
+      case DECIMAL:
       case INTEGER:
       default:
         return new ASN1OctetString(simpleValue.getStringValue());

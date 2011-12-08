@@ -46,6 +46,7 @@ public class PostalAddressTransformation extends Transformation
 
       case DATETIME:
       case BOOLEAN:
+      case DECIMAL:
       case INTEGER:
       case BINARY:
       default:
@@ -72,6 +73,7 @@ public class PostalAddressTransformation extends Transformation
 
       case DATETIME:
       case BOOLEAN:
+      case DECIMAL:
       case INTEGER:
       case BINARY:
       default:

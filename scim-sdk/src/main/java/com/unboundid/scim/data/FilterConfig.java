@@ -33,7 +33,7 @@ import java.util.List;
 public class FilterConfig
 {
   private final boolean supported;
-  private final int maxResults;
+  private final long maxResults;
 
 
 
@@ -99,7 +99,7 @@ public class FilterConfig
    *                     a response.
    */
   public FilterConfig(final boolean supported,
-                      final int maxResults)
+                      final long maxResults)
   {
     this.supported = supported;
     this.maxResults = maxResults;
@@ -122,7 +122,7 @@ public class FilterConfig
    * Retrieves the maximum number of resources returned in a response.
    * @return The maximum number of resources returned in a response.
    */
-  public int getMaxResults()
+  public long getMaxResults()
   {
     return maxResults;
   }
@@ -161,7 +161,7 @@ public class FilterConfig
   public int hashCode()
   {
     int result = (supported ? 1 : 0);
-    result = 31 * result + maxResults;
+    result = 31 * result + (int) (maxResults ^ (maxResults >>> 32));
     return result;
   }
 

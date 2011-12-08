@@ -298,8 +298,12 @@ public class JsonMarshaller implements Marshaller
             jsonWriter.value(val.getBooleanValue());
             break;
 
+          case DECIMAL:
+            jsonWriter.value(val.getDecimalValue());
+            break;
+
           case INTEGER:
-            jsonWriter.value(val.getLongValue());
+            jsonWriter.value(val.getIntegerValue());
             break;
 
           case BINARY:

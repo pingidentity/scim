@@ -59,6 +59,7 @@ public class SCIMFilterTestCase
                        "or email co \"example.org\")" },
         new Object[] { "userName co \"\\ufe00\\\"\\n\\t\\\\\"" },
         new Object[] { "urn:extension:members eq 25" },
+        new Object[] { "urn:extension:members eq 25.52" },
         new Object[] { "urn:extension:isActive eq true" },
         new Object[] { "urn:extension:isActive eq false" },
     };

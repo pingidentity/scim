@@ -147,15 +147,15 @@ public abstract class AttributeValueResolver<T>
 
   /**
    * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
-   * to/from <code>Integer</code> instances.
+   * to/from <code>Decimal</code> instances.
    */
-  public static final AttributeValueResolver<Integer> INTEGER_RESOLVER =
-      new AttributeValueResolver<Integer>() {
+  public static final AttributeValueResolver<Double> DECIMAL_RESOLVER =
+      new AttributeValueResolver<Double>() {
         /**
          * {@inheritDoc}
          */
-        public Integer toInstance(final SCIMAttributeValue value) {
-          return value.getLongValue().intValue();
+        public Double toInstance(final SCIMAttributeValue value) {
+          return value.getDecimalValue();
         }
 
         /**
@@ -163,7 +163,30 @@ public abstract class AttributeValueResolver<T>
          */
         public SCIMAttributeValue fromInstance(
             final AttributeDescriptor attributeDescriptor,
-            final Integer value) {
+            final Double value) {
+          return SCIMAttributeValue.createStringValue(String.valueOf(value));
+        }
+      };
+
+  /**
+   * The <code>AttributeValueResolver</code> that resolves SCIM attribute values
+   * to/from <code>Integer</code> instances.
+   */
+  public static final AttributeValueResolver<Long> INTEGER_RESOLVER =
+      new AttributeValueResolver<Long>() {
+        /**
+         * {@inheritDoc}
+         */
+        public Long toInstance(final SCIMAttributeValue value) {
+          return value.getIntegerValue();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public SCIMAttributeValue fromInstance(
+            final AttributeDescriptor attributeDescriptor,
+            final Long value) {
           return SCIMAttributeValue.createStringValue(String.valueOf(value));
         }
       };

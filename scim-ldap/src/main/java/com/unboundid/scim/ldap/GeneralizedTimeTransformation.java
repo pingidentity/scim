@@ -61,6 +61,7 @@ public class GeneralizedTimeTransformation extends Transformation
 
       case STRING:
       case BOOLEAN:
+      case DECIMAL:
       case INTEGER:
       case BINARY:
       default:
@@ -87,6 +88,7 @@ public class GeneralizedTimeTransformation extends Transformation
 
       case STRING:
       case BOOLEAN:
+      case DECIMAL:
       case INTEGER:
       case BINARY:
       default:

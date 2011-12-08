@@ -124,6 +124,18 @@ public class SimpleValue
 
 
   /**
+   * Retrieves the simple value as a double.
+   *
+   * @return  The simple value as a double.
+   */
+  public Double getDoubleValue()
+  {
+    return Double.valueOf((String)value);
+  }
+
+
+
+  /**
    * Retrieves the simple value as a long.
    *
    * @return  The simple value as a long.

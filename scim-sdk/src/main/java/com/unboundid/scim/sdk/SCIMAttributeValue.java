@@ -311,13 +311,27 @@ public final class SCIMAttributeValue
 
 
   /**
+   * Retrieves the simple Decimal value, or {@code null} if the attribute
+   * value is complex.
+   *
+   * @return  The simple Decimal value, or {@code null} if the attribute
+   *          value is complex.
+   */
+  public Double getDecimalValue()
+  {
+    return value.getDoubleValue();
+  }
+
+
+
+  /**
    * Retrieves the simple Long value, or {@code null} if the attribute
    * value is complex.
    *
    * @return  The simple Long value, or {@code null} if the attribute
    *          value is complex.
    */
-  public Long getLongValue()
+  public Long getIntegerValue()
   {
     return value.getLongValue();
   }

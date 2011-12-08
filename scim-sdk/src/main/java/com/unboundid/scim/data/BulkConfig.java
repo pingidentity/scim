@@ -33,8 +33,8 @@ import java.util.List;
 public class BulkConfig
 {
   private final boolean supported;
-  private final int maxOperations;
-  private final int maxPayloadSize;
+  private final long maxOperations;
+  private final long maxPayloadSize;
 
 
 
@@ -110,8 +110,8 @@ public class BulkConfig
    * @param maxPayloadSize  Specifies the maximum payload size in bytes.
    */
   public BulkConfig(final boolean supported,
-                    final int maxOperations,
-                    final int maxPayloadSize)
+                    final long maxOperations,
+                    final long maxPayloadSize)
   {
     this.supported = supported;
     this.maxOperations = maxOperations;
@@ -135,7 +135,7 @@ public class BulkConfig
    * Retrieves the maximum number of operations.
    * @return The maximum number of operations.
    */
-  public int getMaxOperations()
+  public long getMaxOperations()
   {
     return maxOperations;
   }
@@ -146,11 +146,10 @@ public class BulkConfig
    * Retrieves the maximum payload size in bytes.
    * @return The maximum payload size in bytes.
    */
-  public int getMaxPayloadSize()
+  public long getMaxPayloadSize()
   {
     return maxPayloadSize;
   }
-
 
 
   @Override
@@ -189,8 +188,8 @@ public class BulkConfig
   public int hashCode()
   {
     int result = (supported ? 1 : 0);
-    result = 31 * result + maxOperations;
-    result = 31 * result + maxPayloadSize;
+    result = 31 * result + (int) (maxOperations ^ (maxOperations >>> 32));
+    result = 31 * result + (int) (maxPayloadSize ^ (maxPayloadSize >>> 32));
     return result;
   }
 

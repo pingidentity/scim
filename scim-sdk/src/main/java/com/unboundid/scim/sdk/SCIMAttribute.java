@@ -271,6 +271,7 @@ public final class SCIMAttribute
                   attributeDescriptor.getDataType();
 
         String stringValue = null;
+        Double doubleValue = null;
         Long longValue = null;
         Date dateValue = null;
         Boolean boolValue = null;
@@ -299,8 +300,15 @@ public final class SCIMAttribute
               return false;
             }
             break;
+          case DECIMAL:
+            doubleValue = v.getDecimalValue();
+            if(doubleValue == null)
+            {
+              return false;
+            }
+            break;
           case INTEGER:
-            longValue = v.getLongValue();
+            longValue = v.getIntegerValue();
             if(longValue == null)
             {
               return false;
@@ -331,6 +339,18 @@ public final class SCIMAttribute
             if(stringValue != null)
             {
               return stringValue.equalsIgnoreCase(filterValue);
+            }
+            else if(doubleValue != null)
+            {
+              try
+              {
+                double filterValueDouble = Double.parseDouble(filterValue);
+                return doubleValue.doubleValue() == filterValueDouble;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
             }
             else if(longValue != null)
             {
@@ -384,6 +404,18 @@ public final class SCIMAttribute
               return StaticUtils.toLowerCase(stringValue).contains(
                         StaticUtils.toLowerCase(filterValue));
             }
+            else if(doubleValue != null)
+            {
+              try
+              {
+                double filterValueDouble = Double.parseDouble(filterValue);
+                return doubleValue.doubleValue() == filterValueDouble;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
             else if(longValue != null)
             {
               try
@@ -433,6 +465,10 @@ public final class SCIMAttribute
               return StaticUtils.toLowerCase(stringValue).startsWith(
                         StaticUtils.toLowerCase(filterValue));
             }
+            else if(doubleValue != null)
+            {
+              return false;
+            }
             else if(longValue != null)
             {
               return false;
@@ -454,6 +490,18 @@ public final class SCIMAttribute
             if(stringValue != null)
             {
               return stringValue.compareToIgnoreCase(filterValue) > 0;
+            }
+            else if(doubleValue != null)
+            {
+              try
+              {
+                double filterValueDouble = Double.parseDouble(filterValue);
+                return doubleValue.doubleValue() > filterValueDouble;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
             }
             else if(longValue != null)
             {
@@ -492,6 +540,18 @@ public final class SCIMAttribute
             if(stringValue != null)
             {
               return stringValue.compareToIgnoreCase(filterValue) >= 0;
+            }
+            else if(doubleValue != null)
+            {
+              try
+              {
+                double filterValueDouble = Double.parseDouble(filterValue);
+                return doubleValue.doubleValue() >= filterValueDouble;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
             }
             else if(longValue != null)
             {
@@ -532,6 +592,18 @@ public final class SCIMAttribute
             {
               return stringValue.compareToIgnoreCase(filterValue) < 0;
             }
+            else if(doubleValue != null)
+            {
+              try
+              {
+                double filterValueDouble = Double.parseDouble(filterValue);
+                return doubleValue.doubleValue() < filterValueDouble;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
+            }
             else if(longValue != null)
             {
               try
@@ -569,6 +641,18 @@ public final class SCIMAttribute
             if(stringValue != null)
             {
               return stringValue.compareToIgnoreCase(filterValue) <= 0;
+            }
+            else if(doubleValue != null)
+            {
+              try
+              {
+                double filterValueDouble = Double.parseDouble(filterValue);
+                return doubleValue.doubleValue() <= filterValueDouble;
+              }
+              catch(NumberFormatException e)
+              {
+                return false;
+              }
             }
             else if(longValue != null)
             {
@@ -622,14 +706,8 @@ public final class SCIMAttribute
 
     SCIMAttribute that = (SCIMAttribute) o;
 
-    if (!attributeDescriptor.equals(that.attributeDescriptor)) {
-      return false;
-    }
-    if (!Arrays.equals(values, that.values)) {
-      return false;
-    }
-
-    return true;
+    return attributeDescriptor.equals(that.attributeDescriptor) &&
+        Arrays.equals(values, that.values);
   }
 
   @Override

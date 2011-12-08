@@ -47,6 +47,7 @@ public class BooleanTransformation extends Transformation
 
       case DATETIME:
       case STRING:
+      case DECIMAL:
       case INTEGER:
       case BINARY:
       default:
@@ -79,6 +80,7 @@ public class BooleanTransformation extends Transformation
 
       case DATETIME:
       case STRING:
+      case DECIMAL:
       case INTEGER:
       case BINARY:
       default:
