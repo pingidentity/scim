@@ -38,6 +38,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.net.URI;
@@ -105,6 +106,11 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    */
   protected int scimSecurePort;
 
+  /**
+   * The SSLContext to use.
+   */
+  protected SSLContext sslContext;
+
 
   /**
    * Set up SCIM services before running the tests.
@@ -129,10 +135,11 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
             pw, "JKS", true);
 
     final SSLUtil sslUtil = new SSLUtil(keyManager, trustManager);
+    sslContext = sslUtil.createSSLContext();
 //    final SSLUtil sslUtil = new SSLUtil(new TrustAllTrustManager());
 
     final ClientConfig clientConfig =
-        createManagerClientConfig(scimInstance, sslUtil.createSSLContext());
+        createManagerClientConfig(scimInstance, sslContext);
 
     final URI uri = new URI("http", null, scimInstance.getLdapHost(), scimPort,
                             null, null, null);
@@ -178,9 +185,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     dsInstance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
 
     dsInstance.runSetup("--ldapsPort",
-                      String.valueOf(TestCaseUtils.getFreePort()),
-                      "--generateSelfSignedCertificate",
-                      "--doNotStart");
+        String.valueOf(TestCaseUtils.getFreePort()),
+        "--generateSelfSignedCertificate",
+        "--doNotStart");
 
     final File extensionZipFile =
         new File(System.getProperty("extensionZipFile"));
@@ -250,6 +257,52 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
 
   /**
+   * Tests modifying a user password through SCIM using modify.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPasswordModify() throws Exception
+  {
+    //Add an entry to the Directory
+    dsInstance.addEntry("dn: uid=testPasswordModify," + baseDN,
+                      "objectclass: top",
+                      "objectclass: person",
+                      "objectclass: organizationalPerson",
+                      "objectclass: inetOrgPerson",
+                      "uid: testPasswordModify",
+                      "userPassword: oldPassword",
+                      "cn: testPasswordModify",
+                      "givenname: Test",
+                      "sn: User");
+
+    //Update the entry via SCIM
+    final ClientConfig clientConfig =
+        createClientConfig(scimInstance.getLdapHost(),
+            "uid=testPasswordModify," + baseDN, "oldPassword", sslContext);
+    final URI uri = new URI("http", null, scimInstance.getLdapHost(), scimPort,
+                            null, null, null);
+    SCIMService userService = new SCIMService(uri, clientConfig);
+    SCIMEndpoint<UserResource> userEndpoint = userService.getUserEndpoint();
+    UserResource user = userEndpoint.get("uid=testPasswordModify," + baseDN);
+    assertNotNull(user);
+    user.setPassword("anotherPassword");
+
+    UserResource returnedUser = userEndpoint.update(user);
+
+    //Verify what is returned from the SDK
+    assertTrue(returnedUser.getId().equalsIgnoreCase(
+        "uid=testPasswordModify," + baseDN));
+    assertNull(returnedUser.getPassword());
+
+    //Verify the password was changed in the Directory
+    dsInstance.checkCredentials("uid=testPasswordModify," + baseDN,
+        "anotherPassword");
+  }
+
+
+
+  /**
    * Tests basic resource creation through SCIM.
    *
    * @throws Exception  If the test fails.
@@ -262,7 +315,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     UserResource user = userEndpoint.newResource();
     user.setUserName("jdoe");
     user.setName(
-            new Name("John C. Doe", "Doe", "Charles", "John", null, "Sr."));
+        new Name("John C. Doe", "Doe", "Charles", "John", null, "Sr."));
+    user.setPassword("newPassword");
     user.setTitle("Vice President");
     user.setUserType("Employee");
     Collection<Entry<String>> emails = new HashSet<Entry<String>>(1);
@@ -278,6 +332,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //Verify basic properties of UserResource
     assertEquals(user.getUserName(), "jdoe");
     assertEquals(user.getName().getFormatted(), "John C. Doe");
+    assertEquals(user.getPassword(), "newPassword");
     assertEquals(user.getTitle(), "Vice President");
     assertEquals(user.getUserType(), "Employee");
     assertEquals(user.getEmails().iterator().next().getValue(),
@@ -305,6 +360,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(returnedUser.getUserName(), user.getUserName());
     assertEquals(returnedUser.getName().getFormatted(),
                    user.getName().getFormatted());
+    assertNull(returnedUser.getPassword());
     assertEquals(returnedUser.getTitle(), user.getTitle());
     assertEquals(returnedUser.getUserType(), user.getUserType());
     assertEquals(returnedUser.getEmails().iterator().next().getValue(),
@@ -339,6 +395,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(entry.getAttributeValue("title"), "Vice President");
     assertEquals(entry.getAttributeValue("mail"), "j.doe@example.com");
     assertEquals(entry.getAttributeValue("manager"), "uid=myManager,"+baseDN);
+    dsInstance.checkCredentials(entry.getDN(), "newPassword");
 
     System.out.println("Full user entry:\n" + entry.toLDIFString());
 
@@ -403,6 +460,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                       "objectclass: organizationalPerson",
                       "objectclass: inetOrgPerson",
                       "uid: testModifyWithPut",
+                      "userPassword: oldPassword",
                       "cn: testModifyWithPut",
                       "givenname: Test",
                       "sn: User");
@@ -414,6 +472,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //This will change the 'cn' to 'Test User'
     user.setName(new Name("Test User", "User", null, "Test", null, null));
     user.setUserType("Employee");
+    user.setPassword("anotherPassword");
     user.setTitle("Chief of Operations");
     user.setDisplayName("Test Modify with PUT");
 
@@ -432,6 +491,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(returnedUser.getName().getFormatted(), "Test User");
     assertEquals(returnedUser.getName().getGivenName(), "Test");
     assertEquals(returnedUser.getName().getFamilyName(), "User");
+    assertNull(returnedUser.getPassword());
     assertEquals(returnedUser.getTitle(), user.getTitle());
     assertEquals(returnedUser.getDisplayName(), user.getDisplayName());
     assertTrue(lastModified.after(startTime));
@@ -450,6 +510,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
     assertEquals(entry.getAttributeValue("displayName"),
                                                    "Test Modify with PUT");
+    dsInstance.checkCredentials(entry.getDN(), "anotherPassword");
 
     //Make the exact same update again; this should result in no net change to
     //the Directory entry, but should not fail.
@@ -590,6 +651,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                       "objectclass: organizationalPerson",
                       "objectclass: inetOrgPerson",
                       "uid: " + uid,
+                      "userPassword: anotherPassword",
                       "cn: testRetrieve",
                       "givenname: Test",
                       "sn: User",
@@ -618,9 +680,10 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(user.getDisplayName(), "John Smith");
     assertEquals(user.getEmails().iterator().next().getValue(),
                                                 "jsmith@example.com");
+    assertNull(user.getPassword());
 
-    //Retrieve the user with only the 'userName' attribute
-    user = userEndpoint.get(dn, null, "userName");
+    //Retrieve the user with only the 'userName' and 'password' attribute
+    user = userEndpoint.get(dn, null, "userName", "password");
     assertNotNull(user);
     assertTrue(user.getId().equalsIgnoreCase(dn));
     assertEquals(user.getUserName(), uid);
@@ -629,6 +692,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertNull(user.getTitle());
     assertNull(user.getDisplayName());
     assertNull(user.getEmails());
+    assertNull(user.getPassword());
 
     //Make sure the stats were updated properly
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),

@@ -24,6 +24,7 @@ import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SortParameters;
@@ -181,7 +182,16 @@ public abstract class AttributeMapper
       final AttributeTransformation t =
           AttributeTransformation.create(simpleDefinition.getMapping());
 
-      return new SimpleAttributeMapper(attributeDescriptor, t);
+      if(attributeDescriptor.getSchema().equalsIgnoreCase(
+          SCIMConstants.SCHEMA_URI_CORE) &&
+          attributeDescriptor.getName().equalsIgnoreCase("password"))
+      {
+        return new PasswordAttributeMapper(attributeDescriptor, t);
+      }
+      else
+      {
+        return new SimpleAttributeMapper(attributeDescriptor, t);
+      }
     }
     else if (attributeDefinition.getComplex() != null)
     {

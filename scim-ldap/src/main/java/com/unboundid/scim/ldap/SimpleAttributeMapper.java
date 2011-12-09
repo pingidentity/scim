@@ -79,6 +79,7 @@ public class SimpleAttributeMapper extends AttributeMapper
 
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
+      throws InvalidResourceException
   {
     final String ldapAttributeType = attributeTransformation.getLdapAttribute();
     final SCIMFilterType filterType = filter.getFilterType();
@@ -139,7 +140,7 @@ public class SimpleAttributeMapper extends AttributeMapper
       }
 
       default:
-        throw new RuntimeException(
+        throw new InvalidResourceException(
             "Filter type " + filterType + " is not supported");
     }
   }
