@@ -23,7 +23,6 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
-import com.unboundid.scim.sdk.StaticUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +30,10 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
+
+
 
 /**
  * This class provides methods that describe the schema for a SCIM attribute.
@@ -155,19 +158,19 @@ public final class AttributeDescriptor {
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
       return new AttributeDescriptor(
           value.getSubAttributeValue("name",
-              AttributeValueResolver.STRING_RESOLVER),
+                                     AttributeValueResolver.STRING_RESOLVER),
           DataType.parse(value.getSubAttributeValue("type",
-              AttributeValueResolver.STRING_RESOLVER)),
+                                                    AttributeValueResolver.STRING_RESOLVER)),
           false,
           value.getSubAttributeValue("description",
-              AttributeValueResolver.STRING_RESOLVER),
+                                     AttributeValueResolver.STRING_RESOLVER),
           schema,
           value.getSubAttributeValue("readOnly",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getSubAttributeValue("required",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getSubAttributeValue("caseExact",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           null, null);
     }
   }
@@ -200,29 +203,29 @@ public final class AttributeDescriptor {
     @Override
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
       String schemaValue = value.getSubAttributeValue("schema",
-          AttributeValueResolver.STRING_RESOLVER);
+                                                      AttributeValueResolver.STRING_RESOLVER);
       return new AttributeDescriptor(
           value.getSubAttributeValue("name",
-              AttributeValueResolver.STRING_RESOLVER),
+                                     AttributeValueResolver.STRING_RESOLVER),
           DataType.parse(value.getSubAttributeValue("type",
-              AttributeValueResolver.STRING_RESOLVER)),
+                                                    AttributeValueResolver.STRING_RESOLVER)),
           value.getSubAttributeValue("multiValued",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getSubAttributeValue("description",
-              AttributeValueResolver.STRING_RESOLVER),
+                                     AttributeValueResolver.STRING_RESOLVER),
           schemaValue,
           value.getSubAttributeValue("readOnly",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getSubAttributeValue("required",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getSubAttributeValue("caseExact",
-              AttributeValueResolver.BOOLEAN_RESOLVER),
+                                     AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getAttributeValues("canonicalValues",
-              Entry.STRINGS_RESOLVER),
+                                   Entry.STRINGS_RESOLVER),
           value.getAttributeValues(
               allowNesting ? "attributes" : "subAttributes",
               allowNesting ? this :
-                  new SubAttributeDescriptorResolver(schemaValue)));
+              new SubAttributeDescriptorResolver(schemaValue)));
     }
 
     /**
@@ -365,7 +368,7 @@ public final class AttributeDescriptor {
           new LinkedHashMap<String, AttributeDescriptor>(subAttributes.size());
       for(AttributeDescriptor attributeDescriptor : subAttributes)
       {
-        this.subAttributes.put(StaticUtils.toLowerCase(
+        this.subAttributes.put(toLowerCase(
             attributeDescriptor.getName()),
             attributeDescriptor);
       }
@@ -437,7 +440,7 @@ public final class AttributeDescriptor {
     // TODO: Should we have a strict and non strict mode?
     AttributeDescriptor subAttribute =
         subAttributes == null ? null :
-        subAttributes.get(StaticUtils.toLowerCase(externalName));
+        subAttributes.get(toLowerCase(externalName));
     if(subAttribute == null)
     {
       throw new InvalidResourceException("Sub-attribute " + externalName +
@@ -540,8 +543,8 @@ public final class AttributeDescriptor {
   {
     int hashCode = 0;
 
-    hashCode += schema.hashCode();
-    hashCode += name.toLowerCase().hashCode();
+    hashCode += toLowerCase(schema).hashCode();
+    hashCode += toLowerCase(name).hashCode();
 
     return hashCode;
   }
@@ -570,7 +573,7 @@ public final class AttributeDescriptor {
     else
     {
       return this.schema != null && that.schema != null &&
-          this.schema.equals(that.schema) &&
+          this.schema.equalsIgnoreCase(that.schema) &&
           this.name.equalsIgnoreCase(that.name);
     }
   }

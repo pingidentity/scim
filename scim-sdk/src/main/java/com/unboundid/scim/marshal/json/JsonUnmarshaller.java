@@ -115,7 +115,7 @@ public class JsonUnmarshaller implements Unmarshaller
       for (int i = 0; i < schemas.length(); i++)
       {
         final String schema = schemas.getString(i);
-        if (schema.equals(SCIMConstants.SCHEMA_URI_CORE))
+        if (schema.equalsIgnoreCase(SCIMConstants.SCHEMA_URI_CORE))
         {
           continue;
         }

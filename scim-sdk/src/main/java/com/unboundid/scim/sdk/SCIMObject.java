@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
+
 
 
 /**
@@ -39,7 +41,6 @@ public class SCIMObject
   /**
    * The set of attributes in this object grouped by the URI of the schema to
    * which they belong.
-   * TODO: Do schema URIs have to be normalized?
    */
   private final HashMap<String,LinkedHashMap<String,SCIMAttribute>> attributes;
 
@@ -102,7 +103,7 @@ public class SCIMObject
    */
   public boolean hasSchema(final String schema)
   {
-    return attributes.containsKey(schema);
+    return attributes.containsKey(toLowerCase(schema));
   }
 
 
@@ -120,7 +121,8 @@ public class SCIMObject
    */
   public SCIMAttribute getAttribute(final String schema, final String name)
   {
-    final LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    final LinkedHashMap<String,SCIMAttribute> attrs =
+        attributes.get(toLowerCase(schema));
 
     if (attrs == null)
     {
@@ -128,7 +130,7 @@ public class SCIMObject
     }
     else
     {
-      return attrs.get(StaticUtils.toLowerCase(name));
+      return attrs.get(toLowerCase(name));
     }
   }
 
@@ -145,7 +147,8 @@ public class SCIMObject
    */
   public Collection<SCIMAttribute> getAttributes(final String schema)
   {
-    final LinkedHashMap<String, SCIMAttribute> attrs = attributes.get(schema);
+    final LinkedHashMap<String, SCIMAttribute> attrs =
+        attributes.get(toLowerCase(schema));
 
     if (attrs == null)
     {
@@ -171,7 +174,8 @@ public class SCIMObject
    */
   public boolean hasAttribute(final String schema, final String name)
   {
-    final LinkedHashMap<String, SCIMAttribute> attrs = attributes.get(schema);
+    final LinkedHashMap<String, SCIMAttribute> attrs =
+        attributes.get(toLowerCase(schema));
 
     if (attrs == null)
     {
@@ -179,7 +183,7 @@ public class SCIMObject
     }
     else
     {
-      return attrs.containsKey(StaticUtils.toLowerCase(name));
+      return attrs.containsKey(toLowerCase(name));
     }
   }
 
@@ -197,15 +201,15 @@ public class SCIMObject
    */
   public boolean addAttribute(final SCIMAttribute attribute)
   {
-    final String schema = attribute.getSchema();
-    final String lowerCaseName = StaticUtils.toLowerCase(attribute.getName());
+    final String lowerCaseSchema = toLowerCase(attribute.getSchema());
+    final String lowerCaseName = toLowerCase(attribute.getName());
 
-    LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(lowerCaseSchema);
     if (attrs == null)
     {
       attrs = new LinkedHashMap<String, SCIMAttribute>();
       attrs.put(lowerCaseName, attribute);
-      attributes.put(schema, attrs);
+      attributes.put(lowerCaseSchema, attrs);
       return true;
     }
     else
@@ -232,15 +236,15 @@ public class SCIMObject
    */
   public void setAttribute(final SCIMAttribute attribute)
   {
-    final String schema = attribute.getSchema();
-    final String lowerCaseName = StaticUtils.toLowerCase(attribute.getName());
+    final String lowerCaseSchema = toLowerCase(attribute.getSchema());
+    final String lowerCaseName = toLowerCase(attribute.getName());
 
-    LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(lowerCaseSchema);
     if (attrs == null)
     {
       attrs = new LinkedHashMap<String, SCIMAttribute>();
       attrs.put(lowerCaseName, attribute);
-      attributes.put(schema, attrs);
+      attributes.put(lowerCaseSchema, attrs);
     }
     else
     {
@@ -262,18 +266,18 @@ public class SCIMObject
    */
   public boolean removeAttribute(final String schema, final String name)
   {
-    LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(schema);
+    final String lowerCaseSchema = toLowerCase(schema);
+    LinkedHashMap<String,SCIMAttribute> attrs = attributes.get(lowerCaseSchema);
     if (attrs == null)
     {
       return false;
     }
     else
     {
-      final boolean removed =
-          attrs.remove(StaticUtils.toLowerCase(name)) != null;
+      final boolean removed = attrs.remove(toLowerCase(name)) != null;
       if (removed && attrs.isEmpty())
       {
-        attributes.remove(schema);
+        attributes.remove(lowerCaseSchema);
       }
       return removed;
     }

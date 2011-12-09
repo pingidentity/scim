@@ -56,7 +56,6 @@ import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
@@ -79,6 +78,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
+
 
 
 /**
@@ -301,7 +303,7 @@ public abstract class LDAPBackend
         if (scimFilter.getFilterType() == SCIMFilterType.EQUALITY)
         {
           final AttributePath path = scimFilter.getFilterAttribute();
-          if (path.getAttributeSchema().equals(SCIMConstants.SCHEMA_URI_CORE) &&
+          if (path.getAttributeSchema().equalsIgnoreCase(SCHEMA_URI_CORE) &&
               path.getAttributeName().equalsIgnoreCase("id"))
           {
             final String[] requestAttributes =
@@ -740,7 +742,7 @@ public abstract class LDAPBackend
     {
       final SCIMAttribute meta =
           resource.getScimObject().getAttribute(
-              SCIMConstants.SCHEMA_URI_CORE, "meta");
+              SCHEMA_URI_CORE, "meta");
       resource.getScimObject().setAttribute(
           queryAttributes.pareAttribute(meta));
     }

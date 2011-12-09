@@ -132,7 +132,7 @@ public class AttributePath
    */
   public void toString(final StringBuilder builder)
   {
-    if (!attributeSchema.equals(SCIMConstants.SCHEMA_URI_CORE))
+    if (!attributeSchema.equalsIgnoreCase(SCIMConstants.SCHEMA_URI_CORE))
     {
       builder.append(attributeSchema);
       builder.append(':');

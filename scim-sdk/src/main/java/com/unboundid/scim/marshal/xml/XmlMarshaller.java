@@ -63,7 +63,7 @@ public class XmlMarshaller implements Marshaller
     for (String schemaURI :
         resource.getResourceDescriptor().getAttributeSchemas())
     {
-      final String prefix = schemaURI.equals(resourceSchemaURI) ?
+      final String prefix = schemaURI.equalsIgnoreCase(resourceSchemaURI) ?
           SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
       xmlStreamWriter.setPrefix(prefix, schemaURI);
       xmlStreamWriter.writeNamespace(prefix, schemaURI);
@@ -172,7 +172,7 @@ public class XmlMarshaller implements Marshaller
       for (final String schemaURI :
           resource.getResourceDescriptor().getAttributeSchemas())
       {
-        final String prefix = schemaURI.equals(resourceSchemaURI) ?
+        final String prefix = schemaURI.equalsIgnoreCase(resourceSchemaURI) ?
           SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
         xmlStreamWriter.setPrefix(prefix, schemaURI);
         xmlStreamWriter.writeNamespace(prefix, schemaURI);
@@ -210,7 +210,7 @@ public class XmlMarshaller implements Marshaller
           resource.getResourceDescriptor().getAttributeSchemas())
       {
         // Skip the resource schema.
-        if (!schemaURI.equals(resourceSchemaURI))
+        if (!schemaURI.equalsIgnoreCase(resourceSchemaURI))
         {
           for (final SCIMAttribute a :
               resource.getScimObject().getAttributes(schemaURI))
@@ -281,7 +281,7 @@ public class XmlMarshaller implements Marshaller
         resource.getResourceDescriptor().getAttributeSchemas())
     {
       // Skip the resource schema.
-      if (!schemaURI.equals(resourceSchemaURI))
+      if (!schemaURI.equalsIgnoreCase(resourceSchemaURI))
       {
         for (final SCIMAttribute a :
             resource.getScimObject().getAttributes(schemaURI))
@@ -403,7 +403,8 @@ public class XmlMarshaller implements Marshaller
                                  final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException
   {
-    if (scimAttribute.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE))
+    if (scimAttribute.getSchema().equalsIgnoreCase(
+        SCIMConstants.SCHEMA_URI_CORE))
     {
       xmlStreamWriter.writeStartElement(scimAttribute.getName());
     }
@@ -428,7 +429,8 @@ public class XmlMarshaller implements Marshaller
                                  final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException
   {
-    if (scimAttribute.getSchema().equals(SCIMConstants.SCHEMA_URI_CORE))
+    if (scimAttribute.getSchema().equalsIgnoreCase(
+        SCIMConstants.SCHEMA_URI_CORE))
     {
       xmlStreamWriter.writeStartElement(scimAttribute.getName().substring(0,
           scimAttribute.getName().length()-1));

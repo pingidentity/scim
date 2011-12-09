@@ -73,7 +73,7 @@ public class ResourceSchemaBackend extends SCIMBackend
     {
       String id = rd.getSchema() +
           SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + rd.getName();
-      if(id.equals(request.getResourceID()))
+      if(id.equalsIgnoreCase(request.getResourceID()))
       {
         resourceDescriptor = rd;
         break;
@@ -81,12 +81,15 @@ public class ResourceSchemaBackend extends SCIMBackend
     }
 
     // Try to find a match in case the schema name was not provided.
-    for(ResourceDescriptor rd : resourceDescriptors)
+    if (resourceDescriptor == null)
     {
-      if(rd.getName().equals(request.getResourceID()))
+      for(ResourceDescriptor rd : resourceDescriptors)
       {
-        resourceDescriptor = rd;
-        break;
+        if(rd.getName().equalsIgnoreCase(request.getResourceID()))
+        {
+          resourceDescriptor = rd;
+          break;
+        }
       }
     }
 

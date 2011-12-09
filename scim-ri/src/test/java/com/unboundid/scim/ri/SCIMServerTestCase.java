@@ -109,10 +109,19 @@ public class SCIMServerTestCase
         schemaEndpoint.get(SCHEMA_URI_CORE +
                            SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
                            "User");
+
     // Make sure the convenience method works and returns the
     // same descriptor.
-    assertEquals(userDescriptor,
-        service.getResourceDescriptor("User", SCHEMA_URI_CORE));
+    assertEquals(service.getResourceDescriptor("User", SCHEMA_URI_CORE),
+                 userDescriptor);
+
+    // Make sure that we can use mixed case for the schema URN.
+    assertEquals(
+        service.getResourceDescriptor("User", "UrN:sCiM:ScHeMaS:cOrE:1.0"),
+        userDescriptor);
+    assertEquals(schemaEndpoint.get("UrN:sCiM:ScHeMaS:cOrE:1.0:User"),
+                 userDescriptor);
+
     assertEquals(userDescriptor.getName(), "User");
     assertNotNull(userDescriptor.getDescription());
     assertEquals(userDescriptor.getSchema(), SCHEMA_URI_CORE);
@@ -413,7 +422,7 @@ public class SCIMServerTestCase
         endpoint.get("uid=b jensen,dc=example,dc=com", null,
                      "USERNAME", "name.FORMATTED",
                      "addresses.postalCode",
-                     "addresses.streetAddress");
+                     "UrN:sCiM:ScHeMaS:cOrE:1.0:addresses.streetAddress");
     assertNotNull(partialUser);
     assertTrue(partialUser.getId().equalsIgnoreCase(
         "uid=b jensen,dc=example,dc=com"));
@@ -542,7 +551,8 @@ public class SCIMServerTestCase
     resources = endpoint.query("userName eq \"user.1\"");
     assertEquals(resources.getTotalResults(), 1);
 
-    resources = endpoint.query("USERNAME eq \"User.1\"");
+    resources = endpoint.query("UrN:sCiM:ScHeMaS:cOrE:1.0:USERNAME eq " +
+                               "\"User.1\"");
     assertEquals(resources.getTotalResults(), 1);
 
     resources = endpoint.query("userName sw \"user\"");
@@ -616,7 +626,7 @@ public class SCIMServerTestCase
           "User", sortValue, "password"));
     }
 
-    final String sortBy = "userName";
+    final String sortBy = "UrN:sCiM:ScHeMaS:cOrE:1.0:userName";
     final String sortAscending = "ascending";
     final String sortDescending = "descending";
 

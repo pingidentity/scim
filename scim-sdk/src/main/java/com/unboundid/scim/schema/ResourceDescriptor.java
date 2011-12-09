@@ -23,12 +23,14 @@ import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.StaticUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
+
 
 
 /**
@@ -57,7 +59,8 @@ public class ResourceDescriptor extends BaseResource
   /**
    * A schema -> name -> AttributeDescriptor map to quickly look up
    * attributes. The attribute descriptors are keyed by the lower case
-   * attribute name because attribute names are case-insensitive.
+   * attribute name because attribute names are case-insensitive. Likewise,
+   * the schema key is lower case because schema URNs are case-insensitive.
    */
   private Map<String, Map<String, AttributeDescriptor>> attributesCache;
 
@@ -97,10 +100,11 @@ public class ResourceDescriptor extends BaseResource
     // TODO: Should we implement a strict and non strict mode?
     initAttributesCache();
     AttributeDescriptor attributeDescriptor = null;
-    Map<String, AttributeDescriptor> map = attributesCache.get(schema);
+    Map<String, AttributeDescriptor> map =
+        attributesCache.get(toLowerCase(schema));
     if(map != null)
     {
-      attributeDescriptor = map.get(StaticUtils.toLowerCase(name));
+      attributeDescriptor = map.get(toLowerCase(name));
     }
     if(attributeDescriptor == null)
     {
@@ -122,7 +126,8 @@ public class ResourceDescriptor extends BaseResource
   public Collection<AttributeDescriptor> getAttributes(final String schema)
   {
     initAttributesCache();
-    Map<String, AttributeDescriptor> map = attributesCache.get(schema);
+    Map<String, AttributeDescriptor> map =
+        attributesCache.get(toLowerCase(schema));
     if(map != null)
     {
       return map.values();
@@ -320,14 +325,16 @@ public class ResourceDescriptor extends BaseResource
             Map<String, AttributeDescriptor>>();
         for(AttributeDescriptor attributeDescriptor : getAttributes())
         {
+          final String lowerCaseSchema =
+              toLowerCase(attributeDescriptor.getSchema());
           Map<String, AttributeDescriptor> map =
-              attributesCache.get(attributeDescriptor.getSchema());
+              attributesCache.get(lowerCaseSchema);
           if(map == null)
           {
             map = new HashMap<String, AttributeDescriptor>();
-            attributesCache.put(attributeDescriptor.getSchema(), map);
+            attributesCache.put(lowerCaseSchema, map);
           }
-          map.put(StaticUtils.toLowerCase(attributeDescriptor.getName()),
+          map.put(toLowerCase(attributeDescriptor.getName()),
                   attributeDescriptor);
         }
       }
@@ -342,8 +349,8 @@ public class ResourceDescriptor extends BaseResource
   {
     int hashCode = 0;
 
-    hashCode += getSchema().hashCode();
-    hashCode += getName().toLowerCase().hashCode();
+    hashCode += toLowerCase(getSchema()).hashCode();
+    hashCode += toLowerCase(getName()).hashCode();
 
     return hashCode;
   }
@@ -376,7 +383,7 @@ public class ResourceDescriptor extends BaseResource
     else
     {
       return thisSchema != null && thatSchema != null &&
-          thisSchema.equals(thatSchema) &&
+          thisSchema.equalsIgnoreCase(thatSchema) &&
           thisName.equalsIgnoreCase(thatName);
     }
   }

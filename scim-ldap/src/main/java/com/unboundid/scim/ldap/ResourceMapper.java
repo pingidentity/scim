@@ -716,7 +716,7 @@ public class ResourceMapper
 
     for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
     {
-      if(attributeDescriptor.getSchema().equals(
+      if(attributeDescriptor.getSchema().equalsIgnoreCase(
           attributePath.getAttributeSchema()) &&
           attributeDescriptor.getName().equalsIgnoreCase(
               attributePath.getAttributeName()))
@@ -960,7 +960,7 @@ public class ResourceMapper
         {
           for(AttributeDescriptor attrDescriptor : attributeMappers.keySet())
           {
-            if(attrDescriptor.getSchema().equals(
+            if(attrDescriptor.getSchema().equalsIgnoreCase(
                 filterAttribute.getAttributeSchema()) &&
                   attrDescriptor.getName().equalsIgnoreCase(
                     filterAttribute.getAttributeName()))

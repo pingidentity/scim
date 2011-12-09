@@ -189,12 +189,12 @@ public final class SCIMAttribute
         return false;
     }
 
-    if (!filter.getFilterAttribute().getAttributeSchema().equals(getSchema()))
+    final String schema = filter.getFilterAttribute().getAttributeSchema();
+    if (!schema.equalsIgnoreCase(getSchema()))
     {
       return false;
     }
 
-    final String schema = filter.getFilterAttribute().getAttributeSchema();
     final String attributeName = filter.getFilterAttribute().getAttributeName();
     String subAttributeName =
         filter.getFilterAttribute().getSubAttributeName();
