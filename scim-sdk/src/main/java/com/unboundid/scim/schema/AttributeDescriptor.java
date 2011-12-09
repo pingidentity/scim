@@ -159,8 +159,9 @@ public final class AttributeDescriptor {
       return new AttributeDescriptor(
           value.getSubAttributeValue("name",
                                      AttributeValueResolver.STRING_RESOLVER),
-          DataType.parse(value.getSubAttributeValue("type",
-                                                    AttributeValueResolver.STRING_RESOLVER)),
+          DataType.parse(value.getSubAttributeValue(
+              "type",
+              AttributeValueResolver.STRING_RESOLVER)),
           false,
           value.getSubAttributeValue("description",
                                      AttributeValueResolver.STRING_RESOLVER),
@@ -202,13 +203,15 @@ public final class AttributeDescriptor {
      */
     @Override
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
-      String schemaValue = value.getSubAttributeValue("schema",
-                                                      AttributeValueResolver.STRING_RESOLVER);
+      String schemaValue = value.getSubAttributeValue(
+          "schema",
+          AttributeValueResolver.STRING_RESOLVER);
       return new AttributeDescriptor(
           value.getSubAttributeValue("name",
                                      AttributeValueResolver.STRING_RESOLVER),
-          DataType.parse(value.getSubAttributeValue("type",
-                                                    AttributeValueResolver.STRING_RESOLVER)),
+          DataType.parse(value.getSubAttributeValue(
+              "type",
+              AttributeValueResolver.STRING_RESOLVER)),
           value.getSubAttributeValue("multiValued",
                                      AttributeValueResolver.BOOLEAN_RESOLVER),
           value.getSubAttributeValue("description",
