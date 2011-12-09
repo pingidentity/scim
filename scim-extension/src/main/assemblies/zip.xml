@@ -19,17 +19,6 @@
                 <include>3RD_PARTY_LICENSES.txt</include>
             </includes>
         </fileSet>
-        <!-- TODO: we need to move the core server's GenerateLicenseText build tool
-                   over to the Common module, then update SCIM to depend on Common
-                   and use this tool to get the official UnboundID License text.
-        <fileSet>
-            <outputDirectory>.</outputDirectory>
-            <directory>${project.build.directory}</directory>
-            <includes>
-                <include>CORE-UBID-LICENSE.txt</include>
-            </includes>
-        </fileSet>
-        -->
         <fileSet>
             <outputDirectory>docs</outputDirectory>
             <directory>${project.reporting.outputDirectory}/extension-docs</directory>
@@ -52,11 +41,15 @@
             </includes>
         </fileSet>
         <fileSet>
-            <outputDirectory>config/update</outputDirectory>
-            <directory>${project.basedir}/src/main/assemblies/config/update</directory>
+            <outputDirectory>config</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/config</directory>
         </fileSet>
     </fileSets>
     <files>
+        <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${project.basedir}/LICENSE.txt</source>
+        </file>
         <file>
             <outputDirectory>config/update</outputDirectory>
             <destName>resources.xml.${build.svn.revision}</destName>
@@ -69,8 +62,13 @@
         </file>
         <file>
             <outputDirectory>config/update</outputDirectory>
-            <destName>scim-extension-config.dsconfig.${build.svn.revision}</destName>
-            <source>${main.basedir}/resource/scim-extension-config.dsconfig</source>
+            <destName>ds-scim-extension-config.dsconfig.${build.svn.revision}</destName>
+            <source>src/main/assemblies/config/ds-scim-extension-config.dsconfig</source>
+        </file>
+        <file>
+            <outputDirectory>config/update</outputDirectory>
+            <destName>proxy-scim-extension-config.dsconfig.${build.svn.revision}</destName>
+            <source>src/main/assemblies/config/proxy-scim-extension-config.dsconfig</source>
         </file>
     </files>
     <dependencySets>

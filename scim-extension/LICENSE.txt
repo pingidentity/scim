@@ -1,0 +1,365 @@
+                               UnboundID Corp.
+                         End User License Agreement
+                              (Evaluation Only)
+
+
+THIS END USER LICENSE AGREEMENT (THIS "AGREEMENT") SETS FORTH THE TERMS AND
+CONDITIONS ON WHICH UNBOUNDID CORP. ("UNBOUNDID") IS WILLING TO ALLOW YOU (IF
+YOU ARE INSTALLING THE SOFTWARE ON YOUR OWN BEHALF) OR THE BUSINESS ENTITY
+THAT IS YOUR EMPLOYER (IF YOU ARE INSTALLING THE SOFTWARE IN YOUR CAPACITY AS
+AN EMPLOYEE OR AGENT OF A BUSINESS ENTITY) (IN EITHER CASE, "YOU" or
+"LICENSEE") TO ACCESS AND USE CERTAIN UNBOUNDID SOFTWARE, THIRD PARTY SOFTWARE
+AND ASSOCIATED MEDIA, PRINTED MATERIALS, AND ONLINE OR ELECTRONIC
+DOCUMENTATION (COLLECTIVELY, THE "LICENSED MATERIALS", AS FURTHER DEFINED
+BELOW).  THIS AGREEMENT IS A BINDING LEGAL AGREEMENT BETWEEN LICENSEE AND
+UNBOUNDID AND REPRESENTS THE ENTIRE UNDERSTANDING BETWEEN LICENSEE AND
+UNBOUNDID WITH REGARD TO THE LICENSED MATERIALS.  IF THIS AGREEMENT IS
+CONSIDERED TO BE AN OFFER BY UNBOUNDID, ACCEPTANCE IS EXPRESSLY LIMITED TO
+THE TERMS AND CONDITIONS SET FORTH HEREIN.
+
+BY YOUR EXPRESSION OF ASSENT IN ANSWER TO THE QUESTION "DO YOU ACCEPT ALL THE
+TERMS OF THE PRECEDING LICENSE AGREEMENT?" YOU INDICATE THAT YOU INTEND YOUR
+EXPRESSION OF ASSENT TO SERVE AS YOUR SIGNATURE TO THIS AGREEMENT AND TO HAVE
+THE SAME FORCE AND EFFECT AS THE USE OF A MANUAL SIGNATURE, AND IF YOU ARE
+INSTALLING THE LICENSED MATERIALS IN YOUR CAPACITY AS AN EMPLOYEE OR AGENT OF
+A BUSINESS ENTITY, YOU WARRANT THAT YOU ARE AUTHORIZED TO LEGALLY BIND SUCH
+ENTITY TO THIS AGREEMENT.  IF LICENSEE DOES NOT AGREE TO OR CANNOT COMPLY WITH
+ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT, (1) YOU MUST NOT EXPRESS
+ASSENT TO THE QUESTION "DO YOU ACCEPT ALL THE TERMS OF THE PRECEDING LICENSE
+AGREEMENT?" AND (2) YOU MUST DESTROY ALL COPIES OF THE LICENSED MATERIALS IN
+YOUR POSSESSION IMMEDIATELY.
+
+
+1 Definitions.
+
+1.1   CDDL means the Common Development and Distribution License version 1.0
+      (http://www.unboundid.com/cddl.html), and terms defined therein.
+
+1.2   CDDL Work means any work which is licensed under the CDDL.
+
+1.3   Documentation means the printed, online or electronic documentation
+      provided with the Licensed Software to explain its operation and use.
+
+1.4   Effective Date means the date You express your assent to the terms of
+      this Agreement.
+
+1.5   Evaluation Period means the ninety (90) day time period beginning on the
+      date the Software was first provided to Licensee. 
+
+1.6   Evaluation Purposes means internal non-commercial evaluation with
+      non-production data on ten (10) or fewer systems.  In the event of any
+      conflict between this definition of Evaluation Purposes and the Grant of
+      License and Restrictions on Use stated in Section 2 below, the
+      provisions of Section 2 shall take precedence.
+
+1.7   Licensed Materials means the Licensed Software and Licensed
+      Documentation.
+
+1.8   Licensed Software means the UnboundID Software and Third Party Software.
+
+1.9   Oracle means Oracle USA, Inc.
+
+1.10  Oracle Software means any Oracle software or documentation included in
+      the Licensed Materials including, without limitation, Berkeley DB Java
+      Edition Transactional Data Store.  
+
+1.11  Third Party Licensor means the owner or licensor of any Third Party
+      Software including, but not limited to, Oracle.
+
+1.12  Third Party Software means the object code version of any software owned
+      by or licensed to a third party and licensed to UnboundID that is
+      distributed with or integrally incorporated into the UnboundID Software.
+
+1.13  UnboundID Software means the software that this Agreement accompanies,
+      including but not limited to the UnboundID Directory Server, UnboundID
+      Directory Proxy Server, UnboundID Synchronization Server, UnboundID 
+      LDAP SDK for Java, object code, compiled libraries, source code, and 
+      source files, and patches, updates, modifications or new releases 
+      thereof that may be provided by UnboundID to the licensee from time to
+      time.
+
+
+2 Grant of License and Restrictions on Use.
+
+2.1   In consideration of Licensee's agreement to abide by the terms and
+      conditions of this Agreement, and provided that Licensee complies with
+      the restrictions stated in Section 2.3 below (which define the scope of
+      the license rights granted herein), UnboundID grants Licensee, and only
+      to Licensee, a non-exclusive, non-sublicensable, non-transferable
+      license to install, access and use the Licensed Materials for Evaluation
+      Purposes only.  The foregoing license will apply to Licensee and its
+      officers, employees,  authorized agents and independent contractors
+      using the Licensed Materials on Licensee's behalf (provided that such
+      individuals and entities have agreed in writing to be bound by all
+      applicable restrictions and other relevant terms and conditions of this
+      Agreement) and Licensee is liable for use of the Licensed Materials by
+      such individuals.  Except as expressly stated herein, Licensee will have
+      no right to receive or review the source code version of any portion of
+      the Licensed Software.  The Licensed Software is licensed as a single
+      product; its component parts may not be separated for use on more than
+      one computer.  UnboundID reserves all rights not expressly granted
+      herein.
+
+2.2   UnboundID shall have the right to audit Licensee's use of the Licensed
+      Materials, and Licensee agrees that it will provide reasonable
+      assistance and access to its facilities in the course of such audit.  In
+      addition, Licensee agrees that UnboundID may report the results of such
+      audit to its Third Party Licensors or to assign its right to audit
+      Licensee's use of the Licensed Materials to such Third Party Licensors.
+
+2.3   Acknowledging that such actions are outside the scope of the license
+      granted herein, and subject to the limited exception in Section 4 below,
+      Licensee shall not (and shall not allow any third party to):
+      2.3.1   copy the Licensed Materials;
+      2.3.2   reverse engineer (unless required by law for interoperability),
+              disassemble or decompile the Licensed Software (including, but
+              not limited to, any review of data structures or similar
+              materials produced by the Licensed Software); 
+      2.3.3   remove or modify any product identification, markings, copyright
+              or other notices from the Licensed Materials (including, but not
+              limited to, any notice of UnboundID's or any Third Party
+              Licensor's or its licensor's proprietary rights);
+      2.3.4   sell, distribute, provide, lease, lend, rent, outsource, host or
+              use for timesharing or service bureau purposes or otherwise use
+              or allow others to use the Licensed Materials to or for the
+              benefit of third parties;
+      2.3.5   except as expressly specified in the Documentation, incorporate
+              the Licensed Software into or with other software;
+      2.3.6   modify or create a derivative work of any part of the Licensed
+              Software;
+      2.3.7   disclose to persons other than Licensee any content which uses
+              or references the Licensed Materials, including but not limited
+              to developed extensions (in source or compiled form), test or
+              benchmark results, or evaluation documents; or
+      2.3.8   assign, give or transfer the Licensed Software or an interest in
+              them to another individual or entity (in the event You grant a
+              security interest in Licensed Software, the secured party has no
+              right to use or transfer the Licensed Software).
+
+2.4   With respect to, and solely with respect to, the source code form of any
+      CDDL Works in the Software, the restrictions stated in the foregoing
+      Section 2.3 are null and void to the extent they alter or restrict the
+      CDDL or the recipients' rights thereunder.  The restrictions on the
+      source code form of any CDDL Works in the Licensed Software are as
+      stated in the CDDL.
+
+2.5   Licensee recognizes and agrees that there is no adequate remedy at law
+      for a breach of this Section 2, that such a breach would irreparably
+      harm UnboundID, and that UnboundID is entitled to equitable relief
+      (including, without limitation, injunctions, and without the posting of
+      a bond) with respect to any such breach or potential breach in addition
+      to any other remedies.
+
+
+3 Intellectual Property Ownership.
+
+The Licensed Materials are protected by copyright laws, international
+copyright treaties, and other intellectual property laws and treaties.
+Subject to Section 4 below, UnboundID or its Third Party Licensors (and their
+licensors, if applicable) retain all ownership of, and intellectual property
+rights in (including copyright), the Licensed Materials and all copies
+thereof.  The Licensed Software is licensed, not sold.
+
+
+
+4 CDDL/Open Source Software.
+
+The UnboundID Software may include CDDL Works.  With respect to any such CDDL
+Works:  (i) upon written request by the Licensee, UnboundID will provide
+copies of the source code and other materials subject to and pursuant to the
+terms of the CDDL; (ii) WARRANTY, SUPPORT, INDEMNITY OR LIABILITY OBLIGATIONS
+OFFERED HEREIN, IF ANY, ARE OFFERED BY UNBOUNDID AND NOT BY ANY OTHER
+CONTRIBUTOR OR INITIAL DEVELOPER OF ANY SUCH CDDL WORK; and (iii) ANY AND ALL
+TERMS IN THIS AGREEMENT WHICH DIFFER FROM THE CDDL ARE OFFERED BY UNBOUNDID
+ALONE AND NOT BY ANY OTHER CONTRIBUTOR OR INITIAL DEVELOPER OF ANY SUCH CDDL
+WORK.
+
+
+5 Oracle Components.
+
+The following terms apply to Oracle Software:
+
+5.1   The Oracle Software may only be used by the legal entity that is the
+      Licensee under this Agreement.
+
+5.2   The Oracle Software is subject to a restricted license and can only be
+      used in conjunction with the Licensed Materials.  
+
+5.3   You are not permitted to modify the Oracle Software.
+
+5.4   The Oracle Software may include source code that Oracle may provide as
+      part of its standard shipment of such Oracle Software, which source code
+      shall be governed by the terms of this Agreement.
+
+5.5   Third party technology that may be appropriate or necessary for use with
+      some Oracle Software is specified in the Documentation or as otherwise
+      notified by UnboundID, and such third party technology is licensed to
+      You only for use with the Licensed Materials under the terms of the
+      third party license agreement specified in the Licensed Materials or as
+      otherwise notified by UnboundID and not under the terms of this
+      Agreement.
+
+5.6   To the extent permitted by applicable law, Oracle's liability for (1)
+      any damages, whether direct, indirect, incidental, special, punitive or
+      consequential and (2) loss of profits, revenue, data or data use,
+      arising from the use of the Oracle Software are hereby expressly
+      disclaimed.
+
+5.7   For all purposes of this Agreement, Oracle shall be expressly deemed an
+      intended third party beneficiary of this Agreement and shall have the
+      right to enforce the terms and conditions of this Agreement.
+
+
+6 License Fees.
+
+There is no license fee for the license granted in this Agreement, which is
+limited to Evaluation Purposes.  After the Evaluation Period, You may
+purchase a commercial license to use the Licensed Materials upon execution of
+UnboundID's then-current End User License Agreement and upon payment of
+UnboundID's  then-current fees, including all applicable taxes.   
+
+
+7 Term and Termination.
+
+7.1   This Agreement will be effective as of the Effective Date.  
+
+7.2   This Agreement may be terminated by UnboundID for any reason or no
+      reason upon written notice to Licensee.  
+
+7.3   All rights and licenses granted herein will simultaneously and
+      automatically terminate at the end of the Evaluation Period or upon any
+      earlier termination by UnboundID.  Licensee will, within five (5) days
+      following such termination, (a) delete all copies or partial copies of
+      the Licensed Materials installed on Licensee's computers and (b) return
+      to UnboundID all copies or partial copies of the Licensed Materials in
+      Licensee's possession or, upon request by UnboundID, destroy all copies
+      or partial copies of the Licensed Materials then in Licensee's
+      possession or under Licensee's control and certify in writing to
+      UnboundID that they have been destroyed.  The provisions of Sections
+      2.3, 3, 5, 7.3, 8, 9, 10, 11 and 15 will survive expiration or
+      termination of this Agreement. 
+
+
+8 Confidentiality Obligations.
+
+Except as expressly allowed by this Agreement, Licensee will not use or
+disclose any Licensed Software or related technology, ideas, algorithms or
+information except to the extent Licensee can document that it is generally
+available for use and disclosure by the public without any charge or license.
+Licensee recognizes and agrees that there is no adequate remedy at law for a
+breach of this Section 8, that such a breach would irreparably harm UnboundID
+and its Third Party Licensors and that UnboundID is entitled to equitable
+relief (including, without limitation, injunctions without the posting of a
+bond) with respect to any such breach or potential breach in addition to any
+other remedies.
+
+
+9 Disclaimer of Warranties.
+
+THE LICENSED MATERIALS ARE PROVIDED "AS IS" AND NEITHER UNBOUNDID NOR ITS
+THIRD PARTY LICENSORS  WARRANT THAT THE LICENSED MATERIALS WILL BE ERROR-FREE,
+VIRUS-FREE, WILL PERFORM IN AN UNINTERRUPTED, SECURE OR TIMELY MANNER, OR WILL
+INTEROPERATE WITH OTHER HARDWARE, SOFTWARE, SYSTEMS OR DATA.  TO THE MAXIMUM
+EXTENT ALLOWED BY LAW, ALL CONDITIONS, REPRESENTATIONS AND WARRANTIES, WHETHER
+EXPRESS, IMPLIED, STATUTORY OR OTHERWISE INCLUDING, WITHOUT LIMITATION, ANY
+IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE (EVEN
+IF UNBOUNDID HAD BEEN INFORMED OF SUCH PURPOSE), OR NON-INFRINGEMENT OF THIRD
+PARTY RIGHTS ARE HEREBY DISCLAIMED.  No employee, agent, representative or
+affiliate of UnboundID has authority to bind UnboundID to any oral
+representations or warranty concerning the Licensed Materials. Any written
+representation or warranty not expressly contained in this Agreement is
+unenforceable.
+
+
+10 Limitation of Liability.
+
+IN NO EVENT SHALL UNBOUNDID OR ITS THIRD PARTY LICENSORS BE LIABLE FOR ANY
+DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, LOST PROFITS, REVENUE, DATA
+OR DATA USE, BUSINESS INTERRUPTION, COST OF COVER, DIRECT, INDIRECT, SPECIAL,
+PUNITIVE, INCIDENTAL OR CONSEQUENTIAL DAMAGES OF ANY KIND) ARISING OUT OF THE
+USE OF OR INABILITY TO USE THE LICENSED MATERIALS OR IN ANY WAY RELATED TO
+THIS AGREEMENT, EVEN IF UNBOUNDID HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES.
+
+
+11 Additional Rights.
+
+Certain states do not allow the exclusion of implied warranties or limitation
+of liability for certain kinds of damages, so the exclusion of warranties and
+limitation of liability set forth above may not apply to You.
+
+
+
+12 Technical Support.
+
+UnboundID has no obligation under this Agreement to provide support or
+maintenance or updates, modifications or new releases to the Licensed
+Materials.  To the extent that updates, modifications or new releases are
+provided, Licensee acknowledges that such updates, modifications or new
+releases will be subject to all limitations, restrictions, and qualifications
+relating to Licensed Materials, as well as Licensee's obligations with respect
+to the Licensed Materials. 
+
+
+13 Export Restrictions.
+
+The Licensed Materials are subject to all pertinent import and export laws of
+the United States, including, but not limited to, the U.S. Export
+Administration Regulations ("EAR" located at 15 C.F.R. Sections 734 et seq).
+Licensee agrees that it will be solely responsible for compliance with all
+such laws and shall indemnify UnboundID for any penalties, losses, fines, as
+well as all costs and other expenses incurred by UnboundID as a result of any
+violation or alleged violation of export laws by Licensee.  Licensee agrees
+that: (a) it will not export, re-export, or transfer, directly or indirectly,
+the Licensed Materials to any person, firm or country on the Denied Persons
+List, Entity List, Debarred Parties or Specially Designated Nationals lists,
+countries supporting terrorist activities or any other country or entity
+designated by the U.S. Government as prohibited by U.S. law, or nationals
+thereof; and (b) it is not located in such a country or on such a list.
+Licensee agrees that it will not transfer, export or re-export, directly or
+indirectly, the Software for use or to users in military or proliferation
+activities (nuclear, missile, chemical or biological weapons) without U.S.
+Government authorization (by export license or regulation). Licensee agrees
+that, upon request, it will provide additional end use/end user information or
+written acceptance of requirements and responsibilities to comply with U.S.
+export license requirements. Licensee agrees to be bound by any future
+modifications of the list of restricted destinations by amendments to the EAR
+or other U.S. government regulations. These requirements shall survive the
+term or termination of the Agreement and require the end user to comply fully
+with all relevant laws and regulations of the US and other applicable export
+and import laws to assure that neither the programs, nor any direct product
+thereof, are exported, directly or indirectly, in violation of applicable
+laws.
+
+
+14 U.S. Government Restricted Rights Legend.
+
+The Licensed Materials were developed at private expense and are provided with
+"Restricted Rights."  Use, duplication, or disclosure by the Government is
+subject to restrictions as set forth in FAR52.227-19, its successor or
+applicable agency rights in technical data or computer software.  In the event
+that this Agreement, or any part thereof, is deemed inconsistent with the
+minimum rights identified in the Restricted Rights provisions, the minimum
+rights shall prevail. 
+
+
+15 Miscellaneous.
+
+15.1   This Agreement and performance hereunder shall be governed by and
+       construed in accordance with the laws of the State of Texas without
+       regard to its conflict of laws rules.  Any disputes related to this
+       Agreement shall be exclusively litigated in the state or federal courts
+       located in Travis County, Texas.
+
+15.2   If any provision of this Agreement shall be held to be invalid, illegal
+       or unenforceable, the validity, legality and enforceability of the
+       remaining provisions shall in no way be affected or impaired thereby. 
+
+15.3   The Licensee may not subcontract, sublicense, assign, or transfer its
+       rights, duties or obligations under this Agreement to any person or
+       entity, in whole or in part, without the prior written consent of
+       UnboundID.
+
+15.4   The Uniform Computer Information Transactions Act does not apply to
+       this Agreement.
+
