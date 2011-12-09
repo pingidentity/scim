@@ -56,6 +56,9 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
 
     dsInstance.startInstance();
     dsInstance.addBaseEntry();
+    dsInstance.addEntry("dn: ou=people," + dsInstance.getPrimaryBaseDN(),
+            "objectClass: organizationalUnit",
+            "ou: people");
 
     proxyInstance.runCommandExpectSuccess(
         "prepare-external-server",
@@ -69,7 +72,8 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
         "--baseDN", "dc=example,dc=com"
     );
 
-    baseDN = dsInstance.getPrimaryBaseDN();
+    groupBaseDN = dsInstance.getPrimaryBaseDN();
+    userBaseDN = "ou=people," + dsInstance.getPrimaryBaseDN();
 
     proxyInstance.startInstance();
 
@@ -112,7 +116,7 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
         {
             "create-subtree-view",
             "--view-name", "test-view",
-            "--set", "base-dn:" + baseDN,
+            "--set", "base-dn:" + groupBaseDN,
             "--set", "request-processor:" + dsInstanceName
         },
         new String[]

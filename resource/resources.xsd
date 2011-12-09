@@ -49,6 +49,8 @@
     <xs:sequence>
       <xs:element name="resource" type="ResourceDefinition"
                   minOccurs="1" maxOccurs="unbounded"/>
+      <xs:element name="LDAPSearch" type="LDAPSearchParameters"
+                  minOccurs="0" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
 
@@ -56,7 +58,7 @@
     <xs:sequence>
       <xs:element name="description" type="xs:string"/>
       <xs:element name="endpoint" type="xs:string"/>
-      <xs:element name="LDAPSearch" type="LDAPSearchParameters" minOccurs="0" />
+      <xs:element name="LDAPSearchRef" type="LDAPSearchParametersRef" minOccurs="0" />
       <xs:element name="LDAPAdd" type="LDAPAddParameters" minOccurs="0" />
       <xs:element name="attribute" type="AttributeDefinition"
                   minOccurs="0" maxOccurs="unbounded"/>
@@ -85,6 +87,9 @@
   </xs:complexType>
 
   <xs:complexType name="DerivedAttributeDefinition">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
     <xs:attribute name="javaClass" type="xs:string" use="required"/>
   </xs:complexType>
 
@@ -163,6 +168,11 @@
       <xs:element name="baseDN" type="xs:string" maxOccurs="1"/>
       <xs:element name="filter" type="xs:string"/>
     </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="LDAPSearchParametersRef">
+    <xs:attribute name="idref" type="xs:IDREF" use="required"/>
   </xs:complexType>
 
   <xs:complexType name="LDAPAddParameters">

@@ -135,7 +135,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <unit.resource.dir>${basedir}/src/test/resources</unit.resource.dir>
-                        <base.dir>${basedir}</base.dir>
+                        <main.basedir>${main.basedir}</main.basedir>
                         <DEBUG>true</DEBUG>
                     </systemPropertyVariables>
                 </configuration>

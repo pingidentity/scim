@@ -19,6 +19,7 @@ package com.unboundid.scim.ri;
 
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
@@ -38,6 +39,8 @@ import org.testng.annotations.Test;
 import org.testng.annotations.BeforeClass;
 
 import javax.ws.rs.core.MediaType;
+
+import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,10 +59,13 @@ import static com.unboundid.scim.sdk.SCIMConstants.
 /**
  * This class provides test coverage for the SCIMServer class.
  */
-public class SCIMServerTestCase
-    extends SCIMRITestCase
+public class SCIMServerTestCase extends SCIMRITestCase
 {
+
   private SCIMService service;
+
+  private final String userBaseDN = "ou=people,dc=example,dc=com";
+
 
   /**
    * Sets up the SCIMService.
@@ -363,6 +369,137 @@ public class SCIMServerTestCase
   }
 
 
+  /**
+   * Verifies that we support Users and Groups with different base DNs and that
+   * we can still search for a Group and get all of its members (even though
+   * they're in a different part of the DIT), and that we can search for a user
+   * and get all of its groups (even though they're in a different part of the
+   * DIT).
+   * @throws Exception  If the test failed.
+   */
+  @Test
+  public void testDifferentBaseDNs() throws Exception
+  {
+    //Switch the RI server to use a different resources.xml
+    File f = getFile(
+       "scim-ri/src/test/resources/resources-different-base-dns.xml");
+    assertTrue(f.exists());
+    reconfigureTestSuite(f);
+    setup();
+
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+    testDS.add(generateOrgEntry("example.com", null));
+
+    // Create some users under dc=example,dc=com
+    UserResource user1 = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    Name name1 = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
+        "Barbara", "Ms", "III");
+    user1.setUserName("bjensen");
+    user1.setName(name1);
+    user1.setPassword("4wrj2U81j");
+
+    UserResource user2 = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    Name name2 = new Name("Mr. John D. Smith", "Smith", "D",
+        "John", "Mr", null);
+    user2.setUserName("jsmith");
+    user2.setName(name2);
+    user2.setPassword("Rls3xj2%4");
+
+    // Post the users via SCIM, returning selected attributes.
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+    user1 = endpoint.create(user1, "id", "meta");
+    user2 = endpoint.create(user2, "id", "meta");
+
+    //Verify the users were created under ou=people,dc=example,dc=com
+    assertEquals(
+            DN.getParent(user1.getId()), new DN(userBaseDN));
+    assertEquals(
+            DN.getParent(user2.getId()), new DN(userBaseDN));
+
+    //Create a group containing both users
+    SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
+    GroupResource group1 = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
+    group1.setDisplayName("group1");
+    Set<com.unboundid.scim.data.Entry<String>> members1 =
+          new HashSet<com.unboundid.scim.data.Entry<String>>();
+    members1.add(new com.unboundid.scim.data.Entry<String>(
+                              user1.getId(), "User", false));
+    members1.add(new com.unboundid.scim.data.Entry<String>(
+                              user2.getId(), "User", false));
+    group1.setMembers(members1);
+    group1 = grpEndpoint.create(group1, "id", "meta", "members");
+
+    //Verify that the group was created under o=example.com and contains
+    //both members
+    assertEquals(DN.getParent(group1.getId()), new DN("o=example.com"));
+    assertEquals(group1.getMembers().size(), 2);
+
+    //Verify that the members have the correct base DN
+    for(com.unboundid.scim.data.Entry<String> entry : group1.getMembers())
+    {
+      DN dn = new DN(entry.getValue());
+      assertTrue(dn.isDescendantOf(userBaseDN, false));
+    }
+
+    //Create another group under o=example.com
+    GroupResource group2 = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
+    group2.setDisplayName("group2");
+    Set<com.unboundid.scim.data.Entry<String>> members2 =
+          new HashSet<com.unboundid.scim.data.Entry<String>>();
+    members2.add(new com.unboundid.scim.data.Entry<String>(
+                                user1.getId(), "User", false));
+    members2.add(new com.unboundid.scim.data.Entry<String>(
+                                group1.getId(), "Group", false));
+    group2.setMembers(members2);
+    group2 = grpEndpoint.create(group2, "id", "meta", "members");
+
+    //Verify that the group was created under o=example.com and contains
+    //both members
+    assertEquals(DN.getParent(group2.getId()), new DN("o=example.com"));
+    assertEquals(group2.getMembers().size(), 2);
+    for(com.unboundid.scim.data.Entry<String> entry : group2.getMembers())
+    {
+      DN dn = new DN(entry.getValue());
+      if(entry.getValue().equalsIgnoreCase(user1.getId()))
+       /* Note: this should be if(entry.getType().equalsIgnoreCase("user"))
+          but the problem is entry.getType() returns null, which is a known bug
+          and will be fixed as part of SCIM-133.
+        */
+      {
+        assertTrue(dn.isDescendantOf(userBaseDN, false));
+      }
+      else if(entry.getValue().equalsIgnoreCase(group1.getId()))
+       /* Note: this should be if(entry.getType().equalsIgnoreCase("group"))
+          but the problem is entry.getType() returns null, which is a known bug
+          and will be fixed as part of SCIM-133.
+        */
+      {
+        assertTrue(dn.isDescendantOf("o=example.com", false));
+      }
+      else
+      {
+        fail("Unknown base DN for group member: " + dn);
+      }
+    }
+
+    //Verify that user1 correctly identifies its two groups
+    user1 = endpoint.get(user1.getId(), "id", "meta", "groups");
+    assertEquals(user1.getGroups().size(), 2);
+    for(com.unboundid.scim.data.Entry<String> entry : user1.getGroups())
+    {
+      DN dn = new DN(entry.getValue());
+      assertTrue(dn.isDescendantOf("o=example.com", false));
+    }
+
+    //Cleanup
+    reconfigureTestSuite(getFile("resource/resources.xml"));
+    setup();
+  }
+
+
 
   /**
    * Provides test coverage for the GET operation on a user resource.
@@ -377,6 +514,7 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // A user ID that does not exist should not return anything.
@@ -391,16 +529,16 @@ public class SCIMServerTestCase
     }
 
     // Create a user directly on the test DS.
-    testDS.add(generateUserEntry("b jensen", "dc=example,dc=com",
+    testDS.add(generateUserEntry("b jensen", userBaseDN,
         "Barbara", "Jensen", "password",
         new Attribute("mail", "user.1@example.com"),
         new Attribute("l", "Austin"),
         new Attribute("postalCode", "78759")));
 
     // Fetch the user through the SCIM client.
-    final UserResource user1 = endpoint.get("uid=b jensen,dc=example,dc=com");
+    final UserResource user1 = endpoint.get("uid=b jensen," + userBaseDN);
     assertNotNull(user1);
-    assertEquals(user1.getId(), "uid=b jensen,dc=example,dc=com");
+    assertEquals(user1.getId(), "uid=b jensen," + userBaseDN);
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
@@ -419,13 +557,13 @@ public class SCIMServerTestCase
 
     // Fetch selected attributes only. (id and meta should always be returned)
     UserResource partialUser =
-        endpoint.get("uid=b jensen,dc=example,dc=com", null,
+        endpoint.get("uid=b jensen," + userBaseDN, null,
                      "USERNAME", "name.FORMATTED",
                      "addresses.postalCode",
                      "UrN:sCiM:ScHeMaS:cOrE:1.0:addresses.streetAddress");
     assertNotNull(partialUser);
     assertTrue(partialUser.getId().equalsIgnoreCase(
-        "uid=b jensen,dc=example,dc=com"));
+            "uid=b jensen," + userBaseDN));
     assertNotNull(partialUser.getMeta());
     assertNotNull(partialUser.getMeta().getCreated());
     assertNotNull(partialUser.getMeta().getLastModified());
@@ -445,14 +583,26 @@ public class SCIMServerTestCase
 
     // Fetch selected meta sub-attributes.
     partialUser =
-        endpoint.get("uid=b jensen,dc=example,dc=com", null,
-                     "meta.location");
+        endpoint.get("uid=b jensen," + userBaseDN, null, "meta.location");
     assertNotNull(partialUser);
     assertNotNull(partialUser.getId());
     assertNotNull(partialUser.getMeta());
     assertNull(partialUser.getMeta().getCreated());
     assertNull(partialUser.getMeta().getLastModified());
     assertNotNull(partialUser.getMeta().getLocation());
+
+    //Verify that we cannot obtain user1 through the Groups endpoint
+    SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
+    try
+    {
+      grpEndpoint.get(user1.getId());
+      fail("Should not have found " + user1.getId() +
+              " through the Groups endpoint");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
   }
 
 
@@ -470,13 +620,14 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // Create a static group directly on the test DS.
-    testDS.add(generateUserEntry("bjensen", "dc=example,dc=com",
+    testDS.add(generateUserEntry("bjensen", userBaseDN,
         "Barbara", "Jensen", "password"));
     testDS.add(generateGroupOfUniqueNamesEntry(
         "group1", "dc=example,dc=com",
-        "uid=bjensen,dc=example,dc=com"));
+        "uid=bjensen," + userBaseDN));
 
     // Fetch the Group through the SCIM client.
     SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
@@ -486,18 +637,30 @@ public class SCIMServerTestCase
     assertEquals(group1.getDisplayName(), "group1");
     assertNotNull(group1.getMembers());
     assertEquals(group1.getMembers().iterator().next().getValue(),
-        "uid=bjensen,dc=example,dc=com");
+        "uid=bjensen," + userBaseDN);
     assertNotNull(group1.getMeta());
     assertNotNull(group1.getMeta().getCreated());
     assertNotNull(group1.getMeta().getLastModified());
     assertNotNull(group1.getMeta().getLocation());
 
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    final UserResource user = userEndpoint.get("uid=bjensen,dc=example,dc=com");
+    final UserResource user = userEndpoint.get("uid=bjensen," + userBaseDN);
     assertNotNull(user.getGroups());
     assertEquals(user.getGroups().size(), 1);
     assertEquals(user.getGroups().iterator().next().getValue(),
                  "cn=group1,dc=example,dc=com");
+
+    //Verify that we cannot obtain group1 through the Users endpoint
+    try
+    {
+      userEndpoint.get(group1.getId());
+      fail("Should not have found " + group1.getId() +
+              " through the Users endpoint");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
   }
 
 
@@ -515,14 +678,15 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // Create some users directly on the test DS.
-    testDS.add(generateUserEntry("user.1", "dc=example,dc=com",
+    testDS.add(generateUserEntry("user.1", userBaseDN,
         "User", "One", "password",
         new Attribute("mail", "user.1@example.com"),
         new Attribute("l", "Austin"),
         new Attribute("postalCode", "78759")));
-    testDS.add(generateUserEntry("user.2", "dc=example,dc=com",
+    testDS.add(generateUserEntry("user.2", userBaseDN,
         "User", "Two", "password"));
 
     // Fetch all the users through the SCIM client.
@@ -545,7 +709,7 @@ public class SCIMServerTestCase
       // assertNotNull(endpoint.get(u.getMeta().getLocation().toString()));
     }
 
-    resources = endpoint.query("id eq \"uid=user.1,dc=example,dc=com\"");
+    resources = endpoint.query("id eq \"uid=user.1," + userBaseDN + "\"");
     assertEquals(resources.getTotalResults(), 1);
 
     resources = endpoint.query("userName eq \"user.1\"");
@@ -618,11 +782,12 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // Create some users directly on the test DS.
     for (final String sortValue : Arrays.asList("B", "C", "A"))
     {
-      testDS.add(generateUserEntry(sortValue, "dc=example,dc=com",
+      testDS.add(generateUserEntry(sortValue, userBaseDN,
           "User", sortValue, "password"));
     }
 
@@ -665,13 +830,14 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // Create some users directly on the test DS.
     final long NUM_USERS = 4;
     for (int i = 0; i < NUM_USERS; i++)
     {
       final String uid = "user." + i;
-      testDS.add(generateUserEntry(uid, "dc=example,dc=com",
+      testDS.add(generateUserEntry(uid, userBaseDN,
           "Test", "User", "password"));
     }
 
@@ -711,6 +877,7 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // Create the contents for a new user.
     final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
@@ -725,7 +892,7 @@ public class SCIMServerTestCase
 
     // Check the returned user.
     assertNotNull(user1);
-    assertEquals(user1.getId(), "uid=bjensen,dc=example,dc=com");
+    assertEquals(user1.getId(), "uid=bjensen," + userBaseDN);
     assertNull(user1.getName());
     assertNull(user1.getUserName());
     assertNotNull(user1.getMeta());
@@ -734,7 +901,7 @@ public class SCIMServerTestCase
     assertNotNull(user1.getMeta().getLocation());
 
     // Verify that the entry was actually created.
-    final Entry entry = testDS.getEntry("uid=bjensen,dc=example,dc=com");
+    final Entry entry = testDS.getEntry("uid=bjensen," + userBaseDN);
     assertNotNull(entry);
     assertTrue(entry.hasAttributeValue("sn", "Jensen"));
     assertTrue(entry.hasAttributeValue("cn", "Ms. Barbara J Jensen III"));
@@ -759,10 +926,11 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // Create a user directly on the test DS.
-    final String userDN = "uid=bjensen,dc=example,dc=com";
-    testDS.add(generateUserEntry("bjensen", "dc=example,dc=com",
+    final String userDN = "uid=bjensen," + userBaseDN;
+    testDS.add(generateUserEntry("bjensen", userBaseDN,
         "Barbara", "Jensen", "password"));
 
 
@@ -820,9 +988,10 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // The ID of the test user.
-    final String userDN = "uid=bjensen,dc=example,dc=com";
+    final String userDN = "uid=bjensen," + userBaseDN;
 
     // Create the contents for a new user.
     final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
@@ -988,10 +1157,11 @@ public class SCIMServerTestCase
     final InMemoryDirectoryServer testDS = getTestDS();
 
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
     testDS.add(generateUserEntry(
-        "user.1", "dc=example,dc=com", "Test", "User", "password"));
+        "user.1", userBaseDN, "Test", "User", "password"));
     testDS.add(generateUserEntry(
-        "user.2", "dc=example,dc=com", "Test", "User", "password"));
+        "user.2", userBaseDN, "Test", "User", "password"));
 
     final String idGroupA = "cn=group A,dc=example,dc=com";
     final String idGroupB = "cn=group B,dc=example,dc=com";
@@ -1003,7 +1173,7 @@ public class SCIMServerTestCase
         new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
     final com.unboundid.scim.data.Entry<String> member1 =
         new com.unboundid.scim.data.Entry<String>(
-            "uid=user.1,dc=example,dc=com", "User", false);
+            "uid=user.1," + userBaseDN, "User", false);
     membersA.add(member1);
     groupA.setMembers(membersA);
 
@@ -1016,7 +1186,7 @@ public class SCIMServerTestCase
     assertNotNull(groupA);
     Entry entry = testDS.getEntry(idGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
-        "uid=user.1,dc=example,dc=com"));
+        "uid=user.1," + userBaseDN));
 
     groupB = endpoint.create(groupB);
     assertNotNull(groupB);
@@ -1032,7 +1202,7 @@ public class SCIMServerTestCase
     // Add some members to each group.
     final com.unboundid.scim.data.Entry<String> member2 =
         new com.unboundid.scim.data.Entry<String>(
-            "uid=user.2,dc=example,dc=com", "User", false);
+            "uid=user.2," + userBaseDN, "User", false);
     Collection<com.unboundid.scim.data.Entry<String>> newMembers =
         groupA.getMembers();
     newMembers.add(member2);
@@ -1054,8 +1224,8 @@ public class SCIMServerTestCase
     assertEquals(groupA.getMembers().size(), 2);
     Iterator<com.unboundid.scim.data.Entry<String>> i =
         groupA.getMembers().iterator();
-    assertEquals(i.next().getValue(), "uid=user.1,dc=example,dc=com");
-    assertEquals(i.next().getValue(), "uid=user.2,dc=example,dc=com");
+    assertEquals(i.next().getValue(), "uid=user.1," + userBaseDN);
+    assertEquals(i.next().getValue(), "uid=user.2," + userBaseDN);
 
     assertEquals(groupB.getMembers().size(), 1);
     assertEquals(groupB.getMembers().iterator().next().getValue(), idGroupA);
@@ -1068,9 +1238,9 @@ public class SCIMServerTestCase
     // Verify that the LDAP entries were updated correctly.
     entry = testDS.getEntry(idGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
-        "uid=user.1,dc=example,dc=com"));
+        "uid=user.1," + userBaseDN));
     assertTrue(entry.hasAttributeValue("uniqueMember",
-        "uid=user.2,dc=example,dc=com"));
+        "uid=user.2," + userBaseDN));
     assertTrue(entry.hasAttribute("description"));
 
     entry = testDS.getEntry(idGroupB);
@@ -1104,9 +1274,10 @@ public class SCIMServerTestCase
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
     // The ID of the test user.
-    final String userDN = "uid=bjensen,dc=example,dc=com";
+    final String userDN = "uid=bjensen," + userBaseDN;
 
     // Create the contents for a new user.
     final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
@@ -1131,7 +1302,5 @@ public class SCIMServerTestCase
     // Delete the user.
     endpoint.delete(userDN);
   }
-
-
 
 }

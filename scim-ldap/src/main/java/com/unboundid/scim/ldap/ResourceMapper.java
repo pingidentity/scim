@@ -29,6 +29,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMException;
@@ -55,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
@@ -179,13 +181,35 @@ public class ResourceMapper
     final ResourcesDefinition resources =
         (ResourcesDefinition)jaxbElement.getValue();
 
+    final List<LDAPSearchParameters> ldapSearchParams =
+        resources.getLDAPSearch();
+
     final List<ResourceMapper> resourceMappers =
         new ArrayList<ResourceMapper>();
+
     for (final ResourceDefinition resource : resources.getResource())
     {
-      if (resource.getLDAPSearch() == null)
+      LDAPSearchParameters ldapSearch = null;
+      if(resource.getLDAPSearchRef() == null)
       {
+        Debug.debug(Level.WARNING, DebugType.OTHER,
+              "Skipping the \"" + resource.getName() + "\" resource " +
+              "because it does not contain any LDAP search parameters.");
         continue;
+      }
+      else
+      {
+        Object o = resource.getLDAPSearchRef().getIdref();
+        if(o != null)
+        {
+          ldapSearch = (LDAPSearchParameters) o;
+        }
+        else
+        {
+          throw new JAXBException(
+                  "Cannot find <LDAPSearch> element referenced by " +
+                  "the \"" + resource.getName() + "\" resource.");
+        }
       }
 
       final List<AttributeMapper> attributeMappers =
@@ -213,7 +237,41 @@ public class ResourceMapper
         {
           final DerivedAttribute derivedAttribute =
               DerivedAttribute.create(
-                  attributeDefinition.getDerivation().getJavaClass());
+                  attributeDefinition.getDerivation().getJavaClass(),
+                  attributeDefinition.getDerivation().getAny());
+          if(derivedAttribute instanceof MembersDerivedAttribute ||
+                  derivedAttribute instanceof GroupsDerivedAttribute)
+          {
+            if(derivedAttribute.getArguments().containsKey(
+                                DerivedAttribute.LDAP_SEARCH_REF))
+            {
+              boolean foundRef = false;
+              String id = derivedAttribute.getArguments().get(
+                            DerivedAttribute.LDAP_SEARCH_REF).toString();
+              for(LDAPSearchParameters searchParams : ldapSearchParams)
+              {
+                if(searchParams.getId().equalsIgnoreCase(id))
+                {
+                  //Replace the string in the arguments map with the actual
+                  //LDAPSearchParameters instance. The
+                  //DerivedAttribute.initialize() method will take advantage of
+                  //this.
+                  foundRef = true;
+                  derivedAttribute.getArguments().put(
+                          DerivedAttribute.LDAP_SEARCH_REF, searchParams);
+                  break;
+                }
+              }
+              if(!foundRef)
+              {
+                throw new JAXBException(
+                        "Cannot find <LDAPSearch> element with id=\"" + id +
+                        "\"," + "which is referenced by a Derived Attribute (" +
+                        derivedAttribute.getClass().getName() + ")");
+              }
+
+            }
+          }
           derivedAttribute.initialize(attributeDescriptor);
           derivedAttributes.add(derivedAttribute);
         }
@@ -224,10 +282,9 @@ public class ResourceMapper
               resource.getDescription(), resource.getSchema(),
               resource.getEndpoint(), attributeDescriptors);
 
-      final ResourceMapper resourceMapper =
-          create(resource.getMapping());
+      final ResourceMapper resourceMapper = create(resource.getMapping());
       resourceMapper.initializeMapper(resourceDescriptor,
-                                      resource.getLDAPSearch(),
+                                      ldapSearch,
                                       resource.getLDAPAdd(),
                                       attributeMappers,
                                       derivedAttributes);

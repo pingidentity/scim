@@ -218,6 +218,13 @@ public abstract class LDAPBackend
       final ResourceMapper mapper =
           getResourceMapper(request.getResourceDescriptor());
 
+      if(!DN.isDescendantOf(
+              request.getResourceID(), mapper.getSearchBaseDN(), true))
+      {
+        throw new ResourceNotFoundException(
+                "Resource " + request.getResourceID() + " not found");
+      }
+
       final Set<String> requestAttributeSet = new HashSet<String>();
       requestAttributeSet.addAll(
           mapper.toLDAPAttributeTypes(request.getAttributes()));
@@ -226,7 +233,12 @@ public abstract class LDAPBackend
       final String[] requestAttributes = new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
 
-      final Filter filter = Filter.createPresenceFilter("objectclass");
+      Filter filter = mapper.toLDAPFilter(null);
+      if(filter == null)
+      {
+        filter = Filter.createPresenceFilter("objectclass");
+      }
+
       final SearchRequest searchRequest =
           new SearchRequest(request.getResourceID(), SearchScope.BASE,
               filter, requestAttributes);

@@ -123,31 +123,8 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     testDS = new InMemoryDirectoryServer(cfg);
     testDS.startListening();
 
-    ssPort = getFreePort();
-    final SCIMServerConfig ssConfig = new SCIMServerConfig();
-    ssConfig.setListenPort(ssPort);
-    ssConfig.setMaxThreads(16);
-    ssConfig.setResourcesFile(
-        getFile("../resource/resources.xml"));
-
-    final LDAPExternalServerConfig ldapConfig =
-        new LDAPExternalServerConfig();
-    ldapConfig.setDsHost("localhost");
-    ldapConfig.setDsPort(testDS.getListenPort("LDAP"));
-    ldapConfig.setDsBaseDN("dc=example,dc=com");
-    ldapConfig.setDsBindDN("cn=Directory Manager");
-    ldapConfig.setDsBindPassword("password");
-    ldapConfig.setNumConnections(16);
-
-    testSS = SCIMServer.getInstance();
-    testSS.initializeServer(ssConfig);
-
-    ldapBackend = new ExternalLDAPBackend(testSS.getResourceMappers(),
-                                          ldapConfig);
-    testSS.registerBackend("/", ldapBackend);
-    testSS.startListening();
+    reconfigureTestSuite(getFile("resource/resources.xml"));
   }
-
 
 
 
@@ -173,6 +150,53 @@ public abstract class SCIMRITestCase extends SCIMTestCase
       testDS.shutDown(true);
       testDS = null;
     }
+  }
+
+
+
+  /**
+   * Configures the SCIMServer to use the given resource mapping file.
+   *
+   * @param resourceMappingFile the file to use as the mapping file
+   *
+   * @throws  Exception  If an unexpected problem occurs.
+   */
+  protected static synchronized void reconfigureTestSuite(
+                                      final File resourceMappingFile)
+         throws Exception
+  {
+    if (testSS != null)
+    {
+      testSS.shutdown();
+    }
+
+    if(ldapBackend != null)
+    {
+      ldapBackend.finalizeBackend();
+    }
+
+    ssPort = getFreePort();
+    final SCIMServerConfig ssConfig = new SCIMServerConfig();
+    ssConfig.setListenPort(ssPort);
+    ssConfig.setMaxThreads(16);
+    ssConfig.setResourcesFile(resourceMappingFile);
+
+    final LDAPExternalServerConfig ldapConfig =
+        new LDAPExternalServerConfig();
+    ldapConfig.setDsHost("localhost");
+    ldapConfig.setDsPort(testDS.getListenPort("LDAP"));
+    ldapConfig.setDsBaseDN("dc=example,dc=com");
+    ldapConfig.setDsBindDN("cn=Directory Manager");
+    ldapConfig.setDsBindPassword("password");
+    ldapConfig.setNumConnections(16);
+
+    testSS = SCIMServer.getInstance();
+    testSS.initializeServer(ssConfig);
+
+    ldapBackend = new ExternalLDAPBackend(testSS.getResourceMappers(),
+                                          ldapConfig);
+    testSS.registerBackend("/", ldapBackend);
+    testSS.startListening();
   }
 
 
@@ -265,7 +289,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
    * @return  The port of the SCIM server instance that can be
    *          used for testing.
    */
-  protected static int getSSTestPort()
+  protected static synchronized int getSSTestPort()
   {
     return ssPort;
   }
@@ -2996,7 +3020,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
 
 
   /**
-   * Obtain a reference to a file anywhere under the base directory.
+   * Obtain a reference to a file anywhere under the scim root directory.
    *
    * @param path  The relative path to the desired file.
    *
@@ -3004,7 +3028,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
    */
   protected static File getFile(final String path)
   {
-    final File baseDir = new File(System.getProperty("base.dir"));
+    final File baseDir = new File(System.getProperty("main.basedir"));
     return new File(baseDir, path);
   }
 

@@ -19,6 +19,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
+import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.SearchResult;
@@ -46,6 +47,10 @@ import java.util.logging.Level;
  * the member or uniqueMember attributes in the group entry. For dynamic groups,
  * the members are derived by searching the DIT for user entries containing the
  * group DN as a value of the isMemberOf attribute.
+ * <p>
+ * The &lt;derivation&gt; element for this derived attribute accepts a special
+ * child element, &lt;LDAPSearchRef idref="exampleSearchParams"/&gt;, which
+ * specifies the LDAP search parameters to use when searching for group members.
  */
 public class MembersDerivedAttribute extends DerivedAttribute
 {
@@ -83,6 +88,12 @@ public class MembersDerivedAttribute extends DerivedAttribute
    * The attribute descriptor for the derived attribute.
    */
   private AttributeDescriptor descriptor;
+
+  /**
+   * The LDAPSearchParameters to use when looking for members which are part
+   * of this attribute.
+   */
+  private LDAPSearchParameters searchParams;
 
   /**
    * The set of LDAP attribute types needed in the group entry.
@@ -128,11 +139,27 @@ public class MembersDerivedAttribute extends DerivedAttribute
     {
       try
       {
-        final Filter filter =
-            Filter.createEqualityFilter(ATTR_IS_MEMBER_OF, entry.getDN());
+        String baseDN = searchBaseDN;
+        Filter filter =
+           Filter.createEqualityFilter(ATTR_IS_MEMBER_OF, entry.getDN());
+
+        if(searchParams != null)
+        {
+          baseDN = searchParams.getBaseDN();
+          try
+          {
+            Filter f = Filter.create(searchParams.getFilter());
+            filter = Filter.createANDFilter(filter, f);
+          }
+          catch(LDAPException e)
+          {
+            Debug.debugException(e);
+          }
+        }
+
         final SearchResult searchResult =
-            ldapInterface.search(searchBaseDN, SearchScope.SUB,
-                                 filter, "1.1");
+            ldapInterface.search(baseDN, SearchScope.SUB, filter, "1.1");
+
         members = new ArrayList<String>(searchResult.getEntryCount());
         for (final SearchResultEntry resultEntry :
             searchResult.getSearchEntries())
@@ -184,6 +211,14 @@ public class MembersDerivedAttribute extends DerivedAttribute
   public void initialize(final AttributeDescriptor descriptor)
   {
     this.descriptor = descriptor;
+    if(getArguments().containsKey(LDAP_SEARCH_REF))
+    {
+      Object o = getArguments().get(LDAP_SEARCH_REF);
+      if(o instanceof LDAPSearchParameters)
+      {
+        searchParams = (LDAPSearchParameters) o;
+      }
+    }
   }
 
 
@@ -192,5 +227,18 @@ public class MembersDerivedAttribute extends DerivedAttribute
   public AttributeDescriptor getAttributeDescriptor()
   {
     return descriptor;
+  }
+
+
+  /**
+   * Returns the configured LDAPSearchParameters for this derived attribute,
+   * or null if none were explicitly set (using the <LDAPSearchRef> element).
+   * These can be used to find the users within a certain group.
+   *
+   * @return an LDAPSearchParameters instance, or null if none was set.
+   */
+  public LDAPSearchParameters getLDAPSearchParameters()
+  {
+    return searchParams;
   }
 }

@@ -181,7 +181,7 @@ public final class StaticUtils
   public static void getStackTrace(final Throwable t,
                                    final StringBuilder buffer)
   {
-    buffer.append(getUnqualifiedClassName(t.getClass()));
+    buffer.append(t.getClass().getSimpleName());
     buffer.append('(');
 
     final String message = t.getMessage();
@@ -258,31 +258,5 @@ public final class StaticUtils
       buffer.append(')');
     }
   }
-
-
-
-  /**
-   * Retrieves the unqualified name (i.e., the name without package information)
-   * for the provided class.
-   *
-   * @param  c  The class for which to retrieve the unqualified name.
-   *
-   * @return  The unqualified name for the provided class.
-   */
-  public static String getUnqualifiedClassName(final Class<?> c)
-  {
-    final String className     = c.getName();
-    final int    lastPeriodPos = className.lastIndexOf('.');
-
-    if (lastPeriodPos > 0)
-    {
-      return className.substring(lastPeriodPos+1);
-    }
-    else
-    {
-      return className;
-    }
-  }
-
 
 }

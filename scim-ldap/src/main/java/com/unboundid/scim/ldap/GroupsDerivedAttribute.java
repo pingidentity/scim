@@ -48,6 +48,10 @@ import java.util.logging.Level;
  * does not provide the isMemberOf LDAP attribute. The groups are derived by
  * searching the DIT for static group entries whose members include the DN
  * of the User entry.
+ * <p>
+ * The &lt;derivation&gt; element for this derived attribute accepts a special
+ * child element, &lt;LDAPSearchRef idref="exampleSearchParams"/&gt;, which
+ * specifies the LDAP search parameters to use when searching for Group entries.
  */
 public class GroupsDerivedAttribute extends DerivedAttribute
 {
@@ -76,6 +80,11 @@ public class GroupsDerivedAttribute extends DerivedAttribute
    */
   private AttributeDescriptor descriptor;
 
+  /**
+   * The LDAPSearchParameters to use when looking for groups to which
+   * a certain user belongs.
+   */
+  private LDAPSearchParameters searchParams;
 
 
   @Override
@@ -138,15 +147,29 @@ public class GroupsDerivedAttribute extends DerivedAttribute
     }
     else
     {
-      final Filter filter = Filter.createORFilter(
+      Filter filter = Filter.createORFilter(
           Filter.createEqualityFilter(ATTR_MEMBER, entry.getDN()),
           Filter.createEqualityFilter(ATTR_UNIQUE_MEMBER, entry.getDN()));
+
+      String baseDN = searchBaseDN;
+      if(searchParams != null)
+      {
+        baseDN = searchParams.getBaseDN();
+        try
+        {
+          Filter f = Filter.create(searchParams.getFilter());
+          filter = Filter.createANDFilter(filter, f);
+        }
+        catch(LDAPException e)
+        {
+          Debug.debugException(e);
+        }
+      }
 
       try
       {
         final SearchResult searchResult =
-            ldapInterface.search(searchBaseDN, SearchScope.SUB,
-                                 filter, ATTR_CN);
+            ldapInterface.search(baseDN, SearchScope.SUB, filter, ATTR_CN);
         for (final SearchResultEntry resultEntry :
             searchResult.getSearchEntries())
         {
@@ -200,6 +223,14 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   public void initialize(final AttributeDescriptor descriptor)
   {
     this.descriptor = descriptor;
+    if(getArguments().containsKey(LDAP_SEARCH_REF))
+    {
+      Object o = getArguments().get(LDAP_SEARCH_REF);
+      if(o instanceof LDAPSearchParameters)
+      {
+        searchParams = (LDAPSearchParameters) o;
+      }
+    }
   }
 
 
@@ -208,5 +239,19 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   public AttributeDescriptor getAttributeDescriptor()
   {
     return descriptor;
+  }
+
+
+
+  /**
+   * Returns the configured LDAPSearchParameters for this derived attribute,
+   * or null if none were explicitly set (using the <LDAPSearchRef> element).
+   * These can be used to find the groups to which a certain user belongs.
+   *
+   * @return an LDAPSearchParameters instance, or null if none was set.
+   */
+  public LDAPSearchParameters getLDAPSearchParameters()
+  {
+    return searchParams;
   }
 }

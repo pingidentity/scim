@@ -24,8 +24,12 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.w3c.dom.Element;
 
 
 /**
@@ -57,15 +61,30 @@ import java.util.Set;
 public abstract class DerivedAttribute
 {
   /**
+   * The name of the special element that may be present inside derived
+   * attributes which provides a handle to a top-level LDAPSearch element.
+   */
+  public static final String LDAP_SEARCH_REF = "LDAPSearchRef";
+
+  /**
+   * The map of arguments provided to this derived attribute. This maps the
+   * element name to its value. See getArguments() for an example.
+   */
+  private final Map<String,Object> arguments = new HashMap<String,Object>();
+
+  /**
    * Create a derived attribute from the name of a class that extends the
    * {@code DerivedAttribute} abstract class.
    *
    * @param className  The name of a class that extends
    *                   {@code DerivedAttribute}.
+   * @param args       The set of arguments that are configured for this
+   *                   {@code DerivedAttribute}.
    *
-   * @return  A new instance of the dervied attribute class.
+   * @return  A new instance of the derived attribute class.
    */
-  public static DerivedAttribute create(final String className)
+  public static DerivedAttribute create(final String className,
+                                        final List<Object> args)
   {
     Class clazz;
     try
@@ -98,7 +117,23 @@ public abstract class DerivedAttribute
           "Class '" + className + "' is not a Derived Attribute");
     }
 
-    return (DerivedAttribute)object;
+    DerivedAttribute d = (DerivedAttribute) object;
+    if(args != null)
+    {
+      for(Object o : args)
+      {
+        Element e = (Element) o;
+        String name = e.getTagName();
+        String value = e.getTextContent();
+        if(LDAP_SEARCH_REF.equalsIgnoreCase(name) && e.hasAttribute("idref"))
+        {
+          //This is a special case, for LDAPSearchParameters
+          value = e.getAttribute("idref");
+        }
+        d.arguments.put(name, value);
+      }
+    }
+    return d;
   }
 
 
@@ -145,4 +180,26 @@ public abstract class DerivedAttribute
       final Entry entry,
       final LDAPInterface ldapInterface,
       final String searchBaseDN) throws InvalidResourceException;
+
+
+  /**
+   * Returns the arguments map for this DerivedAttribute. The arguments map is
+   * constructed from the child elements of the <derivation> element.
+   * For example, a derivation like the following:
+   * <PRE>
+   *   &lt;derivation javaClass="com.example.ExampleDerivedAttr"&gt;
+   *     &lt;key1&gt;value1&lt;/key1&gt;
+   *     &lt;key2&gt;value2&lt;/key2&gt;
+   *   &lt;/derivation&gt;
+   * </PRE>
+   * would have an arguments map containing 'key1' and 'key2' with values
+   * 'value1' and 'value2'.
+   *
+   * @return a map of argument names to argument values. This is modifiable,
+   *         and will never be null.
+   */
+  public final Map<String,Object> getArguments()
+  {
+    return arguments;
+  }
 }

@@ -186,9 +186,7 @@
           to be used as a means to specify an initial password when creating
           a new User or to reset an existing User's password. This value will
           never be returned by a Service Provider in any form</description>
-      <simple dataType="string" caseExact="false">
-        <mapping ldapAttribute="userPassword"/>
-      </simple>
+      <simple dataType="string" caseExact="false"/>
     </attribute>
 
     <attribute name="emails" readOnly="false" required="false">
@@ -392,7 +390,7 @@
     <LDAPSearchRef idref="groupSearchParams"/>
 
     <LDAPAdd>
-      <DNTemplate>cn={cn},dc=example,dc=com</DNTemplate>
+      <DNTemplate>cn={cn},o=example.com</DNTemplate>
 
       <fixedAttribute ldapAttribute="objectClass" onConflict="merge">
         <fixedValue>top</fixedValue>
@@ -437,7 +435,7 @@
    ! that the User resource can also reference it, in the GroupsDerivedAttribute.
    !-->
   <LDAPSearch id="groupSearchParams">
-    <baseDN>dc=example,dc=com</baseDN>
+    <baseDN>o=example.com</baseDN>
     <filter>(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
   </LDAPSearch>
 

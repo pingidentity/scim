@@ -92,9 +92,14 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   protected SCIMService secureService;
 
   /**
-   * Base DN of the Directory Server.
+   * Base DN of the Directory Server (for Users).
    */
-  protected String baseDN;
+  protected String userBaseDN;
+
+  /**
+   * Base DN of the Directory Server (for Groups).
+   */
+  protected String groupBaseDN;
 
   /**
    * The non-secure SCIM port.
@@ -195,8 +200,12 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     dsInstance.startInstance();
     dsInstance.addBaseEntry();
+    dsInstance.addEntry("dn: ou=people," + dsInstance.getPrimaryBaseDN(),
+                        "objectClass: organizationalUnit",
+                        "ou: people");
 
-    baseDN = dsInstance.getPrimaryBaseDN();
+    groupBaseDN = dsInstance.getPrimaryBaseDN();
+    userBaseDN = "ou=people," + dsInstance.getPrimaryBaseDN();
 
     dsInstance.getDnsToDumpOnFailureMutable().add("cn=monitor");
     dsInstance.dsconfig(
@@ -265,7 +274,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   public void testPasswordModify() throws Exception
   {
     //Add an entry to the Directory
-    dsInstance.addEntry("dn: uid=testPasswordModify," + baseDN,
+    dsInstance.addEntry("dn: uid=testPasswordModify," + userBaseDN,
                       "objectclass: top",
                       "objectclass: person",
                       "objectclass: organizationalPerson",
@@ -279,12 +288,13 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //Update the entry via SCIM
     final ClientConfig clientConfig =
         createClientConfig(scimInstance.getLdapHost(),
-            "uid=testPasswordModify," + baseDN, "oldPassword", sslContext);
+            "uid=testPasswordModify," + userBaseDN, "oldPassword", sslContext);
     final URI uri = new URI("http", null, scimInstance.getLdapHost(), scimPort,
                             null, null, null);
     SCIMService userService = new SCIMService(uri, clientConfig);
     SCIMEndpoint<UserResource> userEndpoint = userService.getUserEndpoint();
-    UserResource user = userEndpoint.get("uid=testPasswordModify," + baseDN);
+    UserResource user = userEndpoint.get(
+                            "uid=testPasswordModify," + userBaseDN);
     assertNotNull(user);
     user.setPassword("anotherPassword");
 
@@ -292,11 +302,11 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Verify what is returned from the SDK
     assertTrue(returnedUser.getId().equalsIgnoreCase(
-        "uid=testPasswordModify," + baseDN));
+        "uid=testPasswordModify," + userBaseDN));
     assertNull(returnedUser.getPassword());
 
     //Verify the password was changed in the Directory
-    dsInstance.checkCredentials("uid=testPasswordModify," + baseDN,
+    dsInstance.checkCredentials("uid=testPasswordModify," + userBaseDN,
         "anotherPassword");
   }
 
@@ -326,7 +336,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     user.setTimeZone(TimeZone.getDefault().getID());
     user.setSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
-            Manager.MANAGER_RESOLVER, new Manager("uid=myManager," + baseDN,
+            Manager.MANAGER_RESOLVER, new Manager("uid=myManager," + userBaseDN,
                                                         "Mr. Manager"));
 
     //Verify basic properties of UserResource
@@ -385,8 +395,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
 
     //Verify what is actually in the Directory
-    SearchResultEntry entry =
-      dsInstance.getConnectionPool().getEntry("uid=jdoe," + baseDN, "*", "+");
+    SearchResultEntry entry = dsInstance.getConnectionPool().getEntry(
+                                          "uid=jdoe," + userBaseDN, "*", "+");
     assertNotNull(entry);
     assertTrue(entry.hasObjectClass("iNetOrgPerson"));
     assertEquals(entry.getAttributeValue("cn"), "John C. Doe");
@@ -394,7 +404,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(entry.getAttributeValue("sn"), "Doe");
     assertEquals(entry.getAttributeValue("title"), "Vice President");
     assertEquals(entry.getAttributeValue("mail"), "j.doe@example.com");
-    assertEquals(entry.getAttributeValue("manager"), "uid=myManager,"+baseDN);
+    assertEquals(entry.getAttributeValue("manager"),
+                  "uid=myManager," + userBaseDN);
     dsInstance.checkCredentials(entry.getDN(), "newPassword");
 
     System.out.println("Full user entry:\n" + entry.toLDIFString());
@@ -433,7 +444,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Verify what is actually in the Directory
     entry = dsInstance.getConnectionPool().getEntry(
-                        "cn=Engineering," + baseDN, "*", "+");
+                        "cn=Engineering," + groupBaseDN, "*", "+");
     assertNotNull(entry);
     assertTrue(entry.hasObjectClass("groupOfUniqueNames"));
     assertEquals(entry.getAttributeValue("cn"), "Engineering");
@@ -454,7 +465,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   public void testModifyWithPut() throws Exception
   {
     //Add an entry to the Directory
-    dsInstance.addEntry("dn: uid=testModifyWithPut," + baseDN,
+    dsInstance.addEntry("dn: uid=testModifyWithPut," + userBaseDN,
                       "objectclass: top",
                       "objectclass: person",
                       "objectclass: organizationalPerson",
@@ -467,7 +478,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Update the entry via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    UserResource user = userEndpoint.get("uid=testModifyWithPut," + baseDN);
+    UserResource user = userEndpoint.get("uid=testModifyWithPut," + userBaseDN);
     assertNotNull(user);
     //This will change the 'cn' to 'Test User'
     user.setName(new Name("Test User", "User", null, "Test", null, null));
@@ -486,7 +497,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Verify what is returned from the SDK
     assertTrue(returnedUser.getId().equalsIgnoreCase(
-        "uid=testModifyWithPut," + baseDN));
+        "uid=testModifyWithPut," + userBaseDN));
     assertEquals(returnedUser.getUserName(), "testModifyWithPut");
     assertEquals(returnedUser.getName().getFormatted(), "Test User");
     assertEquals(returnedUser.getName().getGivenName(), "Test");
@@ -500,7 +511,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry =
       dsInstance.getConnectionPool().getEntry(
-          "uid=testModifyWithPut," + baseDN);
+          "uid=testModifyWithPut," + userBaseDN);
     assertNotNull(entry);
     assertTrue(entry.hasObjectClass("inetOrgPerson"));
     assertEquals(entry.getAttributeValue("uid"), "testModifyWithPut");
@@ -529,7 +540,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     try
     {
       //Try to update an entry that doesn't exist
-      user.setId("uid=fakeUserName," + baseDN);
+      user.setId("uid=fakeUserName," + userBaseDN);
       user.setUserName("fakeUserName");
       userEndpoint.update(user);
       fail("Expected ResourceNotFoundException when updating " +
@@ -568,13 +579,13 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   public void testDelete() throws Exception
   {
     dsInstance.getConnectionPool().add(
-           generateUserEntry("testDelete", baseDN, "Test", "User", "password"));
+       generateUserEntry("testDelete", userBaseDN, "Test", "User", "password"));
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
     String beforeCount =
         getMonitorAsString(scimInstance, "user-resource-delete-successful");
-    userEndpoint.delete("uid=testDelete," + baseDN);
+    userEndpoint.delete("uid=testDelete," + userBaseDN);
     String afterCount =
         getMonitorAsString(scimInstance, "user-resource-delete-successful");
 
@@ -586,7 +597,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     try
     {
       //Should throw ResourceNotFoundException
-      userEndpoint.delete("uid=testDelete," + baseDN);
+      userEndpoint.delete("uid=testDelete," + userBaseDN);
       fail("Expected ResourceNotFoundException when retrieving " +
               "non-existent user");
     }
@@ -642,7 +653,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       throws Exception
   {
     final String uid = "testRetrieve " + connectionHandler;
-    final String dn = "uid=" + uid + "," + baseDN;
+    final String dn = "uid=" + uid + "," + userBaseDN;
 
     //Add an entry to the Directory
     dsInstance.addEntry("dn: " + dn,
@@ -733,18 +744,18 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
       if(i % 2 == 0)
       {
-        e = generateUserEntry(uid, baseDN, "Test", "User", "password",
+        e = generateUserEntry(uid, userBaseDN, "Test", "User", "password",
                 new Attribute("mail", uid + "@example.com",
                                             "evenNumber@example.com"));
       }
       else if(i % 3 == 0)
       {
-        e = generateUserEntry(uid, baseDN, "Test", "User", "password",
+        e = generateUserEntry(uid, userBaseDN, "Test", "User", "password",
                 new Attribute("displayName", uid));
       }
       else
       {
-        e = generateUserEntry(uid, baseDN, "Test", "User", "password",
+        e = generateUserEntry(uid, userBaseDN, "Test", "User", "password",
                 new Attribute("title", "Engineer"));
       }
 
@@ -882,19 +893,19 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     groupOfUniqueNames = groupEndpoint.create(groupOfUniqueNames);
 
     dsInstance.getConnectionPool().add(
-        generateGroupOfNamesEntry("groupOfNames", baseDN,
+        generateGroupOfNamesEntry("groupOfNames", groupBaseDN,
                                   user1.getId()));
     GroupResource groupOfNames =
-        groupEndpoint.get("cn=groupOfNames," + baseDN);
+        groupEndpoint.get("cn=groupOfNames," + groupBaseDN);
 
     dsInstance.addEntry(
-        "dn: cn=groupOfURLs," + baseDN,
+        "dn: cn=groupOfURLs," + groupBaseDN,
         "objectClass: groupOfURLs",
         "cn: groupOfURLs",
-        "memberURL: ldap:///" + baseDN + "??sub?(sn=GroupsUser)"
+        "memberURL: ldap:///" + userBaseDN + "??sub?(sn=GroupsUser)"
     );
     GroupResource groupOfURLs =
-        groupEndpoint.get("cn=groupOfURLs," + baseDN);
+        groupEndpoint.get("cn=groupOfURLs," + groupBaseDN);
 
     // Verify that the groups attribute is set correctly.
     user1 = userEndpoint.get(user1.getId());
@@ -949,7 +960,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     {
       final String uid = "paginationUser." + i;
       dsInstance.getConnectionPool().add(
-          generateUserEntry(uid, baseDN,
+          generateUserEntry(uid, userBaseDN,
                             "Test", "User", "password"));
     }
 
@@ -978,7 +989,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     {
       final String cn = "paginationGroup." + i;
       dsInstance.getConnectionPool().add(
-          generateGroupOfNamesEntry(cn, baseDN, userIDs));
+          generateGroupOfNamesEntry(cn, groupBaseDN, userIDs));
     }
 
     // Fetch the groups one page at a time with page size equal to 3.
@@ -1040,7 +1051,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     {
       final String uid = "maxResultsUser." + i;
       dsInstance.getConnectionPool().add(
-          generateUserEntry(uid, baseDN, "Test", "User", "password"));
+          generateUserEntry(uid, userBaseDN, "Test", "User", "password"));
     }
 
     // Try to fetch more users than can be returned.
@@ -1118,10 +1129,10 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   public void testBasicAuth() throws Exception
   {
     // Create a new user.
-    final String id = "uid=basicAuthUser," + baseDN;
+    final String id = "uid=basicAuthUser," + userBaseDN;
     dsInstance.getConnectionPool().add(
         generateUserEntry(
-            "basicAuthUser", baseDN, "Basic", "User", "password"));
+            "basicAuthUser", userBaseDN, "Basic", "User", "password"));
 
     // Create a client service that authenticates as the user.
     final URI uri = new URI("http", null, scimInstance.getLdapHost(),
@@ -1148,10 +1159,10 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
              URISyntaxException
   {
     // Create a new user.
-    final String id = "uid=invalidCredentials," + baseDN;
+    final String id = "uid=invalidCredentials," + userBaseDN;
     dsInstance.getConnectionPool().add(
         generateUserEntry(
-            "invalidCredentials", baseDN, "Basic", "User", "password"));
+            "invalidCredentials", userBaseDN, "Basic", "User", "password"));
 
     // Create a client service that authenticates with the wrong password.
     final URI uri = new URI("http", null, scimInstance.getLdapHost(),
