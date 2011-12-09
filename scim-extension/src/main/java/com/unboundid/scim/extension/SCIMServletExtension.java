@@ -172,7 +172,8 @@ public final class SCIMServletExtension
     return new String[]
     {
       "This HTTP servlet extension provides a Simple Cloud Identity " +
-      "Management (SCIM) protocol interface to the Directory Server."
+      "Management (SCIM) protocol interface to the Directory Server " +
+      "and the Directory Proxy Server."
     };
   }
 
