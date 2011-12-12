@@ -305,6 +305,18 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "uid=testPasswordModify," + userBaseDN));
     assertNull(returnedUser.getPassword());
 
+    //We shouldn't be able to use this service anymore since it is using
+    //the old credentials
+    try
+    {
+      userEndpoint.get("uid=testPasswordModify," + userBaseDN);
+      assertTrue(false, "Expected Unauthroized return code");
+    }
+    catch(SCIMException e)
+    {
+      // Expected.
+    }
+
     //Verify the password was changed in the Directory
     dsInstance.checkCredentials("uid=testPasswordModify," + userBaseDN,
         "anotherPassword");
