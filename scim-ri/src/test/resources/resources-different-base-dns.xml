@@ -1,19 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-  Copyright 2011 UnboundID Corp.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License (GPLv2 only)
-  or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
-  as published by the Free Software Foundation.
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
- 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, see <http://www.gnu.org/licenses>.
--->
+  ~ Copyright 2011 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
 
 <scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
 
@@ -191,7 +180,7 @@
 
     <attribute name="emails" readOnly="false" required="false">
       <description>E-mail addresses for the User</description>
-      <simpleMultiValued tag="email" dataType="string">
+      <simpleMultiValued childName="email" dataType="string">
         <canonicalValue name="work">
           <subMapping name="value" ldapAttribute="mail"/>
         </canonicalValue>
@@ -202,7 +191,7 @@
 
     <attribute name="phoneNumbers" readOnly="false" required="false">
       <description>Phone numbers for the User</description>
-      <simpleMultiValued tag="phoneNumber" dataType="string">
+      <simpleMultiValued childName="phoneNumber" dataType="string">
         <canonicalValue name="work">
           <subMapping name="value" ldapAttribute="telephoneNumber"/>
         </canonicalValue>
@@ -220,7 +209,7 @@
 
     <attribute name="ims" readOnly="false" required="false">
       <description>Instant messaging address for the User</description>
-      <simpleMultiValued tag="im" dataType="string">
+      <simpleMultiValued childName="im" dataType="string">
         <canonicalValue name="aim"/>
         <canonicalValue name="gtalk"/>
         <canonicalValue name="icq"/>
@@ -234,7 +223,7 @@
 
     <attribute name="photos" readOnly="false" required="false">
       <description>URL of photos of the User</description>
-      <simpleMultiValued tag="photo" dataType="string">
+      <simpleMultiValued childName="photo" dataType="string">
         <canonicalValue name="photo"/>
         <canonicalValue name="thumbnail"/>
       </simpleMultiValued>
@@ -243,7 +232,7 @@
     <attribute name="addresses" readOnly="false" required="false">
       <description>The full mailing address, formatted for display or use with
           a mailing label</description>
-      <complexMultiValued tag="address">
+      <complexMultiValued childName="address">
         <subAttribute name="formatted" dataType="string">
           <description>The full street address component, which may include
               house number, street name, P.O. box, and multi-line extended
@@ -294,20 +283,20 @@
       <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute">
         <LDAPSearchRef idref="groupSearchParams"/>
       </derivation>
-      <simpleMultiValued tag="group" dataType="string"/>
+      <simpleMultiValued childName="group" dataType="string"/>
     </attribute>
 
     <attribute name="entitlements" readOnly="false" required="false">
       <description>A list of entitlements for the User that represent a thing
           the User has. That is, an entitlement is an additional right to a
           thing, object or service</description>
-      <simpleMultiValued tag="entitlement" dataType="string"/>
+      <simpleMultiValued childName="entitlement" dataType="string"/>
     </attribute>
 
     <attribute name="roles" readOnly="false" required="false">
       <description>A list of roles for the User that collectively represent who
           the User is</description>
-      <simpleMultiValued tag="role" dataType="string"/>
+      <simpleMultiValued childName="role" dataType="string"/>
     </attribute>
 
     <!-- SCIM enterprise extension attribute mappings. -->
@@ -410,7 +399,7 @@
       <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute">
         <LDAPSearchRef idref="userSearchParams"/>
       </derivation>
-      <simpleMultiValued tag="member" dataType="string">
+      <simpleMultiValued childName="member" dataType="string">
         <canonicalValue name="User"/>
         <canonicalValue name="Group"/>
         <mapping ldapAttribute="uniqueMember"/>

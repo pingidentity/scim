@@ -52,7 +52,8 @@ import org.w3c.dom.Element;
  * &lt;attribute name=&quot;exampleAttribute&quot;&gt;
  *   &lt;description&gt;Example Attribute&lt;&#47description&gt;
  *   &lt;derivation javaClass=&quot;com.example.ExampleDerivedAttr&quot;&#47&gt;
- *   &lt;simpleMultiValued tag=&quot;attr&quot; dataType=&quot;string&quot;/&gt;
+ *   &lt;simpleMultiValued childName=&quot;attr&quot;
+ *   &nbsp;dataType=&quot;string&quot;/&gt;
  * &lt;&#47attribute&gt;
  * </PRE>
  * <BR><BR>

@@ -180,7 +180,7 @@ public class SCIMAttributeTestCase
         "http://myextension";
 
     final AttributeDescriptor descriptor =
-        AttributeDescriptor.simple("a",
+        AttributeDescriptor.createAttribute("a",
             AttributeDescriptor.DataType.COMPLEX, "description", customSchema,
             false, false, false);
 

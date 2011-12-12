@@ -301,7 +301,9 @@ public class XmlUnmarshaller implements Unmarshaller
     for (int i = 0; i < attributes.getLength(); i++)
     {
       final Node attribute = attributes.item(i);
-      if (attribute.getNodeType() != Node.ELEMENT_NODE)
+      if (attribute.getNodeType() != Node.ELEMENT_NODE ||
+          !attribute.getLocalName().equals(
+              attributeDescriptor.getMultiValuedChildName()))
       {
         continue;
       }

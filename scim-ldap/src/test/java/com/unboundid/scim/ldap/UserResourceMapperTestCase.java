@@ -309,6 +309,10 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getComponents()[2].getAssertionValue(), "test");
 
     filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("addresses eq \"test\""));
+    assertNull(filter);
+
+    filter = mapper.toLDAPFilter(
         SCIMFilter.parse("addresses.formatted eq \"test\""));
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
@@ -364,7 +368,7 @@ public class UserResourceMapperTestCase
         {SCIMFilter.parse("invalid eq \"test\"")},
         // Addresses is a complex multi-valued attribute w/o a value mapping so
         // it should fail.
-        {SCIMFilter.parse("addresses eq \"test\"")},
+        {SCIMFilter.parse("addresses.invalid eq \"test\"")},
         {SCIMFilter.parse("name eq \"test\"")},
         {SCIMFilter.parse("name.invalid eq \"test\" or userName eq \"test\"")}
     };
@@ -416,6 +420,10 @@ public class UserResourceMapperTestCase
     assertEquals(sss.getSortKeys()[0].reverseOrder(), true);
 
     control = mapper.toLDAPSortControl(
+        new SortParameters("addresses", "ascending"));
+    assertNull(control);
+
+    control = mapper.toLDAPSortControl(
         new SortParameters("name.middleName", "ascending"));
     assertNull(control);
 
@@ -445,7 +453,7 @@ public class UserResourceMapperTestCase
         {new SortParameters("invalid", "ascending")},
         // Addresses is a complex multi-valued attribute w/o a value mapping so
         // it should fail.
-        {new SortParameters("addresses", "ascending")},
+        {new SortParameters("addresses.invalid", "ascending")},
         {new SortParameters("name", "ascending")},
         // Addresses.formatted uses a custom transformation
         {new SortParameters("addresses.formatted", "ascending")}

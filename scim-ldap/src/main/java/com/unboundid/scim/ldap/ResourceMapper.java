@@ -325,7 +325,7 @@ public class ResourceMapper
       final SimpleAttributeDefinition simpleDefinition =
           attributeDefinition.getSimple();
 
-      return AttributeDescriptor.simple(
+      return AttributeDescriptor.createAttribute(
           attributeDefinition.getName(),
           AttributeDescriptor.DataType.parse(
               simpleDefinition.getDataType().value()),
@@ -347,7 +347,7 @@ public class ResourceMapper
       for (final SubAttributeDefinition subAttributeDefinition :
           complexDefinition.getSubAttribute())
       {
-          subAttributes[i++] = AttributeDescriptor.simple(
+          subAttributes[i++] = AttributeDescriptor.createSubAttribute(
               subAttributeDefinition.getName(),
               AttributeDescriptor.DataType.parse(
                   subAttributeDefinition.getDataType().value()),
@@ -358,12 +358,14 @@ public class ResourceMapper
               subAttributeDefinition.isCaseExact());
       }
 
-      return AttributeDescriptor.complex(
+      return AttributeDescriptor.createAttribute(
           attributeDefinition.getName(),
+          AttributeDescriptor.DataType.COMPLEX,
           attributeDefinition.getDescription(),
           schema,
           attributeDefinition.isReadOnly(),
           attributeDefinition.isRequired(),
+          false,
           subAttributes);
     }
     else if (attributeDefinition.getSimpleMultiValued() != null)
@@ -381,8 +383,9 @@ public class ResourceMapper
         CanonicalValues[i++] = CanonicalValue.getName();
       }
 
-      return AttributeDescriptor.simpleMultiValued(
+      return AttributeDescriptor.createMultiValuedAttribute(
           attributeDefinition.getName(),
+          simpleMultiValuedDefinition.getChildName(),
           AttributeDescriptor.DataType.parse(
               simpleMultiValuedDefinition.getDataType().value()),
           attributeDefinition.getDescription(),
@@ -415,7 +418,7 @@ public class ResourceMapper
       for (final SubAttributeDefinition subAttributeDefinition :
           complexMultiValuedDefinition.getSubAttribute())
       {
-          subAttributes[i++] = AttributeDescriptor.simple(
+          subAttributes[i++] = AttributeDescriptor.createSubAttribute(
               subAttributeDefinition.getName(),
               AttributeDescriptor.DataType.parse(
                   subAttributeDefinition.getDataType().value()),
@@ -425,12 +428,15 @@ public class ResourceMapper
               subAttributeDefinition.isRequired(),
               subAttributeDefinition.isCaseExact());
       }
-      return AttributeDescriptor.complexMultiValued(
+      return AttributeDescriptor.createMultiValuedAttribute(
           attributeDefinition.getName(),
+          complexMultiValuedDefinition.getChildName(),
+          AttributeDescriptor.DataType.COMPLEX,
           attributeDefinition.getDescription(),
           schema,
           attributeDefinition.isReadOnly(),
           attributeDefinition.isRequired(),
+          false,
           CanonicalValues, subAttributes);
     }
     else

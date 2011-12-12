@@ -171,7 +171,7 @@ public final class SCIMAttributeValue
    * @return The collection of resolved value instances or <code>null</code> if
    *         the specified attribute does not exist.
    */
-  public <T> Collection<T> getAttributeValues(
+  public <T> Collection<T> getSubAttributeValues(
       final String name, final AttributeValueResolver<T> resolver)
   {
     SCIMAttribute attribute = getAttribute(name);

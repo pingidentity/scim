@@ -116,7 +116,7 @@
       <xs:element name="mapping" type="AttributeMapping"
                   minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
-    <xs:attribute name="tag" type="xs:Name" use="required"/>
+    <xs:attribute name="childName" type="xs:Name" use="required"/>
     <xs:attribute name="dataType" type="DataType" use="required"/>
     <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
   </xs:complexType>
@@ -128,7 +128,7 @@
       <xs:element name="canonicalValue" type="CanonicalValue"
                   minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="tag" type="xs:Name" use="required"/>
+    <xs:attribute name="childName" type="xs:Name" use="required"/>
   </xs:complexType>
 
   <xs:complexType name="SubAttributeDefinition">

@@ -321,7 +321,7 @@ public class XmlMarshaller implements Marshaller
 
     for (final SCIMAttributeValue value : values)
     {
-      writeSingularStartElement(scimAttribute, xmlStreamWriter);
+      writeChildStartElement(scimAttribute, xmlStreamWriter);
 
       // Write the subordinate attributes in the order defined by the schema.
       for (final AttributeDescriptor descriptor :
@@ -425,21 +425,20 @@ public class XmlMarshaller implements Marshaller
    * @param xmlStreamWriter Writer to write with.
    * @throws XMLStreamException thrown if error writing the tag element.
    */
-  private void writeSingularStartElement(final SCIMAttribute scimAttribute,
-                                 final XMLStreamWriter xmlStreamWriter)
+  private void writeChildStartElement(final SCIMAttribute scimAttribute,
+                                      final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException
   {
     if (scimAttribute.getSchema().equalsIgnoreCase(
         SCIMConstants.SCHEMA_URI_CORE))
     {
-      xmlStreamWriter.writeStartElement(scimAttribute.getName().substring(0,
-          scimAttribute.getName().length()-1));
+      xmlStreamWriter.writeStartElement(scimAttribute.getAttributeDescriptor().
+          getMultiValuedChildName());
     }
     else
     {
       xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),
-        scimAttribute.getName().substring(0,
-            scimAttribute.getName().length() - 1));
+        scimAttribute.getAttributeDescriptor().getMultiValuedChildName());
     }
   }
 }
