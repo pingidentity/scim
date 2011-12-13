@@ -38,13 +38,27 @@
               </p>
               
               <p>
+                The SCIM SDK is available via the
+                <a href="http://search.maven.org" target="blank">Maven Central</a> repository.
+                Just add the following dependency to your project's POM file:
+              </p>
+
+<pre>
+&lt;dependency&gt;
+  &lt;groupId&gt;com.unboundid.product.scim&lt;/groupId&gt;
+  &lt;artifactId&gt;scim-sdk&lt;/artifactId&gt;
+  &lt;version&gt;1.0.0&lt;/version&gt;
+&lt;/dependency&gt;
+</pre>
+              
+              <p>
                 Before starting to use this API, you should become familiar with the
                 <a href="http://www.simplecloud.info/specs/draft-scim-core-schema-02.html" target="blank">SCIM Schema</a>,
                 <a href="http://www.simplecloud.info/specs/draft-scim-rest-api-01.html" target="blank">REST API</a>, and 
                 related documentation. This will make it much easier to understand and make efficient
                 use of the UnboundID SCIM SDK.
               </p>
-
+              
               <ul>         
                 <li>
                   <a href="rest-api.html">Using the SCIM REST API</a>
@@ -65,7 +79,7 @@
                   <a href="schema.html">Working with Schema</a>
                   <br><br>
                 </li>
-
+                
                 <li>
                   <a href="debugging.html">Logging and Debugging</a>
                   <br><br>

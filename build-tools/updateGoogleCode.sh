@@ -96,6 +96,6 @@ do
     if [[ "$1" != "--dry-run" ]]
     then
       #Commit the changes back to Google Code
-      svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS
+      svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS --trust-server-cert
     fi
 done
