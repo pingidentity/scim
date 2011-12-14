@@ -463,19 +463,11 @@ public class SCIMServerTestCase extends SCIMRITestCase
     for(com.unboundid.scim.data.Entry<String> entry : group2.getMembers())
     {
       DN dn = new DN(entry.getValue());
-      if(entry.getValue().equalsIgnoreCase(user1.getId()))
-       /* Note: this should be if(entry.getType().equalsIgnoreCase("user"))
-          but the problem is entry.getType() returns null, which is a known bug
-          and will be fixed as part of SCIM-133.
-        */
+      if(entry.getType().equalsIgnoreCase("user"))
       {
         assertTrue(dn.isDescendantOf(userBaseDN, false));
       }
-      else if(entry.getValue().equalsIgnoreCase(group1.getId()))
-       /* Note: this should be if(entry.getType().equalsIgnoreCase("group"))
-          but the problem is entry.getType() returns null, which is a known bug
-          and will be fixed as part of SCIM-133.
-        */
+      else if(entry.getType().equalsIgnoreCase("group"))
       {
         assertTrue(dn.isDescendantOf("o=example.com", false));
       }

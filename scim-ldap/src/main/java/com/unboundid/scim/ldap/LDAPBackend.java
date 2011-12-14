@@ -66,6 +66,7 @@ import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.UnsupportedOperationException;
 import com.unboundid.util.StaticUtils;
+import com.unboundid.util.Validator;
 
 import javax.ws.rs.core.UriBuilder;
 
@@ -266,7 +267,7 @@ public abstract class LDAPBackend
             searchResultEntry, request.getAttributes(), ldapInterface);
         for (final SCIMAttribute a : attributes)
         {
-          resource.getScimObject().addAttribute(a);
+          Validator.ensureTrue(resource.getScimObject().addAttribute(a));
         }
 
         return resource;
@@ -282,7 +283,7 @@ public abstract class LDAPBackend
 
 
   @Override
-  public Resources getResources(final GetResourcesRequest request)
+  public Resources<?> getResources(final GetResourcesRequest request)
       throws SCIMException
   {
     final ResourceMapper resourceMapper =
@@ -515,7 +516,7 @@ public abstract class LDAPBackend
           addedEntry, request.getAttributes(), ldapInterface);
       for (final SCIMAttribute a : scimAttributes)
       {
-        resource.getScimObject().addAttribute(a);
+        Validator.ensureTrue(resource.getScimObject().addAttribute(a));
       }
 
       return resource;
@@ -637,7 +638,7 @@ public abstract class LDAPBackend
 
       for (final SCIMAttribute a : scimAttributes)
       {
-        resource.getScimObject().addAttribute(a);
+        Validator.ensureTrue(resource.getScimObject().addAttribute(a));
       }
 
       return resource;

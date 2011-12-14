@@ -39,6 +39,8 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
+import com.unboundid.util.Validator;
+
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBContext;
@@ -252,10 +254,9 @@ public class ResourceMapper
               {
                 if(searchParams.getId().equalsIgnoreCase(id))
                 {
-                  //Replace the string in the arguments map with the actual
-                  //LDAPSearchParameters instance. The
-                  //DerivedAttribute.initialize() method will take advantage of
-                  //this.
+                  //Replace the String in the arguments map with a
+                  //LDAPSearchParameters instance. The DerivedAttribute
+                  //initialize() method will take advantage of this.
                   foundRef = true;
                   derivedAttribute.getArguments().put(
                           DerivedAttribute.LDAP_SEARCH_REF, searchParams);
@@ -816,27 +817,13 @@ public class ResourceMapper
   public List<SCIMAttribute> toSCIMAttributes(
       final Entry entry,
       final SCIMQueryAttributes queryAttributes,
-      final LDAPInterface ldapInterface) throws InvalidResourceException {
-    final List<SCIMAttribute> attributes =
-        new ArrayList<SCIMAttribute>();
+      final LDAPInterface ldapInterface) throws InvalidResourceException
+  {
+    final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>();
 
-    for (final AttributeMapper attributeMapper : attributeMappers.values())
-    {
-      if (queryAttributes.isAttributeRequested(
-          attributeMapper.getAttributeDescriptor()))
-      {
-        final SCIMAttribute attribute = attributeMapper.toSCIMAttribute(entry);
-        if (attribute != null)
-        {
-          final SCIMAttribute paredAttribute =
-              queryAttributes.pareAttribute(attribute);
-          if (paredAttribute != null)
-          {
-            attributes.add(paredAttribute);
-          }
-        }
-      }
-    }
+    //Keep a list of the derived attributes that we add to the result set
+    final Set<AttributeDescriptor> derivedAttrs =
+          new HashSet<AttributeDescriptor>(derivedAttributes.size());
 
     if (ldapInterface != null)
     {
@@ -845,6 +832,7 @@ public class ResourceMapper
       {
         if (queryAttributes.isAttributeRequested(e.getKey()))
         {
+          derivedAttrs.add(e.getKey());
           final DerivedAttribute derivedAttribute = e.getValue();
           final SCIMAttribute attribute =
               derivedAttribute.toSCIMAttribute(entry, ldapInterface,
@@ -857,6 +845,30 @@ public class ResourceMapper
             {
               attributes.add(paredAttribute);
             }
+          }
+        }
+      }
+    }
+
+    for (final AttributeMapper attributeMapper : attributeMappers.values())
+    {
+      if(derivedAttrs.contains(attributeMapper.getAttributeDescriptor()))
+      {
+        //If this attribute has a derivation, then it was already added above.
+        continue;
+      }
+
+      if (queryAttributes.isAttributeRequested(
+                attributeMapper.getAttributeDescriptor()))
+      {
+        final SCIMAttribute attribute = attributeMapper.toSCIMAttribute(entry);
+        if (attribute != null)
+        {
+          final SCIMAttribute paredAttribute =
+              queryAttributes.pareAttribute(attribute);
+          if (paredAttribute != null)
+          {
+            attributes.add(paredAttribute);
           }
         }
       }
@@ -907,7 +919,7 @@ public class ResourceMapper
     final SCIMObject scimObject = new SCIMObject();
     for (final SCIMAttribute a : attributes)
     {
-      scimObject.addAttribute(a);
+      Validator.ensureTrue(scimObject.addAttribute(a));
     }
 
     return scimObject;

@@ -118,7 +118,6 @@ public class ResourceSearchResultListener implements SearchResultListener
 
     try {
       // Get all the attributes so we can filter on them.
-      // TODO could be too expensive for derived attributes
       final SCIMObject scimObject =
           resourceMapper.toSCIMObject(searchEntry, allAttributes,
                                       ldapInterface);
