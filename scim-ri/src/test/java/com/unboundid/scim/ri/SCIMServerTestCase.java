@@ -477,13 +477,33 @@ public class SCIMServerTestCase extends SCIMRITestCase
       }
     }
 
-    //Verify that user1 correctly identifies its two groups
+    //Verify that user1 correctly identifies its two groups which should
+    //both be direct.
     user1 = endpoint.get(user1.getId(), "id", "meta", "groups");
     assertEquals(user1.getGroups().size(), 2);
     for(com.unboundid.scim.data.Entry<String> entry : user1.getGroups())
     {
       DN dn = new DN(entry.getValue());
       assertTrue(dn.isDescendantOf("o=example.com", false));
+      assertEquals(entry.getType(), "direct");
+    }
+
+    //Verify that user2 correctly identifies its two groups which should
+    //both be direct.
+    user2 = endpoint.get(user2.getId(), "id", "meta", "groups");
+    assertEquals(user2.getGroups().size(), 2);
+    for(com.unboundid.scim.data.Entry<String> entry : user2.getGroups())
+    {
+      DN dn = new DN(entry.getValue());
+      assertTrue(dn.isDescendantOf("o=example.com", false));
+      if(entry.getDisplay().equals("group1"))
+      {
+        assertEquals(entry.getType(), "direct");
+      }
+      else if(entry.getDisplay().equals("group2"))
+      {
+        assertEquals(entry.getType(), "indirect");
+      }
     }
 
     //Cleanup

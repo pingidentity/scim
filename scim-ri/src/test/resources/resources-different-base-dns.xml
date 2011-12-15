@@ -283,7 +283,10 @@
       <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute">
         <LDAPSearchRef idref="groupSearchParams"/>
       </derivation>
-      <simpleMultiValued childName="group" dataType="string"/>
+      <simpleMultiValued childName="group" dataType="string">
+        <canonicalValue name="direct"/>
+        <canonicalValue name="indirect"/>
+      </simpleMultiValued>
     </attribute>
 
     <attribute name="entitlements" readOnly="false" required="false">
@@ -425,7 +428,7 @@
    !-->
   <LDAPSearch id="groupSearchParams">
     <baseDN>o=example.com</baseDN>
-    <filter>(|(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
+    <filter>(&amp;(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))(!(objectClass=ds-virtual-static-group)))</filter>
   </LDAPSearch>
 
 </scim-ldap:resources>

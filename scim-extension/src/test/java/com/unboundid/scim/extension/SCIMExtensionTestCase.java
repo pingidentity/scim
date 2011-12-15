@@ -214,6 +214,15 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "--set", "suppress-internal-operations:false"
     );
 
+    dsInstance.dsconfig(
+        "set-group-implementation-prop",
+        "--implementation-name", "Static",
+        "--set", "support-nested-groups:true",
+        "--set", "cache-user-to-group-mappings:false"
+    );
+
+    dsInstance.restartInstance();
+
     scimInstance = dsInstance;
     setupServices();
 
@@ -264,6 +273,136 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   }
 
 
+  /**
+   * Tests the groups attribute and makes sure the type sub-attribute is
+   * correct.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testGroupsAttribute() throws Exception
+  {
+    dsInstance.addEntry("dn: uid=testGroupMember1," + userBaseDN,
+        "objectclass: top",
+        "objectclass: person",
+        "objectclass: organizationalPerson",
+        "objectclass: inetOrgPerson",
+        "uid: testGroupMember1",
+        "cn: testGroupMember1",
+        "givenname: Test1",
+        "sn: User");
+
+    dsInstance.addEntry("dn: uid=testGroupMember2," + userBaseDN,
+        "objectclass: top",
+        "objectclass: person",
+        "objectclass: organizationalPerson",
+        "objectclass: inetOrgPerson",
+        "uid: testGroupMember2",
+        "cn: testGroupMember2",
+        "givenname: Test2",
+        "sn: User");
+
+    String groupsBaseDN = "ou=groups," + dsInstance.getPrimaryBaseDN();
+    dsInstance.addEntry("dn: " + groupsBaseDN,
+        "objectClass: organizationalUnit",
+        "ou: groups");
+
+    dsInstance.addEntry("dn: cn=testGroup1," + groupsBaseDN,
+        "objectclass: top",
+        "objectclass: groupOfNames",
+        "cn: testGroup1",
+        "member: uid=testGroupMember1," + userBaseDN);
+
+    dsInstance.addEntry("dn: cn=testGroup2," + groupsBaseDN,
+        "objectclass: top",
+        "objectclass: groupOfUniqueNames",
+        "cn: testGroup2",
+        "uniqueMember: uid=testGroupMember2," + userBaseDN,
+        "uniqueMember: cn=testGroup1," + groupsBaseDN);
+
+    dsInstance.addEntry("dn: cn=testGroup3," + groupsBaseDN,
+        "objectclass: top",
+        "objectclass: groupOfURLs",
+        "cn: testGroup3",
+        "memberURL: ldap:///" + userBaseDN + "??sub?(givenName=Test2)");
+
+    // Test using the isMemberOf attribute.
+    testGroupsInternal(groupsBaseDN);
+
+    // Now test without using the isMemberOf attribute.
+    dsInstance.dsconfig(
+        "set-virtual-attribute-prop",
+        "--name", "isMemberOf",
+        "--set", "enabled:false"
+    );
+
+    testGroupsInternal(groupsBaseDN);
+
+    dsInstance.dsconfig(
+        "set-virtual-attribute-prop",
+        "--name", "isMemberOf",
+        "--set", "enabled:true"
+    );
+  }
+
+  /**
+   * Tests the groups attribute and makes sure the type sub-attribute is
+   * correct.
+   *
+   * @param groupsBaseDN The base DN for group entries.
+   * @throws Exception  If the test fails.
+   */
+  private void testGroupsInternal(final String groupsBaseDN) throws Exception
+  {
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    UserResource user = userEndpoint.get("uid=testGroupMember1," + userBaseDN);
+    assertEquals(user.getGroups().size(), 2);
+    for(Entry<String> group : user.getGroups())
+    {
+      if(group.getValue().equalsIgnoreCase("cn=testGroup1," + groupsBaseDN))
+      {
+        assertEquals(group.getDisplay(), "testGroup1");
+        assertEquals(group.getType(), "direct");
+      }
+      else if(group.getValue().equalsIgnoreCase("cn=testGroup2," +
+          groupsBaseDN))
+      {
+        assertEquals(group.getDisplay(), "testGroup2");
+        assertEquals(group.getType(), "indirect");
+      }
+      else
+      {
+        assertTrue(false, "Group ID should be testGroup1, testGroup2 or " +
+            "testGroup4");
+      }
+    }
+
+    user = userEndpoint.get("uid=testGroupMember2," + userBaseDN);
+    // We shouldn't see the virtual static group. They are excluded by default
+    // because we can't reliably search for them using a sub-tree search with
+    // a filter like (member=userdn) through an internal connection.
+    // This is documented in DS-1085
+    assertEquals(user.getGroups().size(), 2);
+    for(Entry<String> group : user.getGroups())
+    {
+      if(group.getValue().equalsIgnoreCase("cn=testGroup2," +
+          groupsBaseDN))
+      {
+        assertEquals(group.getDisplay(), "testGroup2");
+        assertEquals(group.getType(), "direct");
+      }
+      else if(group.getValue().equalsIgnoreCase("cn=testGroup3," +
+          groupsBaseDN))
+      {
+        assertEquals(group.getDisplay(), "testGroup3");
+        assertEquals(group.getType(), "indirect");
+      }
+      else
+      {
+        assertTrue(false, "Group ID should be testGroup2 or testGroup3");
+      }
+    }
+  }
 
   /**
    * Tests modifying a user password through SCIM using modify.
