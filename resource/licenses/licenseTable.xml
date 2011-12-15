@@ -13,66 +13,42 @@
          <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
        <LICENSE index="2">
-         <GROUPID>javax.xml.stream</GROUPID>
-         <ARTIFACTID>stax-api</ARTIFACTID>
-         <VERSION>1.0-2</VERSION>
-         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
-       </LICENSE>
-       <LICENSE index="3">
-         <GROUPID>com.sun.xml.bind</GROUPID>
-         <ARTIFACTID>jaxb-impl</ARTIFACTID>
-         <VERSION>2.2.1.1</VERSION>
-         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
-       </LICENSE>
-       <LICENSE index="5">
          <GROUPID>org.slf4j</GROUPID>
          <ARTIFACTID>slf4j-api</ARTIFACTID>
          <VERSION>1.6.1</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
-       <LICENSE index="6">
+       <LICENSE index="3">
          <GROUPID>org.slf4j</GROUPID>
          <ARTIFACTID>slf4j-jdk14</ARTIFACTID>
          <VERSION>1.6.1</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
-       <LICENSE index="7">
+       <LICENSE index="4">
          <GROUPID>org.slf4j</GROUPID>
          <ARTIFACTID>jcl-over-slf4j</ARTIFACTID>
          <VERSION>1.6.1</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
-       <LICENSE index="8">
+       <LICENSE index="5">
          <GROUPID>javax.servlet</GROUPID>
          <ARTIFACTID>servlet-api</ARTIFACTID>
          <VERSION>2.4</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
-       <LICENSE index="9">
-        <GROUPID>org.eclipse.jetty.aggregate</GROUPID>
-        <ARTIFACTID>jetty-all</ARTIFACTID>
-        <VERSION>8.0.4.v20111024</VERSION>
-        <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
-      </LICENSE>
-      <LICENSE index="10">
-        <GROUPID>org.mortbay.jetty</GROUPID>
-        <ARTIFACTID>servlet-api</ARTIFACTID>
-        <VERSION>3.0.20100224</VERSION>
-        <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
-      </LICENSE>
-      <LICENSE index="11">
+      <LICENSE index="6">
         <GROUPID>asm</GROUPID>
         <ARTIFACTID>asm-commons</ARTIFACTID>
         <VERSION>3.1</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:asm-license:txt:license:1.0</LICENSE_COORDINATES>
       </LICENSE>
-      <LICENSE index="12">
+      <LICENSE index="7">
         <GROUPID>asm</GROUPID>
         <ARTIFACTID>asm-tree</ARTIFACTID>
         <VERSION>3.1</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:asm-license:txt:license:1.0</LICENSE_COORDINATES>
       </LICENSE>
-      <LICENSE index="13">
+      <LICENSE index="8">
         <GROUPID>asm</GROUPID>
         <ARTIFACTID>asm</ARTIFACTID>
         <VERSION>3.1</VERSION>

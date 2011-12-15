@@ -286,7 +286,7 @@
             <plugin>
               <groupId>com.unboundid.build</groupId>
               <artifactId>osslicense-maven-plugin</artifactId>
-              <version>1.1.5</version>
+              <version>1.2.0</version>
               <executions>
                 <execution>
                   <id>collect 3rd party licenses</id>
@@ -295,8 +295,6 @@
                     <goal>collect-licenses</goal>
                   </goals>
                   <configuration>
-                    <licenseOutputText>${project.build.directory}/3RD_PARTY_LICENSES.txt</licenseOutputText>
-                    <licenseSummaryXML>${project.build.directory}/licenseSummary.xml</licenseSummaryXML>
                     <lookupTableFile>${main.basedir}/resource/licenses/licenseTable.xml</lookupTableFile>
                     <quiet>true</quiet>
                   </configuration>
