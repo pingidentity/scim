@@ -143,15 +143,16 @@ public abstract class LDAPBackend
    * Retrieve an LDAP interface that may be used to interact with the LDAP
    * server.
    *
+   *
    * @param userID  The authenticated user ID for the request being processed.
    *
    * @return  An LDAP interface that may be used to interact with the LDAP
    *          server.
    *
-   * @throws LDAPException  If there was a problem retrieving an LDAP interface.
+   * @throws SCIMException  If there was a problem retrieving an LDAP interface.
    */
   protected abstract LDAPInterface getLDAPInterface(final String userID)
-      throws LDAPException;
+      throws SCIMException;
 
 
 
@@ -953,7 +954,7 @@ public abstract class LDAPBackend
    *
    * @return  The SCIM exception.
    */
-  private SCIMException toSCIMException(final LDAPException e)
+  protected SCIMException toSCIMException(final LDAPException e)
   {
     switch (e.getResultCode().intValue())
     {

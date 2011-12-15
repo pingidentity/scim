@@ -40,6 +40,7 @@ import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.SortParameters;
+import com.unboundid.scim.sdk.UnauthorizedException;
 import org.apache.wink.common.AbstractDynamicResource;
 
 import javax.ws.rs.WebApplicationException;
@@ -118,6 +119,10 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
   {
     Response.ResponseBuilder responseBuilder;
     try {
+      final String authID = requestContext.getAuthID();
+      if(authID == null) {
+        throw new UnauthorizedException("Invalid credentials");
+      }
       final String attributes =
           requestContext.getUriInfo().getQueryParameters().getFirst(
               QUERY_PARAMETER_ATTRIBUTES);
@@ -127,10 +132,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Process the request.
       final GetResourceRequest getResourceRequest =
           new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
-              requestContext.getAuthID(),
-              resourceDescriptor,
-              userID,
-              queryAttributes);
+              authID, resourceDescriptor, userID, queryAttributes);
 
       BaseResource resource =
           backend.getResource(getResourceRequest);
@@ -196,6 +198,10 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     Response.ResponseBuilder responseBuilder;
     try
     {
+      String authID = requestContext.getAuthID();
+      if(authID == null) {
+        throw new UnauthorizedException("Invalid credentials");
+      }
       final String attributes =
           requestContext.getUriInfo().getQueryParameters().getFirst(
               QUERY_PARAMETER_ATTRIBUTES);
@@ -292,12 +298,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Process the request.
       final GetResourcesRequest getResourcesRequest =
           new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
-              requestContext.getAuthID(),
-              resourceDescriptor,
-              filter,
-              sortParameters,
-              pageParameters,
-              queryAttributes);
+              authID, resourceDescriptor, filter, sortParameters,
+              pageParameters, queryAttributes);
 
 
       final Resources resources = backend.getResources(getResourcesRequest);
@@ -368,6 +370,11 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     Response.ResponseBuilder responseBuilder;
     try
     {
+      String authID = requestContext.getAuthID();
+      if(authID == null) {
+        throw new UnauthorizedException("Invalid credentials");
+      }
+
       // Parse the resource.
       final BaseResource postedResource = unmarshaller.unmarshal(
           inputStream, resourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
@@ -381,9 +388,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Process the request.
       final PostResourceRequest postResourceRequest =
           new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
-              requestContext.getAuthID(),
-              resourceDescriptor,
-              postedResource.getScimObject(),
+              authID, resourceDescriptor, postedResource.getScimObject(),
               queryAttributes);
 
       final BaseResource resource =
@@ -447,6 +452,11 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
 
     Response.ResponseBuilder responseBuilder;
     try {
+      String authID = requestContext.getAuthID();
+      if(authID == null) {
+        throw new UnauthorizedException("Invalid credentials");
+      }
+
       // Parse the resource.
       final BaseResource puttedResource = unmarshaller.unmarshal(
           inputStream, resourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
@@ -460,10 +470,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Process the request.
       final PutResourceRequest putResourceRequest =
           new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
-              requestContext.getAuthID(),
-              resourceDescriptor,
-              userID, puttedResource.getScimObject(),
-              queryAttributes);
+              authID, resourceDescriptor, userID,
+              puttedResource.getScimObject(), queryAttributes);
 
 
       final BaseResource scimResponse = backend.putResource(putResourceRequest);
@@ -506,12 +514,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               final MediaType mediaType, final String userID)
   {
     // Process the request.
-    final DeleteResourceRequest deleteResourceRequest =
-        new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-            requestContext.getAuthID(),
-            resourceDescriptor, userID);
     Response.ResponseBuilder responseBuilder;
     try {
+      final String authID = requestContext.getAuthID();
+      if(authID == null) {
+        throw new UnauthorizedException("Invalid credentials");
+      }
+      final DeleteResourceRequest deleteResourceRequest =
+        new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
+            authID, resourceDescriptor, userID);
       backend.deleteResource(deleteResourceRequest);
       // Build the response.
       responseBuilder = Response.status(Response.Status.OK);

@@ -24,7 +24,9 @@ import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMRequest;
+import com.unboundid.scim.sdk.UnauthorizedException;
 
 
 /**
@@ -117,15 +119,20 @@ public class ServerContextBackend extends LDAPBackend
    */
   @Override
   protected LDAPInterface getLDAPInterface(final String userID)
-      throws LDAPException
+      throws SCIMException
   {
     final DN bindDN = getUserDN(userID);
     if (bindDN == null)
     {
-      throw new LDAPException(ResultCode.AUTHORIZATION_DENIED);
+      // Don't expose the true reason for security.
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    return serverContext.getInternalConnection(getUserDN(userID).toString());
+    try {
+      return serverContext.getInternalConnection(bindDN.toString());
+    } catch (LDAPException e) {
+      throw toSCIMException(e);
+    }
   }
 
 

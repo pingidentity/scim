@@ -106,6 +106,7 @@ public class SCIMException extends Exception implements SCIMResponse
     switch(statusCode)
     {
       case 400 : return new InvalidResourceException(errorMessage);
+      case 401 : return new UnauthorizedException(errorMessage);
       case 403 : return new UnsupportedOperationException(errorMessage);
       case 404 : return new ResourceNotFoundException(errorMessage);
       case 409 : return new ResourceConflictException(errorMessage);
