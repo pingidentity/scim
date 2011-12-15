@@ -25,12 +25,7 @@ import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.util.StaticUtils;
 import org.apache.wink.server.internal.servlet.RestServlet;
 import org.apache.wink.server.utils.RegistrationUtils;
-import org.eclipse.jetty.http.security.Constraint;
 import org.eclipse.jetty.http.ssl.SslContextFactory;
-import org.eclipse.jetty.security.ConstraintMapping;
-import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.LoginService;
-import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.NCSARequestLog;
@@ -41,18 +36,16 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.unboundid.scim.sdk.Debug.debugException;
 
@@ -270,40 +263,9 @@ public class SCIMServer
       newBackends.put(contextHandler, application);
 
       // Configure authentication.
-
-      final LoginService loginService = new LDAPLoginService(backend);
-      server.addBean(loginService);
-
-      final ConstraintSecurityHandler security =
-          new ConstraintSecurityHandler();
-      contextHandler.setSecurityHandler(security);
-      Constraint constraint = new Constraint();
-      constraint.setAuthenticate(true);
-
-      // A user possessing (literally) any role will do
-      constraint.setRoles(new String[]{Constraint.ANY_ROLE});
-
-      // * maps to all external endpoints
-      final ConstraintMapping mapping = new ConstraintMapping();
-      mapping.setPathSpec("/*");
-      mapping.setConstraint(constraint);
-
-      // for now force map all roles - that is the assertions is only "is the
-      // user authenticated" - not are they authenticated && possess a
-      // roles(s)
-      final Set<String> knownRoles = new HashSet<String>();
-      knownRoles.add(Constraint.ANY_ROLE);
-      security.setConstraintMappings(Collections.singletonList(mapping),
-                                     knownRoles);
-
-      // use the HTTP Basic authentication mechanism
-      security.setAuthenticator(new BasicAuthenticator());
-      security.setLoginService(loginService);
-
-      // strictness refers to Jetty's role handling
-      security.setStrict(false);
-      security.setHandler(contextHandler);
-      security.setServer(server);
+      final FilterHolder filterHolder =
+          new FilterHolder(new BasicAuthenticationFilter(backend));
+      contextHandler.addFilter(filterHolder, "/*", null);
 
       // JAX-RS implementation using Apache Wink.
       final ServletHolder winkServletHolder =

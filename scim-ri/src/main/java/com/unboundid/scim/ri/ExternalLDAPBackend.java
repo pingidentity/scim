@@ -30,6 +30,7 @@ import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMRequest;
 
 import java.util.Map;
@@ -105,9 +106,15 @@ public class ExternalLDAPBackend extends LDAPBackend
    */
   @Override
   protected LDAPInterface getLDAPInterface(final String userID)
-      throws LDAPException
+      throws SCIMException
   {
-    return ldapExternalServer.getLDAPConnectionPool();
+    try
+    {
+      return ldapExternalServer.getLDAPConnectionPool();
+    } catch (LDAPException e)
+    {
+      throw toSCIMException(e);
+    }
   }
 
 

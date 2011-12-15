@@ -20,7 +20,6 @@ package com.unboundid.scim.ri;
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
-import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.PLAINBindRequest;
 import com.unboundid.ldap.sdk.ResultCode;
@@ -30,6 +29,7 @@ import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMRequest;
 
 import java.util.Map;
@@ -115,7 +115,7 @@ public class InMemoryLDAPBackend
    */
   @Override
   protected LDAPInterface getLDAPInterface(final String userID)
-      throws LDAPException
+      throws SCIMException
   {
     return ldapServer;
   }
