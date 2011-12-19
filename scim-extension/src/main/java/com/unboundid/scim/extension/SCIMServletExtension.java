@@ -378,7 +378,10 @@ public final class SCIMServletExtension
 
 
   /**
-   * {@inheritDoc}
+   * Return a list of javax.servlet.Filter instances that are used by the
+   * HTTPConnectionHandler. Currently this provides a mechanism for SCIM to
+   * inject Basic Authentication handling.
+   * @return a list of javax.servlet.Filter instances
    */
   public List<Filter> getServletFilters() {
     return Collections.<Filter>singletonList(
@@ -661,7 +664,7 @@ public final class SCIMServletExtension
          Arrays.asList(
              ARG_NAME_RESOURCES_FILE + "=config/resources.xml"),
          "Create a SCIM servlet that handles resources defined in " +
-         "resources.xml.");
+         "config/resources.xml.");
 
     return exampleMap;
   }

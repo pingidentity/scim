@@ -11,6 +11,7 @@ import com.unboundid.directory.tests.standalone.ExternalInstanceId;
 import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
 import com.unboundid.directory.tests.standalone.TestCaseUtils;
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.sdk.SCIMEndpoint;
@@ -221,6 +222,20 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "--set", "cache-user-to-group-mappings:false"
     );
 
+    dsInstance.dsconfig(
+        "set-virtual-attribute-prop",
+        "--name", "Virtual Static member",
+        "--set", "enabled:true",
+        "--set", "allow-retrieving-membership:true"
+    );
+
+    dsInstance.dsconfig(
+        "set-virtual-attribute-prop",
+        "--name", "Virtual Static uniqueMember",
+        "--set", "enabled:true",
+        "--set", "allow-retrieving-membership:true"
+    );
+
     dsInstance.restartInstance();
 
     scimInstance = dsInstance;
@@ -302,32 +317,40 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "givenname: Test2",
         "sn: User");
 
-    String groupsBaseDN = "ou=groups," + dsInstance.getPrimaryBaseDN();
-    dsInstance.addEntry("dn: " + groupsBaseDN,
+    String testGroupBaseDN = "ou=groups," + groupBaseDN;
+    dsInstance.addEntry("dn: " + testGroupBaseDN,
         "objectClass: organizationalUnit",
         "ou: groups");
 
-    dsInstance.addEntry("dn: cn=testGroup1," + groupsBaseDN,
+    dsInstance.addEntry("dn: cn=testGroup1," + testGroupBaseDN,
         "objectclass: top",
         "objectclass: groupOfNames",
         "cn: testGroup1",
         "member: uid=testGroupMember1," + userBaseDN);
 
-    dsInstance.addEntry("dn: cn=testGroup2," + groupsBaseDN,
+    dsInstance.addEntry("dn: cn=testGroup2," + testGroupBaseDN,
         "objectclass: top",
         "objectclass: groupOfUniqueNames",
         "cn: testGroup2",
         "uniqueMember: uid=testGroupMember2," + userBaseDN,
-        "uniqueMember: cn=testGroup1," + groupsBaseDN);
+        "uniqueMember: cn=testGroup1," + testGroupBaseDN);
 
-    dsInstance.addEntry("dn: cn=testGroup3," + groupsBaseDN,
+    dsInstance.addEntry("dn: cn=testGroup3," + testGroupBaseDN,
         "objectclass: top",
         "objectclass: groupOfURLs",
         "cn: testGroup3",
         "memberURL: ldap:///" + userBaseDN + "??sub?(givenName=Test2)");
 
+    //This group is virtual static
+    dsInstance.addEntry("dn: cn=testGroup4," + testGroupBaseDN,
+        "objectclass: top",
+        "objectclass: groupOfUniqueNames",
+        "objectclass: ds-virtual-static-group",
+        "cn: testGroup4",
+        "ds-target-group-dn: cn=testGroup2," + testGroupBaseDN);
+
     // Test using the isMemberOf attribute.
-    testGroupsInternal(groupsBaseDN);
+    testGroupsInternal(testGroupBaseDN);
 
     // Now test without using the isMemberOf attribute.
     dsInstance.dsconfig(
@@ -336,8 +359,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "--set", "enabled:false"
     );
 
-    testGroupsInternal(groupsBaseDN);
+    testGroupsInternal(testGroupBaseDN);
 
+    //Cleanup
     dsInstance.dsconfig(
         "set-virtual-attribute-prop",
         "--name", "isMemberOf",
@@ -356,50 +380,64 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   {
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     UserResource user = userEndpoint.get("uid=testGroupMember1," + userBaseDN);
-    assertEquals(user.getGroups().size(), 2);
+    assertEquals(user.getGroups().size(), 3);
     for(Entry<String> group : user.getGroups())
     {
       if(group.getValue().equalsIgnoreCase("cn=testGroup1," + groupsBaseDN))
       {
+        //Group 1 is a static group
         assertEquals(group.getDisplay(), "testGroup1");
-        assertEquals(group.getType(), "direct");
+        assertTrue(group.getType().equalsIgnoreCase("direct"));
       }
       else if(group.getValue().equalsIgnoreCase("cn=testGroup2," +
-          groupsBaseDN))
+                                                 groupsBaseDN))
       {
+        //Group 2 contains Group 1 (thus the type is indirect)
         assertEquals(group.getDisplay(), "testGroup2");
-        assertEquals(group.getType(), "indirect");
+        assertTrue(group.getType().equalsIgnoreCase("indirect"));
+      }
+      else if(group.getValue().equalsIgnoreCase("cn=testGroup4," +
+                                                 groupsBaseDN))
+      {
+        //Group 4 is a virtual static group
+        assertEquals(group.getDisplay(), "testGroup4");
+        assertTrue(group.getType().equalsIgnoreCase("indirect"));
       }
       else
       {
-        assertTrue(false, "Group ID should be testGroup1, testGroup2 or " +
-            "testGroup4");
+        fail("Group ID should be testGroup1, testGroup2, or testGroup4");
       }
     }
 
     user = userEndpoint.get("uid=testGroupMember2," + userBaseDN);
-    // We shouldn't see the virtual static group. They are excluded by default
-    // because we can't reliably search for them using a sub-tree search with
-    // a filter like (member=userdn) through an internal connection.
-    // This is documented in DS-1085
-    assertEquals(user.getGroups().size(), 2);
+    assertEquals(user.getGroups().size(), 3);
     for(Entry<String> group : user.getGroups())
     {
       if(group.getValue().equalsIgnoreCase("cn=testGroup2," +
-          groupsBaseDN))
+                                              groupsBaseDN))
       {
+        //Group 2 is a static group
         assertEquals(group.getDisplay(), "testGroup2");
-        assertEquals(group.getType(), "direct");
+        assertTrue(group.getType().equalsIgnoreCase("direct"));
       }
       else if(group.getValue().equalsIgnoreCase("cn=testGroup3," +
-          groupsBaseDN))
+                                                  groupsBaseDN))
       {
+        //Group 3 is a dynamic group
         assertEquals(group.getDisplay(), "testGroup3");
-        assertEquals(group.getType(), "indirect");
+        assertTrue(group.getType().equalsIgnoreCase("indirect"));
+      }
+      else if(group.getValue().equalsIgnoreCase("cn=testGroup4," +
+                                                  groupsBaseDN))
+      {
+        //Group 4 is a virtual static group
+        assertEquals(group.getDisplay(), "testGroup4");
+        assertTrue(group.getType().equalsIgnoreCase("indirect"));
       }
       else
       {
-        assertTrue(false, "Group ID should be testGroup2 or testGroup3");
+        assertTrue(false, "Group ID should be testGroup2, testGroup3, " +
+                            "or testGroup4");
       }
     }
   }
@@ -886,7 +924,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       {
         //Record the time when half the entries have been created
         halfwayTime = System.currentTimeMillis();
-        TestCaseUtils.sleep(100);
+        TestCaseUtils.sleep(300);
       }
 
       final String uid = "filterUser." + i;
@@ -1029,13 +1067,13 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     final SCIMEndpoint<UserResource> userEndpoint =
         service.getUserEndpoint();
 
-    // Create some users.
+    // Create a user
     UserResource user1 = userEndpoint.newResource();
     user1.setUserName("groupsUser.1");
     user1.setName(new Name("User 1", "GroupsUser", null, "Test", null, null));
     user1 = userEndpoint.create(user1);
 
-    // Create different kinds of groups.
+    //Create a static group via SCIM
     GroupResource groupOfUniqueNames = groupEndpoint.newResource();
     groupOfUniqueNames.setDisplayName("groupOfUniqueNames");
     final List<Entry<String>> members = new ArrayList<Entry<String>>(1);
@@ -1043,56 +1081,112 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     groupOfUniqueNames.setMembers(members);
     groupOfUniqueNames = groupEndpoint.create(groupOfUniqueNames);
 
+    //Create a static group via LDAP
     dsInstance.getConnectionPool().add(
         generateGroupOfNamesEntry("groupOfNames", groupBaseDN,
                                   user1.getId()));
-    GroupResource groupOfNames =
-        groupEndpoint.get("cn=groupOfNames," + groupBaseDN);
 
+    //Create a dynamic group via LDAP
     dsInstance.addEntry(
         "dn: cn=groupOfURLs," + groupBaseDN,
         "objectClass: groupOfURLs",
         "cn: groupOfURLs",
         "memberURL: ldap:///" + userBaseDN + "??sub?(sn=GroupsUser)"
     );
+
+    //Create a virtual static group via LDAP
+    dsInstance.addEntry(
+        "dn: cn=testVirtualStaticGroup," + groupBaseDN,
+        "objectclass: top",
+        "objectclass: groupOfNames",
+        "objectclass: ds-virtual-static-group",
+        "cn: testVirtualStaticGroup",
+        "ds-target-group-dn: cn=groupOfURLs," + groupBaseDN);
+
+    //Retrieve the groups via SCIM
+    GroupResource groupOfNames =
+            groupEndpoint.get("cn=groupOfNames," + groupBaseDN);
+
     GroupResource groupOfURLs =
-        groupEndpoint.get("cn=groupOfURLs," + groupBaseDN);
+            groupEndpoint.get("cn=groupOfURLs," + groupBaseDN);
+
+    GroupResource virtualStaticGroup =
+            groupEndpoint.get("cn=testVirtualStaticGroup," + groupBaseDN);
 
     // Verify that the groups attribute is set correctly.
     user1 = userEndpoint.get(user1.getId());
     assertNotNull(user1.getGroups(), "User does not have the groups attribute");
-    assertEquals(user1.getGroups().size(), 3,
+    assertEquals(user1.getGroups().size(), 4,
                  "User has the wrong number of groups");
-    final ArrayList<String> groups = new ArrayList<String>();
-    // TODO cannot access display name in multi-valued attributes
-//    final ArrayList<String> displayNames = new ArrayList<String>();
+    final ArrayList<String> groupIDs = new ArrayList<String>();
+    final ArrayList<String> displayNames = new ArrayList<String>();
     for (final Entry<String> groupEntry : user1.getGroups())
     {
-      groups.add(groupEntry.getValue());
-//      displayNames.add(groupEntry.getDisplay());
+      groupIDs.add(groupEntry.getValue());
+      displayNames.add(groupEntry.getDisplay());
+      if(groupEntry.getValue().equalsIgnoreCase(
+                  "cn=groupOfNames," + groupBaseDN))
+      {
+        assertEquals(groupEntry.getDisplay(), "groupOfNames");
+        assertTrue(groupEntry.getType().equalsIgnoreCase("direct"));
+      }
+      else if(groupEntry.getValue().equalsIgnoreCase(
+                  "cn=groupOfUniqueNames," + groupBaseDN))
+      {
+        assertEquals(groupEntry.getDisplay(), "groupOfUniqueNames");
+        assertTrue(groupEntry.getType().equalsIgnoreCase("direct"));
+      }
+      else if(groupEntry.getValue().equalsIgnoreCase(
+                  "cn=groupOfURLs," + groupBaseDN))
+      {
+        assertEquals(groupEntry.getDisplay(), "groupOfURLs");
+        assertTrue(groupEntry.getType().equalsIgnoreCase("indirect"));
+      }
+      else if(groupEntry.getValue().equalsIgnoreCase(
+                  "cn=testVirtualStaticGroup," + groupBaseDN))
+      {
+        assertEquals(groupEntry.getDisplay(), "testVirtualStaticGroup");
+        assertTrue(groupEntry.getType().equalsIgnoreCase("indirect"));
+      }
+      else
+      {
+        fail("Unexpected group ID: " + groupEntry.getValue());
+      }
     }
-    assertTrue(groups.contains(groupOfNames.getId()));
-    assertTrue(groups.contains(groupOfUniqueNames.getId()));
-    assertTrue(groups.contains(groupOfURLs.getId()));
-//    assertTrue(displayNames.contains("groupOfNames"));
-//    assertTrue(displayNames.contains("groupOfUniqueNames"));
-//    assertTrue(displayNames.contains("groupOfURLs"));
+
+    assertTrue(groupIDs.contains(groupOfNames.getId()));
+    assertTrue(groupIDs.contains(groupOfUniqueNames.getId()));
+    assertTrue(groupIDs.contains(groupOfURLs.getId()));
+    assertTrue(groupIDs.contains(virtualStaticGroup.getId()));
+    assertTrue(displayNames.contains("groupOfNames"));
+    assertTrue(displayNames.contains("groupOfUniqueNames"));
+    assertTrue(displayNames.contains("groupOfURLs"));
+    assertTrue(displayNames.contains("testVirtualStaticGroup"));
 
     // Verify that the members attribute is set correctly.
     assertNotNull(groupOfNames.getMembers());
     assertEquals(groupOfNames.getMembers().size(), 1);
-    assertEquals(groupOfNames.getMembers().iterator().next().getValue(),
-                 user1.getId());
+    Entry<String> member = groupOfNames.getMembers().iterator().next();
+    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertTrue(member.getType().equalsIgnoreCase("user"));
 
     assertNotNull(groupOfUniqueNames.getMembers());
     assertEquals(groupOfUniqueNames.getMembers().size(), 1);
-    assertEquals(groupOfUniqueNames.getMembers().iterator().next().getValue(),
-                 user1.getId());
+    member = groupOfUniqueNames.getMembers().iterator().next();
+    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertTrue(member.getType().equalsIgnoreCase("user"));
 
     assertNotNull(groupOfURLs.getMembers());
     assertEquals(groupOfURLs.getMembers().size(), 1);
-    assertEquals(groupOfURLs.getMembers().iterator().next().getValue(),
-                 user1.getId());
+    member = groupOfURLs.getMembers().iterator().next();
+    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertTrue(member.getType().equalsIgnoreCase("user"));
+
+    assertNotNull(virtualStaticGroup.getMembers());
+    assertEquals(virtualStaticGroup.getMembers().size(), 1);
+    member = virtualStaticGroup.getMembers().iterator().next();
+    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertTrue(member.getType().equalsIgnoreCase("user"));
   }
 
 

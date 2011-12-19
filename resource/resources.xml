@@ -441,7 +441,7 @@
    !-->
   <LDAPSearch id="groupSearchParams">
     <baseDN>dc=example,dc=com</baseDN>
-    <filter>(&amp;(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))(!(objectClass=ds-virtual-static-group)))</filter>
+    <filter>(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
   </LDAPSearch>
 
 </scim-ldap:resources>

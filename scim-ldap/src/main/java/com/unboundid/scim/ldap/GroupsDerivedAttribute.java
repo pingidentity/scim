@@ -269,7 +269,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
 
   /**
    * Construct a filter that could be used to find all static groups with the
-   * provided member DN.
+   * provided member DN (and optionally any dynamic groups as well).
    *
    * @param memberDN The member DN used to determining the static groups for
    *                 which it belongs.
@@ -302,7 +302,15 @@ public class GroupsDerivedAttribute extends DerivedAttribute
           Filter.createEqualityFilter(ATTR_OBJECT_CLASS, OC_GROUP_OF_URLS));
     }
 
-    return Filter.createANDFilter(filter, Filter.createORFilter(memberFilters));
+    if(filter != null)
+    {
+      return Filter.createANDFilter(filter,
+                Filter.createORFilter(memberFilters));
+    }
+    else
+    {
+      return Filter.createORFilter(memberFilters);
+    }
   }
 
   /**

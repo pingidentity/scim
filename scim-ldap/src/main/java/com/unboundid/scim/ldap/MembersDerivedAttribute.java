@@ -22,6 +22,7 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
+import com.unboundid.ldap.sdk.LDAPURL;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 
 
@@ -75,6 +77,11 @@ public class MembersDerivedAttribute extends DerivedAttribute
   private static final String ATTR_UNIQUE_MEMBER = "uniqueMember";
 
   /**
+   * The name of the LDAP memberUrl attribute.
+   */
+  private static final String ATTR_MEMBER_URL = "memberURL";
+
+  /**
    * The name of the LDAP groupOfNames object class.
    */
   private static final String OC_GROUP_OF_NAMES = "groupOfNames";
@@ -88,6 +95,11 @@ public class MembersDerivedAttribute extends DerivedAttribute
    * The name of the LDAP groupOfEntries object class.
    */
   private static final String OC_GROUP_OF_ENTRIES = "groupOfEntries";
+
+  /**
+   * The name of the groupOfURLs object class.
+   */
+  private static final String OC_GROUP_OF_URLS = "groupOfURLs";
 
   /**
    * The attribute descriptor for the derived attribute.
@@ -109,6 +121,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
     ldapAttributeTypes.add(ATTR_MEMBER);
     ldapAttributeTypes.add(ATTR_UNIQUE_MEMBER);
     ldapAttributeTypes.add(ATTR_OBJECT_CLASS);
+    ldapAttributeTypes.add(ATTR_MEMBER_URL);
   }
 
 
@@ -129,22 +142,22 @@ public class MembersDerivedAttribute extends DerivedAttribute
     final List<SCIMAttributeValue> values = new ArrayList<SCIMAttributeValue>();
 
     List<String> members = null;
-    Filter isMemberFilter = null;
     Filter usersFilter = null;
-    Filter compoundFilter = null;
+    String usersBaseDN = null;
 
     if(searchParams != null)
     {
       try
       {
-        isMemberFilter = Filter.createEqualityFilter(
-                                    ATTR_IS_MEMBER_OF, entry.getDN());
+        usersBaseDN = searchParams.getBaseDN();
         usersFilter = Filter.create(searchParams.getFilter());
-        compoundFilter = Filter.createANDFilter(isMemberFilter, usersFilter);
       }
       catch(LDAPException e)
       {
         Debug.debugException(e);
+        Debug.debug(Level.SEVERE, DebugType.OTHER,
+                "The MembersDerivedAttribute does not contain a reference " +
+                "to the LDAP search parameters for the User resource.");
       }
     }
 
@@ -163,76 +176,130 @@ public class MembersDerivedAttribute extends DerivedAttribute
         members = Arrays.asList(entry.getAttributeValues(ATTR_UNIQUE_MEMBER));
       }
     }
-    else
+    else if (entry.hasObjectClass(OC_GROUP_OF_URLS))
     {
-      try
+      //Determine the dynamic group members and their 'type'
+      if(entry.hasAttribute(ATTR_MEMBER_URL))
       {
-        Set<DN> memberDNs = new HashSet<DN>();
-        if(compoundFilter != null)
+        String[] attrsToGet;
+        if(usersFilter != null)
         {
-          //Search for 'User' group members
-          SearchResult searchResult = ldapInterface.search(
-              searchParams.getBaseDN(), SearchScope.SUB, compoundFilter, "1.1");
-
-          List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(2);
-          for(SearchResultEntry resultEntry : searchResult.getSearchEntries())
-          {
-            subAttributes.clear();
-
-            subAttributes.add(SCIMAttribute.create(
-                getAttributeDescriptor().getSubAttribute("value"),
-                   SCIMAttributeValue.createStringValue(resultEntry.getDN())));
-
-            subAttributes.add(SCIMAttribute.create(
-                getAttributeDescriptor().getSubAttribute("type"),
-                   SCIMAttributeValue.createStringValue("User")));
-
-            values.add(SCIMAttributeValue.createComplexValue(subAttributes));
-
-            memberDNs.add(resultEntry.getParsedDN());
-          }
+          Set<String> attrSet = getAllFilterAttributes(usersFilter);
+          attrsToGet = attrSet.toArray(new String[attrSet.size()]);
+        }
+        else
+        {
+          attrsToGet = new String[] { "objectClass" };
         }
 
-        //Search for 'Group' group members (note this may pick up 'User' entries
-        //as well, but they will be filtered out using the memberDNs list below)
-        SearchResult searchResult = ldapInterface.search(
-                groupsBaseDN, SearchScope.SUB, isMemberFilter, "1.1");
-
-        List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(2);
-        for(SearchResultEntry resultEntry : searchResult.getSearchEntries())
+        String[] memberURLs = entry.getAttributeValues(ATTR_MEMBER_URL);
+        for(String url : memberURLs)
         {
-          if(memberDNs.contains(resultEntry.getParsedDN()))
+          try
           {
-            //If the entry is already present in the members set, then it is
-            //a 'User' member and has already been added to the result set.
-            continue;
+            LDAPURL ldapURL = new LDAPURL(url);
+            SearchResult searchResult = ldapInterface.search(
+                    ldapURL.getBaseDN().toString(),
+                    SearchScope.SUB, ldapURL.getFilter(), attrsToGet);
+
+            if(searchResult.getEntryCount() > 0)
+            {
+              List<SCIMAttribute> subAttributes =
+                        new ArrayList<SCIMAttribute>(2);
+              for(SearchResultEntry rEntry : searchResult.getSearchEntries())
+              {
+                subAttributes.clear();
+
+                subAttributes.add(SCIMAttribute.create(
+                    getAttributeDescriptor().getSubAttribute("value"),
+                       SCIMAttributeValue.createStringValue(rEntry.getDN())));
+
+                if(usersFilter == null)
+                {
+                  //In the absence of the LDAPSearchParameters in the
+                  //DerivedAttribute, we cannot populate the 'type'
+                  //sub-attribute (i.e. degrade gracefully). Furthermore,
+                  //if the given entry is not below the Groups base DN, then
+                  //it is out of scope.
+                  if(DN.isDescendantOf(rEntry.getDN(), groupsBaseDN, true))
+                  {
+                    values.add(
+                          SCIMAttributeValue.createComplexValue(subAttributes));
+                    continue;
+                  }
+                  else
+                  {
+                    //This group member is not within any SCIM scope
+                    if(Debug.debugEnabled())
+                    {
+                      Debug.debug(Level.INFO, DebugType.OTHER,
+                        "Skipping group member '" + rEntry.getDN() +
+                        "' for group '" + entry.getDN() + "' because it is " +
+                        "not within the scope of the SCIM User or Group " +
+                        "resources.");
+                    }
+                    continue;
+                  }
+                }
+                else if(usersFilter.matchesEntry(rEntry))
+                {
+                  if(DN.isDescendantOf(rEntry.getDN(), usersBaseDN, true))
+                  {
+                    subAttributes.add(SCIMAttribute.create(
+                            getAttributeDescriptor().getSubAttribute("type"),
+                               SCIMAttributeValue.createStringValue("User")));
+                  }
+                  else
+                  {
+                    //The group member is not within the Users scope
+                    if(Debug.debugEnabled())
+                    {
+                      Debug.debug(Level.INFO, DebugType.OTHER,
+                        "Skipping group member '" + rEntry.getDN() +
+                        "' for group '" + entry.getDN() + "' because it is " +
+                        "not within the scope of the SCIM User resource.");
+                    }
+                    continue;
+                  }
+                }
+                else
+                {
+                  if(DN.isDescendantOf(rEntry.getDN(), groupsBaseDN, true))
+                  {
+                    subAttributes.add(SCIMAttribute.create(
+                            getAttributeDescriptor().getSubAttribute("type"),
+                               SCIMAttributeValue.createStringValue("Group")));
+                  }
+                  else
+                  {
+                    //The group member is not within the Groups scope
+                    if(Debug.debugEnabled())
+                    {
+                      Debug.debug(Level.INFO, DebugType.OTHER,
+                        "Skipping group member '" + rEntry.getDN() +
+                        "' for group '" + entry.getDN() + "' because it is " +
+                        "not within the scope of the SCIM Group resource.");
+                    }
+                    continue;
+                  }
+                }
+                values.add(
+                        SCIMAttributeValue.createComplexValue(subAttributes));
+              }
+            }
           }
-
-          subAttributes.clear();
-
-          subAttributes.add(SCIMAttribute.create(
-              getAttributeDescriptor().getSubAttribute("value"),
-                 SCIMAttributeValue.createStringValue(resultEntry.getDN())));
-
-          subAttributes.add(SCIMAttribute.create(
-              getAttributeDescriptor().getSubAttribute("type"),
-                 SCIMAttributeValue.createStringValue("Group")));
-
-          values.add(SCIMAttributeValue.createComplexValue(subAttributes));
-
-          memberDNs.add(resultEntry.getParsedDN());
-        }
-      }
-      catch (LDAPException e)
-      {
-        Debug.debugException(e);
-        Debug.debug(Level.WARNING, DebugType.OTHER,
+          catch(LDAPException e)
+          {
+            Debug.debugException(e);
+            Debug.debug(Level.WARNING, DebugType.OTHER,
                     "Error searching for values of the members attribute", e);
-        return null;
+            return null;
+          }
+        }
       }
     }
 
-
+    //Determine the 'type' for static and virtual static groups
     if (members != null)
     {
       List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(2);
@@ -246,10 +313,10 @@ public class MembersDerivedAttribute extends DerivedAttribute
 
         try
         {
-          //If usersFilter is not null, then we know searchParams is not null.
+          //If usersFilter is not null, then we know usersBaseDN is not null.
           if(usersFilter != null)
           {
-            if(DN.isDescendantOf(userID, searchParams.getBaseDN(), true))
+            if(DN.isDescendantOf(userID, usersBaseDN, true))
             {
               SearchResult searchResult = ldapInterface.search(
                       userID, SearchScope.BASE, usersFilter, "1.1");
@@ -362,5 +429,33 @@ public class MembersDerivedAttribute extends DerivedAttribute
   public LDAPSearchParameters getLDAPSearchParameters()
   {
     return searchParams;
+  }
+
+
+  /**
+   * Returns a set of all the attributes used in the given filter. This method
+   * invokes itself recursively if the given filter is a compound (AND/OR)
+   * filter.
+   *
+   * @param filter the Filter whose attribute names to get
+   * @return a set of attribute names
+   */
+  private Set<String> getAllFilterAttributes(final Filter filter)
+  {
+    Set<String> attrNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    if(filter.getFilterType() == Filter.FILTER_TYPE_AND ||
+            filter.getFilterType() == Filter.FILTER_TYPE_OR)
+    {
+      for(Filter component : filter.getComponents())
+      {
+        attrNames.addAll(getAllFilterAttributes(component));
+      }
+      return attrNames;
+    }
+    else
+    {
+      attrNames.add(filter.getAttributeName());
+      return attrNames;
+    }
   }
 }

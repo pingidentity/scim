@@ -65,6 +65,21 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
         "--set", "support-nested-groups:true",
         "--set", "cache-user-to-group-mappings:false"
     );
+
+    dsInstance.dsconfig(
+        "set-virtual-attribute-prop",
+        "--name", "Virtual Static member",
+        "--set", "enabled:true",
+        "--set", "allow-retrieving-membership:true"
+    );
+
+    dsInstance.dsconfig(
+        "set-virtual-attribute-prop",
+        "--name", "Virtual Static uniqueMember",
+        "--set", "enabled:true",
+        "--set", "allow-retrieving-membership:true"
+    );
+
     dsInstance.restartInstance();
 
     proxyInstance.runCommandExpectSuccess(

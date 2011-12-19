@@ -45,6 +45,7 @@
                     <schemaDirectory>${main.basedir}/resource</schemaDirectory>
                     <schemaFiles>resources.xsd</schemaFiles>
                     <outputDirectory>${project.build.genSourceDirectory}/jaxb2</outputDirectory>
+                    <npa>true</npa>
                 </configuration>
             </plugin>
             <plugin>
