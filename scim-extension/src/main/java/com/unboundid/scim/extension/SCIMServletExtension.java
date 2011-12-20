@@ -98,6 +98,11 @@ public final class SCIMServletExtension
   private volatile String contextPath;
 
   /**
+   * The unique name that will be used to reference this servlet instance.
+   */
+  private volatile String name;
+
+  /**
    * The backend that will handle the SCIM requests.
    */
   private LDAPBackend backend;
@@ -247,8 +252,11 @@ public final class SCIMServletExtension
   @Override
   public Map<String,String> getServletInitParameters()
   {
-    return Collections.singletonMap("propertiesLocation",
+    Map<String, String> params = new HashMap<String, String>(2);
+    params.put("requestProcessorAttribute", name);
+    params.put("propertiesLocation",
         "com/unboundid/scim/wink/wink-scim.properties");
+    return params;
   }
 
 
@@ -296,7 +304,7 @@ public final class SCIMServletExtension
   {
     this.serverContext = serverContext;
 
-    config.getConfigObjectName();
+    this.name = config.getConfigObjectName();
 
     Debug.getLogger().addHandler(new DebugLogHandler(serverContext));
     Debug.getLogger().setUseParentHandlers(false);
@@ -434,7 +442,8 @@ public final class SCIMServletExtension
   public void doPostRegistrationProcessing()
   {
     RegistrationUtils.registerApplication(application,
-                                          servlet.getServletContext());
+                                          servlet.getServletContext(),
+                                          name);
   }
 
 
