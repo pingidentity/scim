@@ -25,6 +25,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skip>true</skip>
                     <debugForkedProcess>${debugForkedProcess}</debugForkedProcess>
                     <!-- Setting forkMode to none keeps the surefire tests from continuing to
                         run if you ^C the tests, but it also means that debugForkedProcess
@@ -53,6 +54,9 @@
                         <goals>
                             <goal>test</goal>
                         </goals>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

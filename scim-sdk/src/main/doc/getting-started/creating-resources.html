@@ -126,7 +126,8 @@ public static final ResourceFactory&lt;DeviceResource&gt; DEVICE_RESOURCE_FACTOR
      };
                   
 ResourceDescriptor deviceDescriptor = scimService.getResourceDescriptor("Device");
-SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(deviceDescriptor, DEVICE_RESOURCE_FACTORY);
+SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
+  deviceDescriptor, DEVICE_RESOURCE_FACTORY);
 </pre>
               
                <p>

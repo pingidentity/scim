@@ -67,7 +67,8 @@ scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
               </p>
 
 <pre>
-TrustManager trustManager = new TrustStoreTrustManager(new File("truststore"), "trustst0re-pAssw0rd", "JKS", true);
+TrustManager trustManager = new TrustStoreTrustManager(
+  new File("truststore"), "trustst0re-pAssw0rd", "JKS", true);
 SSLUtil sslUtil = new SSLUtil(null, trustManager);
 
 SSLSocketFactory sslSocketFactory = new SSLSocketFactory(sslUtil.createSSLContext());
@@ -82,7 +83,8 @@ params.setBooleanParameter(SO_REUSEADDR, true);
 DefaultHttpClient.setDefaultHttpParams(params);
 ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager(schemeRegistry);
 DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
-httpClient.getCredentialsProvider().setCredentials(new AuthScope("localhost", -1), new UsernamePasswordCredentials("uid=bjensen,dc=example,dc=com", "pAssw0rd"));
+httpClient.getCredentialsProvider().setCredentials(new AuthScope("localhost", -1),
+  new UsernamePasswordCredentials("uid=bjensen,dc=example,dc=com", "pAssw0rd"));
 
 URI secureUri = URI.create("https://localhost:52443");
 SCIMService secureScimService = new SCIMService(secureUri, new ApacheHttpClientConfig(httpClient));
