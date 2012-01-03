@@ -29,6 +29,7 @@ import org.json.JSONWriter;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -110,21 +111,25 @@ public class JsonMarshaller implements Marshaller
     {
       if (!schema.equalsIgnoreCase(SCIMConstants.SCHEMA_URI_CORE))
       {
-        jsonWriter.key(schema);
-        jsonWriter.object();
-        for (SCIMAttribute attribute :
-            resource.getScimObject().getAttributes(schema))
+        Collection<SCIMAttribute> attributes =
+            resource.getScimObject().getAttributes(schema);
+        if(!attributes.isEmpty())
         {
-          if (attribute.getAttributeDescriptor().isMultiValued())
+          jsonWriter.key(schema);
+          jsonWriter.object();
+          for (SCIMAttribute attribute : attributes)
           {
-            this.writeMultiValuedAttribute(attribute, jsonWriter);
+            if (attribute.getAttributeDescriptor().isMultiValued())
+            {
+              this.writeMultiValuedAttribute(attribute, jsonWriter);
+            }
+            else
+            {
+              this.writeSingularAttribute(attribute, jsonWriter);
+            }
           }
-          else
-          {
-            this.writeSingularAttribute(attribute, jsonWriter);
-          }
+          jsonWriter.endObject();
         }
-        jsonWriter.endObject();
       }
     }
     jsonWriter.endObject();

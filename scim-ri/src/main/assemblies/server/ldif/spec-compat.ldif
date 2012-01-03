@@ -15,7 +15,7 @@ ou: people
 description: SCIM people
 objectclass: organizationalunit
 
-dn: uid=bjensen,dc=example,dc=com
+dn: uid=bjensen,ou=people,dc=example,dc=com
 objectclass: inetOrgPerson
 cn: Ms. Barbara J Jensen III
 sn: Jensen
@@ -26,7 +26,7 @@ telephoneNumber: 555-555-8377
 mail: bjensen@example.com
 mail: babs@example.com
 
-dn: uid=jsmith,dc=example,dc=com
+dn: uid=jsmith,ou=people,dc=example,dc=com
 objectclass: inetOrgPerson
 cn: Mr. John Smith
 sn: Smith

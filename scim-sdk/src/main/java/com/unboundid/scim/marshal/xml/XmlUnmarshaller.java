@@ -339,9 +339,19 @@ public class XmlUnmarshaller implements Unmarshaller
       Node item1 = childNodes.item(i);
       if (item1.getNodeType() == Node.ELEMENT_NODE)
       {
+        if(item1.getNamespaceURI() != null &&
+            !item1.getNamespaceURI().equalsIgnoreCase(
+            attributeDescriptor.getSchema()))
+        {
+          // Sub-attributes should have the same namespace URI as the complex
+          // attribute.
+          throw new InvalidResourceException("Sub-attribute " +
+              item1.getNodeName() + " does not use the same namespace as the " +
+              "containing complex attribute " + attributeDescriptor.getName());
+        }
         SCIMAttribute childAttr;
         AttributeDescriptor subAttribute =
-            attributeDescriptor.getSubAttribute(item1.getNodeName());
+            attributeDescriptor.getSubAttribute(item1.getLocalName());
         // Allow multi-valued sub-attribute as the resource schema needs this.
         if(subAttribute.isMultiValued())
         {

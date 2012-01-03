@@ -275,29 +275,6 @@ public class XmlMarshaller implements Marshaller
       }
     }
 
-    // Now write any extension attributes, grouped by the schema
-    // extension they belong to.
-    for (final String schemaURI :
-        resource.getResourceDescriptor().getAttributeSchemas())
-    {
-      // Skip the resource schema.
-      if (!schemaURI.equalsIgnoreCase(resourceSchemaURI))
-      {
-        for (final SCIMAttribute a :
-            resource.getScimObject().getAttributes(schemaURI))
-        {
-          if (a.getAttributeDescriptor().isMultiValued())
-          {
-            writeMultiValuedAttribute(a, xmlStreamWriter);
-          }
-          else
-          {
-            writeSingularAttribute(a, xmlStreamWriter);
-          }
-        }
-      }
-    }
-
     xmlStreamWriter.writeEndElement();
   }
 

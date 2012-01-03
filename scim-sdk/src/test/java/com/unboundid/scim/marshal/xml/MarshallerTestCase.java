@@ -21,6 +21,7 @@ import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Entry;
+import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Marshaller;
@@ -110,6 +111,9 @@ public class MarshallerTestCase
         "division", AttributeValueResolver.STRING_RESOLVER,"People");
     user1.setSingularAttributeValue(SCHEMA_URI_ENTERPRISE_EXTENSION,
         "department", AttributeValueResolver.STRING_RESOLVER,"Sales");
+    user1.setSingularAttributeValue(SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+        Manager.MANAGER_RESOLVER,
+        new Manager("uid=manager,dc=example,dc=com", "The Boss"));
 
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     final Marshaller marshaller = new XmlMarshaller();
@@ -137,7 +141,8 @@ public class MarshallerTestCase
     for (final String attribute : Arrays.asList("employeeNumber",
                                                 "organization",
                                                 "division",
-                                                "department"))
+                                                "department",
+                                                "manager"))
     {
       assertTrue(user2.hasAttribute(SCHEMA_URI_ENTERPRISE_EXTENSION,
                                     attribute));
