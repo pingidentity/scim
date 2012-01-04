@@ -32,6 +32,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -125,10 +126,7 @@ public class ResourceMapper
    * The attribute mappers for this resource mapper.
    */
   private Map<AttributeDescriptor, AttributeMapper> attributeMappers;
-  /**
-   * The set of LDAP attributes used by this resource mapper.
-   */
-  private Set<String> ldapAttributeTypes;
+
   /**
    * The derived attributes for this resource mapper.
    */
@@ -508,12 +506,10 @@ public class ResourceMapper
 
     attributeMappers =
         new HashMap<AttributeDescriptor, AttributeMapper>(mappers.size());
-    ldapAttributeTypes = new HashSet<String>();
 
     for (final AttributeMapper m : mappers)
     {
       attributeMappers.put(m.getAttributeDescriptor(), m);
-      ldapAttributeTypes.addAll(m.getLDAPAttributeTypes());
     }
 
     this.derivedAttributes =
@@ -580,7 +576,8 @@ public class ResourceMapper
 
   /**
    * Retrieve the set of LDAP attribute types that should be requested in order
-   * to return the specified query attributes.
+   * to return the specified query attributes. Any LDAP attribute types mapped
+   * from the password attribute will not be included.
    *
    * @param queryAttributes  The requested query attributes.
    *
@@ -592,7 +589,8 @@ public class ResourceMapper
     final Set<String> ldapAttributes = new HashSet<String>();
     for (final AttributeMapper m : attributeMappers.values())
     {
-      if (queryAttributes.isAttributeRequested(m.getAttributeDescriptor()))
+      if (queryAttributes.isAttributeRequested(m.getAttributeDescriptor()) &&
+          !(m instanceof PasswordAttributeMapper))
       {
         ldapAttributes.addAll(m.getLDAPAttributeTypes());
       }
@@ -692,6 +690,40 @@ public class ResourceMapper
     return attributes;
   }
 
+
+  /**
+   * Retrieve the set of all modifiable LDAP attribute types that should be
+   * requested in order to return the current LDAP entry representing the SCIM
+   * object. This entry may then be used with {@code toLDAPModifications} to
+   * map the replacement attributes to LDAP modifications.
+   *
+   * @param scimObject The object containing attributes to be mapped.
+   * @return The set of LDAP attribute types that should be requested.
+   */
+  public Set<String> getModifiableLDAPAttributeTypes(
+      final SCIMObject scimObject)
+  {
+    final Set<String> ldapAttributeTypes = new HashSet<String>();
+    final boolean hasPasswordAttribute =
+        scimObject.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "password");
+
+    // Retrieve all LDAP attributes that are mapped from SCIM attributes.
+    // Derived attributes are read-only thus should never be included in LDAP
+    // modifications.
+    for (final AttributeMapper m : attributeMappers.values())
+    {
+      // The password attribute is a special case as it should not be retrieved
+      // unless it is included in the updated SCIM object to be mapped.
+      if(hasPasswordAttribute || !(m instanceof PasswordAttributeMapper))
+      {
+        ldapAttributeTypes.addAll(m.getLDAPAttributeTypes());
+      }
+    }
+
+    return ldapAttributeTypes;
+  }
+
+
   /**
    * Map the replacement attributes in a SCIM object to LDAP modifications.
    *
@@ -708,10 +740,7 @@ public class ResourceMapper
     final List<Attribute> attributes = toLDAPAttributes(scimObject);
     final Entry entry = new Entry(currentEntry.getDN(), attributes);
 
-    final String[] ldapAttributesArray =
-        ldapAttributeTypes.toArray(new String[ldapAttributeTypes.size()]);
-
-    return Entry.diff(currentEntry, entry, true, false, ldapAttributesArray);
+    return Entry.diff(currentEntry, entry, false, false);
   }
 
   /**

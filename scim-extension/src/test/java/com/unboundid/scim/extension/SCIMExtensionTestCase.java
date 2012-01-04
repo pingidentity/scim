@@ -473,9 +473,19 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     UserResource user = userEndpoint.get(
                             "uid=testPasswordModify," + userBaseDN);
     assertNotNull(user);
+
+    //Verify that not including the password attribute in the PUT will not
+    //affect the current value
+    user.setPassword(null);
+    user.setTitle("Engineer");
+    user = userEndpoint.update(user);
+    assertNotNull(user);
+    assertEquals(user.getTitle(), "Engineer");
+
+    //Now change the password
     user.setPassword("anotherPassword");
 
-    UserResource returnedUser = userEndpoint.update(user);
+    UserResource returnedUser = userEndpoint.update(user, "id");
 
     //Verify what is returned from the SDK
     assertTrue(returnedUser.getId().equalsIgnoreCase(

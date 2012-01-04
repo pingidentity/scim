@@ -584,13 +584,11 @@ public abstract class LDAPBackend
     final ResourceMapper mapper =
         getResourceMapper(request.getResourceDescriptor());
 
-    final Set<String> requestAttributeSet = new HashSet<String>();
-    requestAttributeSet.addAll(
-        mapper.toLDAPAttributeTypes(request.getAttributes()));
-    requestAttributeSet.addAll(getLastModAttributes());
-
-    final String[] requestAttributes = new String[requestAttributeSet.size()];
-    requestAttributeSet.toArray(requestAttributes);
+    // Retrieve all LDAP attributes to get the current state of the resource.
+    final Set<String> mappedAttributeSet =
+        mapper.getModifiableLDAPAttributeTypes(request.getResourceObject());
+    final String[] mappedAttributes = new String[mappedAttributeSet.size()];
+    mappedAttributeSet.toArray(mappedAttributes);
 
     final String entryDN = request.getResourceID();
     final List<Modification> mods = new ArrayList<Modification>();
@@ -600,7 +598,7 @@ public abstract class LDAPBackend
       final LDAPInterface ldapInterface =
           getLDAPInterface(request.getAuthenticatedUserID());
       final Entry currentEntry = ldapInterface.getEntry(entryDN,
-                                                        requestAttributes);
+                                                        mappedAttributes);
       if (currentEntry == null)
       {
         throw new ResourceNotFoundException(
@@ -612,6 +610,15 @@ public abstract class LDAPBackend
 
       if(!mods.isEmpty())
       {
+        final Set<String> requestAttributeSet = new HashSet<String>();
+        requestAttributeSet.addAll(
+            mapper.toLDAPAttributeTypes(request.getAttributes()));
+        requestAttributeSet.addAll(getLastModAttributes());
+
+        final String[] requestAttributes =
+            new String[requestAttributeSet.size()];
+        requestAttributeSet.toArray(requestAttributes);
+
         final ModifyRequest modifyRequest = new ModifyRequest(entryDN, mods);
         modifyRequest.addControl(new PostReadRequestControl(requestAttributes));
         addCommonControls(request, modifyRequest);

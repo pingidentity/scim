@@ -690,7 +690,8 @@ public class SCIMQueryRate
       final SSLSocketFactory socketFactory;
       try
       {
-        socketFactory = new SSLSocketFactory(sslUtil.createSSLContext());
+        socketFactory = new SSLSocketFactory(sslUtil.createSSLContext(),
+            SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
       }
       catch (GeneralSecurityException e)
       {
@@ -714,11 +715,13 @@ public class SCIMQueryRate
     final ThreadSafeClientConnManager mgr =
         new ThreadSafeClientConnManager(schemeRegistry);
     mgr.setMaxTotal(numThreads.getValue());
+    mgr.setDefaultMaxPerRoute(numThreads.getValue());
 
     final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
 
     final ApacheHttpClientConfig clientConfig =
         new ApacheHttpClientConfig(httpClient);
+    clientConfig.setBypassHostnameVerification(true);
     if (authID.isPresent())
     {
       try
