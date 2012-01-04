@@ -20,7 +20,7 @@
        </LICENSE>
        <LICENSE index="3">
          <GROUPID>org.slf4j</GROUPID>
-         <ARTIFACTID>slf4j-jdk14</ARTIFACTID>
+         <ARTIFACTID>slf4j-simple</ARTIFACTID>
          <VERSION>1.6.1</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>

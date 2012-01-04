@@ -23,8 +23,8 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.util.StaticUtils;
+import org.apache.wink.server.internal.DeploymentConfiguration;
 import org.apache.wink.server.internal.servlet.RestServlet;
-import org.apache.wink.server.utils.RegistrationUtils;
 import org.eclipse.jetty.http.ssl.SslContextFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -41,6 +41,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
+import javax.ws.rs.core.Application;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -241,7 +242,7 @@ public class SCIMServer
   public SCIMApplication registerBackend(final String baseURI,
                                          final SCIMBackend backend)
   {
-    SCIMApplication application;
+    final SCIMApplication application;
     synchronized (this)
     {
       final String normalizedBaseURI = normalizeURI(baseURI);
@@ -269,7 +270,17 @@ public class SCIMServer
 
       // JAX-RS implementation using Apache Wink.
       final ServletHolder winkServletHolder =
-          new ServletHolder(RestServlet.class);
+          new ServletHolder(new RestServlet()
+          {
+            @Override
+            protected Application getApplication(
+                final DeploymentConfiguration configuration)
+                throws ClassNotFoundException, InstantiationException,
+                IllegalAccessException
+            {
+              return application;
+            }
+          });
       winkServletHolder.setInitOrder(1);
       winkServletHolder.setInitParameter("propertiesLocation",
           "com/unboundid/scim/wink/wink-scim.properties");
@@ -310,12 +321,6 @@ public class SCIMServer
           "with the SCIM server");
     }
     server.start();
-    for(Map.Entry<ServletContextHandler, SCIMApplication> entry :
-        backends.entrySet())
-    {
-      RegistrationUtils.registerApplication(entry.getValue(),
-          entry.getKey().getServletContext());
-    }
   }
 
 

@@ -25,11 +25,12 @@ import com.unboundid.util.args.BooleanArgument;
 import com.unboundid.util.args.FileArgument;
 import com.unboundid.util.args.IntegerArgument;
 import com.unboundid.util.args.StringArgument;
+import org.apache.wink.server.internal.DeploymentConfiguration;
 import org.apache.wink.server.internal.servlet.RestServlet;
-import org.apache.wink.server.utils.RegistrationUtils;
 
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
+import javax.ws.rs.core.Application;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -365,12 +366,21 @@ public final class SCIMServletExtension
     backend = new ServerContextBackend(resourceMappers, serverContext);
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
 
-    // Create the Wink JAX-RS servlet.
-    servlet = new RestServlet();
-
-    // Create the Wink JAX-RS application. It will be registered with the
-    // servlet once the HTTP server has started in doPostRegistrationProcessing.
+    // Create the Wink JAX-RS application.
     application = new SCIMApplication(resourceMappers.keySet(), backend);
+
+    // Create the Wink JAX-RS servlet.
+    servlet = new RestServlet()
+    {
+      @Override
+      protected Application getApplication(
+          final DeploymentConfiguration configuration)
+          throws ClassNotFoundException, InstantiationException,
+          IllegalAccessException
+      {
+        return application;
+      }
+    };
 
     // Register a custom monitor provider.
     final String monitorInstanceName = getMonitorInstanceName(config);
@@ -434,16 +444,6 @@ public final class SCIMServletExtension
     }
 
     return normalizedPath;
-  }
-
-
-
-  @Override
-  public void doPostRegistrationProcessing()
-  {
-    RegistrationUtils.registerApplication(application,
-                                          servlet.getServletContext(),
-                                          name);
   }
 
 
