@@ -388,9 +388,9 @@
 
     <!--
      ! The following element provides information that is needed to search
-     ! LDAP for Group entries. This references the 'userSearchParams' element,
-     ! which is also used in the MembersDerivedAttribute, so that the Group
-     ! resource knows to use these search parameters for its members.
+     ! LDAP for Group entries. This references the 'groupSearchParams' element,
+     ! which is also used in the GroupsDerivedAttribute, so that the User
+     ! resource knows to use these search parameters for its groups.
      !-->
     <LDAPSearchRef idref="groupSearchParams"/>
 
