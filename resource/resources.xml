@@ -62,7 +62,8 @@
     </LDAPAdd>
 
     <!-- These elements define the SCIM attributes and their LDAP mappings. -->
-    <attribute name="userName" readOnly="false" required="true">
+    <attribute name="userName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="true">
       <description>Unique identifier for the User, typically used by the user
           to directly authenticate to the Service Provider</description>
       <simple dataType="string" caseExact="false">
@@ -70,13 +71,15 @@
       </simple>
     </attribute>
 
-    <attribute name="externalId" readOnly="false" required="false">
+    <attribute name="externalId" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>Unique identifier for the Resource as defined by the
           Service Consumer</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
 
-    <attribute name="name" readOnly="false" required="false">
+    <attribute name="name" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The components of the User's real name</description>
       <complex>
         <subAttribute name="formatted" dataType="string">
@@ -114,7 +117,8 @@
       </complex>
     </attribute>
 
-    <attribute name="displayName" readOnly="false" required="false">
+    <attribute name="displayName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The name of the User, suitable for display to
           end-users</description>
       <simple dataType="string" caseExact="false">
@@ -122,33 +126,38 @@
       </simple>
     </attribute>
 
-    <attribute name="nickName" readOnly="false" required="false">
+    <attribute name="nickName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The casual way to address the user in real life, e.g. "Bob"
           or "Bobby" instead of "Robert"</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
 
-    <attribute name="profileUrl" readOnly="false" required="false">
+    <attribute name="profileUrl" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>URL to a page representing the User's online
           profile</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
 
-    <attribute name="title" readOnly="false" required="false">
+    <attribute name="title" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The User's title, such as "Vice President"</description>
       <simple dataType="string" caseExact="false">
         <mapping ldapAttribute="title"/>
       </simple>
     </attribute>
 
-    <attribute name="userType" readOnly="false" required="false">
+    <attribute name="userType" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The organization-to-user relationship</description>
       <simple dataType="string" caseExact="false">
         <mapping ldapAttribute="employeeType"/>
       </simple>
     </attribute>
 
-    <attribute name="preferredLanguage" readOnly="false" required="false">
+    <attribute name="preferredLanguage" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The User's preferred written or spoken language. Generally
           used for selecting a localized User interface.  Valid values are
           concatenation of the ISO 639-1 two letter language code, an
@@ -159,7 +168,8 @@
       </simple>
     </attribute>
 
-    <attribute name="locale" readOnly="false" required="false">
+    <attribute name="locale" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>Used to indicate the User's default location for purposes of
           localizing items such as currency, date time format, numerical
           representations, etc. A locale value is a concatenation of the
@@ -169,19 +179,22 @@
       <simple dataType="string" caseExact="false"/>
     </attribute>
 
-    <attribute name="timezone" readOnly="false" required="false">
+    <attribute name="timezone" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The User's time zone in the "Olson" timezone database format;
           e.g.,'America/Los_Angeles'</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
 
-    <attribute name="active" readOnly="false" required="false">
+    <attribute name="active" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>A Boolean value indicating the User's administrative
           status</description>
       <simple dataType="boolean"/>
     </attribute>
 
-    <attribute name="password" readOnly="false" required="false">
+    <attribute name="password" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The User's clear text password. This attribute is intended
           to be used as a means to specify an initial password when creating
           a new User or to reset an existing User's password. This value will
@@ -191,7 +204,8 @@
       </simple>
     </attribute>
 
-    <attribute name="emails" readOnly="false" required="false">
+    <attribute name="emails" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>E-mail addresses for the User</description>
       <simpleMultiValued childName="email" dataType="string">
         <canonicalValue name="work">
@@ -202,7 +216,8 @@
       </simpleMultiValued>
     </attribute>
 
-    <attribute name="phoneNumbers" readOnly="false" required="false">
+    <attribute name="phoneNumbers" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>Phone numbers for the User</description>
       <simpleMultiValued childName="phoneNumber" dataType="string">
         <canonicalValue name="work">
@@ -220,7 +235,8 @@
       </simpleMultiValued>
     </attribute>
 
-    <attribute name="ims" readOnly="false" required="false">
+    <attribute name="ims" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>Instant messaging address for the User</description>
       <simpleMultiValued childName="im" dataType="string">
         <canonicalValue name="aim"/>
@@ -234,7 +250,8 @@
       </simpleMultiValued>
     </attribute>
 
-    <attribute name="photos" readOnly="false" required="false">
+    <attribute name="photos" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>URL of photos of the User</description>
       <simpleMultiValued childName="photo" dataType="string">
         <canonicalValue name="photo"/>
@@ -242,7 +259,8 @@
       </simpleMultiValued>
     </attribute>
 
-    <attribute name="addresses" readOnly="false" required="false">
+    <attribute name="addresses" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>The full mailing address, formatted for display or use with
           a mailing label</description>
       <complexMultiValued childName="address">
@@ -291,7 +309,8 @@
       </complexMultiValued>
     </attribute>
 
-    <attribute name="groups" readOnly="true" required="false">
+    <attribute name="groups" schema="urn:scim:schemas:core:1.0"
+               readOnly="true" required="false">
       <description>A list of groups that the user belongs to</description>
       <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute">
         <LDAPSearchRef idref="groupSearchParams"/>
@@ -302,14 +321,16 @@
       </simpleMultiValued>
     </attribute>
 
-    <attribute name="entitlements" readOnly="false" required="false">
+    <attribute name="entitlements" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>A list of entitlements for the User that represent a thing
           the User has. That is, an entitlement is an additional right to a
           thing, object or service</description>
       <simpleMultiValued childName="entitlement" dataType="string"/>
     </attribute>
 
-    <attribute name="roles" readOnly="false" required="false">
+    <attribute name="roles" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>A list of roles for the User that collectively represent who
           the User is</description>
       <simpleMultiValued childName="role" dataType="string"/>
@@ -317,8 +338,9 @@
 
     <!-- SCIM enterprise extension attribute mappings. -->
 
-    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
-               name="employeeNumber" readOnly="false" required="false">
+    <attribute name="employeeNumber"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
       <description>Numeric or alphanumeric identifier assigned to a person,
           typically based on order of hire or association with an
           organization</description>
@@ -327,38 +349,43 @@
       </simple>
     </attribute>
 
-    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
-               name="costCenter" readOnly="false" required="false">
+    <attribute name="costCenter"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
       <description>Identifies the name of a cost center</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
 
-    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
-               name="organization" readOnly="false" required="false">
+    <attribute name="organization"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
       <description>Identifies the name of an organization</description>
       <simple dataType="string" caseExact="false">
         <mapping ldapAttribute="o"/>
       </simple>
     </attribute>
 
-    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
-               name="division" readOnly="false" required="false">
+    <attribute name="division"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
       <description>Identifies the name of a division</description>
       <simple dataType="string" caseExact="false">
         <mapping ldapAttribute="ou"/>
       </simple>
     </attribute>
 
-    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
-               name="department" readOnly="false" required="false">
+    <attribute name="department"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
       <description>Identifies the name of a department</description>
       <simple dataType="string" caseExact="false">
         <mapping ldapAttribute="departmentNumber"/>
       </simple>
     </attribute>
 
-    <attribute schema="urn:scim:schemas:extension:enterprise:1.0"
-                      name="manager" readOnly="false" required="false">
+    <attribute name="manager"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
       <description>The User's manager</description>
       <complex>
         <subAttribute name="managerId" dataType="string">
@@ -403,14 +430,16 @@
       </fixedAttribute>
     </LDAPAdd>
 
-    <attribute name="displayName" readOnly="false" required="false">
+    <attribute name="displayName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
       <description>A human readable name for the Group</description>
       <simple dataType="string">
         <mapping ldapAttribute="cn"/>
       </simple>
     </attribute>
 
-    <attribute name="members" readOnly="false" required="true">
+    <attribute name="members" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="true">
       <description>A list of members of the Group</description>
       <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute">
         <LDAPSearchRef idref="userSearchParams"/>

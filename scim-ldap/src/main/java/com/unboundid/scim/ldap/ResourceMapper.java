@@ -309,15 +309,7 @@ public class ResourceMapper
       final String resourceSchema)
       throws SCIMException
   {
-    final String schema;
-    if (attributeDefinition.getSchema() == null)
-    {
-      schema = resourceSchema;
-    }
-    else
-    {
-      schema = attributeDefinition.getSchema();
-    }
+    final String schema = attributeDefinition.getSchema();
 
     if (attributeDefinition.getSimple() != null)
     {
