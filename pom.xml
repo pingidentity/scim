@@ -270,6 +270,7 @@
 		          <exportDirectory>${original.target.dir}/export</exportDirectory>
 		          <username>${env.CVSDUDE_USER}</username>
 		          <password>${env.CVSDUDE_PASSWORD}</password>
+		          <tag>scim-${project.version}</tag> 
 		          <scmVersion>scim-${project.version}</scmVersion>
 		          <scmVersionType>tag</scmVersionType>
 		        </configuration>
