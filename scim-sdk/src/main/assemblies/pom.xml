@@ -31,7 +31,7 @@
       See http://www.simplecloud.info for more information.
     </description>
     
-    <url>http://www.unboundid.com/labs/scim.php</url>
+    <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
     
     <inceptionYear>2011</inceptionYear>
     
@@ -51,7 +51,7 @@
       </license>
       <license>
         <name>UnboundID SCIM SDK Free Use License</name>
-        <url>http://www.unboundid.com/labs/scim.php</url>
+        <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
         <comments>This license is available from the UnboundID website.</comments>
       </license>
     </licenses>

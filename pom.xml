@@ -20,7 +20,7 @@
       <!-- When the Server SDK becomes a release version, make sure to change
            the value of UnboundID-Server-SDK-Version in the scim-extension pom
            -->
-        <unboundid.serversdk.version>3.2.1.0-SNAPSHOT</unboundid.serversdk.version>
+        <unboundid.serversdk.version>3.2.1.0</unboundid.serversdk.version>
         <main.basedir>${project.basedir}</main.basedir>
     </properties>
 

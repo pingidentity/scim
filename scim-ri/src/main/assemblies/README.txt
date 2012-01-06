@@ -64,4 +64,5 @@ that exercises the basic SCIM operations. The following components are included:
  The bundled examples are simple. Enhance them by modifying the client source
  found under client/src/main/java and then rebuild.
 
- For further information visit UnboundID labs at http://www.unboundid.com/labs.
+ For further information visit UnboundID labs at
+ http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim.
