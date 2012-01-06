@@ -3,13 +3,12 @@
   ~ All Rights Reserved.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>scim-parent</artifactId>
         <groupId>com.unboundid.product.scim</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
     <artifactId>scim-extension</artifactId>
     <packaging>jar</packaging>
@@ -122,13 +121,13 @@
                       <target name="generate-extension-docs">
                         <property name="doc.dir" location="${project.reporting.outputDirectory}/extension-docs" />
                         <delete dir="${doc.dir}" />
-                        <mkdir  dir="${doc.dir}/images" />
+                        <mkdir dir="${doc.dir}/images" />
 
                         <copy file="${main.basedir}/resource/unboundid.css" toDir="${doc.dir}" />
 
                         <copy toDir="${doc.dir}/images">
                           <fileset dir="${main.basedir}/resource/images">
-                            <include  name="**/*" />
+                            <include name="**/*" />
                           </fileset>
                         </copy>
 
