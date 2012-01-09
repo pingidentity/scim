@@ -43,6 +43,24 @@
       <url>http://www.unboundid.com</url>
     </organization>    
 
+    <developers>
+      <developer>
+        <id>coulbeck</id>
+        <name>Andrew Coulbeck</name>
+        <email>andy.coulbeck@unboundid.com</email>
+      </developer>
+      <developer>
+        <id>boli</id>
+        <name>Bo Li</name>
+        <email>bo.li@unboundid.com</email>
+      </developer>
+      <developer>
+        <id>tthompson</id>
+        <name>Trevor Thompson</name>
+        <email>trevor.thompson@unboundid.com</email>
+      </developer>
+    </developers>
+
     <licenses>
       <license>
         <name>GNU General Public License version 2 (GPLv2)</name>
