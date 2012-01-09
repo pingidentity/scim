@@ -185,6 +185,18 @@ public class QueryRateThread
         final ResultCode rc = ResultCode.OTHER;
         resultCode.compareAndSet(null, rc);
       }
+      catch (RuntimeException e)
+      {
+        Debug.debugException(e);
+
+        // If we are shutting down then just ignore the error.
+        if (stopRequested.get())
+        {
+          break;
+        }
+
+        throw e;
+      }
 
       queryCounter.incrementAndGet();
       queryDurations.addAndGet(System.nanoTime() - startTime);

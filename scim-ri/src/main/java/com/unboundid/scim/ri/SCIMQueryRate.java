@@ -33,6 +33,7 @@ import com.unboundid.util.FormattableColumn;
 import com.unboundid.util.HorizontalAlignment;
 import com.unboundid.util.OutputFormat;
 import com.unboundid.util.ValuePattern;
+import com.unboundid.util.WakeableSleeper;
 import com.unboundid.util.args.ArgumentException;
 import com.unboundid.util.args.ArgumentParser;
 import com.unboundid.util.args.BooleanArgument;
@@ -962,6 +963,12 @@ public class SCIMQueryRate
     {
       t.signalShutdown();
     }
+
+    // Interrupt any blocked threads after a grace period.
+    final WakeableSleeper sleeper = new WakeableSleeper();
+    sleeper.sleep(1000);
+    mgr.shutdown();
+
     for (final QueryRateThread t : threads)
     {
       final ResultCode r = t.waitForShutdown();
