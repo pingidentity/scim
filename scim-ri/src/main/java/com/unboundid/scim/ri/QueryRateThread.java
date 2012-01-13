@@ -72,6 +72,9 @@ public class QueryRateThread
   // The value pattern to use for the filters.
   private final ValuePattern filterPattern;
 
+  // Indicates whether this is a query request or a get request.
+  private final boolean isQuery;
+
   // The barrier to use for controlling the rate of queries.  null if no
   // rate-limiting should be used.
   private final FixedRateBarrier fixedRateBarrier;
@@ -82,6 +85,8 @@ public class QueryRateThread
    * Creates a new search rate thread with the provided information.
    *
    * @param  threadNumber     The thread number for this thread.
+   * @param  isQuery          Flag indicating whether the request is
+   *                          a query or a get.
    * @param  client           The client to use for the queries.
    * @param  filterPattern    The value pattern for the filters.
    * @param  attributes       The set of attributes to return.
@@ -100,6 +105,7 @@ public class QueryRateThread
    *                          should be used.
    */
   QueryRateThread(final int threadNumber,
+                  final boolean isQuery,
                   final SCIMEndpoint<? extends BaseResource> client,
                   final ValuePattern filterPattern,
                   final String[] attributes,
@@ -114,6 +120,7 @@ public class QueryRateThread
     setDaemon(true);
 
     this.client          = client;
+    this.isQuery         = isQuery;
     this.filterPattern   = filterPattern;
     this.attributes      = attributes;
     this.queryCounter    = queryCounter;
@@ -170,11 +177,19 @@ public class QueryRateThread
 
       try
       {
-        final Resources<? extends BaseResource> resources =
-            client.query(filterValue, null, null, attributes);
-        if (resources != null)
+        if (isQuery)
         {
-          resourceCounter.addAndGet(resources.getItemsPerPage());
+          final Resources<? extends BaseResource> resources =
+            client.query(filterValue, null, null, attributes);
+          if (resources != null)
+          {
+            resourceCounter.addAndGet(resources.getItemsPerPage());
+          }
+        }
+        else
+        {
+          client.get(filterValue, null, attributes);
+          resourceCounter.incrementAndGet();
         }
       }
       catch (SCIMException e)

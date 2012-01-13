@@ -197,6 +197,9 @@ public class SCIMQueryRate
   // The argument used to specify the filters for the queries.
   private StringArgument filter;
 
+  // The argument used to specify a resource ID (or pattern).
+  private StringArgument resourceId;
+
   // The argument used to specify the name of resources to be queried.
   private StringArgument resourceName;
 
@@ -367,6 +370,13 @@ public class SCIMQueryRate
     parser.addArgument(filter);
 
 
+    resourceId = new StringArgument(
+        'd', "resourceID", false, 1,
+        INFO_QUERY_TOOL_ARG_PLACEHOLDER_RESOURCE_ID.get(),
+        INFO_QUERY_TOOL_ARG_DESC_RESOURCE_ID.get());
+    parser.addArgument(resourceId);
+
+
     attributes = new StringArgument(
         'A', "attribute", false, 0,
         INFO_QUERY_TOOL_ARG_PLACEHOLDER_ATTRIBUTE.get(),
@@ -492,6 +502,7 @@ public class SCIMQueryRate
     parser.addExclusiveArgumentSet(keyStorePassword, keyStorePasswordFile);
     parser.addExclusiveArgumentSet(trustStorePassword, trustStorePasswordFile);
     parser.addExclusiveArgumentSet(trustAll, trustStorePath);
+    parser.addExclusiveArgumentSet(filter, resourceId);
   }
 
 
@@ -505,7 +516,7 @@ public class SCIMQueryRate
     final LinkedHashMap<String[],String> examples =
          new LinkedHashMap<String[],String>();
 
-    final String[] args =
+    final String[] args1 =
     {
       "--hostname", "server.example.com",
       "--port", "80",
@@ -517,7 +528,20 @@ public class SCIMQueryRate
       "--attribute", "name",
       "--numThreads", "8"
     };
-    examples.put(args, INFO_QUERY_TOOL_EXAMPLE_1.get());
+    examples.put(args1, INFO_QUERY_TOOL_EXAMPLE_1.get());
+
+    final String[] args2 =
+    {
+      "--hostname", "server.example.com",
+      "--port", "80",
+      "--authID", "admin",
+      "--authPassword", "password",
+      "--resourceID", "uid=user.[1-1000000],ou=people,dc=example,dc=com",
+      "--attribute", "userName",
+      "--attribute", "name",
+      "--numThreads", "8"
+    };
+    examples.put(args2, INFO_QUERY_TOOL_EXAMPLE_2.get());
 
     return examples;
   }
@@ -547,6 +571,7 @@ public class SCIMQueryRate
 
     // Create a value pattern for the filter.
     final ValuePattern filterPattern;
+    boolean isQuery = true;
     if (filter.isPresent())
     {
       try
@@ -557,6 +582,20 @@ public class SCIMQueryRate
       {
         Debug.debugException(pe);
         err(ERR_QUERY_TOOL_BAD_FILTER_PATTERN.get(pe.getMessage()));
+        return ResultCode.PARAM_ERROR;
+      }
+    }
+    else if (resourceId.isPresent())
+    {
+      isQuery = false;
+      try
+      {
+        filterPattern = new ValuePattern(resourceId.getValue());
+      }
+      catch (ParseException pe)
+      {
+        Debug.debugException(pe);
+        err(ERR_QUERY_TOOL_BAD_RESOURCE_ID_PATTERN.get(pe.getMessage()));
         return ResultCode.PARAM_ERROR;
       }
     }
@@ -813,9 +852,9 @@ public class SCIMQueryRate
     for (int i=0; i < threads.length; i++)
     {
       threads[i] =
-          new QueryRateThread(i, endpoint, filterPattern, attrs, barrier,
-              queryCounter, resourceCounter, queryDurations, errorCounter,
-              fixedRateBarrier);
+          new QueryRateThread(i, isQuery, endpoint, filterPattern, attrs,
+              barrier, queryCounter, resourceCounter, queryDurations,
+              errorCounter, fixedRateBarrier);
       threads[i].start();
     }
 
