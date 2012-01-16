@@ -5,8 +5,8 @@
 
 package com.unboundid.scim.extension;
 
-import com.unboundid.directory.tests.standalone.BaseTestCase;
-import com.unboundid.directory.tests.standalone.ExternalInstance;
+import com.unboundid.directory.tests.externalinstance.BaseTestCase;
+import com.unboundid.directory.tests.externalinstance.ExternalInstance;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
 import org.apache.http.auth.AuthScope;

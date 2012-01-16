@@ -5,11 +5,12 @@
 
 package com.unboundid.scim.extension;
 
-import com.unboundid.directory.tests.standalone.DirectoryInstance;
-import com.unboundid.directory.tests.standalone.ExternalInstance;
-import com.unboundid.directory.tests.standalone.ExternalInstanceId;
-import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
-import com.unboundid.directory.tests.standalone.TestCaseUtils;
+import com.unboundid.directory.tests.externalinstance.DirectoryInstance;
+import com.unboundid.directory.tests.externalinstance.ExternalInstance;
+import com.unboundid.directory.tests.externalinstance.ExternalInstanceManager;
+import com.unboundid.directory.tests.externalinstance.TestCaseUtils;
+import com.unboundid.directory.tests.externalinstance.standalone.
+    ExternalInstanceIdImpl;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -188,7 +189,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   {
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
 
-    dsInstance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
+    dsInstance = m.getExternalInstance(
+        ExternalInstanceIdImpl.BasicDirectoryServer);
 
     dsInstance.runSetup("--ldapsPort",
         String.valueOf(TestCaseUtils.getFreePort()),

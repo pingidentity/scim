@@ -42,7 +42,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>com.unboundid.directory.tests.standalone.TestListener</value>
+                            <value>com.unboundid.directory.tests.externalinstance.TestListener</value>
                         </property>
                     </properties>
                 </configuration>
@@ -194,13 +194,13 @@
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.8</version>
+            <version>0.9-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.8</version>
+            <version>0.9-SNAPSHOT</version>
             <classifier>sources</classifier>
             <scope>test</scope>
         </dependency>

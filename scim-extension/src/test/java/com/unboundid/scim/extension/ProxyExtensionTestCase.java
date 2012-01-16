@@ -5,10 +5,11 @@
 
 package com.unboundid.scim.extension;
 
-import com.unboundid.directory.tests.standalone.ExternalInstanceId;
-import com.unboundid.directory.tests.standalone.ExternalInstanceManager;
-import com.unboundid.directory.tests.standalone.ProxyInstance;
-import com.unboundid.directory.tests.standalone.TestCaseUtils;
+import com.unboundid.directory.tests.externalinstance.ExternalInstanceManager;
+import com.unboundid.directory.tests.externalinstance.ProxyInstance;
+import com.unboundid.directory.tests.externalinstance.TestCaseUtils;
+import com.unboundid.directory.tests.externalinstance.standalone.
+    ExternalInstanceIdImpl;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -42,8 +43,9 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
   {
     final ExternalInstanceManager m = ExternalInstanceManager.singleton();
 
-    dsInstance = m.getExternalInstance(ExternalInstanceId.BasicDirectoryServer);
-    proxyInstance = m.getExternalInstance(ExternalInstanceId.ProxyOne);
+    dsInstance = m.getExternalInstance(
+        ExternalInstanceIdImpl.BasicDirectoryServer);
+    proxyInstance = m.getExternalInstance(ExternalInstanceIdImpl.ProxyOne);
 
     proxyInstance.runSetup("--ldapsPort",
                            String.valueOf(TestCaseUtils.getFreePort()),
