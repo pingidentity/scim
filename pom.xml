@@ -42,8 +42,8 @@
     </organization>
 
     <scm>
-        <connection>scm:svn:https://unboundid-svn.cvsdude.com/components/scim/trunk</connection>
-        <developerConnection>scm:svn:https://unboundid-svn.cvsdude.com/components/scim/trunk</developerConnection>
+        <connection>scm:svn:https://unboundid.svn.cvsdude.com/components/scim/trunk</connection>
+        <developerConnection>scm:svn:https://unboundid.svn.cvsdude.com/components/scim/trunk</developerConnection>
     </scm>
 
     <modules>

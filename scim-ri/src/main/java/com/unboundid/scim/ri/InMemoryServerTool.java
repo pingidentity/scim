@@ -698,13 +698,13 @@ public class InMemoryServerTool
 
     final String[] example1Args =
     {
-        "--useResourcesFile", "config/resources.xml"
+        "--resourceMappingFile", "config/resources.xml"
     };
     exampleUsages.put(example1Args, INFO_MEM_SERVER_TOOL_EXAMPLE_1.get());
 
     final String[] example2Args =
     {
-      "--useResourcesFile", "config/resources.xml",
+      "--resourceMappingFile", "config/resources.xml",
       "--contextPath", "scim",
       "--port", "8181",
       "--ldifFile", "test.ldif"
