@@ -252,6 +252,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
 
       if (path != null)
       {
+        // Parse the path into an endpoint and optional resource ID.
         int startPos = 0;
         if (path.charAt(startPos) == '/')
         {
@@ -266,15 +267,29 @@ public class BulkContentRequestHandler extends BulkContentHandler
 
         endpoint = path.substring(startPos, endPos);
 
-        if (method != BulkOperation.Method.POST)
+        if (endPos < path.length() - 1)
         {
-          if (endPos >= path.length() - 1)
+          resourceID = path.substring(endPos+1);
+        }
+
+        if (method == BulkOperation.Method.POST)
+        {
+          if (resourceID != null)
+          {
+            throw new InvalidResourceException(
+                "The bulk operation has method POST but the path includes" +
+                "a resource ID");
+          }
+        }
+        else
+        {
+          if (resourceID == null)
           {
             throw new InvalidResourceException(
                 "The bulk operation does not have a resource ID in " +
                 "the path");
           }
-          resourceID = path.substring(endPos+1);
+
           if (resourceID.startsWith("bulkId:"))
           {
             final String ref = resourceID.substring(7);
@@ -323,6 +338,13 @@ public class BulkContentRequestHandler extends BulkContentHandler
       final UriBuilder locationBuilder =
           UriBuilder.fromUri(requestContext.getUriInfo().getBaseUri());
       locationBuilder.path(path);
+
+      if (method == BulkOperation.Method.POST && bulkId == null)
+      {
+        throw new InvalidResourceException(
+            "The bulk operation has method POST but does not " +
+            "specify a bulkId");
+      }
 
       if (bulkId != null)
       {
@@ -380,13 +402,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
       switch (method)
       {
         case POST:
-          if (bulkId == null)
-          {
-            throw new InvalidResourceException(
-                "The bulk operation has method POST but does not " +
-                "specify a bulkId");
-          }
-
           final BaseResource postedResource = backend.postResource(
               new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
                                       requestContext.getAuthID(),
@@ -394,9 +409,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                       resource.getScimObject(),
                                       queryAttributes));
 
-          final String newResourceID = postedResource.getId();
-          resourceIDs.put(bulkId, newResourceID);
-          locationBuilder.path(newResourceID);
+          resourceID = postedResource.getId();
+          locationBuilder.path(resourceID);
           location = locationBuilder.build().toString();
           statusCode = 201;
           resourceStats.incrementStat(ResourceStats.POST_OK);
@@ -423,6 +437,11 @@ public class BulkContentRequestHandler extends BulkContentHandler
           location = locationBuilder.build().toString();
           resourceStats.incrementStat(ResourceStats.DELETE_OK);
           break;
+      }
+
+      if (bulkId != null)
+      {
+        resourceIDs.put(bulkId, resourceID);
       }
     }
     catch (SCIMException e)

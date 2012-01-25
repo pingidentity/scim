@@ -32,6 +32,7 @@ import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.sdk.SortParameters;
+import com.unboundid.scim.sdk.Status;
 import com.unboundid.scim.sdk.Version;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
@@ -50,6 +51,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -1551,7 +1553,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         BulkOperation.Method.POST, "alice", null,
         "/Users", userAlice));
     operations.add(BulkOperation.createRequest(
-        BulkOperation.Method.PUT, null, null,
+        BulkOperation.Method.PUT, "bob", null,
         "/Users/" + userBob.getId(), userBob));
     operations.add(BulkOperation.createRequest(
         BulkOperation.Method.DELETE, null, null,
@@ -1610,11 +1612,27 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                   0 : Integer.parseInt(beforeGroupPostSuccessCount)) + 1);
 
 
-    assertEquals(responses.size(), 4);
-    assertEquals(responses.get(0).getStatus().getCode(), "201");
-    assertEquals(responses.get(1).getStatus().getCode(), "200");
-    assertEquals(responses.get(2).getStatus().getCode(), "200");
-    assertEquals(responses.get(3).getStatus().getCode(), "201");
+    assertEquals(responses.size(), operations.size());
+
+    for (int i = 0; i < operations.size(); i++)
+    {
+      final BulkOperation o = operations.get(i);
+      final BulkOperation r = responses.get(i);
+
+      assertEquals(o.getMethod(), r.getMethod());
+      assertEquals(o.getBulkId(), r.getBulkId());
+      assertNotNull(r.getLocation());
+      assertNotNull(r.getStatus());
+
+      if (o.getMethod() == BulkOperation.Method.POST)
+      {
+        assertEquals(r.getStatus().getCode(), "201");
+      }
+      else
+      {
+        assertEquals(r.getStatus().getCode(), "200");
+      }
+    }
 
     userAlice = userEndpoint.query(
         "userName eq \"alice-" + mediaSubType + "\"").iterator().next();
@@ -1637,11 +1655,122 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     group = groupEndpoint.query(
         "displayName eq \"group-" + mediaSubType + "\"").iterator().next();
+    assertEquals(responses.get(3).getBulkId(), "group");
     assertTrue(responses.get(3).getLocation().contains(group.getId()));
     assertEquals(group.getMembers().iterator().next().getValue(),
                  userAlice.getId());
 
     groupEndpoint.delete(group.getId());
+  }
+
+
+
+  /**
+   * Tests that the server returns the correct response for invalid SCIM Bulk
+   * operations.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testInvalidBulk()
+      throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource testUser = userEndpoint.newResource();
+    testUser.setName(new Name("Test Invalid Bulk", "Bulk", null,
+                              "Test", null, null));
+    testUser.setUserName("test-invalid-bulk");
+
+    final SCIMEndpoint<GroupResource> groupEndpoint =
+        service.getGroupEndpoint();
+
+    final GroupResource testGroup = groupEndpoint.newResource();
+    testGroup.setDisplayName("test-invalid-bulk");
+    final Collection<Entry<String>> members = new ArrayList<Entry<String>>();
+    members.add(new Entry<String>("bulkId:undefined", null));
+    testGroup.setMembers(members);
+
+    // Missing method.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(null, null, null, "/Users", null),
+        "400");
+
+    // POST with missing bulkId.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, null, null,
+                                    "/Users", testUser),
+        "400");
+
+    // Missing path.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null, null,
+                                    null, null),
+        "400");
+
+    // POST with missing data.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "user", null,
+                                    "/Users", null),
+        "400");
+
+    // POST specifies path with a resource ID.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "user", null,
+                                    "/Users/1", testUser),
+        "400");
+
+    // DELETE specifies a path with no resource ID.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null, null,
+                                    "/Users", null),
+        "400");
+
+    // Undefined bulkId reference in the data.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "group", null,
+                                    "/Groups/", testGroup),
+        "400");
+
+    // PATCH is not supported.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.PATCH, null, null,
+                                    "/Users/1", testUser),
+        "501");
+  }
+
+
+
+  /**
+   * Tests that the server returns the correct response for an invalid SCIM Bulk
+   * operation.
+   *
+   * @param o                     An invalid operation.
+   * @param expectedResponseCode  The expected response code.
+   *
+   * @throws Exception If the test fails.
+   */
+  private void testInvalidBulkOperation(final BulkOperation o,
+                                        final String expectedResponseCode)
+      throws Exception
+  {
+    // We allow either the request to fail or the individual operation to fail
+    // within the request.
+    final BulkResponse response;
+    try
+    {
+      response = service.processBulkRequest(Arrays.asList(o));
+      final Status status = response.iterator().next().getStatus();
+
+      assertNotNull(status);
+      assertEquals(status.getCode(), expectedResponseCode);
+      assertNotNull(status.getDescription());
+    }
+    catch (SCIMException e)
+    {
+      assertEquals(String.valueOf(e.getStatusCode()), expectedResponseCode);
+      assertNotNull(e.getMessage());
+    }
   }
 
 
@@ -1831,5 +1960,60 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     }
 
     return count;
+  }
+
+
+
+  /**
+   * Our implementation of Bulk operations permits a bulkId reference to be
+   * used as a resource ID in the path. This method tests that feature.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkIdInPath() throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource testUser = userEndpoint.newResource();
+    testUser.setName(new Name("Test BulkId In Path", "Path", null,
+                              "Test", null, null));
+    testUser.setUserName("test-bulkid-in-path");
+
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "user", null,
+        "/Users", testUser));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.DELETE, null, null,
+        "/Users/" + "bulkId:user", null));
+
+    final BulkResponse response = service.processBulkRequest(operations);
+    final List<BulkOperation> responses = new ArrayList<BulkOperation>();
+    for (final BulkOperation o : response)
+    {
+      responses.add(o);
+    }
+
+    assertEquals(responses.size(), operations.size());
+
+    for (int i = 0; i < operations.size(); i++)
+    {
+      final BulkOperation o = operations.get(i);
+      final BulkOperation r = responses.get(i);
+
+      if (o.getMethod() == BulkOperation.Method.POST)
+      {
+        assertEquals(r.getStatus().getCode(), "201");
+      }
+      else
+      {
+        assertEquals(r.getStatus().getCode(), "200");
+      }
+    }
+
+    assertEquals(userEndpoint.query(
+        "userName eq \"test-bulkid-in-path\"").getTotalResults(), 0);
   }
 }
