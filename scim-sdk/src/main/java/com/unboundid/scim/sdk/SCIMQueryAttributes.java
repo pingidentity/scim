@@ -70,49 +70,48 @@ public class SCIMQueryAttributes
     {
       allAttributesRequested = true;
     }
-    else if (attributes.isEmpty())
-    {
-      allAttributesRequested = false;
-    }
     else
     {
       allAttributesRequested = false;
-      final String[] paths = attributes.split(",");
-      if (paths.length > 0)
+      if (!attributes.isEmpty())
       {
-        for (final String a : paths)
+        final String[] paths = attributes.split(",");
+        if (paths.length > 0)
         {
-          final AttributePath path = AttributePath.parse(a);
-          final AttributeDescriptor attributeDescriptor =
-              resourceDescriptor.getAttribute(path.getAttributeSchema(),
-                                              path.getAttributeName());
+          for (final String a : paths)
+          {
+            final AttributePath path = AttributePath.parse(a);
+            final AttributeDescriptor attributeDescriptor =
+                resourceDescriptor.getAttribute(path.getAttributeSchema(),
+                                                path.getAttributeName());
 
-          Set<AttributeDescriptor> subAttributes =
-              descriptors.get(attributeDescriptor);
-          if (subAttributes == null)
-          {
-            subAttributes = new HashSet<AttributeDescriptor>();
-            if (path.getSubAttributeName() != null)
+            Set<AttributeDescriptor> subAttributes =
+                descriptors.get(attributeDescriptor);
+            if (subAttributes == null)
             {
-              subAttributes.add(
-                  attributeDescriptor.getSubAttribute(
-                      path.getSubAttributeName()));
-            }
-            descriptors.put(attributeDescriptor, subAttributes);
-          }
-          else
-          {
-            if (!subAttributes.isEmpty())
-            {
+              subAttributes = new HashSet<AttributeDescriptor>();
               if (path.getSubAttributeName() != null)
               {
                 subAttributes.add(
                     attributeDescriptor.getSubAttribute(
                         path.getSubAttributeName()));
               }
-              else
+              descriptors.put(attributeDescriptor, subAttributes);
+            }
+            else
+            {
+              if (!subAttributes.isEmpty())
               {
-                subAttributes.clear();
+                if (path.getSubAttributeName() != null)
+                {
+                  subAttributes.add(
+                      attributeDescriptor.getSubAttribute(
+                          path.getSubAttributeName()));
+                }
+                else
+                {
+                  subAttributes.clear();
+                }
               }
             }
           }

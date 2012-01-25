@@ -19,10 +19,13 @@ package com.unboundid.scim.marshal;
 
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
 
 import java.io.OutputStream;
+import java.util.List;
+
 
 
 /**
@@ -68,4 +71,19 @@ public interface Marshaller {
   void marshal(SCIMException response, OutputStream outputStream)
     throws Exception;
 
+  /**
+   * Write the content of a SCIM bulk operation request or response to an
+   * output stream.
+   *
+   * @param outputStream  The output stream to which the content should be
+   *                      written.
+   * @param failOnErrors  The value of failOnErrors, or -1 to not provide a
+   *                      value.
+   * @param operations    The bulk operations to include in the content.
+   *
+   * @throws Exception  If the content could not be written.
+   */
+  void bulkMarshal(OutputStream outputStream, int failOnErrors,
+                   List<BulkOperation> operations)
+    throws Exception;
 }

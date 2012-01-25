@@ -35,8 +35,10 @@ import org.apache.wink.common.WinkApplication;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
@@ -49,8 +51,11 @@ import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 public class SCIMApplication extends WinkApplication
 {
   private final Set<Object> instances;
-  private final Collection<ResourceStats> resourceStats;
+  private final Map<String,ResourceDescriptor> descriptors;
+  private final Map<String,ResourceStats> resourceStats;
   private final SCIMBackend backend;
+  private volatile long bulkMaxOperations = Long.MAX_VALUE;
+  private volatile long bulkMaxPayloadSize = Long.MAX_VALUE;
 
   /**
    * Create a new SCIMApplication that defines the endpoints provided by the
@@ -61,8 +66,16 @@ public class SCIMApplication extends WinkApplication
    */
   public SCIMApplication(
       final Collection<ResourceDescriptor> resourceDescriptors,
-      final SCIMBackend backend) {
-    instances = new HashSet<Object>(resourceDescriptors.size() * 4 + 8);
+      final SCIMBackend backend)
+  {
+    descriptors =
+        new HashMap<String, ResourceDescriptor>(resourceDescriptors.size());
+    for (final ResourceDescriptor descriptor : resourceDescriptors)
+    {
+      descriptors.put(descriptor.getEndpoint(), descriptor);
+    }
+
+    instances = new HashSet<Object>(resourceDescriptors.size() * 4 + 12);
     Collection<ResourceStats> statsCollection =
         new ArrayList<ResourceStats>(resourceDescriptors.size() + 2);
 
@@ -98,7 +111,20 @@ public class SCIMApplication extends WinkApplication
       instances.add(new JSONQueryResource(resourceDescriptor, stats, backend));
       statsCollection.add(stats);
     }
-    this.resourceStats = Collections.unmodifiableCollection(statsCollection);
+
+    // The Bulk operation endpoint.
+    stats = new ResourceStats("Bulk");
+    instances.add(new BulkResource(this, stats, backend));
+    instances.add(new JSONBulkResource(this, stats, backend));
+    instances.add(new XMLBulkResource(this, stats, backend));
+    statsCollection.add(stats);
+
+    this.resourceStats =
+        new HashMap<String, ResourceStats>(statsCollection.size());
+    for (final ResourceStats s : statsCollection)
+    {
+      resourceStats.put(s.getName(), s);
+    }
     this.backend = backend;
   }
 
@@ -120,7 +146,21 @@ public class SCIMApplication extends WinkApplication
    */
   public Collection<ResourceStats> getResourceStats()
   {
-    return resourceStats;
+    return Collections.unmodifiableCollection(resourceStats.values());
+  }
+
+
+
+  /**
+   * Retrieve the stats for a given resource.
+   *
+   * @param resourceName  The name of the resource.
+   *
+   * @return  The stats for the requested resource.
+   */
+  public ResourceStats getStatsForResource(final String resourceName)
+  {
+    return resourceStats.get(resourceName);
   }
 
   /**
@@ -137,7 +177,8 @@ public class SCIMApplication extends WinkApplication
 
     serviceProviderConfig.setId(SCHEMA_URI_CORE);
     serviceProviderConfig.setPatchConfig(new PatchConfig(false));
-    serviceProviderConfig.setBulkConfig(new BulkConfig(false, 0, 0));
+    serviceProviderConfig.setBulkConfig(
+        new BulkConfig(true, bulkMaxOperations, bulkMaxPayloadSize));
     serviceProviderConfig.setFilterConfig(new FilterConfig(true,
         backend.getConfig().getMaxResults()));
     serviceProviderConfig.setChangePasswordConfig(
@@ -161,5 +202,40 @@ public class SCIMApplication extends WinkApplication
     serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
 
     return serviceProviderConfig;
+  }
+
+
+
+  /**
+   * Sprecify the maximum number of operations permitted in a bulk request.
+   * @param bulkMaxOperations  The maximum number of operations permitted in a
+   *                           bulk request.
+   */
+  public void setBulkMaxOperations(final long bulkMaxOperations)
+  {
+    this.bulkMaxOperations = bulkMaxOperations;
+  }
+
+
+
+  /**
+   * Sprecify the maximum payload size in bytes of a bulk request.
+   * @param bulkMaxPayloadSize  The maximum payload size in bytes of a bulk
+   *                            request.
+   */
+  public void setBulkMaxPayloadSize(final long bulkMaxPayloadSize)
+  {
+    this.bulkMaxPayloadSize = bulkMaxPayloadSize;
+  }
+
+
+
+  /**
+   * Retrieve the resource descriptors keyed by name of endpoint.
+   * @return  The resource descriptors keyed by name of endpoint.
+   */
+  public Map<String, ResourceDescriptor> getDescriptors()
+  {
+    return descriptors;
   }
 }

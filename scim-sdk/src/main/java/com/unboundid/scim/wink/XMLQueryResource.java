@@ -99,10 +99,12 @@ public class XMLQueryResource extends AbstractSCIMResource
                            final String pageSize)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
 
-    return getUsers(requestContext, MediaType.APPLICATION_XML_TYPE,
-                    filterString, sortBy, sortOrder, pageStartIndex, pageSize);
+    return getUsers(requestContext, filterString, sortBy, sortOrder,
+                    pageStartIndex, pageSize);
   }
 
 

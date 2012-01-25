@@ -29,6 +29,9 @@ import org.apache.wink.client.RestClient;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
+import java.util.List;
+
+
 
 /**
  * The SCIMService class represents a client connection to a SCIM service
@@ -194,6 +197,52 @@ public class SCIMService
     // The ServiceProviderConfig is a special case where there is only a
     // single resource at the endpoint, so the id is not specified.
     return endpoint.get(null);
+  }
+
+
+
+  /**
+   * Invoke a bulk request. The service provider will perform as
+   * many operations as possible without regard to the number of failures.
+   *
+   * @param operations  The operations to be performed.
+   *
+   * @return  The bulk response.
+   *
+   * @throws SCIMException  If the request fails.
+   */
+  public BulkResponse processBulkRequest(
+      final List<BulkOperation> operations)
+      throws SCIMException
+  {
+    return processBulkRequest(operations, -1);
+  }
+
+
+
+  /**
+   * Invoke a bulk request.
+   *
+   * @param operations    The operations to be performed.
+   * @param failOnErrors  The number of errors that the service provider will
+   *                      accept before the operation is terminated and an
+   *                      error response is returned. A value of -1 indicates
+   *                      the the service provider will continue to perform
+   *                      as many operations as possible without regard to
+   *                      failures.
+   *
+   * @return  The bulk response.
+   *
+   * @throws SCIMException  If the request fails.
+   */
+  public BulkResponse processBulkRequest(
+      final List<BulkOperation> operations,
+      final int failOnErrors)
+      throws SCIMException
+  {
+    final BulkEndpoint request = new BulkEndpoint(this, client);
+
+    return request.processRequest(operations, failOnErrors);
   }
 
 

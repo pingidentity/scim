@@ -19,6 +19,7 @@ package com.unboundid.scim.wink;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.security.Principal;
@@ -60,6 +61,21 @@ public class RequestContext
    */
   private final String origin;
 
+  /**
+   * The media type to be consumed, if any.
+   */
+  private final MediaType consumeMediaType;
+
+  /**
+   * The media type to be produced, if any.
+   */
+  private final MediaType produceMediaType;
+
+  /**
+   * The value of the HTTP Content-Length header.
+   */
+  private final long contentLength;
+
 
 
   /**
@@ -69,16 +85,22 @@ public class RequestContext
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
+   * @param consumeMediaType The media type to be consumed, if any.
+   * @param produceMediaType The media type to be produced, if any.
    */
   public RequestContext(final ServletContext servletContext,
                         final SecurityContext securityContext,
                         final HttpHeaders headers,
-                        final UriInfo uriInfo)
+                        final UriInfo uriInfo,
+                        final MediaType consumeMediaType,
+                        final MediaType produceMediaType)
   {
-    this.servletContext  = servletContext;
-    this.securityContext = securityContext;
-    this.headers         = headers;
-    this.uriInfo         = uriInfo;
+    this.servletContext   = servletContext;
+    this.securityContext  = securityContext;
+    this.headers          = headers;
+    this.uriInfo          = uriInfo;
+    this.consumeMediaType = consumeMediaType;
+    this.produceMediaType = produceMediaType;
 
     // Determine the authenticated ID for the request.
     final Principal userPrincipal = securityContext.getUserPrincipal();
@@ -100,6 +122,17 @@ public class RequestContext
     else
     {
       origin = null;
+    }
+
+    final List<String> contentLengthHeaders =
+        headers.getRequestHeader(HttpHeaders.CONTENT_LENGTH);
+    if (contentLengthHeaders != null)
+    {
+      contentLength = Long.parseLong(contentLengthHeaders.get(0));
+    }
+    else
+    {
+      contentLength = -1;
     }
   }
 
@@ -167,5 +200,39 @@ public class RequestContext
   public String getOrigin()
   {
     return origin;
+  }
+
+
+
+  /**
+   * Retrieve the media type to be consumed.
+   * @return  The media type to be consumed.
+   */
+  public MediaType getConsumeMediaType()
+  {
+    return consumeMediaType;
+  }
+
+
+
+  /**
+   * Retrieve the media type to be produced.
+   * @return  The media type to be produced.
+   */
+  public MediaType getProduceMediaType()
+  {
+    return produceMediaType;
+  }
+
+
+
+  /**
+   * Retrieve the value of the HTTP Content-Length header.
+   * @return The value of the HTTP Content-Length header, or -1 if it is
+   *         not present.
+   */
+  public long getContentLength()
+  {
+    return contentLength;
   }
 }

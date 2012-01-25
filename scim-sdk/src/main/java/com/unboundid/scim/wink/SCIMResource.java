@@ -105,10 +105,12 @@ public class SCIMResource extends AbstractSCIMResource
                             final String pageSize)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
 
-    return getUsers(requestContext, MediaType.APPLICATION_JSON_TYPE,
-                    filterString, sortBy, sortOrder, pageStartIndex, pageSize);
+    return getUsers(requestContext, filterString, sortBy, sortOrder,
+                    pageStartIndex, pageSize);
   }
 
 
@@ -146,10 +148,12 @@ public class SCIMResource extends AbstractSCIMResource
                            final String pageSize)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
 
-    return getUsers(requestContext, MediaType.APPLICATION_XML_TYPE,
-                    filterString, sortBy, sortOrder, pageStartIndex, pageSize);
+    return getUsers(requestContext, filterString, sortBy, sortOrder,
+                    pageStartIndex, pageSize);
   }
 
 
@@ -176,8 +180,10 @@ public class SCIMResource extends AbstractSCIMResource
                             @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return getUser(requestContext, MediaType.APPLICATION_JSON_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return getUser(requestContext, userID);
   }
 
 
@@ -204,8 +210,10 @@ public class SCIMResource extends AbstractSCIMResource
                            @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return getUser(requestContext, MediaType.APPLICATION_XML_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return getUser(requestContext, userID);
   }
 
 
@@ -232,8 +240,10 @@ public class SCIMResource extends AbstractSCIMResource
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return getUser(requestContext, MediaType.APPLICATION_JSON_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return getUser(requestContext, userID);
   }
 
 
@@ -260,8 +270,10 @@ public class SCIMResource extends AbstractSCIMResource
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return getUser(requestContext, MediaType.APPLICATION_XML_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return getUser(requestContext, userID);
   }
 
 
@@ -287,11 +299,10 @@ public class SCIMResource extends AbstractSCIMResource
                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return postUser(requestContext,
-                    MediaType.APPLICATION_JSON_TYPE,
-                    MediaType.APPLICATION_JSON_TYPE,
-                    inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return postUser(requestContext, inputStream);
   }
 
 
@@ -317,11 +328,10 @@ public class SCIMResource extends AbstractSCIMResource
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return postUser(requestContext,
-                    MediaType.APPLICATION_XML_TYPE,
-                    MediaType.APPLICATION_XML_TYPE,
-                    inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return postUser(requestContext, inputStream);
   }
 
 
@@ -348,11 +358,10 @@ public class SCIMResource extends AbstractSCIMResource
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return postUser(requestContext,
-                    MediaType.APPLICATION_XML_TYPE,
-                    MediaType.APPLICATION_JSON_TYPE,
-                    inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return postUser(requestContext, inputStream);
   }
 
 
@@ -379,11 +388,10 @@ public class SCIMResource extends AbstractSCIMResource
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return postUser(requestContext,
-        MediaType.APPLICATION_JSON_TYPE,
-        MediaType.APPLICATION_XML_TYPE,
-        inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return postUser(requestContext, inputStream);
   }
 
 
@@ -412,12 +420,10 @@ public class SCIMResource extends AbstractSCIMResource
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return putUser(requestContext,
-                   MediaType.APPLICATION_JSON_TYPE,
-                   MediaType.APPLICATION_JSON_TYPE,
-                   userID,
-                   inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return putUser(requestContext, userID, inputStream);
   }
 
 
@@ -446,10 +452,10 @@ public class SCIMResource extends AbstractSCIMResource
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
     return putUser(requestContext,
-                   MediaType.APPLICATION_JSON_TYPE,
-                   MediaType.APPLICATION_JSON_TYPE,
                    userID,
                    inputStream);
   }
@@ -480,10 +486,10 @@ public class SCIMResource extends AbstractSCIMResource
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
     return putUser(requestContext,
-                   MediaType.APPLICATION_XML_TYPE,
-                   MediaType.APPLICATION_XML_TYPE,
                    userID,
                    inputStream);
   }
@@ -514,12 +520,10 @@ public class SCIMResource extends AbstractSCIMResource
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return putUser(requestContext,
-                   MediaType.APPLICATION_XML_TYPE,
-                   MediaType.APPLICATION_XML_TYPE,
-                   userID,
-                   inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return putUser(requestContext, userID, inputStream);
   }
 
 
@@ -549,12 +553,10 @@ public class SCIMResource extends AbstractSCIMResource
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return putUser(requestContext,
-                   MediaType.APPLICATION_XML_TYPE,
-                   MediaType.APPLICATION_JSON_TYPE,
-                   userID,
-                   inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return putUser(requestContext, userID, inputStream);
   }
 
 
@@ -584,12 +586,10 @@ public class SCIMResource extends AbstractSCIMResource
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return putUser(requestContext,
-        MediaType.APPLICATION_JSON_TYPE,
-        MediaType.APPLICATION_XML_TYPE,
-        userID,
-        inputStream);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return putUser(requestContext, userID, inputStream);
   }
 
 
@@ -616,8 +616,10 @@ public class SCIMResource extends AbstractSCIMResource
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return deleteUser(requestContext, MediaType.APPLICATION_JSON_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return deleteUser(requestContext, userID);
   }
 
 
@@ -644,8 +646,10 @@ public class SCIMResource extends AbstractSCIMResource
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return deleteUser(requestContext, MediaType.APPLICATION_XML_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return deleteUser(requestContext, userID);
   }
 
 
@@ -674,8 +678,10 @@ public class SCIMResource extends AbstractSCIMResource
                                   @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return deleteUser(requestContext, MediaType.APPLICATION_JSON_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return deleteUser(requestContext, userID);
   }
 
 
@@ -702,7 +708,9 @@ public class SCIMResource extends AbstractSCIMResource
                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo);
-    return deleteUser(requestContext, MediaType.APPLICATION_XML_TYPE, userID);
+        new RequestContext(servletContext, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
+    return deleteUser(requestContext, userID);
   }
 }

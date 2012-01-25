@@ -18,10 +18,12 @@
 package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.BulkConfig;
 import com.unboundid.scim.data.ResourceFactory;
+import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -263,6 +265,23 @@ public class XmlUnmarshaller implements Unmarshaller
     return null;
 
   }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public void bulkUnmarshal(final InputStream inputStream,
+                            final BulkConfig bulkConfig,
+                            final BulkContentHandler handler)
+      throws SCIMException
+  {
+    final XmlBulkParser xmlBulkUnmarshaller =
+        new XmlBulkParser(inputStream, bulkConfig, handler);
+    xmlBulkUnmarshaller.unmarshal();
+  }
+
+
 
   /**
    * Parse a simple attribute from its representation as a DOM node.

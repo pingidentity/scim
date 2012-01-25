@@ -26,6 +26,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.util.CommandLineTool;
 import com.unboundid.util.MinimalLogFormatter;
 import com.unboundid.util.StaticUtils;
@@ -155,6 +156,14 @@ public class InMemoryServerTool
   // the SSL trust store
   private StringArgument trustStorePasswordArgument;
 
+  // The argument used to specify the maximum number of operations permitted in
+  // a bulk request.
+  private IntegerArgument bulkMaxOperationsArgument;
+
+  // The argument used to specify the maximum payload size in bytes of a bulk
+  // request.
+  private IntegerArgument bulkMaxPayloadSizeArgument;
+
   // The in-memory directory server instance that has been created by this tool.
   private InMemoryDirectoryServer directoryServer;
 
@@ -242,6 +251,8 @@ public class InMemoryServerTool
     trustStorePathArgument         = null;
     keyStorePasswordArgument       = null;
     trustStorePasswordArgument     = null;
+    bulkMaxOperationsArgument      = null;
+    bulkMaxPayloadSizeArgument     = null;
   }
 
 
@@ -298,6 +309,12 @@ public class InMemoryServerTool
          INFO_MEM_SERVER_TOOL_ARG_DESC_PORT.get(), 0, 65535);
     parser.addArgument(portArgument);
 
+    contextPathArgument = new StringArgument(null, "contextPath", false, 1,
+         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_CONTEXT_PATH.get(),
+         INFO_MEM_SERVER_TOOL_ARG_DESC_CONTEXT_PATH.get(),
+         Arrays.asList("/"));
+    parser.addArgument(contextPathArgument);
+
     maxResultsArgument =
         new IntegerArgument(
             null, "maxResults",
@@ -305,12 +322,25 @@ public class InMemoryServerTool
             INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_MAX_RESULTS.get(),
             INFO_MEM_SERVER_TOOL_ARG_DESC_MAX_RESULTS.get(),
             1, Integer.MAX_VALUE, 100);
+    parser.addArgument(maxResultsArgument);
 
-    contextPathArgument = new StringArgument(null, "contextPath", false, 1,
-         INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_CONTEXT_PATH.get(),
-         INFO_MEM_SERVER_TOOL_ARG_DESC_CONTEXT_PATH.get(),
-         Arrays.asList("/"));
-    parser.addArgument(contextPathArgument);
+    bulkMaxOperationsArgument =
+        new IntegerArgument(
+            null, "bulkMaxOperations",
+            true, 1,
+            INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_BULK_MAX_OPERATIONS.get(),
+            INFO_MEM_SERVER_TOOL_ARG_DESC_BULK_MAX_OPERATIONS.get(),
+            1, Integer.MAX_VALUE, 10000);
+    parser.addArgument(bulkMaxOperationsArgument);
+
+    bulkMaxPayloadSizeArgument =
+        new IntegerArgument(
+            null, "bulkMaxPayloadSize",
+            true, 1,
+            INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_BULK_MAX_PAYLOAD_SIZE.get(),
+            INFO_MEM_SERVER_TOOL_ARG_DESC_BULK_MAX_PAYLOAD_SIZE.get(),
+            0, Integer.MAX_VALUE, 10000000);
+    parser.addArgument(bulkMaxPayloadSizeArgument);
 
     ldapPortArgument = new IntegerArgument(null, "ldapPort", false, 1,
          INFO_MEM_SERVER_TOOL_ARG_PLACEHOLDER_LDAP_PORT.get(),
@@ -510,7 +540,12 @@ public class InMemoryServerTool
                                 directoryServer);
     backend.getConfig().setMaxResults(maxResultsArgument.getValue());
 
-    scimServer.registerBackend(contextPath, backend);
+    final SCIMApplication application =
+        scimServer.registerBackend(contextPath, backend);
+    application.setBulkMaxOperations(
+        bulkMaxOperationsArgument.getValue().longValue());
+    application.setBulkMaxPayloadSize(
+        bulkMaxPayloadSizeArgument.getValue().longValue());
 
     // Start the server.
     try

@@ -20,16 +20,19 @@ package com.unboundid.scim.marshal.xml;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.OutputStream;
+import java.util.List;
 
 
 
@@ -50,26 +53,16 @@ public class XmlMarshaller implements Marshaller
       outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
-
     xmlStreamWriter.setDefaultNamespace(SCIMConstants.SCHEMA_URI_CORE);
 
     final String resourceSchemaURI =
         resource.getResourceDescriptor().getSchema();
 
-    xmlStreamWriter.writeStartElement(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
+    xmlStreamWriter.writeStartElement(
+        SCIMConstants.DEFAULT_SCHEMA_PREFIX,
         resource.getResourceDescriptor().getName(), resourceSchemaURI);
-
-    int i = 1;
-    for (String schemaURI :
-        resource.getResourceDescriptor().getAttributeSchemas())
-    {
-      final String prefix = schemaURI.equalsIgnoreCase(resourceSchemaURI) ?
-          SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
-      xmlStreamWriter.setPrefix(prefix, schemaURI);
-      xmlStreamWriter.writeNamespace(prefix, schemaURI);
-    }
-
-    marshal(resourceSchemaURI, resource, xmlStreamWriter);
+    marshal(resource, xmlStreamWriter, null);
+    xmlStreamWriter.writeEndElement();
 
     xmlStreamWriter.writeEndDocument();
     xmlStreamWriter.flush();
@@ -84,7 +77,7 @@ public class XmlMarshaller implements Marshaller
     final XMLStreamWriter xmlStreamWriter =
         outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
 
-    final String xsiURI = "http://www.w3.org/2001/XMLSchema-instance";
+    final String xsiURI = XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
 
@@ -132,7 +125,7 @@ public class XmlMarshaller implements Marshaller
     final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
     final XMLStreamWriter xmlStreamWriter =
         outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
-    final String xsiURI = "http://www.w3.org/2001/XMLSchema-instance";
+    final String xsiURI = XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
 
     xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
 
@@ -165,68 +158,7 @@ public class XmlMarshaller implements Marshaller
     for (final BaseResource resource : response)
     {
       xmlStreamWriter.writeStartElement("Resource");
-      final String resourceSchemaURI =
-          resource.getResourceDescriptor().getSchema();
-
-      int i = 1;
-      for (final String schemaURI :
-          resource.getResourceDescriptor().getAttributeSchemas())
-      {
-        final String prefix = schemaURI.equalsIgnoreCase(resourceSchemaURI) ?
-          SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
-        xmlStreamWriter.setPrefix(prefix, schemaURI);
-        xmlStreamWriter.writeNamespace(prefix, schemaURI);
-      }
-
-      xmlStreamWriter.writeAttribute(xsiURI, "type",
-          SCIMConstants.DEFAULT_SCHEMA_PREFIX + ':' +
-              resource.getResourceDescriptor().getName());
-
-      // Write the resource attributes first in the order defined by the
-      // resource descriptor.
-        for (final AttributeDescriptor attributeDescriptor :
-            resource.getResourceDescriptor().getAttributes())
-        {
-          final SCIMAttribute a =
-              resource.getScimObject().
-                  getAttribute(attributeDescriptor.getSchema(),
-                      attributeDescriptor.getName());
-          if (a != null)
-          {
-            if (a.getAttributeDescriptor().isMultiValued())
-            {
-              writeMultiValuedAttribute(a, xmlStreamWriter);
-            }
-            else
-            {
-              writeSingularAttribute(a, xmlStreamWriter);
-            }
-          }
-        }
-
-      // Now write any extension attributes, grouped by the schema
-      // extension they belong to.
-      for (final String schemaURI :
-          resource.getResourceDescriptor().getAttributeSchemas())
-      {
-        // Skip the resource schema.
-        if (!schemaURI.equalsIgnoreCase(resourceSchemaURI))
-        {
-          for (final SCIMAttribute a :
-              resource.getScimObject().getAttributes(schemaURI))
-          {
-            if (a.getAttributeDescriptor().isMultiValued())
-            {
-              writeMultiValuedAttribute(a, xmlStreamWriter);
-            }
-            else
-            {
-              writeSingularAttribute(a, xmlStreamWriter);
-            }
-          }
-        }
-      }
-
+      marshal(resource, xmlStreamWriter, xsiURI);
       xmlStreamWriter.writeEndElement();
     }
 
@@ -239,22 +171,138 @@ public class XmlMarshaller implements Marshaller
 
 
 
+  /**
+   * {@inheritDoc}
+   */
+  public void bulkMarshal(final OutputStream outputStream,
+                          final int failOnErrors,
+                          final List<BulkOperation> operations)
+      throws Exception
+  {
+    final XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    final XMLStreamWriter xmlStreamWriter =
+        outputFactory.createXMLStreamWriter(outputStream, "UTF-8");
+    final String xsiURI = XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
+
+    xmlStreamWriter.writeStartDocument("UTF-8", "1.0");
+
+    xmlStreamWriter.setPrefix(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
+        SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.setPrefix("xsi", xsiURI);
+    xmlStreamWriter.writeStartElement(SCIMConstants.SCHEMA_URI_CORE,
+        "Bulk");
+    xmlStreamWriter.writeNamespace(SCIMConstants.DEFAULT_SCHEMA_PREFIX,
+        SCIMConstants.SCHEMA_URI_CORE);
+    xmlStreamWriter.writeNamespace("xsi", xsiURI);
+
+    if (failOnErrors >= 0)
+    {
+      xmlStreamWriter.writeStartElement("failOnErrors");
+      xmlStreamWriter.writeCharacters(
+          Integer.toString(failOnErrors));
+      xmlStreamWriter.writeEndElement();
+    }
+
+    xmlStreamWriter.writeStartElement("Operations");
+    for (final BulkOperation o : operations)
+    {
+      xmlStreamWriter.writeStartElement("Operation");
+      if (o.getMethod() != null)
+      {
+        xmlStreamWriter.writeStartElement("method");
+        xmlStreamWriter.writeCharacters(o.getMethod().toString());
+        xmlStreamWriter.writeEndElement();
+      }
+      if (o.getBulkId() != null)
+      {
+        xmlStreamWriter.writeStartElement("bulkId");
+        xmlStreamWriter.writeCharacters(o.getBulkId());
+        xmlStreamWriter.writeEndElement();
+      }
+      if (o.getVersion() != null)
+      {
+        xmlStreamWriter.writeStartElement("version");
+        xmlStreamWriter.writeCharacters(o.getVersion());
+        xmlStreamWriter.writeEndElement();
+      }
+      if (o.getPath() != null)
+      {
+        xmlStreamWriter.writeStartElement("path");
+        xmlStreamWriter.writeCharacters(o.getPath());
+        xmlStreamWriter.writeEndElement();
+      }
+      if (o.getLocation() != null)
+      {
+        xmlStreamWriter.writeStartElement("location");
+        xmlStreamWriter.writeCharacters(o.getLocation());
+        xmlStreamWriter.writeEndElement();
+      }
+      if (o.getData() != null)
+      {
+        xmlStreamWriter.writeStartElement("data");
+        marshal(o.getData(), xmlStreamWriter, xsiURI);
+        xmlStreamWriter.writeEndElement();
+      }
+      if (o.getStatus() != null)
+      {
+        xmlStreamWriter.writeStartElement("status");
+        xmlStreamWriter.writeStartElement("code");
+        xmlStreamWriter.writeCharacters(o.getStatus().getCode());
+        xmlStreamWriter.writeEndElement();
+        if (o.getStatus().getDescription() != null)
+        {
+          xmlStreamWriter.writeStartElement("description");
+          xmlStreamWriter.writeCharacters(o.getStatus().getDescription());
+          xmlStreamWriter.writeEndElement();
+        }
+        xmlStreamWriter.writeEndElement();
+      }
+      xmlStreamWriter.writeEndElement();
+    }
+    xmlStreamWriter.writeEndElement();
+
+    xmlStreamWriter.writeEndElement();
+    xmlStreamWriter.writeEndDocument();
+    xmlStreamWriter.flush();
+  }
+
+
 
   /**
    * Write a SCIM object to an XML stream.
    *
-   * @param resourceSchemaURI  The schema URI of the resource.
-   * @param resource           The SCIM resource to be written.
+   * @param resource        The SCIM resource to be written.
    * @param xmlStreamWriter The stream to which the SCIM object should be
    *                        written.
+   * @param xsiURI          The xsi URI to use for the type attribute.
    * @throws XMLStreamException If the object could not be written.
    */
-  private void marshal(final String resourceSchemaURI,
-                       final BaseResource resource,
-                       final XMLStreamWriter xmlStreamWriter)
-    throws XMLStreamException {
+  private void marshal(final BaseResource resource,
+                       final XMLStreamWriter xmlStreamWriter,
+                       final String xsiURI)
+    throws XMLStreamException
+  {
+    final String resourceSchemaURI =
+        resource.getResourceDescriptor().getSchema();
 
-    // Write the resource attributes first in the order defined by the
+    int i = 1;
+    for (final String schemaURI :
+        resource.getResourceDescriptor().getAttributeSchemas())
+    {
+      final String prefix = schemaURI.equalsIgnoreCase(resourceSchemaURI) ?
+          SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
+      xmlStreamWriter.setPrefix(prefix, schemaURI);
+      xmlStreamWriter.writeNamespace(prefix, schemaURI);
+    }
+
+    if (xsiURI != null)
+    {
+      xmlStreamWriter.writeAttribute(xsiURI, "type",
+          SCIMConstants.DEFAULT_SCHEMA_PREFIX + ':' +
+              resource.getResourceDescriptor().getName());
+    }
+
+    // Write the resource attributes in the order defined by the
     // resource descriptor.
     for (final AttributeDescriptor attributeDescriptor :
         resource.getResourceDescriptor().getAttributes())
@@ -274,8 +322,6 @@ public class XmlMarshaller implements Marshaller
         }
       }
     }
-
-    xmlStreamWriter.writeEndElement();
   }
 
 

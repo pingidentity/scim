@@ -108,14 +108,11 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a GET operation.
    *
    * @param requestContext The request context.
-   * @param mediaType      The media type to be produced.
    * @param userID         The user ID requested.
    *
    * @return  The response to the operation.
    */
-  Response getUser(final RequestContext requestContext,
-                           final MediaType mediaType,
-                           final String userID)
+  Response getUser(final RequestContext requestContext, final String userID)
   {
     Response.ResponseBuilder responseBuilder;
     try {
@@ -138,7 +135,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           backend.getResource(getResourceRequest);
       // Build the response.
       responseBuilder = Response.status(Response.Status.OK);
-      setResponseEntity(responseBuilder, mediaType, resource);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        resource);
       URI location = resource.getMeta().getLocation();
       if(location != null)
       {
@@ -148,7 +146,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, mediaType, e);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        e);
       resourceStats.incrementStat("get-" + e.getStatusCode());
     }
 
@@ -160,11 +159,12 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
         Boolean.TRUE.toString());
 
-    if(mediaType == MediaType.APPLICATION_JSON_TYPE)
+    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.GET_RESPONSE_JSON);
     }
-    else if(mediaType == MediaType.APPLICATION_XML_TYPE)
+    else if(requestContext.getProduceMediaType() ==
+            MediaType.APPLICATION_XML_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.GET_RESPONSE_XML);
     }
@@ -178,7 +178,6 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a GET operation.
    *
    * @param requestContext   The request context.
-   * @param mediaType        The media type to be produced.
    * @param filterString     The filter query parameter, or {@code null}.
    * @param sortBy           The sortBy query parameter, or {@code null}.
    * @param sortOrder        The sortOrder query parameter, or {@code null}.
@@ -188,7 +187,6 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * @return  The response to the operation.
    */
   protected Response getUsers(final RequestContext requestContext,
-                              final MediaType mediaType,
                               final String filterString,
                               final String sortBy,
                               final String sortOrder,
@@ -307,14 +305,16 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Build the response.
       responseBuilder =
           Response.status(Response.Status.OK);
-      setResponseEntity(responseBuilder, mediaType, resources);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        resources);
       resourceStats.incrementStat(ResourceStats.QUERY_OK);
     }
     catch(SCIMException e)
     {
       responseBuilder =
           Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, mediaType, e);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        e);
       resourceStats.incrementStat("query-" + e.getStatusCode());
     }
 
@@ -326,11 +326,12 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
         Boolean.TRUE.toString());
 
-    if(mediaType == MediaType.APPLICATION_JSON_TYPE)
+    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.QUERY_RESPONSE_JSON);
     }
-    else if(mediaType == MediaType.APPLICATION_XML_TYPE)
+    else if(requestContext.getProduceMediaType() ==
+            MediaType.APPLICATION_XML_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.QUERY_RESPONSE_XML);
     }
@@ -344,19 +345,16 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a POST operation.
    *
    * @param requestContext    The request context.
-   * @param consumeMediaType  The media type to be consumed.
-   * @param produceMediaType  The media type to be produced.
    * @param inputStream       The content to be consumed.
    *
    * @return  The response to the operation.
    */
   Response postUser(final RequestContext requestContext,
-                            final MediaType consumeMediaType,
-                            final MediaType produceMediaType,
                             final InputStream inputStream)
   {
     final Unmarshaller unmarshaller;
-    if (consumeMediaType.equals(MediaType.APPLICATION_JSON_TYPE))
+    if (requestContext.getConsumeMediaType().equals(
+        MediaType.APPLICATION_JSON_TYPE))
     {
       unmarshaller = new JsonUnmarshaller();
       resourceStats.incrementStat(ResourceStats.POST_CONTENT_JSON);
@@ -395,7 +393,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           backend.postResource(postResourceRequest);
       // Build the response.
       responseBuilder = Response.status(Response.Status.CREATED);
-      setResponseEntity(responseBuilder, produceMediaType,
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
           resource);
       responseBuilder.location(resource.getMeta().getLocation());
       resourceStats.incrementStat(ResourceStats.POST_OK);
@@ -403,15 +401,17 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       Debug.debugException(e);
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, produceMediaType, e);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        e);
       resourceStats.incrementStat("post-" + e.getStatusCode());
     }
 
-    if(produceMediaType == MediaType.APPLICATION_JSON_TYPE)
+    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.POST_RESPONSE_JSON);
     }
-    else if(produceMediaType == MediaType.APPLICATION_XML_TYPE)
+    else if(requestContext.getProduceMediaType() ==
+            MediaType.APPLICATION_XML_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.POST_RESPONSE_XML);
     }
@@ -425,21 +425,18 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a PUT operation.
    *
    * @param requestContext    The request context.
-   * @param consumeMediaType  The media type to be consumed.
-   * @param produceMediaType  The media type to be produced.
    * @param userID            The target user ID.
    * @param inputStream       The content to be consumed.
    *
    * @return  The response to the operation.
    */
   Response putUser(final RequestContext requestContext,
-                           final MediaType consumeMediaType,
-                           final MediaType produceMediaType,
-                           final String userID,
-                           final InputStream inputStream)
+                   final String userID,
+                   final InputStream inputStream)
   {
     final Unmarshaller unmarshaller;
-    if (consumeMediaType.equals(MediaType.APPLICATION_JSON_TYPE))
+    if (requestContext.getConsumeMediaType().equals(
+        MediaType.APPLICATION_JSON_TYPE))
     {
       unmarshaller = new JsonUnmarshaller();
       resourceStats.incrementStat(ResourceStats.PUT_CONTENT_JSON);
@@ -477,21 +474,24 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       final BaseResource scimResponse = backend.putResource(putResourceRequest);
       // Build the response.
       responseBuilder = Response.status(Response.Status.OK);
-      setResponseEntity(responseBuilder, produceMediaType, scimResponse);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        scimResponse);
       responseBuilder.location(scimResponse.getMeta().getLocation());
       resourceStats.incrementStat(ResourceStats.PUT_OK);
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, produceMediaType, e);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        e);
       resourceStats.incrementStat("put-" + e.getStatusCode());
     }
 
-    if(produceMediaType == MediaType.APPLICATION_JSON_TYPE)
+    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_JSON);
     }
-    else if(produceMediaType == MediaType.APPLICATION_XML_TYPE)
+    else if(requestContext.getProduceMediaType() ==
+            MediaType.APPLICATION_XML_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_XML);
     }
@@ -505,13 +505,12 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a DELETE operation.
    *
    * @param requestContext    The request context.
-   * @param mediaType  The media type to be produced.
    * @param userID     The target user ID.
    *
    * @return  The response to the operation.
    */
   Response deleteUser(final RequestContext requestContext,
-                              final MediaType mediaType, final String userID)
+                      final String userID)
   {
     // Process the request.
     Response.ResponseBuilder responseBuilder;
@@ -530,7 +529,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, mediaType, e);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                        e);
       resourceStats.incrementStat("delete-" + e.getStatusCode());
     }
 

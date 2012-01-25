@@ -15,8 +15,6 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResultEntry;
-import com.unboundid.scim.sdk.SCIMEndpoint;
-import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.GroupResource;
@@ -24,11 +22,15 @@ import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.BulkResponse;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Version;
 import com.unboundid.util.ssl.SSLUtil;
@@ -42,6 +44,7 @@ import org.testng.annotations.Test;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -499,7 +502,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     try
     {
       userEndpoint.get("uid=testPasswordModify," + userBaseDN);
-      assertTrue(false, "Expected Unauthroized return code");
+      assertTrue(false, "Expected Unauthorized return code");
     }
     catch(SCIMException e)
     {
@@ -1360,7 +1363,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     // These assertions need to be updated as optional features are implemented.
     assertFalse(config.getPatchConfig().isSupported());
-    assertFalse(config.getBulkConfig().isSupported());
+    assertTrue(config.getBulkConfig().isSupported());
+    assertTrue(config.getBulkConfig().getMaxOperations() > 0);
+    assertTrue(config.getBulkConfig().getMaxPayloadSize() > 0);
     assertTrue(config.getFilterConfig().isSupported());
     assertTrue(config.getFilterConfig().getMaxResults() > 0);
     assertFalse(config.getChangePasswordConfig().isSupported());
@@ -1427,5 +1432,404 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     final SCIMService basicAuthService = new SCIMService(uri, id, "assword");
 
     basicAuthService.getUserEndpoint().get(id);
+  }
+
+
+
+  /**
+   * Tests the SCIM Bulk operation using JSON.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkJson() throws Exception
+  {
+    final MediaType origContentType = service.getContentType();
+    final MediaType origAcceptType = service.getAcceptType();
+
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    try
+    {
+      testBulk(MediaType.APPLICATION_JSON_TYPE);
+    }
+    finally
+    {
+      service.setContentType(origContentType);
+      service.setAcceptType(origAcceptType);
+    }
+  }
+
+
+
+  /**
+   * Tests the SCIM Bulk operation using XML.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkXml() throws Exception
+  {
+    final MediaType origContentType = service.getContentType();
+    final MediaType origAcceptType = service.getAcceptType();
+
+    service.setContentType(MediaType.APPLICATION_XML_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
+    try
+    {
+      testBulk(MediaType.APPLICATION_XML_TYPE);
+    }
+    finally
+    {
+      service.setContentType(origContentType);
+      service.setAcceptType(origAcceptType);
+    }
+  }
+
+
+
+  /**
+   * Tests the SCIM Bulk operation.
+   *
+   * @param mediaType  The media type to use for the operation.
+   *
+   * @throws Exception If the test fails.
+   */
+  private void testBulk(final MediaType mediaType) throws Exception
+  {
+    final String mediaSubType = mediaType.getSubtype();
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    final SCIMEndpoint<GroupResource> groupEndpoint =
+        service.getGroupEndpoint();
+
+    UserResource userAlice = userEndpoint.newResource();
+    userAlice.setName(new Name("Alice Ecila", "Ecila", null,
+                               "Alice", null, null));
+    userAlice.setUserName("alice-" + mediaSubType);
+
+    UserResource userBob = userEndpoint.newResource();
+    userBob.setName(new Name("Bob The Builder", "Builder", "The",
+                             "Bob", null, null));
+    userBob.setUserName("bob-" + mediaSubType);
+    userBob = userEndpoint.create(userBob);
+    userBob.setTitle("Construction Worker");
+
+    UserResource userDave = userEndpoint.newResource();
+    userDave.setName(new Name("Dave Allen", "Allen", null,
+                              "Dave", null, null));
+    userDave.setUserName("dave-" + mediaSubType);
+    userDave = userEndpoint.create(userDave);
+
+    GroupResource group = groupEndpoint.newResource();
+    group.setDisplayName("group-" + mediaSubType);
+    Collection<Entry<String>> members = new ArrayList<Entry<String>>();
+    members.add(new Entry<String>("bulkId:alice", null));
+    group.setMembers(members);
+
+    final String beforeBulkSuccessCount =
+        getMonitorAsString(scimInstance,
+                           "bulk-resource-post-successful");
+    final String beforeBulkContentCount =
+        getMonitorAsString(scimInstance,
+                           "bulk-resource-post-content-" + mediaSubType);
+    final String beforeBulkResponseCount =
+        getMonitorAsString(scimInstance,
+                           "bulk-resource-post-response-" + mediaSubType);
+
+    final String beforeUserPostSuccessCount =
+        getMonitorAsString(scimInstance, "user-resource-post-successful");
+    final String beforeUserPutSuccessCount =
+        getMonitorAsString(scimInstance, "user-resource-put-successful");
+    final String beforeUserDeleteSuccessCount =
+        getMonitorAsString(scimInstance, "user-resource-delete-successful");
+    final String beforeGroupPostSuccessCount =
+        getMonitorAsString(scimInstance, "group-resource-post-successful");
+
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "alice", null,
+        "/Users", userAlice));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.PUT, null, null,
+        "/Users/" + userBob.getId(), userBob));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.DELETE, null, null,
+        "/Users/" + userDave.getId(), null));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "group", null,
+        "/Groups", group));
+
+    final BulkResponse response = service.processBulkRequest(operations);
+    final List<BulkOperation> responses = new ArrayList<BulkOperation>();
+    for (final BulkOperation o : response)
+    {
+      responses.add(o);
+    }
+
+    final String afterBulkSuccessCount =
+        getMonitorAsString(scimInstance,
+                           "bulk-resource-post-successful");
+    final String afterBulkContentCount =
+        getMonitorAsString(scimInstance,
+                           "bulk-resource-post-content-" + mediaSubType);
+    final String afterBulkResponseCount =
+        getMonitorAsString(scimInstance,
+                           "bulk-resource-post-response-" + mediaSubType);
+
+    assertTrue(Integer.valueOf(afterBulkSuccessCount) >
+               (beforeBulkSuccessCount == null ?
+                0 : Integer.valueOf(beforeBulkSuccessCount)));
+    assertTrue(Integer.valueOf(afterBulkContentCount) >
+               (beforeBulkContentCount == null ?
+                0 : Integer.valueOf(beforeBulkContentCount)));
+    assertTrue(Integer.valueOf(afterBulkResponseCount) >
+               (beforeBulkResponseCount == null ?
+                0 : Integer.valueOf(beforeBulkResponseCount)));
+
+    final String afterUserPostSuccessCount =
+        getMonitorAsString(scimInstance, "user-resource-post-successful");
+    final String afterUserPutSuccessCount =
+        getMonitorAsString(scimInstance, "user-resource-put-successful");
+    final String afterUserDeleteSuccessCount =
+        getMonitorAsString(scimInstance, "user-resource-delete-successful");
+    final String afterGroupPostSuccessCount =
+        getMonitorAsString(scimInstance, "group-resource-post-successful");
+
+    assertEquals(Integer.parseInt(afterUserPostSuccessCount),
+                 (beforeUserPostSuccessCount == null ?
+                  0 : Integer.parseInt(beforeUserPostSuccessCount)) + 1);
+    assertEquals(Integer.parseInt(afterUserPutSuccessCount),
+                 (beforeUserPutSuccessCount == null ?
+                  0 : Integer.parseInt(beforeUserPutSuccessCount)) + 1);
+    assertEquals(Integer.parseInt(afterUserDeleteSuccessCount),
+                 (beforeUserDeleteSuccessCount == null ?
+                  0 : Integer.parseInt(beforeUserDeleteSuccessCount)) + 1);
+    assertEquals(Integer.parseInt(afterGroupPostSuccessCount),
+                 (beforeGroupPostSuccessCount == null ?
+                  0 : Integer.parseInt(beforeGroupPostSuccessCount)) + 1);
+
+
+    assertEquals(responses.size(), 4);
+    assertEquals(responses.get(0).getStatus().getCode(), "201");
+    assertEquals(responses.get(1).getStatus().getCode(), "200");
+    assertEquals(responses.get(2).getStatus().getCode(), "200");
+    assertEquals(responses.get(3).getStatus().getCode(), "201");
+
+    userAlice = userEndpoint.query(
+        "userName eq \"alice-" + mediaSubType + "\"").iterator().next();
+    assertEquals(responses.get(0).getBulkId(), "alice");
+    assertTrue(responses.get(0).getLocation().contains(userAlice.getId()));
+
+    try
+    {
+      userEndpoint.get(userDave.getId());
+      fail("User Dave was not deleted");
+    }
+    catch (SCIMException e)
+    {
+      // Expected.
+      assertEquals(e.getStatusCode(), 404);
+    }
+
+    userBob = userEndpoint.get(userBob.getId());
+    assertEquals(userBob.getTitle(), "Construction Worker");
+
+    group = groupEndpoint.query(
+        "displayName eq \"group-" + mediaSubType + "\"").iterator().next();
+    assertTrue(responses.get(3).getLocation().contains(group.getId()));
+    assertEquals(group.getMembers().iterator().next().getValue(),
+                 userAlice.getId());
+
+    groupEndpoint.delete(group.getId());
+  }
+
+
+
+  /**
+   * Tests the bulkMaxPayloadSize configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMaxPayloadSize() throws Exception
+  {
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 100; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null, "/Users/" + i, null));
+    }
+
+    // Lower the bulkMaxPayloadSize setting.
+    int bulkMaxPayloadSize = 1000;
+    scimInstance.dsconfig(
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
+        "--add", "extension-argument:bulkMaxPayloadSize=" +
+                 bulkMaxPayloadSize);
+
+    try
+    {
+      try
+      {
+        service.processBulkRequest(operations);
+        fail("The bulkMaxPayloadSize was intentionally exceeded but the " +
+             "bulk request was not rejected");
+      }
+      catch (SCIMException e)
+      {
+        // Expected.
+        assertEquals(e.getStatusCode(), 413);
+      }
+    }
+    finally
+    {
+      //Clean up
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxPayloadSize=" +
+                      bulkMaxPayloadSize);
+    }
+
+    // Increase the bulkMaxPayloadSize setting.
+    bulkMaxPayloadSize = 10000;
+    scimInstance.dsconfig(
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
+        "--add", "extension-argument:bulkMaxPayloadSize=" +
+                 bulkMaxPayloadSize);
+
+    try
+    {
+      // The same request should now succeed (although all the operations fail)
+      service.processBulkRequest(operations);
+    }
+    finally
+    {
+      //Clean up
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxPayloadSize=" +
+                      bulkMaxPayloadSize);
+    }
+  }
+
+
+
+  /**
+   * Tests the bulkMaxOperations configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMaxOperations() throws Exception
+  {
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 100; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null, "/Users/" + i, null));
+    }
+
+    // Lower the bulkMaxOperations setting.
+    int bulkMaxOperations = 99;
+    scimInstance.dsconfig(
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
+        "--add", "extension-argument:bulkMaxOperations=" +
+                 bulkMaxOperations);
+
+    try
+    {
+      try
+      {
+        service.processBulkRequest(operations);
+        fail("The bulkMaxOperations was intentionally exceeded but the " +
+             "bulk request was not rejected");
+      }
+      catch (SCIMException e)
+      {
+        // Expected.
+        assertEquals(e.getStatusCode(), 413);
+      }
+    }
+    finally
+    {
+      //Clean up
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxOperations=" +
+                      bulkMaxOperations);
+    }
+
+    // Increase the bulkMaxPayloadSize setting.
+    bulkMaxOperations = 100;
+    scimInstance.dsconfig(
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
+        "--add", "extension-argument:bulkMaxOperations=" +
+                 bulkMaxOperations);
+
+    try
+    {
+      // The same request should now succeed (although all the operations fail)
+      service.processBulkRequest(operations);
+    }
+    finally
+    {
+      //Clean up
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxOperations=" +
+                      bulkMaxOperations);
+    }
+  }
+
+
+
+  /**
+   * Tests the Bulk request failOnErrors value.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testFailOnErrors() throws Exception
+  {
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 10; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null, "/Users/" + i, null));
+    }
+
+    assertEquals(getSize(service.processBulkRequest(operations, 1)), 1);
+    assertEquals(getSize(service.processBulkRequest(operations, 9)), 9);
+    assertEquals(getSize(service.processBulkRequest(operations, 10)), 10);
+    assertEquals(getSize(service.processBulkRequest(operations, -1)), 10);
+  }
+
+
+
+  /**
+   * Determine the number of operations in a bulk response.
+   *
+   * @param bulkResponse  The bulk response to be sized.
+   *
+   * @return  The number of operations in the bulk response.
+   */
+  private int getSize(final BulkResponse bulkResponse)
+  {
+    int count = 0;
+    for (final BulkOperation o : bulkResponse)
+    {
+      count++;
+    }
+
+    return count;
   }
 }

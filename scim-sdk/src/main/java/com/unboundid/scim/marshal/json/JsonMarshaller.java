@@ -19,6 +19,7 @@ package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Marshaller;
+import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -31,6 +32,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -221,6 +223,111 @@ public class JsonMarshaller implements Marshaller
 
       jsonWriter.endObject();
 
+      jsonWriter.endArray();
+
+      jsonWriter.endObject();
+    }
+    finally
+    {
+      outputStreamWriter.close();
+    }
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public void bulkMarshal(final OutputStream outputStream,
+                          final int failOnErrors,
+                          final List<BulkOperation> operations)
+      throws Exception
+  {
+    final OutputStreamWriter outputStreamWriter =
+        new OutputStreamWriter(outputStream);
+    try
+    {
+      final JSONWriter jsonWriter = new JSONWriter(outputStreamWriter);
+      jsonWriter.object();
+
+      if (failOnErrors >= 0)
+      {
+        jsonWriter.key("failOnErrors");
+        jsonWriter.value(failOnErrors);
+      }
+
+      // Figure out what schemas are referenced by the resources.
+      final Set<String> schemaURIs = new HashSet<String>();
+      for (final BulkOperation o : operations)
+      {
+        final BaseResource resource = o.getData();
+        if (resource != null)
+        {
+          schemaURIs.addAll(
+              o.getData().getResourceDescriptor().getAttributeSchemas());
+        }
+      }
+
+      // Write the schemas.
+      jsonWriter.key(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME);
+      jsonWriter.array();
+      for (final String schemaURI : schemaURIs)
+      {
+        jsonWriter.value(schemaURI);
+      }
+      jsonWriter.endArray();
+
+      // Write the operations.
+      jsonWriter.key("Operations");
+      jsonWriter.array();
+      for (final BulkOperation o : operations)
+      {
+        jsonWriter.object();
+        if (o.getMethod() != null)
+        {
+          jsonWriter.key("method");
+          jsonWriter.value(o.getMethod().toString());
+        }
+        if (o.getBulkId() != null)
+        {
+          jsonWriter.key("bulkId");
+          jsonWriter.value(o.getBulkId());
+        }
+        if (o.getVersion() != null)
+        {
+          jsonWriter.key("version");
+          jsonWriter.value(o.getVersion());
+        }
+        if (o.getPath() != null)
+        {
+          jsonWriter.key("path");
+          jsonWriter.value(o.getPath());
+        }
+        if (o.getLocation() != null)
+        {
+          jsonWriter.key("location");
+          jsonWriter.value(o.getLocation());
+        }
+        if (o.getData() != null)
+        {
+          jsonWriter.key("data");
+          marshal(o.getData(), jsonWriter, true);
+        }
+        if (o.getStatus() != null)
+        {
+          jsonWriter.key("status");
+          jsonWriter.object();
+          jsonWriter.key("code");
+          jsonWriter.value(o.getStatus().getCode());
+          if (o.getStatus().getDescription() != null)
+          {
+            jsonWriter.key("description");
+            jsonWriter.value(o.getStatus().getDescription());
+          }
+          jsonWriter.endObject();
+        }
+        jsonWriter.endObject();
+      }
       jsonWriter.endArray();
 
       jsonWriter.endObject();

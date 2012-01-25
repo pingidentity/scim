@@ -89,6 +89,20 @@ public final class SCIMServletExtension
   private static final String ARG_NAME_CONTEXT_PATH = "contextPath";
 
   /**
+   * The name of the argument that will be used to specify the maximum number
+   * of operations permitted in a bulk request.
+   */
+  private static final String ARG_NAME_BULK_MAX_OPERATIONS =
+      "bulkMaxOperations";
+
+  /**
+   * The name of the argument that will be used to specify the maximum payload
+   * size in bytes of a bulk request.
+   */
+  private static final String ARG_NAME_BULK_MAX_PAYLOAD_SIZE =
+      "bulkMaxPayloadSize";
+
+  /**
    * The servlet that has been created.
    */
   private volatile RestServlet servlet;
@@ -238,6 +252,23 @@ public final class SCIMServletExtension
                             "The maximum number of resources that are " +
                             "returned in a response. The default value is 100",
                             1, Integer.MAX_VALUE, 100));
+
+    // This argument has a default.
+    parser.addArgument(
+        new IntegerArgument(null, ARG_NAME_BULK_MAX_OPERATIONS,
+                            true, 1, "{integer}",
+                            "The maximum number of operations that are " +
+                            "permitted in a bulk request. The default value" +
+                            "is 10000.",
+                            1, Integer.MAX_VALUE, 10000));
+
+    // This argument has a default.
+    parser.addArgument(
+        new IntegerArgument(null, ARG_NAME_BULK_MAX_PAYLOAD_SIZE,
+                            true, 1, "{integer}",
+                            "The maximum payload size in bytes of a bulk" +
+                            "request. The default value is 10000000 bytes.",
+                            0, Integer.MAX_VALUE, 10000000));
   }
 
 
@@ -320,6 +351,12 @@ public final class SCIMServletExtension
          (StringArgument) parser.getNamedArgument(ARG_NAME_CONTEXT_PATH);
     final IntegerArgument maxResultsArg =
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
+    final IntegerArgument bulkMaxOperationsArg =
+         (IntegerArgument) parser.getNamedArgument(
+             ARG_NAME_BULK_MAX_OPERATIONS);
+    final IntegerArgument bulkMaxPayloadSizeArg =
+         (IntegerArgument) parser.getNamedArgument(
+             ARG_NAME_BULK_MAX_PAYLOAD_SIZE);
     final FileArgument resourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
 
@@ -368,6 +405,10 @@ public final class SCIMServletExtension
 
     // Create the Wink JAX-RS application.
     application = new SCIMApplication(resourceMappers.keySet(), backend);
+    application.setBulkMaxOperations(
+        bulkMaxOperationsArg.getValue().longValue());
+    application.setBulkMaxPayloadSize(
+        bulkMaxPayloadSizeArg.getValue().longValue());
 
     // Create the Wink JAX-RS servlet.
     servlet = new RestServlet()
@@ -605,8 +646,18 @@ public final class SCIMServletExtension
 
     final IntegerArgument maxResultsArg =
          (IntegerArgument) parser.getNamedArgument(ARG_NAME_MAX_RESULTS);
+    final IntegerArgument bulkMaxOperationsArg =
+         (IntegerArgument) parser.getNamedArgument(
+             ARG_NAME_BULK_MAX_OPERATIONS);
+    final IntegerArgument bulkMaxPayloadSizeArg =
+         (IntegerArgument) parser.getNamedArgument(
+             ARG_NAME_BULK_MAX_PAYLOAD_SIZE);
 
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
+    application.setBulkMaxOperations(
+        bulkMaxOperationsArg.getValue().longValue());
+    application.setBulkMaxPayloadSize(
+        bulkMaxPayloadSizeArg.getValue().longValue());
 
     final FileArgument useResourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);

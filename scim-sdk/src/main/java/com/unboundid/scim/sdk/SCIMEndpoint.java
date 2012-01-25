@@ -337,7 +337,7 @@ public class SCIMEndpoint<R extends BaseResource>
         try {
           marshaller.marshal(resource, outputStream);
         } catch (Exception e) {
-          new WebApplicationException(e, Response.Status.BAD_REQUEST);
+          throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
       }
     };
@@ -427,7 +427,7 @@ public class SCIMEndpoint<R extends BaseResource>
         try {
           marshaller.marshal(resource, outputStream);
         } catch (Exception e) {
-          new WebApplicationException(e, Response.Status.BAD_REQUEST);
+          throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
         }
       }
     };

@@ -18,8 +18,10 @@
 package com.unboundid.scim.marshal;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.BulkConfig;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
@@ -84,4 +86,20 @@ public interface Unmarshaller {
    */
   SCIMException unmarshalError(final InputStream inputStream)
       throws InvalidResourceException;
+
+  /**
+   * Reads a SCIM bulk request or response from an input stream.
+   *
+   * @param inputStream  The input stream containing the bulk content to be
+   *                     read.
+   * @param bulkConfig   The bulk configuration settings to be enforced.
+   * @param handler      A bulk operation listener to handle the content as it
+   *                     is read.
+   *
+   * @throws SCIMException If the bulk content could not be read.
+   */
+  void bulkUnmarshal(final InputStream inputStream,
+                     final BulkConfig bulkConfig,
+                     final BulkContentHandler handler)
+      throws SCIMException;
 }
