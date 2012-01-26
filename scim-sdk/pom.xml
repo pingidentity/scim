@@ -207,9 +207,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.unboundid.components</groupId>
-            <artifactId>json</artifactId>
-            <version>1.0.0</version>
+          <groupId>com.unboundid.components</groupId>
+          <artifactId>json</artifactId>
+          <version>1.0.0</version>
         </dependency>
 	    <dependency>
 	      <groupId>org.mortbay.jetty</groupId>
@@ -217,14 +217,15 @@
 	      <version>3.0.20100224</version>
 	    </dependency>
         <dependency>
-            <groupId>org.apache.wink</groupId>
-            <artifactId>wink-common</artifactId>
-            <version>1.1.3-incubating</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.wink</groupId>
-            <artifactId>wink-client</artifactId>
-            <version>1.1.3-incubating</version>
+          <groupId>org.apache.wink</groupId>
+          <artifactId>wink-client-apache-httpclient</artifactId>
+          <version>1.1.3-incubating</version>
+          <exclusions>
+            <exclusion>
+              <groupId>org.slf4j</groupId>
+              <artifactId>jcl-over-slf4j</artifactId>
+            </exclusion>
+          </exclusions>
         </dependency>
     </dependencies>
 </project>

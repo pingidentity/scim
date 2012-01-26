@@ -27,7 +27,13 @@ import com.unboundid.scim.marshal.json.JsonUnmarshaller;
 import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
+
+import org.apache.http.HttpException;
+import org.apache.wink.client.ClientAuthenticationException;
+import org.apache.wink.client.ClientConfigException;
 import org.apache.wink.client.ClientResponse;
+import org.apache.wink.client.ClientRuntimeException;
+import org.apache.wink.client.ClientWebException;
 import org.apache.wink.client.RestClient;
 
 import javax.ws.rs.WebApplicationException;
@@ -170,11 +176,12 @@ public class SCIMEndpoint<R extends BaseResource>
       clientResource.header("If-None-Match", etag);
     }
 
-    ClientResponse response = clientResource.get();
-
-    InputStream entity = response.getEntity(InputStream.class);
+    InputStream entity = null;
     try
     {
+      ClientResponse response = clientResource.get();
+      entity = response.getEntity(InputStream.class);
+
       if(response.getStatusType() == Response.Status.NOT_MODIFIED)
       {
         return null;
@@ -190,6 +197,14 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         throw createErrorResponseException(response, entity);
       }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e), e.getMessage());
     }
     finally
     {
@@ -267,10 +282,12 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     }
 
-    ClientResponse response = clientResource.get();
-    InputStream entity = response.getEntity(InputStream.class);
+    InputStream entity = null;
     try
     {
+      ClientResponse response = clientResource.get();
+      entity = response.getEntity(InputStream.class);
+
       if(response.getStatusType() == Response.Status.OK)
       {
         return unmarshaller.unmarshalResources(entity, resourceDescriptor,
@@ -280,6 +297,14 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         throw createErrorResponseException(response, entity);
       }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e), e.getMessage());
     }
     finally
     {
@@ -342,10 +367,13 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     };
 
-    ClientResponse response = clientResource.post(output);
-    InputStream entity = response.getEntity(InputStream.class);
+
+    InputStream entity = null;
     try
     {
+      ClientResponse response = clientResource.post(output);
+      entity = response.getEntity(InputStream.class);
+
       if(response.getStatusType() == Response.Status.CREATED)
       {
         R postedResource = unmarshaller.unmarshal(entity, resourceDescriptor,
@@ -357,6 +385,14 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         throw createErrorResponseException(response, entity);
       }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e), e.getMessage());
     }
     finally
     {
@@ -432,20 +468,22 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     };
 
-    ClientResponse response;
-    if(overrides[0])
-    {
-      clientResource.header("X-HTTP-Method-Override", "PUT");
-      response = clientResource.post(output);
-    }
-    else
-    {
-      response = clientResource.put(output);
-    }
-
-    InputStream entity = response.getEntity(InputStream.class);
+    InputStream entity = null;
     try
     {
+      ClientResponse response;
+      if(overrides[0])
+      {
+        clientResource.header("X-HTTP-Method-Override", "PUT");
+        response = clientResource.post(output);
+      }
+      else
+      {
+        response = clientResource.put(output);
+      }
+
+      entity = response.getEntity(InputStream.class);
+
       if(response.getStatusType() == Response.Status.OK)
       {
         R postedResource = unmarshaller.unmarshal(entity, resourceDescriptor,
@@ -457,6 +495,14 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         throw createErrorResponseException(response, entity);
       }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e), e.getMessage());
     }
     finally
     {
@@ -510,25 +556,35 @@ public class SCIMEndpoint<R extends BaseResource>
       clientResource.header("If-Match", etag);
     }
 
-    ClientResponse response;
 
-    if(overrides[2])
-    {
-      clientResource.header("X-HTTP-Method-Override", "DELETE");
-      response = clientResource.post(null);
-    }
-    else
-    {
-      response = clientResource.delete();
-    }
-
-    InputStream entity = response.getEntity(InputStream.class);
+    InputStream entity = null;
     try
     {
+      ClientResponse response;
+      if(overrides[2])
+      {
+        clientResource.header("X-HTTP-Method-Override", "DELETE");
+        response = clientResource.post(null);
+      }
+      else
+      {
+        response = clientResource.delete();
+      }
+
+      entity = response.getEntity(InputStream.class);
+
       if(response.getStatusType() != Response.Status.OK)
       {
         throw createErrorResponseException(response, entity);
       }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e), e.getMessage());
     }
     finally
     {
@@ -651,5 +707,46 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
     return scimException;
+  }
+
+
+  /**
+   * Tries to deduce the most appropriate HTTP response code from the given
+   * exception. This method expects most exceptions to be one of 3 or 4
+   * expected runtime exceptions that are common to Wink.
+   *
+   * @param e the Exception instance to analyze
+   * @return the most appropriate HTTP status code
+   */
+  private static int getStatusCode(final Exception e)
+  {
+    if(e instanceof ClientWebException)
+    {
+      ClientWebException cwe = (ClientWebException) e;
+      return cwe.getResponse().getStatusCode();
+    }
+    else if(e instanceof ClientAuthenticationException)
+    {
+      return 401;
+    }
+    else if(e instanceof ClientConfigException)
+    {
+      return 400;
+    }
+    else if(e instanceof ClientRuntimeException)
+    {
+      Throwable t = e.getCause();
+      if(t instanceof HttpException)
+      {
+        return 501;
+      }
+      else if(t instanceof IOException)
+      {
+        return 500;
+      }
+    }
+
+    //Default
+    return 500;
   }
 }
