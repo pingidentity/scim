@@ -544,6 +544,11 @@ public class CoreSchema
           "A HTTP addressable URL pointing to the Authentication Scheme's " +
               "usage documentation.",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
+  private static final AttributeDescriptor XML_DATA_TYPE_SUPPORTED =
+      AttributeDescriptor.createSubAttribute("supported",
+          AttributeDescriptor.DataType.BOOLEAN,
+          "Boolean value specifying whether the XML data format is supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor PATCH_CONFIG =
       AttributeDescriptor.createAttribute("patch",
           AttributeDescriptor.DataType.COMPLEX,
@@ -589,6 +594,14 @@ public class CoreSchema
           new String[]{"OAuth", "OAuth2", "HttpBasic", "httpDigest"},
           AUTH_SCHEME_NAME, AUTH_SCHEME_DESCRIPTION, AUTH_SCHEME_SPEC_URL,
           AUTH_SCHEME_DOCUMENTATION_URL);
+  private static final AttributeDescriptor XML_DATA_TYPE_CONFIG =
+      AttributeDescriptor.createAttribute(
+          "xmlDataFormat",
+          AttributeDescriptor.DataType.COMPLEX,
+          "A complex type that specifies whether the XML data format is " +
+          "supported",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false,
+          XML_DATA_TYPE_SUPPORTED);
 
   //// 10.  Resource Schema ////
 
@@ -774,7 +787,8 @@ public class CoreSchema
           SCIMConstants.SCHEMA_URI_CORE,
           SCIMConstants.RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG,
           CONFIG_DOCUMENTATION_URL, PATCH_CONFIG, BULK_CONFIG, FILTER_CONFIG,
-          CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG, AUTH_SCHEMES);
+          CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG, AUTH_SCHEMES,
+          XML_DATA_TYPE_CONFIG);
 
 
   /**

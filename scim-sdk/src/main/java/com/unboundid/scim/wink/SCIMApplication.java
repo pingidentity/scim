@@ -25,6 +25,7 @@ import com.unboundid.scim.data.FilterConfig;
 import com.unboundid.scim.data.PatchConfig;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.SortConfig;
+import com.unboundid.scim.data.XmlDataFormatConfig;
 import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
@@ -200,6 +201,8 @@ public class SCIMApplication extends WinkApplication
             "http://en.wikipedia.org/wiki/Basic_access_authentication",
             null, false));
     serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
+
+    serviceProviderConfig.setXmlDataFormatConfig(new XmlDataFormatConfig(true));
 
     return serviceProviderConfig;
   }

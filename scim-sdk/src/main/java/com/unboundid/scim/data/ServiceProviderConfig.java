@@ -283,10 +283,13 @@ public class ServiceProviderConfig extends BaseResource
    */
   public Collection<AuthenticationScheme> getAuthenticationSchemes()
   {
-    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
+    return getAttributeValues(
+        SCIMConstants.SCHEMA_URI_CORE,
         "authenticationSchemes",
         AuthenticationScheme.AUTHENTICATION_SCHEME_RESOLVER);
   }
+
+
 
   /**
    * Sets the supported Authentication Schemes.
@@ -299,9 +302,9 @@ public class ServiceProviderConfig extends BaseResource
   {
     try {
       setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
-          "authenticationSchemes",
-          AuthenticationScheme.AUTHENTICATION_SCHEME_RESOLVER,
-          authenticationSchemes);
+                         "authenticationSchemes",
+                         AuthenticationScheme.AUTHENTICATION_SCHEME_RESOLVER,
+                         authenticationSchemes);
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
       throw new RuntimeException(e);
@@ -309,4 +312,42 @@ public class ServiceProviderConfig extends BaseResource
     return this;
   }
 
+
+
+  /**
+   * Retrieves the XML data format configuration options.
+   *
+   * @return The XML data format configuration options.
+   */
+  public XmlDataFormatConfig getXmlDataFormatConfig()
+  {
+    return getSingularAttributeValue(
+        SCIMConstants.SCHEMA_URI_CORE,
+        "xmlDataFormat",
+        XmlDataFormatConfig.XML_DATA_FORMAT_CONFIG_RESOLVER);
+  }
+
+
+
+  /**
+   * Specifies the XML data format configuration options.
+   *
+   * @param xmlDataFormatConfig The XML data format configuration options.
+   * @return this resource instance.
+   */
+  public ServiceProviderConfig setXmlDataFormatConfig(
+      final XmlDataFormatConfig xmlDataFormatConfig)
+  {
+    try {
+      setSingularAttributeValue(
+          SCIMConstants.SCHEMA_URI_CORE,
+          "xmlDataFormat",
+          XmlDataFormatConfig.XML_DATA_FORMAT_CONFIG_RESOLVER,
+          xmlDataFormatConfig);
+    } catch (InvalidResourceException e) {
+      // This should never happen as these are core attributes...
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
 }

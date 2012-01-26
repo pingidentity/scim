@@ -258,7 +258,7 @@ public final class SCIMServletExtension
         new IntegerArgument(null, ARG_NAME_BULK_MAX_OPERATIONS,
                             true, 1, "{integer}",
                             "The maximum number of operations that are " +
-                            "permitted in a bulk request. The default value" +
+                            "permitted in a bulk request. The default value " +
                             "is 10000.",
                             1, Integer.MAX_VALUE, 10000));
 
@@ -266,7 +266,7 @@ public final class SCIMServletExtension
     parser.addArgument(
         new IntegerArgument(null, ARG_NAME_BULK_MAX_PAYLOAD_SIZE,
                             true, 1, "{integer}",
-                            "The maximum payload size in bytes of a bulk" +
+                            "The maximum payload size in bytes of a bulk " +
                             "request. The default value is 10000000 bytes.",
                             0, Integer.MAX_VALUE, 10000000));
   }

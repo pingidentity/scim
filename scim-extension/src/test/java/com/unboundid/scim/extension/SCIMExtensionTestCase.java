@@ -1374,6 +1374,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertFalse(config.getSortConfig().isSupported());
     assertFalse(config.getETagConfig().isSupported());
     assertTrue(config.getAuthenticationSchemes().size() > 0);
+    assertTrue(config.getXmlDataFormatConfig().isSupported());
 
     for (final AuthenticationScheme s : config.getAuthenticationSchemes())
     {
