@@ -33,10 +33,10 @@ import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Status;
+import com.unboundid.scim.sdk.UnauthorizedException;
 import com.unboundid.scim.sdk.Version;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
-import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientConfig;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -1413,14 +1413,14 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   /**
    * Tests HTTP Basic Auth with the wrong credentials.
    *
-   * @throws ClientAuthenticationException  If the test passes.
+   * @throws UnauthorizedException          If the test passes.
    * @throws LDAPException                  If the test fails.
    * @throws SCIMException                  If the test fails.
    * @throws URISyntaxException             If the test fails.
    */
-  @Test(expectedExceptions = ClientAuthenticationException.class)
+  @Test(expectedExceptions = UnauthorizedException.class)
   public void testBasicAuthInvalidCredentials()
-      throws ClientAuthenticationException, LDAPException, SCIMException,
+      throws UnauthorizedException, LDAPException, SCIMException,
              URISyntaxException
   {
     // Create a new user.
