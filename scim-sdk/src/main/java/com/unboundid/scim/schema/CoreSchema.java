@@ -35,11 +35,6 @@ import java.util.List;
 public class CoreSchema
 {
   //// 3.  SCIM Schema Structure ////
-  private static final AttributeDescriptor MULTIVALUED_VALUE =
-      AttributeDescriptor.createSubAttribute("value",
-          AttributeDescriptor.DataType.STRING,
-          "The attribute's significant value",
-          SCIMConstants.SCHEMA_URI_CORE, false, true, false);
   private static final AttributeDescriptor MULTIVALUED_PRIMARY =
       AttributeDescriptor.createSubAttribute("primary",
           AttributeDescriptor.DataType.BOOLEAN,
@@ -73,37 +68,34 @@ public class CoreSchema
       final String[] canonicalValues,
       final AttributeDescriptor... subAttributes)
   {
-    // See if they declared a value sub-attribute
-    AttributeDescriptor value = null;
-    for(AttributeDescriptor attributeDescriptor : subAttributes)
-    {
-      if(attributeDescriptor.equals(MULTIVALUED_VALUE))
-      {
-        // Use the declared one
-        value = MULTIVALUED_VALUE;
-        break;
-      }
-    }
-    if(value == null)
-    {
-      value =  AttributeDescriptor.createSubAttribute(
-        "value", dataType, "The attribute's significant value",
-          SCIMConstants.SCHEMA_URI_CORE, false, true, false);
-    }
     final AttributeDescriptor type = AttributeDescriptor.createSubAttribute(
         "type", AttributeDescriptor.DataType.STRING, "A label indicating the " +
         "attribute's function; e.g., \"work\" or " + "\"home\"",
         SCIMConstants.SCHEMA_URI_CORE, false, false, false, canonicalValues);
-    AttributeDescriptor[] subAttributeList =
-        new AttributeDescriptor[subAttributes.length + 5];
-    System.arraycopy(subAttributes, 0, subAttributeList, 0,
-        subAttributes.length);
-    subAttributeList[subAttributes.length] = value;
-    subAttributeList[subAttributes.length + 1] = type;
-    subAttributeList[subAttributes.length + 2] = MULTIVALUED_PRIMARY;
-    subAttributeList[subAttributes.length + 3] = MULTIVALUED_DISPLAY;
-    subAttributeList[subAttributes.length + 4] = MULTIVALUED_OPERATION;
-    return subAttributeList;
+
+    int i = 0;
+    final AttributeDescriptor[] allSubAttributes;
+    if (dataType == AttributeDescriptor.DataType.COMPLEX)
+    {
+      allSubAttributes = new AttributeDescriptor[subAttributes.length + 4];
+    }
+    else
+    {
+      allSubAttributes = new AttributeDescriptor[subAttributes.length + 5];
+      allSubAttributes[i++] = AttributeDescriptor.createSubAttribute(
+        "value", dataType, "The attribute's significant value",
+          SCIMConstants.SCHEMA_URI_CORE, false, true, false);
+    }
+
+    allSubAttributes[i++] = MULTIVALUED_DISPLAY;
+    allSubAttributes[i++] = MULTIVALUED_PRIMARY;
+    allSubAttributes[i++] = type;
+    allSubAttributes[i++] = MULTIVALUED_OPERATION;
+
+    System.arraycopy(subAttributes, 0, allSubAttributes, i,
+                     subAttributes.length);
+
+    return allSubAttributes;
   }
 
   /**

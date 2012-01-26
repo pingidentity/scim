@@ -17,17 +17,17 @@
   -->
 
 <scim:User xmlns:scim="urn:scim:schemas:core:1.0">
+    <id>uid=005D0000001Az1u,ou=People,dc=example,dc=com</id>
     <meta>
-        <lastModified>2011-05-13T04:42:34Z</lastModified>
         <created>2010-01-23T04:56:22Z</created>
+        <lastModified>2011-05-13T04:42:34Z</lastModified>
         <location>
             http://example.com/User/uid=005D0000001Az1u,
             ou=People,dc=example,dc=com
         </location>
     </meta>
-    <id>uid=005D0000001Az1u,ou=People,dc=example,dc=com</id>
-    <userName>bjensen@example.com</userName>
     <externalId>701984</externalId>
+    <userName>bjensen@example.com</userName>
     <name>
         <formatted>Ms. Babs J Jensen III</formatted>
         <familyName>Jensen</familyName>

@@ -17,6 +17,11 @@
 
 package com.unboundid.scim;
 
+import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
+import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.Test;
 
@@ -64,4 +69,29 @@ public class SCIMTestCase
   {
     // Nothing needed by default
   }
+
+
+
+  /**
+   * Read in a standard test user from a test resource file.
+   *
+   * @return  The test user.
+   *
+   * @throws Exception  If the file could not be read.
+   */
+  protected static BaseResource getTestUser()
+      throws Exception
+  {
+    final InputStream testXML =
+        getResource("/com/unboundid/scim/marshal/spec/core-user.xml");
+
+    final ResourceDescriptor userResourceDescriptor =
+        CoreSchema.USER_DESCRIPTOR;
+    final Unmarshaller unmarshaller = new XmlUnmarshaller();
+    return unmarshaller.unmarshal(testXML,
+        userResourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
+  }
+
+
+
 }

@@ -27,19 +27,33 @@ import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
 import org.testng.annotations.Test;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 
@@ -147,5 +161,85 @@ public class MarshallerTestCase
       assertTrue(user2.hasAttribute(SCHEMA_URI_ENTERPRISE_EXTENSION,
                                     attribute));
     }
+  }
+
+
+
+  /**
+   *
+   * Verify that a bulk request written to XML is valid according to the SCIM
+   * core XML schema.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMarshal()
+    throws Exception
+  {
+    final BaseResource testUser = getTestUser();
+
+    final int failOnErrors = 1;
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "bulkId", null,
+        "/Users", testUser));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.DELETE, null, "W/\"lha5bbazU3fNvfe5\"",
+        "/Users/1", null));
+
+    final File xmlFile = File.createTempFile("test-", ".xml");
+
+    final OutputStream outputStream = new FileOutputStream(xmlFile);
+    try
+    {
+      final XmlMarshaller marshaller = new XmlMarshaller();
+      marshaller.bulkMarshal(outputStream,  failOnErrors, operations);
+    }
+    finally
+    {
+      outputStream.close();
+    }
+
+    // Validate the XML document against the schema.
+    final SchemaFactory schemaFactory =
+        SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
+    final Schema scimCoreSchema =
+        schemaFactory.newSchema(
+            getResourceFile("/com/unboundid/scim/schema/scim-core.xsd"));
+    final DocumentBuilderFactory documentBuilderFactory =
+        DocumentBuilderFactory.newInstance();
+    documentBuilderFactory.setNamespaceAware(true);
+    documentBuilderFactory.setIgnoringElementContentWhitespace(true);
+    documentBuilderFactory.setValidating(false);
+    documentBuilderFactory.setSchema(scimCoreSchema);
+
+    final DocumentBuilder documentBuilder =
+        documentBuilderFactory.newDocumentBuilder();
+    documentBuilder.setErrorHandler(new ErrorHandler()
+    {
+      public void warning(final SAXParseException exception)
+          throws SAXException
+      {
+        throw exception;
+      }
+
+
+
+      public void error(final SAXParseException exception)
+          throws SAXException
+      {
+        throw exception;
+      }
+
+
+
+      public void fatalError(final SAXParseException exception)
+          throws SAXException
+      {
+        throw exception;
+      }
+    });
+
+    documentBuilder.parse(xmlFile);
   }
 }

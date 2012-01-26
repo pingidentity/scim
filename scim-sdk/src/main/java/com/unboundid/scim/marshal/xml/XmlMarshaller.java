@@ -289,10 +289,18 @@ public class XmlMarshaller implements Marshaller
     for (final String schemaURI :
         resource.getResourceDescriptor().getAttributeSchemas())
     {
-      final String prefix = schemaURI.equalsIgnoreCase(resourceSchemaURI) ?
-          SCIMConstants.DEFAULT_SCHEMA_PREFIX : "ns" + String.valueOf(i++);
-      xmlStreamWriter.setPrefix(prefix, schemaURI);
-      xmlStreamWriter.writeNamespace(prefix, schemaURI);
+      if (schemaURI.equalsIgnoreCase(resourceSchemaURI))
+      {
+        final String prefix = SCIMConstants.DEFAULT_SCHEMA_PREFIX;
+        xmlStreamWriter.setPrefix(prefix, schemaURI);
+        xmlStreamWriter.writeNamespace(prefix, schemaURI);
+      }
+      else if (resource.getScimObject().hasSchema(schemaURI))
+      {
+        final String prefix = "ns" + String.valueOf(i++);
+        xmlStreamWriter.setPrefix(prefix, schemaURI);
+        xmlStreamWriter.writeNamespace(prefix, schemaURI);
+      }
     }
 
     if (xsiURI != null)

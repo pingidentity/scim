@@ -48,6 +48,7 @@ import static com.unboundid.util.LDAPTestUtils.generateUserEntry;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -308,9 +309,16 @@ public class UserResourceMapperTestCase
         "facsimileTelephoneNumber");
     assertEquals(filter.getComponents()[2].getAssertionValue(), "test");
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("addresses eq \"test\""));
-    assertNull(filter);
+    try
+    {
+      mapper.toLDAPFilter(SCIMFilter.parse("addresses eq \"test\""));
+      fail("The complex filter attribute 'addresses' without a sub-attribute " +
+           "should cause an exception to be thrown");
+    }
+    catch (InvalidResourceException e)
+    {
+      // Expected.
+    }
 
     filter = mapper.toLDAPFilter(
         SCIMFilter.parse("addresses.formatted eq \"test\""));
@@ -419,9 +427,16 @@ public class UserResourceMapperTestCase
     assertEquals(sss.getSortKeys()[0].getMatchingRuleID(), "2.5.13.3");
     assertEquals(sss.getSortKeys()[0].reverseOrder(), true);
 
-    control = mapper.toLDAPSortControl(
-        new SortParameters("addresses", "ascending"));
-    assertNull(control);
+    try
+    {
+      mapper.toLDAPSortControl(new SortParameters("addresses", "ascending"));
+      fail("sortBy=addresses should cause an exception to be thrown because " +
+           "it is not valid");
+    }
+    catch (InvalidResourceException e)
+    {
+      // Expected.
+    }
 
     control = mapper.toLDAPSortControl(
         new SortParameters("name.middleName", "ascending"));
