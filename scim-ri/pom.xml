@@ -162,16 +162,11 @@
         <dependency>
             <groupId>org.eclipse.jetty.aggregate</groupId>
             <artifactId>jetty-all</artifactId>
-            <version>8.0.4.v20111024</version>
+            <version>8.1.0.RC5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.wink</groupId>
             <artifactId>wink-server</artifactId>
-            <version>1.1.3-incubating</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.wink</groupId>
-            <artifactId>wink-client-apache-httpclient</artifactId>
             <version>1.1.3-incubating</version>
         </dependency>
         <dependency>
