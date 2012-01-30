@@ -15,6 +15,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.Entry;
 import com.unboundid.scim.data.GroupResource;
@@ -599,7 +600,6 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                    SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
                    Manager.MANAGER_RESOLVER).getManagerId());
 
-
     //Verify what is actually in the Directory
     SearchResultEntry entry = dsInstance.getConnectionPool().getEntry(
                                           "uid=jdoe," + userBaseDN, "*", "+");
@@ -703,6 +703,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     user.setPassword("anotherPassword");
     user.setTitle("Chief of Operations");
     user.setDisplayName("Test Modify with PUT");
+    user.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+              AttributeValueResolver.STRING_RESOLVER, "456");
 
     //Mark the start and end time with a 500ms buffer on either side, because
     //the Directory Server will record the actual modifyTimestamp using the
@@ -724,6 +727,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(returnedUser.getDisplayName(), user.getDisplayName());
     assertTrue(lastModified.after(startTime));
     assertTrue(lastModified.before(endTime));
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+              AttributeValueResolver.STRING_RESOLVER), "456");
 
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry =
@@ -736,6 +742,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(entry.getAttributeValue("givenname"), "Test");
     assertEquals(entry.getAttributeValue("sn"), "User");
     assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
     assertEquals(entry.getAttributeValue("displayName"),
                                                    "Test Modify with PUT");
     dsInstance.checkCredentials(entry.getDN(), "anotherPassword");
