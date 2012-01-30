@@ -304,7 +304,7 @@ public class JsonBulkParser extends JsonParser
       }
 
       resource = unmarshal(data, descriptor,
-                           BaseResource.BASE_RESOURCE_FACTORY);
+                           BaseResource.BASE_RESOURCE_FACTORY, null);
     }
 
     return new BulkOperation(method, bulkId, version, path, location, resource,

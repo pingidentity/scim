@@ -58,7 +58,8 @@ public class JsonUnmarshaller implements Unmarshaller
           new JSONObject(new JSONTokener(inputStream));
 
       final JsonParser parser = new JsonParser();
-      return parser.unmarshal(jsonObject, resourceDescriptor, resourceFactory);
+      return parser.unmarshal(jsonObject, resourceDescriptor, resourceFactory,
+                              null);
     }
     catch(JSONException e)
     {
@@ -93,6 +94,8 @@ public class JsonUnmarshaller implements Unmarshaller
         startIndex = jsonObject.getInt("startIndex");
       }
 
+      final JSONArray schemas = jsonObject.optJSONArray("schemas");
+
       List<R> resources = Collections.emptyList();
       if(jsonObject.has("Resources"))
       {
@@ -103,7 +106,8 @@ public class JsonUnmarshaller implements Unmarshaller
           R resource =
               parser.unmarshal(resourcesArray.getJSONObject(i),
                                resourceDescriptor,
-                               resourceFactory);
+                               resourceFactory,
+                               schemas);
           resources.add(resource);
         }
       }

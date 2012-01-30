@@ -192,14 +192,28 @@ public final class SCIMAttributeValue
   }
 
 
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString()
   {
-    return "SCIMAttributeValue{" +
-      "value=" + value +
-      ", attributes=" + attributes +
-      '}';
+    final StringBuilder sb = new StringBuilder();
+    sb.append("SCIMAttributeValue{");
+    if (value != null)
+    {
+      sb.append("value=").append(value);
+    }
+    else
+    {
+      sb.append("attributes=").append(attributes);
+    }
+    sb.append('}');
+    return sb.toString();
   }
+
+
 
   /**
    * Create a new complex attribute value from the provided attributes.

@@ -616,6 +616,17 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     System.out.println("Full user entry:\n" + entry.toLDIFString());
 
+    // Verify that a query returns all attributes including extension
+    // attributes.
+    returnedUser = userEndpoint.query("userName eq \"jdoe\"").iterator().next();
+    System.out.println(returnedUser);
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getManagerId(),
+                 user.getSingularAttributeValue(
+                   SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+                   Manager.MANAGER_RESOLVER).getManagerId());
+
     //Create a new group
     SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
     GroupResource group = grpEndpoint.newResource();

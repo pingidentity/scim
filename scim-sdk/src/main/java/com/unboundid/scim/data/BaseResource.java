@@ -364,4 +364,22 @@ public class BaseResource implements SCIMResponse
     result = 31 * result + scimObject.hashCode();
     return result;
   }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString()
+  {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("BaseResource");
+    sb.append("{resource=").append(resourceDescriptor.getSchema());
+    sb.append(SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
+    sb.append(resourceDescriptor.getName());
+    sb.append(", scimObject=").append(scimObject);
+    sb.append('}');
+    return sb.toString();
+  }
 }

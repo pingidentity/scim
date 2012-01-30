@@ -49,6 +49,9 @@ public class JsonParser
    * @param resourceDescriptor The descriptor of the SCIM resource to be read.
    * @param resourceFactory The resource factory to use to create the resource
    *                        instance.
+   * @param defaultSchemas  The set of schemas used by attributes of the
+   *                        resource, or {@code null} if the schemas must be
+   *                        provided in the resource object.
    *
    * @return  The SCIM resource that was read.
    *
@@ -58,7 +61,8 @@ public class JsonParser
   protected <R extends BaseResource> R unmarshal(
       final JSONObject jsonObject,
       final ResourceDescriptor resourceDescriptor,
-      final ResourceFactory<R> resourceFactory)
+      final ResourceFactory<R> resourceFactory,
+      final JSONArray defaultSchemas)
       throws JSONException, InvalidResourceException
   {
     final SCIMObject scimObject = new SCIMObject();
@@ -66,7 +70,15 @@ public class JsonParser
     // The first keyed object ought to be a schemas array, but it may not be
     // present if 1) the attrs are all core and 2) the client decided to omit
     // the schema declaration.
-    final JSONArray schemas = jsonObject.optJSONArray("schemas");
+    final JSONArray schemas;
+    if (jsonObject.has("schemas"))
+    {
+      schemas = jsonObject.getJSONArray("schemas");
+    }
+    else
+    {
+      schemas = defaultSchemas;
+    }
 
     // Read the core attributes.
     for (AttributeDescriptor attributeDescriptor : resourceDescriptor

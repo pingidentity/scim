@@ -723,7 +723,9 @@ public final class SCIMAttribute
   {
     final StringBuilder sb = new StringBuilder();
     sb.append("SCIMAttribute");
-    sb.append("{attributeDescriptor=").append(attributeDescriptor);
+    sb.append("{attribute=").append(attributeDescriptor.getSchema());
+    sb.append(SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE);
+    sb.append(attributeDescriptor.getName());
     sb.append(", values=").append(values == null ? "null" :
         Arrays.asList(values).toString());
     sb.append('}');
