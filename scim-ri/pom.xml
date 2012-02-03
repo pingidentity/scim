@@ -18,7 +18,7 @@
     <parent>
         <artifactId>scim-parent</artifactId>
         <groupId>com.unboundid.product.scim</groupId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>scim-ri</artifactId>
     <packaging>jar</packaging>
@@ -122,7 +122,7 @@
                             <descriptors>
                                 <descriptor>${basedir}/src/main/assemblies/zip.xml</descriptor>
                             </descriptors>
-                            <attach>true</attach>
+                            <attach>false</attach>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>
@@ -149,6 +149,14 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <!-- We don't want to publish this to the Engineering Repo. -->
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

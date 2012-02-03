@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
@@ -26,13 +26,13 @@
     <distributionManagement>
         <repository>
             <id>releases</id>
-            <name>QA Releases Repository</name>
-            <url>http://hudson:8081/nexus/content/repositories/releases</url>
+            <name>Engineering Releases Repo</name>
+            <url>http://maven-eng:8080/nexus/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
-            <name>QA Snapshots Repository</name>
-            <url>http://hudson:8081/nexus/content/repositories/snapshots</url>
+            <name>Engineering Snapshots Repo</name>
+            <url>http://maven-eng:8080/nexus/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 

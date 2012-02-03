@@ -18,7 +18,7 @@
     <parent>
         <artifactId>scim-parent</artifactId>
         <groupId>com.unboundid.product.scim</groupId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>scim-sdk</artifactId>
     <packaging>jar</packaging>
@@ -163,7 +163,7 @@
                             <descriptors>
                                 <descriptor>${project.basedir}/src/main/assemblies/zip.xml</descriptor>
                             </descriptors>
-                            <attach>true</attach>
+                            <attach>false</attach>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>
