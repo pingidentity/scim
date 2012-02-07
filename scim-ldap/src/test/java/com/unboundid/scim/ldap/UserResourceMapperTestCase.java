@@ -120,7 +120,7 @@ public class UserResourceMapperTestCase
     final ResourceMapper mapper = getUserResourceMapper();
 
     final Entry entry = new Entry("cn=test",
-        mapper.toLDAPAttributes(user.getScimObject()));
+        mapper.toLDAPAttributes(user.getScimObject(), null));
     assertTrue(entry.hasAttributeValue("uid", "bjensen"));
     assertTrue(entry.hasAttributeValue("mail", "bjensen@example.com"));
     assertTrue(entry.hasAttributeValue("cn", "Ms. Barbara J Jensen III"));
@@ -144,7 +144,8 @@ public class UserResourceMapperTestCase
       user2.addAttribute(a);
     }
 
-    final Entry entry2 = new Entry("cn=test", mapper.toLDAPAttributes(user2));
+    final Entry entry2 =
+        new Entry("cn=test", mapper.toLDAPAttributes(user2, null));
     assertEquals(entry2, entry);
     assertEquals(entry, entry2);
 
@@ -175,7 +176,8 @@ public class UserResourceMapperTestCase
 
     final ResourceMapper mapper = getUserResourceMapper();
 
-    final Entry entry = new Entry("cn=test", mapper.toLDAPAttributes(user));
+    final Entry entry =
+        new Entry("cn=test", mapper.toLDAPAttributes(user, null));
     assertTrue(entry.hasAttributeValue("uid", "user.0"));
     assertTrue(entry.hasAttributeValue("mail", "user.0@example.com"));
     assertTrue(entry.hasAttributeValue("cn", "Aaren Atp"));

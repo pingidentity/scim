@@ -38,6 +38,7 @@
                         <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                         <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
                         <extensionZipFile>${project.build.directory}/${project.build.finalName}.zip</extensionZipFile>
+                        <main.basedir>${main.basedir}</main.basedir>
                     </systemPropertyVariables>
                     <properties>
                         <property>

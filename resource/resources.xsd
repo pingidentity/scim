@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
   Copyright 2011-2012 UnboundID Corp.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License (GPLv2 only)
   or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
@@ -10,7 +10,7 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this program; if not, see <http://www.gnu.org/licenses>.
 -->
@@ -58,7 +58,8 @@
     <xs:sequence>
       <xs:element name="description" type="xs:string"/>
       <xs:element name="endpoint" type="xs:string"/>
-      <xs:element name="LDAPSearchRef" type="LDAPSearchParametersRef" minOccurs="0" />
+      <xs:element name="LDAPSearchRef" type="LDAPSearchParametersRef"
+                  minOccurs="1" />
       <xs:element name="LDAPAdd" type="LDAPAddParameters" minOccurs="0" />
       <xs:element name="attribute" type="AttributeDefinition"
                   minOccurs="0" maxOccurs="unbounded"/>
@@ -167,6 +168,8 @@
     <xs:sequence>
       <xs:element name="baseDN" type="xs:string" maxOccurs="1"/>
       <xs:element name="filter" type="xs:string"/>
+      <xs:element name="resourceIDMapping" type="ResourceIDMapping"
+                  minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
     <xs:attribute name="id" type="xs:ID" use="required"/>
   </xs:complexType>
@@ -190,6 +193,21 @@
     <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
     <xs:attribute name="onConflict" type="OnConflict" default="merge"/>
   </xs:complexType>
+
+  <xs:complexType name="ResourceIDMapping">
+    <xs:complexContent>
+      <xs:extension base="AttributeMapping">
+        <xs:attribute name="createdBy" type="CreatedBy"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:simpleType name="CreatedBy">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="scim-consumer"/>
+      <xs:enumeration value="directory"/>
+    </xs:restriction>
+  </xs:simpleType>
 
   <!--
     Root Element

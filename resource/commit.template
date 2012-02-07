@@ -13,4 +13,5 @@ JiraIssue:SCIM-<Jira Issue ID>
 SalesforceCaseNumber:<SF case number>
 
 Product:scim-sdk
+Product:scim-ri
 Product:scim-extension

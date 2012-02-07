@@ -22,26 +22,25 @@ import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
-import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
+import com.unboundid.scim.sdk.StaticUtils;
 import com.unboundid.util.Validator;
-
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBContext;
@@ -59,7 +58,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
@@ -106,14 +104,13 @@ public class ResourceMapper
    * mapper.
    */
   private ResourceDescriptor resourceDescriptor;
+
   /**
-   * The LDAP Search base DN to be used for querying.
+   * The LDAPSearchResolver to resolve resources handled by this resource
+   * manager.
    */
-  private String searchBaseDN;
-  /**
-   * The LDAP filter to match all resources handled by this resource manager.
-   */
-  private Filter searchFilter;
+  private LDAPSearchResolver searchResolver;
+
   /**
    * The LDAP Add parameters.
    */
@@ -138,6 +135,14 @@ public class ResourceMapper
    * resources.xml.
    */
   private AttributeMapper metaAttributeMapper;
+
+  /**
+   * The internal AttributeMapper for the id attribute. This allows the
+   * toLDAPFilter() code to generate LDAP filters which are based on the id
+   * information, even though there are no explicit mappings for id set up in
+   * resources.xml.
+   */
+  private AttributeMapper idAttributeMapper;
 
   /**
    * Create a new instance of this resource mapper. All resource mappers must
@@ -181,35 +186,38 @@ public class ResourceMapper
     final ResourcesDefinition resources =
         (ResourcesDefinition)jaxbElement.getValue();
 
-    final List<LDAPSearchParameters> ldapSearchParams =
-        resources.getLDAPSearch();
+    final Map<String,LDAPSearchResolver> ldapSearchResolvers =
+        new HashMap<String, LDAPSearchResolver>();
+    for (final LDAPSearchParameters p : resources.getLDAPSearch())
+    {
+      try
+      {
+        ldapSearchResolvers.put(StaticUtils.toLowerCase(p.getId()),
+                                new LDAPSearchResolver(p));
+      }
+      catch (LDAPException e)
+      {
+        Debug.debugException(e);
+        throw new ServerErrorException(e.getMessage());
+      }
+    }
 
     final List<ResourceMapper> resourceMappers =
         new ArrayList<ResourceMapper>();
 
     for (final ResourceDefinition resource : resources.getResource())
     {
-      LDAPSearchParameters ldapSearch = null;
-      if(resource.getLDAPSearchRef() == null)
+      final LDAPSearchParameters ldapSearch;
+      Object o = resource.getLDAPSearchRef().getIdref();
+      if(o != null)
       {
-        Debug.debug(Level.WARNING, DebugType.OTHER,
-              "Skipping the \"" + resource.getName() + "\" resource " +
-              "because it does not contain any LDAP search parameters.");
-        continue;
+        ldapSearch = (LDAPSearchParameters) o;
       }
       else
       {
-        Object o = resource.getLDAPSearchRef().getIdref();
-        if(o != null)
-        {
-          ldapSearch = (LDAPSearchParameters) o;
-        }
-        else
-        {
-          throw new JAXBException(
-                  "Cannot find <LDAPSearch> element referenced by " +
-                  "the \"" + resource.getName() + "\" resource.");
-        }
+        throw new JAXBException(
+                "Cannot find <LDAPSearch> element referenced by " +
+                "the \"" + resource.getName() + "\" resource.");
       }
 
       final List<AttributeMapper> attributeMappers =
@@ -223,8 +231,16 @@ public class ResourceMapper
           resource.getAttribute())
       {
         final AttributeDescriptor attributeDescriptor =
-            createAttributeDescriptor(attributeDefinition,
-                                      resource.getSchema());
+            createAttributeDescriptor(attributeDefinition);
+
+        if (attributeDescriptor.equals(CoreSchema.ID_DESCRIPTOR))
+        {
+          throw new ServerErrorException(
+              "An attribute definition is not permitted for the 'id' " +
+              "attribute. The mapping for this attribute may only be " +
+              "specified in a LDAPSearch element.");
+        }
+
         attributeDescriptors[i++] = attributeDescriptor;
         final AttributeMapper m =
             AttributeMapper.create(attributeDefinition, attributeDescriptor);
@@ -245,23 +261,19 @@ public class ResourceMapper
             if(derivedAttribute.getArguments().containsKey(
                                 DerivedAttribute.LDAP_SEARCH_REF))
             {
-              boolean foundRef = false;
               String id = derivedAttribute.getArguments().get(
                             DerivedAttribute.LDAP_SEARCH_REF).toString();
-              for(LDAPSearchParameters searchParams : ldapSearchParams)
+              final LDAPSearchResolver resolver =
+                  ldapSearchResolvers.get(StaticUtils.toLowerCase(id));
+              if (resolver != null)
               {
-                if(searchParams.getId().equalsIgnoreCase(id))
-                {
-                  //Replace the String in the arguments map with a
-                  //LDAPSearchParameters instance. The DerivedAttribute
-                  //initialize() method will take advantage of this.
-                  foundRef = true;
-                  derivedAttribute.getArguments().put(
-                          DerivedAttribute.LDAP_SEARCH_REF, searchParams);
-                  break;
-                }
+                //Replace the String in the arguments map with a
+                //LDAPSearchResolver instance. The DerivedAttribute
+                //initialize() method will take advantage of this.
+                derivedAttribute.getArguments().put(
+                    DerivedAttribute.LDAP_SEARCH_REF, resolver);
               }
-              if(!foundRef)
+              else
               {
                 throw new JAXBException(
                         "Cannot find <LDAPSearch> element with id=\"" + id +
@@ -282,11 +294,14 @@ public class ResourceMapper
               resource.getEndpoint(), attributeDescriptors);
 
       final ResourceMapper resourceMapper = create(resource.getMapping());
-      resourceMapper.initializeMapper(resourceDescriptor,
-                                      ldapSearch,
-                                      resource.getLDAPAdd(),
-                                      attributeMappers,
-                                      derivedAttributes);
+      final LDAPSearchResolver ldapSearchResolver =
+          ldapSearchResolvers.get(StaticUtils.toLowerCase(ldapSearch.getId()));
+      resourceMapper.initializeMapper(
+          resourceDescriptor,
+          ldapSearchResolver,
+          resource.getLDAPAdd(),
+          attributeMappers,
+          derivedAttributes);
 
       resourceMappers.add(resourceMapper);
     }
@@ -298,15 +313,13 @@ public class ResourceMapper
    * Create an attribute descriptor from an attribute definition.
    *
    * @param attributeDefinition  The attribute definition.
-   * @param resourceSchema       The resource schema URN.
    *
    * @return  A new attribute descriptor.
    *
    * @throws com.unboundid.scim.sdk.SCIMException  If an error occurs.
    */
   private static AttributeDescriptor createAttributeDescriptor(
-      final AttributeDefinition attributeDefinition,
-      final String resourceSchema)
+      final AttributeDefinition attributeDefinition)
       throws SCIMException
   {
     final String schema = attributeDefinition.getSchema();
@@ -448,8 +461,7 @@ public class ResourceMapper
    *
    * @param resourceDescriptor The ResourceDescriptor of the SCIM resource
    *                           handled by this resource mapper.
-   * @param searchParameters   The LDAP Search parameters, or {@code null} if
-   *                           there are none defined.
+   * @param searchResolver     The LDAP Search resolver.
    * @param addParameters      The LDAP Add parameters, or {@code null} if there
    *                           are none defined.
    * @param mappers            The attribute mappers for this resource mapper.
@@ -457,32 +469,14 @@ public class ResourceMapper
    */
   public void initializeMapper(
       final ResourceDescriptor resourceDescriptor,
-      final LDAPSearchParameters searchParameters,
+      final LDAPSearchResolver searchResolver,
       final LDAPAddParameters addParameters,
       final Collection<AttributeMapper> mappers,
       final Collection<DerivedAttribute> derivedAttributes)
   {
     this.resourceDescriptor  = resourceDescriptor;
     this.addParameters       = addParameters;
-
-    if (searchParameters != null)
-    {
-      this.searchBaseDN = searchParameters.getBaseDN().trim();
-      try
-      {
-        this.searchFilter = Filter.create(searchParameters.getFilter().trim());
-      }
-      catch (LDAPException e)
-      {
-        Debug.debugException(e);
-        throw new IllegalArgumentException(e.getExceptionMessage());
-      }
-    }
-    else
-    {
-      this.searchBaseDN = null;
-      this.searchFilter = null;
-    }
+    this.searchResolver      = searchResolver;
 
     if (addParameters != null)
     {
@@ -495,6 +489,7 @@ public class ResourceMapper
     }
 
     metaAttributeMapper = createMetaAttributeMapper();
+    idAttributeMapper = searchResolver.getIdAttributeMapper();
 
     attributeMappers =
         new HashMap<AttributeDescriptor, AttributeMapper>(mappers.size());
@@ -548,14 +543,14 @@ public class ResourceMapper
    */
   public boolean supportsQuery()
   {
-    return searchBaseDN != null;
+    return searchResolver != null;
   }
 
 
 
   /**
    * Indicates whether this mapper supports creation of new resources through
-   * {@link #toLDAPEntry(com.unboundid.scim.sdk.SCIMObject)}.
+   * {@code toLDAPEntry}.
    *
    * @return  {@code true} if this mapper supports resource creation.
    */
@@ -598,22 +593,28 @@ public class ResourceMapper
       }
     }
 
+    searchResolver.addIdAttribute(ldapAttributes);
+
     return ldapAttributes;
   }
 
   /**
    * Construct an LDAP entry from the provided SCIM object.
    *
-   * @param scimObject  The SCIM object to form the contents of the entry.
+   * @param scimObject       The SCIM object to form the contents of the entry.
+   * @param ldapInterface    An optional LDAP interface that can be used to
+   *                         derive attributes from other entries.
    *
    * @return  An LDAP entry.
    *
    * @throws LDAPException  If the entry could not be constructed.
    * @throws InvalidResourceException if the mapping violates the schema.
    */
-  public Entry toLDAPEntry(final SCIMObject scimObject)
-      throws LDAPException, InvalidResourceException {
-    final Entry entry = new Entry("");
+  public Entry toLDAPEntry(final SCIMObject scimObject,
+                           final LDAPRequestInterface ldapInterface)
+      throws LDAPException, InvalidResourceException
+  {
+    Entry entry = new Entry("");
 
     if (addParameters == null)
     {
@@ -649,7 +650,7 @@ public class ResourceMapper
       }
     }
 
-    for (final Attribute a : toLDAPAttributes(scimObject))
+    for (final Attribute a : toLDAPAttributes(scimObject, ldapInterface))
     {
       entry.addAttribute(a);
     }
@@ -657,6 +658,7 @@ public class ResourceMapper
     // TODO allow SCIM object values to be referenced
     entry.setDN(dnConstructor.constructValue(entry));
 
+    entry = searchResolver.preProcessAddEntry(entry);
     return entry;
   }
 
@@ -664,15 +666,32 @@ public class ResourceMapper
   /**
    * Map the attributes in a SCIM object to LDAP attributes.
    *
-   * @param scimObject  The object containing attributes to be mapped.
+   * @param scimObject       The object containing attributes to be mapped.
+   * @param ldapInterface    An optional LDAP interface that can be used to
+   *                         derive attributes from other entries.
    *
    * @return  A list of LDAP attributes mapped from the SCIM object. This should
    *          never be {@code null} but may be empty.
+   *
    * @throws InvalidResourceException if the mapping violates the schema.
    */
-  public List<Attribute> toLDAPAttributes(final SCIMObject scimObject)
-      throws InvalidResourceException {
+  public List<Attribute> toLDAPAttributes(
+      final SCIMObject scimObject,
+      final LDAPRequestInterface ldapInterface)
+      throws InvalidResourceException
+  {
     final List<Attribute> attributes = new ArrayList<Attribute>();
+
+    if (ldapInterface != null)
+    {
+      for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
+          derivedAttributes.entrySet())
+      {
+        final DerivedAttribute derivedAttribute = e.getValue();
+        derivedAttribute.toLDAPAttributes(scimObject, attributes,
+                                          ldapInterface, searchResolver);
+      }
+    }
 
     for (final AttributeMapper attributeMapper : attributeMappers.values())
     {
@@ -719,17 +738,24 @@ public class ResourceMapper
   /**
    * Map the replacement attributes in a SCIM object to LDAP modifications.
    *
-   * @param currentEntry  The current LDAP entry representing the SCIM object.
-   * @param scimObject  The object containing attributes to be mapped.
+   * @param currentEntry   The current LDAP entry representing the SCIM object.
+   * @param scimObject     The object containing attributes to be mapped.
+   * @param ldapInterface  An optional LDAP interface that can be used to
+   *                       derive attributes from other entries.
    *
    * @return  A list of LDAP modifications mapped from the SCIM object. This
    *          should never be {@code null} but may be empty.
+   *
    * @throws InvalidResourceException if the mapping violates the schema.
    */
-  public List<Modification> toLDAPModifications(final Entry currentEntry,
-                                                final SCIMObject scimObject)
-      throws InvalidResourceException {
-    final List<Attribute> attributes = toLDAPAttributes(scimObject);
+  public List<Modification> toLDAPModifications(
+      final Entry currentEntry,
+      final SCIMObject scimObject,
+      final LDAPRequestInterface ldapInterface)
+      throws InvalidResourceException
+  {
+    final List<Attribute> attributes =
+        toLDAPAttributes(scimObject, ldapInterface);
     final Entry entry = new Entry(currentEntry.getDN(), attributes);
 
     return Entry.diff(currentEntry, entry, false, false);
@@ -751,7 +777,7 @@ public class ResourceMapper
   {
     if (filter == null)
     {
-      return searchFilter;
+      return searchResolver.getFilter();
     }
 
     final Filter filterComponent = toLDAPFilterComponent(filter);
@@ -760,9 +786,10 @@ public class ResourceMapper
     {
       return null;
     }
-    else if(searchFilter != null)
+    else if(searchResolver.getFilter() != null)
     {
-      return Filter.createANDFilter(filterComponent, searchFilter);
+      return Filter.createANDFilter(filterComponent,
+                                    searchResolver.getFilter());
     }
     else
     {
@@ -778,7 +805,7 @@ public class ResourceMapper
    */
   public String getSearchBaseDN()
   {
-    return searchBaseDN;
+    return searchResolver.getBaseDN();
   }
 
 
@@ -795,24 +822,15 @@ public class ResourceMapper
       throws InvalidResourceException
   {
     final AttributePath attributePath = sortParameters.getSortBy();
-    AttributeMapper attributeMapper = null;
+    final AttributeDescriptor attributeDescriptor =
+        resourceDescriptor.getAttribute(attributePath.getAttributeSchema(),
+          attributePath.getAttributeName());
+    AttributeMapper attributeMapper = attributeMappers.get(attributeDescriptor);
 
     //TODO: handle if scimAttributeType == meta here
 
-    for(AttributeDescriptor attributeDescriptor : attributeMappers.keySet())
-    {
-      if(attributeDescriptor.getSchema().equalsIgnoreCase(
-          attributePath.getAttributeSchema()) &&
-          attributeDescriptor.getName().equalsIgnoreCase(
-              attributePath.getAttributeName()))
-      {
-        attributeMapper = attributeMappers.get(attributeDescriptor);
-      }
-    }
     if (attributeMapper == null)
     {
-      resourceDescriptor.getAttribute(attributePath.getAttributeSchema(),
-          attributePath.getAttributeName());
       return null;
     }
 
@@ -838,7 +856,7 @@ public class ResourceMapper
   public List<SCIMAttribute> toSCIMAttributes(
       final Entry entry,
       final SCIMQueryAttributes queryAttributes,
-      final LDAPInterface ldapInterface) throws InvalidResourceException
+      final LDAPRequestInterface ldapInterface) throws InvalidResourceException
   {
     final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>();
 
@@ -857,7 +875,7 @@ public class ResourceMapper
           final DerivedAttribute derivedAttribute = e.getValue();
           final SCIMAttribute attribute =
               derivedAttribute.toSCIMAttribute(entry, ldapInterface,
-                                               searchBaseDN);
+                                               searchResolver);
           if (attribute != null)
           {
             final SCIMAttribute paredAttribute =
@@ -916,13 +934,14 @@ public class ResourceMapper
    */
   public SCIMObject toSCIMObject(final Entry entry,
                                  final SCIMQueryAttributes queryAttributes,
-                                 final LDAPInterface ldapInterface)
-      throws InvalidResourceException {
-    if (searchFilter != null)
+                                 final LDAPRequestInterface ldapInterface)
+      throws InvalidResourceException
+  {
+    if (searchResolver.getFilter() != null)
     {
       try
       {
-        if (!searchFilter.matchesEntry(entry))
+        if (!searchResolver.getFilter().matchesEntry(entry))
         {
           return null;
         }
@@ -1044,37 +1063,31 @@ public class ResourceMapper
 
       default:
         final AttributePath filterAttribute = filter.getFilterAttribute();
-        // TODO: This should have a reference to the resource descriptor
-        AttributeMapper attributeMapper = null;
+        final AttributeDescriptor attributeDescriptor =
+            resourceDescriptor.getAttribute(
+                filterAttribute.getAttributeSchema(),
+                filterAttribute.getAttributeName());
 
-        if(metaAttributeMapper.getAttributeDescriptor().getName()
-                .equalsIgnoreCase(filterAttribute.getAttributeName()))
+        AttributeMapper attributeMapper;
+
+        if (attributeDescriptor.equals(
+            metaAttributeMapper.getAttributeDescriptor()))
         {
           attributeMapper = metaAttributeMapper;
         }
+        else if (idAttributeMapper != null &&
+                 attributeDescriptor.equals(
+                     idAttributeMapper.getAttributeDescriptor()))
+        {
+          attributeMapper = idAttributeMapper;
+        }
         else
         {
-          for(AttributeDescriptor attrDescriptor : attributeMappers.keySet())
-          {
-            if(attrDescriptor.getSchema().equalsIgnoreCase(
-                filterAttribute.getAttributeSchema()) &&
-                  attrDescriptor.getName().equalsIgnoreCase(
-                    filterAttribute.getAttributeName()))
-            {
-              attributeMapper = attributeMappers.get(attrDescriptor);
-              break;
-            }
-          }
+          attributeMapper = attributeMappers.get(attributeDescriptor);
         }
         if (attributeMapper != null)
         {
           return attributeMapper.toLDAPFilter(filter);
-        }
-        else
-        {
-          // Throw an error if this is an undefined attribute.
-          resourceDescriptor.getAttribute(filterAttribute.getAttributeSchema(),
-              filterAttribute.getAttributeName());
         }
         break;
     }
@@ -1103,5 +1116,73 @@ public class ResourceMapper
 
     return new ComplexSingularAttributeMapper(
                     CoreSchema.META_DESCRIPTOR, transformations);
+  }
+
+
+
+  /**
+   * Determines whether the SCIM resource ID maps to the LDAP DN.
+   *
+   * @return  {@code true} if the SCIM resource ID maps to the LDAP DN or
+   *          {@code false} if the ID maps to some other attribute.
+   */
+  public boolean idMapsToDn()
+  {
+    return searchResolver.idMapsToDn();
+  }
+
+
+
+  /**
+   * Returns the LDAP attribute that the SCIM resource ID maps to, or
+   * {@code null} if the SCIM ID maps to the LDAP DN.
+   *
+   * @return  The LDAP attribute that the SCIM resource ID maps to, or
+   *          {@code null} if the SCIM ID maps to the LDAP DN.
+   */
+  public String getIdAttribute()
+  {
+    return searchResolver.getIdAttribute();
+  }
+
+
+
+  /**
+   * Retrieve a resource ID from an LDAP entry.
+   *
+   * @param entry  The LDAP entry, which must contain a value for the
+   *               resource ID attribute unless the resource ID maps to the
+   *               LDAP DN.
+   *
+   * @return  The resource ID of the entry.
+   *
+   * @throws InvalidResourceException  If the resource ID could not be
+   *                                   determined.
+   */
+  public String getIdFromEntry(final Entry entry)
+      throws InvalidResourceException
+  {
+    return searchResolver.getIdFromEntry(entry);
+  }
+
+
+
+  /**
+   * Read the LDAP entry identified by the given resource ID.
+   *
+   * @param ldapInterface  The LDAP interface to use to read the entry.
+   * @param resourceID     The requested SCIM resource ID.
+   * @param attributes     The requested LDAP attributes.
+   *
+   * @return  The LDAP entry for the given resource ID.
+   *
+   * @throws ResourceNotFoundException  If the resource ID was not found.
+   */
+  public Entry getEntry(final LDAPRequestInterface ldapInterface,
+                        final String resourceID,
+                        final String... attributes)
+      throws ResourceNotFoundException
+  {
+    return searchResolver.getEntry(ldapInterface, resourceID, attributes);
   }
 }

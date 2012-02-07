@@ -36,7 +36,6 @@ import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.PageParameters;
 import org.testng.annotations.Test;
-import org.testng.annotations.BeforeClass;
 
 import javax.ws.rs.core.MediaType;
 
@@ -62,22 +61,7 @@ import static com.unboundid.scim.sdk.SCIMConstants.
 public class SCIMServerTestCase extends SCIMRITestCase
 {
 
-  private SCIMService service;
-
   private final String userBaseDN = "ou=people,dc=example,dc=com";
-
-
-  /**
-   * Sets up the SCIMService.
-   */
-  @BeforeClass
-  public void setup()
-  {
-    // Start a client for the SCIM operations.
-    service = new SCIMService(URI.create("http://localhost:"+getSSTestPort()),
-        "cn=Manager", "password");
-  }
-
 
 
   /**
@@ -385,7 +369,6 @@ public class SCIMServerTestCase extends SCIMRITestCase
        "scim-ri/src/test/resources/resources-different-base-dns.xml");
     assertTrue(f.exists());
     reconfigureTestSuite(f);
-    setup();
 
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
@@ -508,7 +491,6 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
     //Cleanup
     reconfigureTestSuite(getFile("resource/resources.xml"));
-    setup();
   }
 
 
@@ -547,10 +529,13 @@ public class SCIMServerTestCase extends SCIMRITestCase
         new Attribute("l", "Austin"),
         new Attribute("postalCode", "78759")));
 
+    // Determine the user ID.
+    final String userID = endpoint.query(null).iterator().next().getId();
+
     // Fetch the user through the SCIM client.
-    final UserResource user1 = endpoint.get("uid=b jensen," + userBaseDN);
+    final UserResource user1 = endpoint.get(userID);
     assertNotNull(user1);
-    assertEquals(user1.getId(), "uid=b jensen," + userBaseDN);
+    assertEquals(user1.getId(), userID);
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
@@ -569,13 +554,12 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
     // Fetch selected attributes only. (id and meta should always be returned)
     UserResource partialUser =
-        endpoint.get("uid=b jensen," + userBaseDN, null,
+        endpoint.get(userID, null,
                      "USERNAME", "name.FORMATTED",
                      "addresses.postalCode",
                      "UrN:sCiM:ScHeMaS:cOrE:1.0:addresses.streetAddress");
     assertNotNull(partialUser);
-    assertTrue(partialUser.getId().equalsIgnoreCase(
-            "uid=b jensen," + userBaseDN));
+    assertTrue(partialUser.getId().equals(userID));
     assertNotNull(partialUser.getMeta());
     assertNotNull(partialUser.getMeta().getCreated());
     assertNotNull(partialUser.getMeta().getLastModified());
@@ -594,8 +578,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     }
 
     // Fetch selected meta sub-attributes.
-    partialUser =
-        endpoint.get("uid=b jensen," + userBaseDN, null, "meta.location");
+    partialUser = endpoint.get(userID, null, "meta.location");
     assertNotNull(partialUser);
     assertNotNull(partialUser.getId());
     assertNotNull(partialUser.getMeta());
@@ -641,26 +624,30 @@ public class SCIMServerTestCase extends SCIMRITestCase
         "group1", "dc=example,dc=com",
         "uid=bjensen," + userBaseDN));
 
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    final SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
+
+    // Determine the resource IDs.
+    final String groupID = endpoint.query(null).iterator().next().getId();
+    final String userID = userEndpoint.query(null).iterator().next().getId();
+
     // Fetch the Group through the SCIM client.
-    SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
-    final GroupResource group1 = endpoint.get("cn=group1,dc=example,dc=com");
+    final GroupResource group1 = endpoint.get(groupID);
     assertNotNull(group1);
-    assertEquals(group1.getId(), "cn=group1,dc=example,dc=com");
+    assertEquals(group1.getId(), groupID);
     assertEquals(group1.getDisplayName(), "group1");
     assertNotNull(group1.getMembers());
-    assertEquals(group1.getMembers().iterator().next().getValue(),
-        "uid=bjensen," + userBaseDN);
+    assertEquals(group1.getMembers().iterator().next().getValue(), userID);
     assertNotNull(group1.getMeta());
     assertNotNull(group1.getMeta().getCreated());
     assertNotNull(group1.getMeta().getLastModified());
     assertNotNull(group1.getMeta().getLocation());
 
-    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    final UserResource user = userEndpoint.get("uid=bjensen," + userBaseDN);
+    final UserResource user = userEndpoint.get(userID);
     assertNotNull(user.getGroups());
     assertEquals(user.getGroups().size(), 1);
     assertEquals(user.getGroups().iterator().next().getValue(),
-                 "cn=group1,dc=example,dc=com");
+                 groupID);
 
     //Verify that we cannot obtain group1 through the Users endpoint
     try
@@ -721,7 +708,8 @@ public class SCIMServerTestCase extends SCIMRITestCase
       // assertNotNull(endpoint.get(u.getMeta().getLocation().toString()));
     }
 
-    resources = endpoint.query("id eq \"uid=user.1," + userBaseDN + "\"");
+    final String userID = resources.iterator().next().getId();
+    resources = endpoint.query("id eq \"" + userID + "\"");
     assertEquals(resources.getTotalResults(), 1);
 
     resources = endpoint.query("userName eq \"user.1\"");
@@ -904,13 +892,16 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
     // Check the returned user.
     assertNotNull(user1);
-    assertEquals(user1.getId(), "uid=bjensen," + userBaseDN);
+    assertNotNull(user1.getId());
     assertNull(user1.getName());
     assertNull(user1.getUserName());
     assertNotNull(user1.getMeta());
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
     assertNotNull(user1.getMeta().getLocation());
+
+    // Check the resource ID.
+    assertEquals(endpoint.get(user1.getId()).getId(), user1.getId());
 
     // Verify that the entry was actually created.
     final Entry entry = testDS.getEntry("uid=bjensen," + userBaseDN);
@@ -947,13 +938,17 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
 
     SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+
+    // Determine the user ID.
+    final String userID = endpoint.query(null).iterator().next().getId();
+
     // Delete the user through SCIM.
-    endpoint.delete(userDN);
+    endpoint.delete(userID);
 
     // Attempt to delete the user again.
     try
     {
-      endpoint.delete(userDN);
+      endpoint.delete(userID);
       assertTrue(false, "Should throw ResourceNotFoundException");
     }
     catch (ResourceNotFoundException e)
@@ -966,11 +961,11 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertNull(entry);
 
     // Create the contents for a user to be created via SCIM.
-    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
-    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
-        "Barbara", "Ms", "III");
-    user.setUserName("bjensen");
-    user.setName(name);
+//    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
+//    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
+//        "Barbara", "Ms", "III");
+//    user.setUserName("bjensen");
+//    user.setName(name);
 
     // Create the user via SCIM.
     //final UserResource response = endpoint.create(user);
@@ -1170,13 +1165,18 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
     testDS.add(generateDomainEntry("example", "dc=com"));
     testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
-    testDS.add(generateUserEntry(
-        "user.1", userBaseDN, "Test", "User", "password"));
-    testDS.add(generateUserEntry(
-        "user.2", userBaseDN, "Test", "User", "password"));
 
-    final String idGroupA = "cn=group A,dc=example,dc=com";
-    final String idGroupB = "cn=group B,dc=example,dc=com";
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final String idUser1 = userEndpoint.create(
+        userEndpoint.newResource().setUserName("user.1").setName(
+            new Name("Test User", "User", null, "Test", null, null))).getId();
+    final String idUser2 = userEndpoint.create(
+        userEndpoint.newResource().setUserName("user.2").setName(
+            new Name("Test User", "User", null, "Test", null, null))).getId();
+
+    final String dnGroupA = "cn=group A,dc=example,dc=com";
+    final String dnGroupB = "cn=group B,dc=example,dc=com";
 
     // Create the contents for the groups.
     GroupResource groupA = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
@@ -1185,36 +1185,36 @@ public class SCIMServerTestCase extends SCIMRITestCase
         new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
     final com.unboundid.scim.data.Entry<String> member1 =
         new com.unboundid.scim.data.Entry<String>(
-            "uid=user.1," + userBaseDN, "User", false);
+            idUser1, "User", false);
     membersA.add(member1);
     groupA.setMembers(membersA);
 
     GroupResource groupB = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
     groupB.setDisplayName("group B");
 
-    SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
+    SCIMEndpoint<GroupResource> groupEndpoint = service.getGroupEndpoint();
     // Post the new groups.
-    groupA = endpoint.create(groupA);
+    groupA = groupEndpoint.create(groupA);
     assertNotNull(groupA);
-    Entry entry = testDS.getEntry(idGroupA);
+    Entry entry = testDS.getEntry(dnGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
-        "uid=user.1," + userBaseDN));
+                                       "uid=user.1," + userBaseDN));
 
-    groupB = endpoint.create(groupB);
+    groupB = groupEndpoint.create(groupB);
     assertNotNull(groupB);
 
     // Add a value that should be preserved during SCIM updates.
-    testDS.modify(idGroupA,
+    testDS.modify(dnGroupA,
         new Modification(ModificationType.ADD, "description",
             "This value should be preserved"));
-    testDS.modify(idGroupB,
-        new Modification(ModificationType.ADD, "description",
-            "This value should be preserved"));
+    testDS.modify(dnGroupB,
+                  new Modification(ModificationType.ADD, "description",
+                                   "This value should be preserved"));
 
     // Add some members to each group.
     final com.unboundid.scim.data.Entry<String> member2 =
         new com.unboundid.scim.data.Entry<String>(
-            "uid=user.2," + userBaseDN, "User", false);
+            idUser2, "User", false);
     Collection<com.unboundid.scim.data.Entry<String>> newMembers =
         groupA.getMembers();
     newMembers.add(member2);
@@ -1222,25 +1222,24 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
     final com.unboundid.scim.data.Entry<String> memberA =
         new com.unboundid.scim.data.Entry<String>(
-            idGroupA, "Group", false);
-    memberA.setType("Group");
-    memberA.setValue(idGroupA);
+            groupA.getId(), "Group", false);
     newMembers = new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
     newMembers.add(memberA);
     groupB.setMembers(newMembers);
 
     // Put the updated groups.
-    groupA = endpoint.update(groupA);
-    groupB = endpoint.update(groupB);
+    groupA = groupEndpoint.update(groupA);
+    groupB = groupEndpoint.update(groupB);
 
     assertEquals(groupA.getMembers().size(), 2);
     Iterator<com.unboundid.scim.data.Entry<String>> i =
         groupA.getMembers().iterator();
-    assertEquals(i.next().getValue(), "uid=user.1," + userBaseDN);
-    assertEquals(i.next().getValue(), "uid=user.2," + userBaseDN);
+    assertEquals(i.next().getValue(), idUser1);
+    assertEquals(i.next().getValue(), idUser2);
 
     assertEquals(groupB.getMembers().size(), 1);
-    assertEquals(groupB.getMembers().iterator().next().getValue(), idGroupA);
+    assertTrue(groupB.getMembers().iterator().next().getValue().
+        equals(groupA.getId()));
 
     assertNotNull(groupA.getMeta().getLastModified());
     assertNotNull(groupA.getMeta().getLocation());
@@ -1248,23 +1247,23 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertNotNull(groupB.getMeta().getLocation());
 
     // Verify that the LDAP entries were updated correctly.
-    entry = testDS.getEntry(idGroupA);
+    entry = testDS.getEntry(dnGroupA);
     assertTrue(entry.hasAttributeValue("uniqueMember",
-        "uid=user.1," + userBaseDN));
+                                       "uid=user.1," + userBaseDN));
     assertTrue(entry.hasAttributeValue("uniqueMember",
-        "uid=user.2," + userBaseDN));
+                                       "uid=user.2," + userBaseDN));
     assertTrue(entry.hasAttribute("description"));
 
-    entry = testDS.getEntry(idGroupB);
-    assertTrue(entry.hasAttributeValue("uniqueMember", idGroupA));
+    entry = testDS.getEntry(dnGroupB);
+    assertTrue(entry.hasAttributeValue("uniqueMember", dnGroupA));
     assertTrue(entry.hasAttribute("description"));
 
     // Delete the groups.
-    endpoint.delete(idGroupB);
-    endpoint.delete(idGroupA);
+    groupEndpoint.delete(groupB.getId());
+    groupEndpoint.delete(groupA.getId());
 
-    assertNull(testDS.getEntry(idGroupA));
-    assertNull(testDS.getEntry(idGroupB));
+    assertNull(testDS.getEntry(dnGroupA));
+    assertNull(testDS.getEntry(dnGroupB));
   }
 
 
@@ -1288,9 +1287,6 @@ public class SCIMServerTestCase extends SCIMRITestCase
     testDS.add(generateDomainEntry("example", "dc=com"));
     testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
-    // The ID of the test user.
-    final String userDN = "uid=bjensen," + userBaseDN;
-
     // Create the contents for a new user.
     final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
     final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", null,
@@ -1312,7 +1308,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     endpoint.update(user1);
 
     // Delete the user.
-    endpoint.delete(userDN);
+    endpoint.delete(user1.getId());
   }
 
 }

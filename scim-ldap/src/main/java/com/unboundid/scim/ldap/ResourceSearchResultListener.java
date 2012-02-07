@@ -17,7 +17,6 @@
 
 package com.unboundid.scim.ldap;
 
-import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
@@ -62,7 +61,7 @@ public class ResourceSearchResultListener implements SearchResultListener
   /**
    * An LDAP interface that can be used to derive attributes from other entries.
    */
-  private final LDAPInterface ldapInterface;
+  private final LDAPRequestInterface ldapInterface;
 
   /**
    * The maximum number of resources that may be returned.
@@ -86,7 +85,7 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   public ResourceSearchResultListener(final LDAPBackend backend,
                                       final GetResourcesRequest request,
-                                      final LDAPInterface ldapInterface,
+                                      final LDAPRequestInterface ldapInterface,
                                       final int maxResults)
       throws SCIMException
   {
@@ -124,7 +123,8 @@ public class ResourceSearchResultListener implements SearchResultListener
       final BaseResource resource =
           new BaseResource(request.getResourceDescriptor(), scimObject);
 
-      LDAPBackend.setIdAndMetaAttributes(resource, request, searchEntry, null);
+      LDAPBackend.setIdAndMetaAttributes(resourceMapper, resource, request,
+                                         searchEntry, null);
 
       if (request.getFilter() == null ||
           scimObject.matchesFilter(request.getFilter()))

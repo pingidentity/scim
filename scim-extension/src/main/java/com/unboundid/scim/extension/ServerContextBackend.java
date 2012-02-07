@@ -5,28 +5,26 @@
 
 package com.unboundid.scim.extension;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.unboundid.directory.sdk.common.types.InternalConnection;
 import com.unboundid.directory.sdk.common.types.ServerContext;
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchScope;
-import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.scim.ldap.LDAPBackend;
+import com.unboundid.scim.ldap.LDAPRequestInterface;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMException;
-import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.UnauthorizedException;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -118,7 +116,7 @@ public class ServerContextBackend extends LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  protected LDAPInterface getLDAPInterface(final String userID)
+  protected LDAPRequestInterface getLDAPRequestInterface(final String userID)
       throws SCIMException
   {
     final DN bindDN = getUserDN(userID);
@@ -128,23 +126,14 @@ public class ServerContextBackend extends LDAPBackend
       throw new UnauthorizedException("Invalid credentials");
     }
 
-    try {
-      return serverContext.getInternalConnection(bindDN.toString());
-    } catch (LDAPException e) {
+    try
+    {
+      return new LDAPRequestInterface(
+          serverContext.getInternalConnection(bindDN.toString()));
+    }
+    catch (LDAPException e) {
       throw toSCIMException(e);
     }
-  }
-
-
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  protected void addCommonControls(final SCIMRequest scimRequest,
-                                   final UpdatableLDAPRequest ldapRequest)
-  {
-    // No implementation required.
   }
 
 

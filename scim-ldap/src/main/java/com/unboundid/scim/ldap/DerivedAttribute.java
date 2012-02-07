@@ -17,19 +17,20 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMObject;
+import org.w3c.dom.Element;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.w3c.dom.Element;
 
 
 /**
@@ -172,15 +173,36 @@ public abstract class DerivedAttribute
    * @param entry          An LDAP entry representing the SCIM resource for
    *                       which a SCIM attribute value is to be derived.
    * @param ldapInterface  An LDAP interface that may be used to search the DIT.
-   * @param searchBaseDN   The search base DN for the DIT.
+   * @param searchResolver The LDAPSearchResolver for resources containing this
+   *                       derived attribute.
    *
    * @return  A SCIM attribute, or {@code null} if no attribute was created.
    * @throws InvalidResourceException if the mapping violates the schema.
    */
   public abstract SCIMAttribute toSCIMAttribute(
       final Entry entry,
-      final LDAPInterface ldapInterface,
-      final String searchBaseDN) throws InvalidResourceException;
+      final LDAPRequestInterface ldapInterface,
+      final LDAPSearchResolver searchResolver) throws InvalidResourceException;
+
+
+  /**
+   * Map the SCIM attribute in the provided SCIM object to LDAP attributes.
+   *
+   * @param scimObject  The SCIM object containing the attribute to be mapped.
+   * @param attributes  A collection of LDAP attributes to hold any attributes
+   *                    created by this mapping.
+   * @param ldapInterface  An LDAP interface that may be used to search the DIT.
+   * @param searchResolver The LDAPSearchResolver for resources containing this
+   *                       derived attribute.
+   *
+   * @throws InvalidResourceException if the mapping violates the schema.
+   */
+  public abstract void toLDAPAttributes(
+      final SCIMObject scimObject,
+      final Collection<Attribute> attributes,
+      final LDAPRequestInterface ldapInterface,
+      final LDAPSearchResolver searchResolver) throws InvalidResourceException;
+
 
 
   /**

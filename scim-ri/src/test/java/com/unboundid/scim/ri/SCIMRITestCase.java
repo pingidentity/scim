@@ -38,6 +38,7 @@ import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.SCIMTestCase;
 import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.KeyStoreKeyManager;
 import com.unboundid.util.ssl.SSLUtil;
@@ -54,6 +55,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.List;
@@ -77,6 +79,11 @@ public abstract class SCIMRITestCase extends SCIMTestCase
 
   // The LDAP SCIM backend.
   private static SCIMBackend ldapBackend;
+
+  /**
+   * The SCIM service to be used to access the server.
+   */
+  protected static SCIMService service;
 
 
   /**
@@ -197,6 +204,10 @@ public abstract class SCIMRITestCase extends SCIMTestCase
                                           ldapConfig);
     testSS.registerBackend("/", ldapBackend);
     testSS.startListening();
+
+    // Start a client for the SCIM operations.
+    service = new SCIMService(URI.create("http://localhost:" + getSSTestPort()),
+        "cn=Manager", "password");
   }
 
 

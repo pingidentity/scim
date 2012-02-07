@@ -46,6 +46,13 @@ dsconfig create-connection-handler --handler-name "HTTPS" --type http --set enab
 dsconfig set-access-control-handler-prop --add 'global-aci:(targetcontrol="1.3.6.1.1.13.2 || 1.2.840.113556.1.4.473 || 2.16.840.1.113730.3.4.9")(version 3.0;acl "Authenticated access to controls used by the SCIM servlet extension"; allow (all) userdn="ldap:///all";)'
 
 #
+# Add Access Control to allow read access to operational attributes used
+# by the SCIM servlet extension.
+#
+
+dsconfig set-access-control-handler-prop --add 'global-aci:(targetattr="entryUUID || ds-entry-unique-id || createTimestamp || ds-create-time || modifyTimestamp || ds-update-time")(version 3.0;acl "Authenticated read access to operational attributes used by the SCIM servlet extension"; allow (read,search,compare) userdn="ldap:///all";)'
+
+#
 # Optionally, create some Virtual List View indexes to support pagination.
 #
 

@@ -21,17 +21,15 @@ import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.PLAINBindRequest;
 import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.UpdatableLDAPRequest;
 import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
 import com.unboundid.scim.ldap.LDAPBackend;
+import com.unboundid.scim.ldap.LDAPRequestInterface;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMException;
-import com.unboundid.scim.sdk.SCIMRequest;
 
 import java.util.Map;
 
@@ -105,30 +103,20 @@ public class ExternalLDAPBackend extends LDAPBackend
    * {@inheritDoc}
    */
   @Override
-  protected LDAPInterface getLDAPInterface(final String userID)
+  protected LDAPRequestInterface getLDAPRequestInterface(final String userID)
       throws SCIMException
   {
     try
     {
-      return ldapExternalServer.getLDAPConnectionPool();
-    } catch (LDAPException e)
+      return new LDAPRequestInterface(
+          ldapExternalServer.getLDAPConnectionPool(),
+          new ProxiedAuthorizationV2RequestControl(
+            getSASLAuthenticationID(userID)));
+    }
+    catch (LDAPException e)
     {
       throw toSCIMException(e);
     }
-  }
-
-
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  protected void addCommonControls(final SCIMRequest scimRequest,
-                                   final UpdatableLDAPRequest ldapRequest)
-  {
-    ldapRequest.addControl(
-        new ProxiedAuthorizationV2RequestControl(
-            getSASLAuthenticationID(scimRequest.getAuthenticatedUserID())));
   }
 
 

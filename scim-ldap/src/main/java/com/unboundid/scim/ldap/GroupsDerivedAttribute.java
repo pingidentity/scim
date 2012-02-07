@@ -17,12 +17,13 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPURL;
+import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
@@ -32,8 +33,10 @@ import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,21 +89,6 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   private static final String ATTR_UNIQUE_MEMBER = "uniqueMember";
 
   /**
-   * The name of the groupOfNames object class.
-   */
-  private static final String OC_GROUP_OF_NAMES = "groupOfNames";
-
-  /**
-   * The name of the groupOfUniqueNames object class.
-   */
-  private static final String OC_GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
-
-  /**
-   * The name of the groupOfEntries object class.
-   */
-  private static final String OC_GROUP_OF_ENTRIES = "groupOfEntries";
-
-  /**
    * The name of the groupOfURLs object class.
    */
   private static final String OC_GROUP_OF_URLS = "groupOfURLs";
@@ -127,10 +115,10 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   private AttributeDescriptor descriptor;
 
   /**
-   * The LDAPSearchParameters to use when looking for groups to which
+   * The LDAPSearchResolver to use when looking for groups to which
    * a certain user belongs.
    */
-  private LDAPSearchParameters searchParams;
+  private LDAPSearchResolver groupResolver;
 
 
   @Override
@@ -143,33 +131,46 @@ public class GroupsDerivedAttribute extends DerivedAttribute
 
   @Override
   public SCIMAttribute toSCIMAttribute(final Entry entry,
-                                       final LDAPInterface ldapInterface,
-                                       final String searchBaseDN)
-      throws InvalidResourceException {
+                                       final LDAPRequestInterface ldapInterface,
+                                       final LDAPSearchResolver userResolver)
+      throws InvalidResourceException
+  {
     final List<SCIMAttributeValue> values = new ArrayList<SCIMAttributeValue>();
 
-    String baseDN = searchBaseDN;
-    if(searchParams != null)
+    if (groupResolver == null)
     {
-      baseDN = searchParams.getBaseDN();
+      Debug.debug(Level.WARNING, DebugType.OTHER,
+                  "Cannot provide the groups attribute because there are " +
+                  "no LDAPSearch parameters");
+      return null;
     }
 
     if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
     {
+      final List<String> attrList = new ArrayList<String>(3);
+      attrList.add(ATTR_CN);
+      attrList.add(ATTR_OBJECT_CLASS);
+      groupResolver.addIdAttribute(attrList);
+      final String[] attrsToGet =
+          attrList.toArray(new String[attrList.size()]);
+
       // We can use the isMemberOf attribute
       for (final String dnString : entry.getAttributeValues(ATTR_IS_MEMBER_OF))
       {
         try
         {
           // Make sure the group is scoped within the base DN.
-          if(DN.isDescendantOf(dnString, baseDN, true))
+          if (groupResolver.isDnInScope(dnString))
           {
             // Retrieve the group entry and passing in the search param filter
             // if available.
-            SearchResultEntry groupEntry = ldapInterface.searchForEntry(
-                dnString, SearchScope.BASE,
-                searchParams == null ? "(objectClass=*)" :
-                    searchParams.getFilter(), ATTR_CN, ATTR_OBJECT_CLASS);
+            SearchRequest searchRequest =
+                new SearchRequest(dnString, SearchScope.BASE,
+                                  groupResolver.getFilterString(),
+                                  attrsToGet);
+            searchRequest.setSizeLimit(1);
+            SearchResultEntry groupEntry =
+                ldapInterface.searchForEntry(searchRequest);
 
             if(groupEntry != null)
             {
@@ -181,11 +182,15 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                   !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
               {
                 // Make sure the entry DN is listed as a member or uniqueMember.
-                isDirect = ldapInterface.searchForEntry(
-                  dnString, SearchScope.BASE,
-                    groupsFilter(entry.getDN(), false), "1.1") != null;
+                searchRequest =
+                    new SearchRequest(dnString, SearchScope.BASE,
+                    groupsFilter(entry.getDN(), false), "1.1");
+                searchRequest.setSizeLimit(1);
+                isDirect = ldapInterface.searchForEntry(searchRequest) != null;
               }
-              values.add(createGroupValue(groupEntry.getDN(),
+              final String resourceID =
+                  groupResolver.getIdFromEntry(groupEntry);
+              values.add(createGroupValue(resourceID,
                   groupEntry.getAttributeValue(ATTR_CN), isDirect));
             }
           }
@@ -204,7 +209,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       // well as all dynamic groups that satisfies the search params.
       try
       {
-        findGroupsForMember(entry, ldapInterface, baseDN,
+        findGroupsForMember(entry, ldapInterface, groupResolver.getBaseDN(),
             groupsFilter(entry.getDN(), true), values, new LinkedList<DN>(),
             false);
       }
@@ -231,6 +236,21 @@ public class GroupsDerivedAttribute extends DerivedAttribute
 
 
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void toLDAPAttributes(final SCIMObject scimObject,
+                               final Collection<Attribute> attributes,
+                               final LDAPRequestInterface ldapInterface,
+                               final LDAPSearchResolver groupResolver)
+      throws InvalidResourceException
+  {
+    // No implementation required because this attribute is read-only.
+  }
+
+
+
   @Override
   public void initialize(final AttributeDescriptor descriptor)
   {
@@ -238,9 +258,9 @@ public class GroupsDerivedAttribute extends DerivedAttribute
     if(getArguments().containsKey(LDAP_SEARCH_REF))
     {
       Object o = getArguments().get(LDAP_SEARCH_REF);
-      if(o instanceof LDAPSearchParameters)
+      if(o instanceof LDAPSearchResolver)
       {
-        searchParams = (LDAPSearchParameters) o;
+        groupResolver = (LDAPSearchResolver) o;
       }
     }
   }
@@ -254,18 +274,6 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   }
 
 
-
-  /**
-   * Returns the configured LDAPSearchParameters for this derived attribute,
-   * or null if none were explicitly set (using the <LDAPSearchRef> element).
-   * These can be used to find the groups to which a certain user belongs.
-   *
-   * @return an LDAPSearchParameters instance, or null if none was set.
-   */
-  public LDAPSearchParameters getLDAPSearchParameters()
-  {
-    return searchParams;
-  }
 
   /**
    * Construct a filter that could be used to find all static groups with the
@@ -285,10 +293,10 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       throws LDAPException
   {
     Filter filter = null;
-    if(searchParams != null)
+    if(groupResolver != null)
     {
       //This will be a filter that handles all the Group object classes
-      filter = Filter.create(searchParams.getFilter());
+      filter = Filter.create(groupResolver.getFilterString());
     }
 
     List<Filter> memberFilters = new ArrayList<Filter>(3);
@@ -329,7 +337,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
    * @throws InvalidResourceException if the mapping violates the schema.
    */
   private void findGroupsForMember(final Entry entry,
-                                   final LDAPInterface ldapInterface,
+                                   final LDAPRequestInterface ldapInterface,
                                    final String baseDN,
                                    final Filter filter,
                                    final List<SCIMAttributeValue> values,
@@ -337,10 +345,18 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                                    final boolean nested)
       throws LDAPException, InvalidResourceException
   {
+    final List<String> attrList = new ArrayList<String>(4);
+    attrList.add(ATTR_CN);
+    attrList.add(ATTR_OBJECT_CLASS);
+    attrList.add(ATTR_MEMBER_URL);
+    groupResolver.addIdAttribute(attrList);
+    final String[] attrsToGet =
+        attrList.toArray(new String[attrList.size()]);
+
     // Find all groups
-    final SearchResult searchResult =
-        ldapInterface.search(baseDN, SearchScope.SUB, filter,
-            ATTR_CN, ATTR_OBJECT_CLASS, ATTR_MEMBER_URL);
+    final SearchRequest searchRequest =
+        new SearchRequest(baseDN, SearchScope.SUB, filter, attrsToGet);
+    final SearchResult searchResult = ldapInterface.search(searchRequest);
 
     List<SearchResultEntry> entriesToVisit =
         new ArrayList<SearchResultEntry>(searchResult.getEntryCount());
@@ -354,6 +370,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       {
         visitedGroups.add(groupDN);
         entriesToVisit.add(resultEntry);
+        final String resourceID = groupResolver.getIdFromEntry(resultEntry);
         if(resultEntry.hasObjectClass(OC_GROUP_OF_URLS))
         {
           // This is a dynamic group, see if the entry should be a member
@@ -364,7 +381,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
             if(entry.matchesBaseAndScope(url.getBaseDN(), url.getScope()) &&
                 url.getFilter().matchesEntry(entry))
             {
-              values.add(createGroupValue(resultEntry.getDN(),
+              values.add(createGroupValue(resourceID,
                   resultEntry.getAttributeValue(ATTR_CN), false));
             }
           }
@@ -372,7 +389,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
         else
         {
           // This is a static group that we are a member of.
-          values.add(createGroupValue(resultEntry.getDN(),
+          values.add(createGroupValue(resourceID,
               resultEntry.getAttributeValue(ATTR_CN), !nested &&
               !resultEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP)));
         }

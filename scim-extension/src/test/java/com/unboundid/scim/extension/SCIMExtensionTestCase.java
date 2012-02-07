@@ -12,7 +12,6 @@ import com.unboundid.directory.tests.externalinstance.TestCaseUtils;
 import com.unboundid.directory.tests.externalinstance.standalone.
     ExternalInstanceIdImpl;
 import com.unboundid.ldap.sdk.Attribute;
-import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.data.AttributeValueResolver;
@@ -170,6 +169,14 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                  "(version 3.0;" +
                  "acl \"Authenticated access to controls used by the " +
                  "SCIM plugin\"; allow (all) userdn=\"ldap:///all\";)",
+        "--add", "global-aci:" +
+                 "(targetattr=\"entryUUID || ds-entry-unique-id || " +
+                 "createTimestamp || ds-create-time || " +
+                 "modifyTimestamp || ds-update-time\")" +
+                 "(version 3.0;" +
+                 "acl \"Authenticated read access to operational attributes " +
+                 "used by the SCIM extension\"; " +
+                 "allow (read,search,compare) userdn=\"ldap:///all\";)",
         "--add", "global-aci:" +
                  "(targetattr!=\"userPassword\")" +
                  "(version 3.0; " +
@@ -358,7 +365,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "ds-target-group-dn: cn=testGroup2," + testGroupBaseDN);
 
     // Test using the isMemberOf attribute.
-    testGroupsInternal(testGroupBaseDN);
+    testGroupsInternal();
 
     // Now test without using the isMemberOf attribute.
     dsInstance.dsconfig(
@@ -367,7 +374,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "--set", "enabled:false"
     );
 
-    testGroupsInternal(testGroupBaseDN);
+    testGroupsInternal();
 
     //Cleanup
     dsInstance.dsconfig(
@@ -377,35 +384,80 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     );
   }
 
+
+
+  /**
+   * Retrieve the user resource that has the provided userName value.
+   *
+   * @param userName  The userName of the user to be retrieved.
+   *
+   * @return  The user resource.
+   *
+   * @throws SCIMException  If the resource could not be retrieved.
+   */
+  private UserResource getUser(final String userName)
+      throws SCIMException
+  {
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+
+    final Resources<UserResource> resources =
+        endpoint.query("userName eq \"" + userName + "\"");
+
+    return resources.iterator().next();
+  }
+
+
+  /**
+   * Retrieve the group resource that has the provided displayName value.
+   *
+   * @param displayName  The displayName of the group to be retrieved.
+   *
+   * @return  The user resource.
+   *
+   * @throws SCIMException  If the resource could not be retrieved.
+   */
+  private GroupResource getGroup(final String displayName)
+      throws SCIMException
+  {
+    SCIMEndpoint<GroupResource> endpoint = service.getGroupEndpoint();
+
+    final Resources<GroupResource> resources =
+        endpoint.query("displayName eq \"" + displayName + "\"");
+
+    return resources.iterator().next();
+  }
+
+
   /**
    * Tests the groups attribute and makes sure the type sub-attribute is
    * correct.
    *
-   * @param groupsBaseDN The base DN for group entries.
    * @throws Exception  If the test fails.
    */
-  private void testGroupsInternal(final String groupsBaseDN) throws Exception
+  private void testGroupsInternal() throws Exception
   {
-    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    UserResource user = userEndpoint.get("uid=testGroupMember1," + userBaseDN);
+    final GroupResource group1 = getGroup("testGroup1");
+    final GroupResource group2 = getGroup("testGroup2");
+    final GroupResource group3 = getGroup("testGroup3");
+    final GroupResource group4 = getGroup("testGroup4");
+
+    UserResource user = getUser("testGroupMember1");
     assertEquals(user.getGroups().size(), 3);
     for(Entry<String> group : user.getGroups())
     {
-      if(group.getValue().equalsIgnoreCase("cn=testGroup1," + groupsBaseDN))
+      if(group.getValue().equals(group1.getId()))
       {
         //Group 1 is a static group
         assertEquals(group.getDisplay(), "testGroup1");
         assertTrue(group.getType().equalsIgnoreCase("direct"));
       }
-      else if(group.getValue().equalsIgnoreCase("cn=testGroup2," +
-                                                 groupsBaseDN))
+      else if(group.getValue().equals(group2.getId()))
       {
         //Group 2 contains Group 1 (thus the type is indirect)
         assertEquals(group.getDisplay(), "testGroup2");
         assertTrue(group.getType().equalsIgnoreCase("indirect"));
       }
-      else if(group.getValue().equalsIgnoreCase("cn=testGroup4," +
-                                                 groupsBaseDN))
+      else if(group.getValue().equals(group4.getId()))
       {
         //Group 4 is a virtual static group
         assertEquals(group.getDisplay(), "testGroup4");
@@ -417,26 +469,23 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       }
     }
 
-    user = userEndpoint.get("uid=testGroupMember2," + userBaseDN);
+    user = getUser("testGroupMember2");
     assertEquals(user.getGroups().size(), 3);
     for(Entry<String> group : user.getGroups())
     {
-      if(group.getValue().equalsIgnoreCase("cn=testGroup2," +
-                                              groupsBaseDN))
+      if(group.getValue().equals(group2.getId()))
       {
         //Group 2 is a static group
         assertEquals(group.getDisplay(), "testGroup2");
         assertTrue(group.getType().equalsIgnoreCase("direct"));
       }
-      else if(group.getValue().equalsIgnoreCase("cn=testGroup3," +
-                                                  groupsBaseDN))
+      else if(group.getValue().equals(group3.getId()))
       {
         //Group 3 is a dynamic group
         assertEquals(group.getDisplay(), "testGroup3");
         assertTrue(group.getType().equalsIgnoreCase("indirect"));
       }
-      else if(group.getValue().equalsIgnoreCase("cn=testGroup4," +
-                                                  groupsBaseDN))
+      else if(group.getValue().equalsIgnoreCase(group4.getId()))
       {
         //Group 4 is a virtual static group
         assertEquals(group.getDisplay(), "testGroup4");
@@ -478,8 +527,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                             null, null, null);
     SCIMService userService = new SCIMService(uri, clientConfig);
     SCIMEndpoint<UserResource> userEndpoint = userService.getUserEndpoint();
-    UserResource user = userEndpoint.get(
-                            "uid=testPasswordModify," + userBaseDN);
+    UserResource user = getUser("testPasswordModify");
     assertNotNull(user);
 
     //Verify that not including the password attribute in the PUT will not
@@ -496,15 +544,14 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     UserResource returnedUser = userEndpoint.update(user, "id");
 
     //Verify what is returned from the SDK
-    assertTrue(returnedUser.getId().equalsIgnoreCase(
-        "uid=testPasswordModify," + userBaseDN));
+    assertEquals(returnedUser.getId(), user.getId());
     assertNull(returnedUser.getPassword());
 
     //We shouldn't be able to use this service anymore since it is using
     //the old credentials
     try
     {
-      userEndpoint.get("uid=testPasswordModify," + userBaseDN);
+      userEndpoint.get(user.getId());
       assertTrue(false, "Expected Unauthorized return code");
     }
     catch(SCIMException e)
@@ -660,15 +707,15 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         Integer.valueOf(afterCount) - 1);
 
     //Verify what is actually in the Directory
-    entry = dsInstance.getConnectionPool().getEntry(
-                        "cn=Engineering," + groupBaseDN, "*", "+");
-    assertNotNull(entry);
-    assertTrue(entry.hasObjectClass("groupOfUniqueNames"));
-    assertEquals(entry.getAttributeValue("cn"), "Engineering");
-    assertEquals(entry.getAttributeValue("uniqueMember"), returnedUser.getId(),
-            entry.toLDIFString());
+    SearchResultEntry groupEntry = dsInstance.getConnectionPool().getEntry(
+        "cn=Engineering," + groupBaseDN, "*", "+");
+    assertNotNull(groupEntry);
+    assertTrue(groupEntry.hasObjectClass("groupOfUniqueNames"));
+    assertEquals(groupEntry.getAttributeValue("cn"), "Engineering");
+    assertTrue(groupEntry.getAttributeValue("uniqueMember").
+        equalsIgnoreCase(entry.getDN()), entry.toLDIFString());
 
-    System.out.println("Full group entry:\n" + entry.toLDIFString());
+    System.out.println("Full group entry:\n" + groupEntry.toLDIFString());
   }
 
 
@@ -695,7 +742,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Update the entry via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    UserResource user = userEndpoint.get("uid=testModifyWithPut," + userBaseDN);
+    UserResource user = getUser("testModifyWithPut");
     assertNotNull(user);
     //This will change the 'cn' to 'Test User'
     user.setName(new Name("Test User", "User", null, "Test", null, null));
@@ -716,8 +763,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     Date endTime = new Date(System.currentTimeMillis() + 500);
 
     //Verify what is returned from the SDK
-    assertTrue(returnedUser.getId().equalsIgnoreCase(
-        "uid=testModifyWithPut," + userBaseDN));
+    assertEquals(returnedUser.getId(), user.getId());
     assertEquals(returnedUser.getUserName(), "testModifyWithPut");
     assertEquals(returnedUser.getName().getFormatted(), "Test User");
     assertEquals(returnedUser.getName().getGivenName(), "Test");
@@ -751,13 +797,15 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //the Directory entry, but should not fail.
     String beforeCount =
         getMonitorAsString(scimInstance, "user-resource-put-successful");
-    // returnedUser =
-    userEndpoint.update(user);
+    returnedUser = userEndpoint.update(user);
     String afterCount =
         getMonitorAsString(scimInstance, "user-resource-put-successful");
 
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
+
+    // Again, an update with the previously returned content should not fail.
+    userEndpoint.update(returnedUser);
 
     beforeCount =
         getMonitorAsString(scimInstance, "user-resource-put-404");
@@ -807,9 +855,10 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
+    final String userID = getUser("testDelete").getId();
     String beforeCount =
         getMonitorAsString(scimInstance, "user-resource-delete-successful");
-    userEndpoint.delete("uid=testDelete," + userBaseDN);
+    userEndpoint.delete(userID);
     String afterCount =
         getMonitorAsString(scimInstance, "user-resource-delete-successful");
 
@@ -821,8 +870,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     try
     {
       //Should throw ResourceNotFoundException
-      userEndpoint.delete("uid=testDelete," + userBaseDN);
-      fail("Expected ResourceNotFoundException when retrieving " +
+      userEndpoint.delete(userID);
+      fail("Expected ResourceNotFoundException when deleting " +
               "non-existent user");
     }
     catch(ResourceNotFoundException e)
@@ -895,17 +944,19 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                       "mail: jsmith@example.com",
                       "employeeType: Engineer");
 
+    final String userID = getUser(uid).getId();
+
     //Try to retrieve the user via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     String beforeCount =
         getMonitorAsString(scimInstance, connectionHandler,
                            "user-resource-get-successful");
-    UserResource user = userEndpoint.get(dn);
+    UserResource user = userEndpoint.get(userID);
     String afterCount =
         getMonitorAsString(scimInstance, connectionHandler,
                            "user-resource-get-successful");
     assertNotNull(user);
-    assertTrue(user.getId().equalsIgnoreCase(dn));
+    assertEquals(user.getId(), userID);
     assertEquals(user.getUserName(), uid);
     assertEquals(user.getUserType(), "Engineer");
     assertEquals(user.getName().getFormatted(), "testRetrieve");
@@ -918,9 +969,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertNull(user.getPassword());
 
     //Retrieve the user with only the 'userName' and 'password' attribute
-    user = userEndpoint.get(dn, null, "userName", "password");
+    user = userEndpoint.get(userID, null, "userName", "password");
     assertNotNull(user);
-    assertTrue(user.getId().equalsIgnoreCase(dn));
+    assertEquals(user.getId(), userID);
     assertEquals(user.getUserName(), uid);
     assertNull(user.getUserType());
     assertNull(user.getName());
@@ -1119,7 +1170,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     //Create a static group via LDAP
     dsInstance.getConnectionPool().add(
         generateGroupOfNamesEntry("groupOfNames", groupBaseDN,
-                                  user1.getId()));
+                                  "uid=groupsUser.1," + userBaseDN));
 
     //Create a dynamic group via LDAP
     dsInstance.addEntry(
@@ -1139,14 +1190,16 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         "ds-target-group-dn: cn=groupOfURLs," + groupBaseDN);
 
     //Retrieve the groups via SCIM
-    GroupResource groupOfNames =
-            groupEndpoint.get("cn=groupOfNames," + groupBaseDN);
+    GroupResource groupOfNames = getGroup("groupOfNames");
 
-    GroupResource groupOfURLs =
-            groupEndpoint.get("cn=groupOfURLs," + groupBaseDN);
+    GroupResource groupOfURLs = getGroup("groupOfURLs");
 
-    GroupResource virtualStaticGroup =
-            groupEndpoint.get("cn=testVirtualStaticGroup," + groupBaseDN);
+    GroupResource virtualStaticGroup = getGroup("testVirtualStaticGroup");
+
+    user1 = userEndpoint.query("id eq \"" + user1.getId() + "\"",
+                               null, null, "userName").iterator().next();
+    assertNull(user1.getGroups(),
+               "User has the groups attribute that was not requested");
 
     // Verify that the groups attribute is set correctly.
     user1 = userEndpoint.get(user1.getId());
@@ -1159,26 +1212,22 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     {
       groupIDs.add(groupEntry.getValue());
       displayNames.add(groupEntry.getDisplay());
-      if(groupEntry.getValue().equalsIgnoreCase(
-                  "cn=groupOfNames," + groupBaseDN))
+      if(groupEntry.getValue().equals(groupOfNames.getId()))
       {
         assertEquals(groupEntry.getDisplay(), "groupOfNames");
         assertTrue(groupEntry.getType().equalsIgnoreCase("direct"));
       }
-      else if(groupEntry.getValue().equalsIgnoreCase(
-                  "cn=groupOfUniqueNames," + groupBaseDN))
+      else if(groupEntry.getValue().equals(groupOfUniqueNames.getId()))
       {
         assertEquals(groupEntry.getDisplay(), "groupOfUniqueNames");
         assertTrue(groupEntry.getType().equalsIgnoreCase("direct"));
       }
-      else if(groupEntry.getValue().equalsIgnoreCase(
-                  "cn=groupOfURLs," + groupBaseDN))
+      else if(groupEntry.getValue().equals(groupOfURLs.getId()))
       {
         assertEquals(groupEntry.getDisplay(), "groupOfURLs");
         assertTrue(groupEntry.getType().equalsIgnoreCase("indirect"));
       }
-      else if(groupEntry.getValue().equalsIgnoreCase(
-                  "cn=testVirtualStaticGroup," + groupBaseDN))
+      else if(groupEntry.getValue().equals(virtualStaticGroup.getId()))
       {
         assertEquals(groupEntry.getDisplay(), "testVirtualStaticGroup");
         assertTrue(groupEntry.getType().equalsIgnoreCase("indirect"));
@@ -1189,6 +1238,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       }
     }
 
+    System.out.println("groupIDs=" + groupIDs);
+    System.out.println("groupOfUniqueNames=" + groupOfUniqueNames.getId());
     assertTrue(groupIDs.contains(groupOfNames.getId()));
     assertTrue(groupIDs.contains(groupOfUniqueNames.getId()));
     assertTrue(groupIDs.contains(groupOfURLs.getId()));
@@ -1202,25 +1253,25 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertNotNull(groupOfNames.getMembers());
     assertEquals(groupOfNames.getMembers().size(), 1);
     Entry<String> member = groupOfNames.getMembers().iterator().next();
-    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertEquals(member.getValue(), user1.getId());
     assertTrue(member.getType().equalsIgnoreCase("user"));
 
     assertNotNull(groupOfUniqueNames.getMembers());
     assertEquals(groupOfUniqueNames.getMembers().size(), 1);
     member = groupOfUniqueNames.getMembers().iterator().next();
-    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertEquals(member.getValue(), user1.getId());
     assertTrue(member.getType().equalsIgnoreCase("user"));
 
     assertNotNull(groupOfURLs.getMembers());
     assertEquals(groupOfURLs.getMembers().size(), 1);
     member = groupOfURLs.getMembers().iterator().next();
-    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertEquals(member.getValue(), user1.getId());
     assertTrue(member.getType().equalsIgnoreCase("user"));
 
     assertNotNull(virtualStaticGroup.getMembers());
     assertEquals(virtualStaticGroup.getMembers().size(), 1);
     member = virtualStaticGroup.getMembers().iterator().next();
-    assertEquals(new DN(member.getValue()), new DN(user1.getId()));
+    assertEquals(member.getValue(), user1.getId());
     assertTrue(member.getType().equalsIgnoreCase("user"));
   }
 
@@ -1235,6 +1286,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   public void testPagination() throws Exception
   {
     // Create some users.
+    final Set<String> userDNs = new HashSet<String>();
     final long NUM_USERS = 10;
     for (int i = 0; i < NUM_USERS; i++)
     {
@@ -1242,12 +1294,12 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       dsInstance.getConnectionPool().add(
           generateUserEntry(uid, userBaseDN,
                             "Test", "User", "password"));
+      userDNs.add("uid=" + uid + "," + userBaseDN);
     }
 
     // Fetch the users one page at a time with page size equal to 1.
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     int pageSize = 1;
-    final Set<String> userIDs = new HashSet<String>();
     for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
     {
       final Resources<UserResource> resources =
@@ -1256,12 +1308,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       assertEquals(resources.getTotalResults(), NUM_USERS);
       assertEquals(resources.getStartIndex(), startIndex);
       assertEquals(resources.getItemsPerPage(), pageSize);
-      for (final UserResource resource : resources)
-      {
-        userIDs.add(resource.getId());
-      }
     }
-    assertEquals(userIDs.size(), NUM_USERS);
+    assertEquals(userDNs.size(), NUM_USERS);
 
     // Create some groups.
     final long NUM_GROUPS = 10;
@@ -1269,7 +1317,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     {
       final String cn = "paginationGroup." + i;
       dsInstance.getConnectionPool().add(
-          generateGroupOfNamesEntry(cn, groupBaseDN, userIDs));
+          generateGroupOfNamesEntry(cn, groupBaseDN, userDNs));
     }
 
     // Fetch the groups one page at a time with page size equal to 3.
@@ -1412,18 +1460,26 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   public void testBasicAuth() throws Exception
   {
     // Create a new user.
-    final String id = "uid=basicAuthUser," + userBaseDN;
+    final String dn = "uid=basicAuthUser," + userBaseDN;
     dsInstance.getConnectionPool().add(
         generateUserEntry(
             "basicAuthUser", userBaseDN, "Basic", "User", "password"));
+    final String id = getUser("basicAuthUser").getId();
 
     // Create a client service that authenticates as the user.
     final URI uri = new URI("http", null, scimInstance.getLdapHost(),
                             scimPort, null, null, null);
-    final SCIMService basicAuthService = new SCIMService(uri, id, "password");
+    final SCIMService basicAuthService = new SCIMService(uri, dn, "password");
 
     // Check that the authenticated user can read its own entry.
-    assertNotNull(basicAuthService.getUserEndpoint().get(id));
+    final SCIMEndpoint<UserResource> endpoint =
+        basicAuthService.getUserEndpoint();
+    final UserResource userResource = endpoint.get(id);
+    assertNotNull(userResource);
+
+    System.out.println("basicAuthUser = " + userResource);
+    assertNotNull(userResource.getMeta().getCreated());
+    assertNotNull(userResource.getMeta().getLastModified());
   }
 
 
@@ -1442,15 +1498,16 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
              URISyntaxException
   {
     // Create a new user.
-    final String id = "uid=invalidCredentials," + userBaseDN;
+    final String dn = "uid=invalidCredentials," + userBaseDN;
     dsInstance.getConnectionPool().add(
         generateUserEntry(
             "invalidCredentials", userBaseDN, "Basic", "User", "password"));
+    final String id = getUser("invalidCredentials").getId();
 
     // Create a client service that authenticates with the wrong password.
     final URI uri = new URI("http", null, scimInstance.getLdapHost(),
                             scimPort, null, null, null);
-    final SCIMService basicAuthService = new SCIMService(uri, id, "assword");
+    final SCIMService basicAuthService = new SCIMService(uri, dn, "assword");
 
     basicAuthService.getUserEndpoint().get(id);
   }

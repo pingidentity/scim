@@ -809,4 +809,9 @@ public class CoreSchema
    * The SCIM AttributeDescriptor for the meta attribute.
    */
   public static final AttributeDescriptor META_DESCRIPTOR = META;
+
+  /**
+   * The SCIM AttributeDescriptor for the id attribute.
+   */
+  public static final AttributeDescriptor ID_DESCRIPTOR = ID;
 }

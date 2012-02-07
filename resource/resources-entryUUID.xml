@@ -18,14 +18,10 @@
 <scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
 
   <!--
-   ! This configuration file serves two purposes.
-   !
-   ! 1. It defines the SCIM Resource Schema. The Resource Schema is
-   !    generated from this configuration file in the forms specified in
-   !    the SCIM protocol.
-   !
-   ! 2. It may also specify a mapping between SCIM and LDAP for the resources.
-   !
+   ! This SCIM configuration file defines a mapping almost identical to
+   ! the one shipped with the SCIM servlet extension. The difference is that
+   ! the SCIM resource ID is mapped to the LDAP entryUUID attribute instead
+   ! of the LDAP entry DN.
    !-->
 
   <!-- SCIM User with a mapping to inetOrgPerson -->
@@ -461,10 +457,9 @@
     <baseDN>ou=people,dc=example,dc=com</baseDN>
     <filter>(objectClass=inetOrgPerson)</filter>
     <!--
-     ! Uncomment the following line to map the user resource ID to entryUUID
-     ! rather than DN.
+     ! Map the group resource ID to entryUUID rather than DN.
      !-->
-    <!--<resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
   </LDAPSearch>
 
   <!--
@@ -476,10 +471,9 @@
     <baseDN>dc=example,dc=com</baseDN>
     <filter>(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
     <!--
-     ! Uncomment the following line to map the group resource ID to entryUUID
-     ! rather than DN.
+     ! Map the group resource ID to entryUUID rather than DN.
      !-->
-    <!--<resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
   </LDAPSearch>
 
 </scim-ldap:resources>
