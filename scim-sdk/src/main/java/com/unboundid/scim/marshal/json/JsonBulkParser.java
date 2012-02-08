@@ -24,6 +24,7 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -34,6 +35,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 
 
@@ -147,8 +149,13 @@ public class JsonBulkParser extends JsonParser
         }
       }
     }
-    catch (JSONException e)
+    catch (SCIMException e)
     {
+      throw e;
+    }
+    catch (Exception e)
+    {
+      Debug.debugException(e);
       throw new InvalidResourceException(
           "Error while reading JSON Bulk content: " + e.getMessage(), e);
     }
@@ -262,9 +269,10 @@ public class JsonBulkParser extends JsonParser
     }
     catch (IllegalArgumentException e)
     {
-      throw new InvalidResourceException(
-          "Bulk operation " + operationIndex + " specifies an invalid HTTP " +
-          "method '" + httpMethod);
+      throw SCIMException.createException(
+          405, "Bulk operation " + operationIndex + " specifies an invalid " +
+               "HTTP method '" + httpMethod + "'. Allowed methods are " +
+               Arrays.asList(BulkOperation.Method.values()));
     }
 
     String endpoint = null;

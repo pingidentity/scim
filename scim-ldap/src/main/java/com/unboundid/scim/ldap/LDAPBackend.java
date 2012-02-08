@@ -929,18 +929,17 @@ public abstract class LDAPBackend
   {
     switch (e.getResultCode().intValue())
     {
-      case ResultCode.INVALID_ATTRIBUTE_SYNTAX_INT_VALUE:
-      case ResultCode.INVALID_DN_SYNTAX_INT_VALUE:
-        return SCIMException.createException(400, e.getMessage());
-
       case ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE:
         return SCIMException.createException(403, e.getMessage());
 
       case ResultCode.NO_SUCH_OBJECT_INT_VALUE:
         return SCIMException.createException(404, e.getMessage());
 
+      case ResultCode.ENTRY_ALREADY_EXISTS_INT_VALUE:
+        return SCIMException.createException(409, e.getMessage());
+
       default:
-        return SCIMException.createException(500, e.getMessage());
+        return SCIMException.createException(400, e.getMessage());
     }
   }
 }

@@ -433,6 +433,53 @@ public class LDAPSearchResolver
 
 
   /**
+   * Determine the resource ID of the resource identified by the given DN.
+   *
+   * @param ldapInterface  The LDAP interface to use to read the entry if
+   *                       necessary.
+   * @param dn             The DN of the requested resource.
+   *
+   * @return  The resource ID for the given DN.
+   *
+   * @throws InvalidResourceException  If the DN does not represent a resource.
+   */
+  public String getIdFromDn(final LDAPRequestInterface ldapInterface,
+                            final String dn)
+      throws InvalidResourceException
+  {
+    try
+    {
+      if (idMapsToDn())
+      {
+        return getIdFromEntry(new Entry(dn));
+      }
+      else
+      {
+        final SearchRequest searchRequest =
+            new SearchRequest(dn, SearchScope.BASE,
+                              getFilter(), getIdAttribute());
+        searchRequest.setSizeLimit(1);
+        final Entry entry = ldapInterface.searchForEntry(searchRequest);
+        if (entry != null)
+        {
+          return getIdFromEntry(entry);
+        }
+      }
+    }
+    catch (LDAPSearchException e)
+    {
+      Debug.debugException(e);
+      throw new InvalidResourceException(
+          "Error searching for resource with DN '" + dn + "'");
+    }
+
+    throw new InvalidResourceException(
+        "Resource with DN '" + dn + "' not found");
+  }
+
+
+
+  /**
    * Retrieve an attribute mapper for the id attribute.
    *
    * @return  An attribute mapper for the id attribute, or {@code null} if the

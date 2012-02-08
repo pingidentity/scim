@@ -38,6 +38,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
@@ -123,7 +124,11 @@ public class XmlBulkParser
         xmlStreamReader.close();
       }
     }
-    catch (XMLStreamException e)
+    catch (SCIMException e)
+    {
+      throw e;
+    }
+    catch (Exception e)
     {
       Debug.debugException(e);
       throw new InvalidResourceException("Error reading XML Bulk operation: " +
@@ -254,9 +259,11 @@ public class XmlBulkParser
             }
             catch (IllegalArgumentException e)
             {
-              throw new InvalidResourceException(
-                  "Bulk operation " + operationIndex + " specifies an " +
-                  "invalid HTTP method '" + httpMethod);
+              throw SCIMException.createException(
+                  405, "Bulk operation " + operationIndex + " specifies an " +
+                       "invalid HTTP method '" + httpMethod + "'. " +
+                       "Allowed methods are " +
+                       Arrays.asList(BulkOperation.Method.values()));
             }
           }
           else if (xmlStreamReader.getLocalName().equals("bulkId"))

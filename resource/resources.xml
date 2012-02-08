@@ -387,11 +387,13 @@
                schema="urn:scim:schemas:extension:enterprise:1.0"
                readOnly="false" required="false">
       <description>The User's manager</description>
+      <derivation javaClass="com.unboundid.scim.ldap.ManagerDerivedAttribute">
+        <LDAPSearchRef idref="userSearchParams"/>
+      </derivation>
       <complex>
         <subAttribute name="managerId" dataType="string">
           <description>The id of the SCIM resource representing the User's
               manager</description>
-          <mapping ldapAttribute="manager"/>
         </subAttribute>
         <subAttribute name="displayName" dataType="string" readOnly="true" >
           <description>The displayName of the User's manager</description>

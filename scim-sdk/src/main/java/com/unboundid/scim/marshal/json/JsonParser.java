@@ -65,66 +65,75 @@ public class JsonParser
       final JSONArray defaultSchemas)
       throws JSONException, InvalidResourceException
   {
-    final SCIMObject scimObject = new SCIMObject();
+    try
+    {
+      final SCIMObject scimObject = new SCIMObject();
 
-    // The first keyed object ought to be a schemas array, but it may not be
-    // present if 1) the attrs are all core and 2) the client decided to omit
-    // the schema declaration.
-    final JSONArray schemas;
-    if (jsonObject.has("schemas"))
-    {
-      schemas = jsonObject.getJSONArray("schemas");
-    }
-    else
-    {
-      schemas = defaultSchemas;
-    }
-
-    // Read the core attributes.
-    for (AttributeDescriptor attributeDescriptor : resourceDescriptor
-        .getAttributes())
-    {
-      final String externalAttributeName = attributeDescriptor.getName();
-      final Object jsonAttribute = jsonObject.opt(externalAttributeName);
-      if (jsonAttribute != null)
+      // The first keyed object ought to be a schemas array, but it may not be
+      // present if 1) the attrs are all core and 2) the client decided to omit
+      // the schema declaration.
+      final JSONArray schemas;
+      if (jsonObject.has("schemas"))
       {
-        scimObject.addAttribute(
-            create(attributeDescriptor, jsonAttribute));
+        schemas = jsonObject.getJSONArray("schemas");
       }
-    }
-
-    // Read the extension attributes.
-    if (schemas != null)
-    {
-      for (int i = 0; i < schemas.length(); i++)
+      else
       {
-        final String schema = schemas.getString(i);
-        if (schema.equalsIgnoreCase(SCIMConstants.SCHEMA_URI_CORE))
-        {
-          continue;
-        }
+        schemas = defaultSchemas;
+      }
 
-        final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
-        if (schemaAttrs != null)
+      // Read the core attributes.
+      for (AttributeDescriptor attributeDescriptor : resourceDescriptor
+          .getAttributes())
+      {
+        final String externalAttributeName = attributeDescriptor.getName();
+        final Object jsonAttribute = jsonObject.opt(externalAttributeName);
+        if (jsonAttribute != null)
         {
-          if (resourceDescriptor.getAttributeSchemas().contains(schema))
+          scimObject.addAttribute(
+              create(attributeDescriptor, jsonAttribute));
+        }
+      }
+
+      // Read the extension attributes.
+      if (schemas != null)
+      {
+        for (int i = 0; i < schemas.length(); i++)
+        {
+          final String schema = schemas.getString(i);
+          if (schema.equalsIgnoreCase(SCIMConstants.SCHEMA_URI_CORE))
           {
-            final Iterator keys = schemaAttrs.keys();
-            while (keys.hasNext())
+            continue;
+          }
+
+          final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
+          if (schemaAttrs != null)
+          {
+            if (resourceDescriptor.getAttributeSchemas().contains(schema))
             {
-              final String attributeName = (String) keys.next();
-              final AttributeDescriptor attributeDescriptor =
-                  resourceDescriptor.getAttribute(schema, attributeName);
-              final Object jsonAttribute = schemaAttrs.get(attributeName);
-              scimObject.addAttribute(
-                  create(attributeDescriptor, jsonAttribute));
+              final Iterator keys = schemaAttrs.keys();
+              while (keys.hasNext())
+              {
+                final String attributeName = (String) keys.next();
+                final AttributeDescriptor attributeDescriptor =
+                    resourceDescriptor.getAttribute(schema, attributeName);
+                final Object jsonAttribute = schemaAttrs.get(attributeName);
+                scimObject.addAttribute(
+                    create(attributeDescriptor, jsonAttribute));
+              }
             }
           }
         }
       }
-    }
 
-    return resourceFactory.createResource(resourceDescriptor, scimObject);
+      return resourceFactory.createResource(resourceDescriptor, scimObject);
+    }
+    catch (Exception e)
+    {
+      throw new InvalidResourceException(
+          "Resource '" + resourceDescriptor.getName() + "' is malformed: " +
+          e.getMessage());
+    }
   }
 
 
@@ -255,10 +264,22 @@ public class JsonParser
   {
     if (descriptor.isMultiValued())
     {
+      if (!(jsonAttribute instanceof JSONArray))
+      {
+        throw new InvalidResourceException(
+            "JSON array expected for multi-valued attribute '" +
+            descriptor.getName() + "'");
+      }
       return createMutiValuedAttribute((JSONArray) jsonAttribute, descriptor);
     }
     else if (descriptor.getDataType() == AttributeDescriptor.DataType.COMPLEX)
     {
+      if (!(jsonAttribute instanceof JSONObject))
+      {
+        throw new InvalidResourceException(
+            "JSON object expected for multi-valued attribute '" +
+            descriptor.getName() + "'");
+      }
       return SCIMAttribute.create(
           descriptor,
           createComplexAttribute((JSONObject) jsonAttribute, descriptor));

@@ -1,6 +1,6 @@
 <!--
   Copyright 2011-2012 UnboundID Corp.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License (GPLv2 only)
   or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
@@ -9,21 +9,21 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this program; if not, see <http://www.gnu.org/licenses>.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-ldap</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    
+
     <name>UnboundID SCIM-LDAP</name>
-    
+
     <description>
       The UnboundID SCIM-LDAP module builds on the UnboundID SCIM-SDK to provide
       classes that map SCIM resources to LDAP entries and vice versa. It also
@@ -31,23 +31,23 @@
       the mapping configuration file to extend its capabilities above and beyond
       those provided out of the box. Each extension type varies in the amount of
       control the implementation has over the mapping process and the amount of
-      effort required for implementation. 
+      effort required for implementation.
     </description>
-    
+
     <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
-    
+
     <inceptionYear>2011</inceptionYear>
-    
+
     <organization>
       <name>UnboundID Corp.</name>
       <url>http://www.unboundid.com</url>
-    </organization>    
+    </organization>
 
     <developers>
       <developer>
         <id>coulbeck</id>
-        <name>Andrew Coulbeck</name>
-        <email>andy.coulbeck@unboundid.com</email>
+        <name>Andy Coulbeck</name>
+        <email>andrew.coulbeck@unboundid.com</email>
       </developer>
       <developer>
         <id>boli</id>

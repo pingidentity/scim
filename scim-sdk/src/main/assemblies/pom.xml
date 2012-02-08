@@ -1,6 +1,6 @@
 <!--
   Copyright 2011-2012 UnboundID Corp.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License (GPLv2 only)
   or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
@@ -9,42 +9,42 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this program; if not, see <http://www.gnu.org/licenses>.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    
+
     <name>UnboundID SCIM SDK</name>
-    
+
     <description>
       The UnboundID SCIM SDK is a library that may be used to interact with various
       types of SCIM-enabled endpoints (such as the UnboundID server products) to
       perform lightweight, cloud-based identity management via the SCIM Protocol.
       See http://www.simplecloud.info for more information.
     </description>
-    
+
     <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
-    
+
     <inceptionYear>2011</inceptionYear>
-    
+
     <organization>
       <name>UnboundID Corp.</name>
       <url>http://www.unboundid.com</url>
-    </organization>    
+    </organization>
 
     <developers>
       <developer>
         <id>coulbeck</id>
-        <name>Andrew Coulbeck</name>
-        <email>andy.coulbeck@unboundid.com</email>
+        <name>Andy Coulbeck</name>
+        <email>andrew.coulbeck@unboundid.com</email>
       </developer>
       <developer>
         <id>boli</id>
@@ -96,7 +96,7 @@
             <version>1.1.3-incubating</version>
         </dependency>
     </dependencies>
-    
+
     <scm>
       <url>http://code.google.com/p/scimsdk/source/browse</url>
       <connection>scm:svn:http://scimsdk.googlecode.com/svn/trunk</connection>

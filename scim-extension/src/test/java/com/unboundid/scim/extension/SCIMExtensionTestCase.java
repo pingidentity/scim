@@ -11,6 +11,7 @@ import com.unboundid.directory.tests.externalinstance.ExternalInstanceManager;
 import com.unboundid.directory.tests.externalinstance.TestCaseUtils;
 import com.unboundid.directory.tests.externalinstance.standalone.
     ExternalInstanceIdImpl;
+import com.unboundid.directory.tests.externalinstance.util.FutureCondition;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchResultEntry;
@@ -60,6 +61,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -576,6 +582,13 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
   {
     //Create a new user
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    UserResource manager = userEndpoint.newResource();
+    manager.setUserName("myManager");
+    manager.setName(
+        new Name("Mr. Manager", "Manager", null, null, "Mr.", null));
+    manager = userEndpoint.create(manager);
+
     UserResource user = userEndpoint.newResource();
     user.setUserName("jdoe");
     user.setName(
@@ -590,8 +603,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     user.setTimeZone(TimeZone.getDefault().getID());
     user.setSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
-            Manager.MANAGER_RESOLVER, new Manager("uid=myManager," + userBaseDN,
-                                                        "Mr. Manager"));
+            Manager.MANAGER_RESOLVER,
+            new Manager(manager.getId(), "Mr. Manager"));
 
     //Verify basic properties of UserResource
     assertEquals(user.getUserName(), "jdoe");
@@ -657,8 +670,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(entry.getAttributeValue("sn"), "Doe");
     assertEquals(entry.getAttributeValue("title"), "Vice President");
     assertEquals(entry.getAttributeValue("mail"), "j.doe@example.com");
-    assertEquals(entry.getAttributeValue("manager"),
-                  "uid=myManager," + userBaseDN);
+    assertTrue(entry.getAttributeValue("manager").equalsIgnoreCase(
+        "uid=myManager," + userBaseDN));
     dsInstance.checkCredentials(entry.getDN(), "newPassword");
 
     System.out.println("Full user entry:\n" + entry.toLDIFString());
@@ -1591,6 +1604,10 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     userBob.setUserName("bob-" + mediaSubType);
     userBob = userEndpoint.create(userBob);
     userBob.setTitle("Construction Worker");
+    userBob.setSingularAttributeValue(
+        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+        Manager.MANAGER_RESOLVER,
+        new Manager("bulkId:alice", "Miss Manager"));
 
     UserResource userDave = userEndpoint.newResource();
     userDave.setName(new Name("Dave Allen", "Allen", null,
@@ -1728,6 +1745,10 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     userBob = userEndpoint.get(userBob.getId());
     assertEquals(userBob.getTitle(), "Construction Worker");
+    assertEquals(userBob.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getManagerId(),
+                 userAlice.getId());
 
     group = groupEndpoint.query(
         "displayName eq \"group-" + mediaSubType + "\"").iterator().next();
@@ -1806,7 +1827,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     testInvalidBulkOperation(
         BulkOperation.createRequest(BulkOperation.Method.POST, "group", null,
                                     "/Groups/", testGroup),
-        "400");
+        "409");
 
     // PATCH is not supported.
     testInvalidBulkOperation(
@@ -1847,6 +1868,49 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       assertEquals(String.valueOf(e.getStatusCode()), expectedResponseCode);
       assertNotNull(e.getMessage());
     }
+  }
+
+
+
+  /**
+   * Tests that the server returns the correct response to a SCIM Bulk request
+   * which contains two operations with the same bulkId.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testDuplicateBulkId()
+      throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource testUser1 = userEndpoint.newResource();
+    testUser1.setName(new Name("Test Duplicate BulkId", "BulkId", null,
+                              "Test", null, null));
+    testUser1.setUserName("test-duplicate-bulkid-1");
+
+    final UserResource testUser2 = userEndpoint.newResource();
+    testUser2.setName(new Name("Test Duplicate BulkId", "BulkId", null,
+                              "Test", null, null));
+    testUser2.setUserName("test-duplicate-bulkid-2");
+
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>(2);
+    operations.add(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "bulkid1", null,
+                                    "/Users", testUser1));
+    operations.add(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "bulkid1", null,
+                                    "/Users", testUser2));
+
+    final BulkResponse bulkResponse = service.processBulkRequest(operations);
+    final List<BulkOperation> responses = new ArrayList<BulkOperation>();
+    for (final BulkOperation o : bulkResponse)
+    {
+      responses.add(o);
+    }
+
+    assertEquals(responses.get(0).getStatus().getCode(), "201");
+    assertEquals(responses.get(1).getStatus().getCode(), "400");
   }
 
 
@@ -2091,5 +2155,129 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     assertEquals(userEndpoint.query(
         "userName eq \"test-bulkid-in-path\"").getTotalResults(), 0);
+  }
+
+
+
+  /**
+   * Test that concurrent, conflicting bulk operations don't cause anything
+   * bad to happen.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testConcurrentBulkOperations() throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    // Create bulk operations to add some users, modify them, and delete them.
+    final List<UserResource> users = new ArrayList<UserResource>();
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 10; i++)
+    {
+      final UserResource user = userEndpoint.newResource();
+      user.setName(new Name("User " + i, "User", null, "Test", null, null));
+      user.setUserName("user." + i);
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.POST, "bulkid." + i, null, "/Users", user));
+      users.add(user);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+      final UserResource user = users.get(i);
+      user.setTitle("Updated Title");
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.PUT, null, null,
+          "/Users/bulkId:bulkid." + i, user));
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null,
+          "/Users/bulkId:bulkid." + i, null));
+    }
+
+    final AtomicInteger numSuccessfulRequests = new AtomicInteger(0);
+    final AtomicInteger numCompletedRequests = new AtomicInteger(0);
+    final AtomicInteger numCaughtExceptions = new AtomicInteger(0);
+
+    // Create a runnable to execute a single bulk request with the same
+    // operations.
+    final Runnable runnable = new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        try
+        {
+          final BulkResponse bulkResponse =
+              service.processBulkRequest(operations);
+
+          boolean successful = true;
+          for (final BulkOperation o : bulkResponse)
+          {
+            final String statusCode = o.getStatus().getCode();
+            if (!(statusCode.equals("200") || statusCode.equals("201") ||
+                  statusCode.equals("404") || statusCode.equals("409")))
+            {
+              System.out.println(
+                  "Unexpected status code in bulk operation response: " + o);
+              successful = false;
+            }
+          }
+
+          if (successful)
+          {
+            numSuccessfulRequests.incrementAndGet();
+          }
+        }
+        catch (Exception e)
+        {
+          numCaughtExceptions.incrementAndGet();
+          // Ignore.
+        }
+        numCompletedRequests.incrementAndGet();
+      }
+    };
+
+    // Execute a bunch of requests in parallel.
+    final int numRequests = 10;
+    final ThreadPoolExecutor executor =
+        new ThreadPoolExecutor(16,                   // min # threads
+                               16,                   // max # threads
+                               5, TimeUnit.MINUTES,  // kill after idle
+                               new LinkedBlockingQueue<Runnable>());
+
+    Future<?> future = null;
+    for (int i = 0; i < numRequests; i++)
+    {
+      future = executor.submit(runnable);
+    }
+
+
+    // Make sure all the requests were completed.
+    future.get();
+    TestCaseUtils.assertFutureCondition(new FutureCondition(1000, 120)
+    {
+      @Override
+      public boolean testCondition() throws Exception
+      {
+        return numCompletedRequests.get() == numRequests;
+      }
+
+      @Override
+      protected String getConditionDetails()
+      {
+        return "numCompletedRequests=" + numCompletedRequests +
+               " numRequests=" + numRequests +
+               " numSuccessfulRequests=" + numSuccessfulRequests +
+               " numCaughtExceptions=" + numCaughtExceptions;
+      }
+    });
+
+    assertEquals(numCaughtExceptions.get(), 0);
+    assertEquals(numSuccessfulRequests.get(), numCompletedRequests.get());
   }
 }

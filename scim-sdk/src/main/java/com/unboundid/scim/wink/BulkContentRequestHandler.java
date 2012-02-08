@@ -296,9 +296,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
             resourceID = resourceIDs.get(ref);
             if (resourceID == null)
             {
-              throw new InvalidResourceException(
-                  "The bulk operation path has an undefined or forward " +
-                  "bulkId reference '" + ref + "'");
+              throw SCIMException.createException(
+                  409, "Cannot resolve bulkId reference '" + ref + "'");
             }
           }
         }
@@ -581,8 +580,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
         }
         else
         {
-          throw new InvalidResourceException(
-              "Undefined or forward bulkId reference '" + bulkId + "'");
+          throw SCIMException.createException(
+              409, "Cannot resolve bulkId reference '" + bulkId + "'");
         }
       }
       else
