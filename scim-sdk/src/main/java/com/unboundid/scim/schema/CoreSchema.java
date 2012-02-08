@@ -688,9 +688,9 @@ public class CoreSchema
           "A complex type that specifies the set of associated " +
               "Resource attributes", SCIMConstants.SCHEMA_URI_CORE,
           true, true, false, ATTRIBUTES_NAME, ATTRIBUTES_TYPE,
+          ATTRIBUTES_MULTIVALUED, ATTRIBUTES_MULTIVALUED_CHILD_NAME,
           ATTRIBUTES_DESCRIPTION, ATTRIBUTES_SCHEMA,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT,
-          ATTRIBUTES_MULTIVALUED, ATTRIBUTES_MULTIVALUED_CHILD_NAME,
           RESOURCE_SUB_ATTRIBUTES);
 
   private static final AttributeDescriptor.AttributeDescriptorResolver

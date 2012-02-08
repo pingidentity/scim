@@ -1,21 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!--
-  ~ Copyright 2012 UnboundID Corp.
-  ~
-  ~ This program is free software; you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License (GPLv2 only)
-  ~ or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
-  ~ as published by the Free Software Foundation.
-  ~
-  ~ This program is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ~ GNU General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU General Public License
-  ~ along with this program; if not, see <http://www.gnu.org/licenses>.
-  -->
-
 <xs:schema xmlns:tns="urn:scim:schemas:core:1.0"
            targetNamespace="urn:scim:schemas:core:1.0"
            xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
@@ -89,7 +72,7 @@
       </xs:element>
     </xs:sequence>
   </xs:complexType>
-
+  
   <xs:complexType name="Operation">
     <xs:sequence>
       <xs:element name="method" type="xs:string" minOccurs="1"
@@ -102,9 +85,9 @@
                   maxOccurs="1"/>
       <xs:element name="location" type="xs:string" minOccurs="0"
                   maxOccurs="1"/>
-      <xs:element name="data" type="tns:Resource" minOccurs="0"
+      <xs:element name="data" type="tns:Resource" minOccurs="0" 
                   maxOccurs="1" />
-      <xs:element name="status" type="tns:Status" minOccurs="0"
+      <xs:element name="status" type="tns:Status" minOccurs="0" 
                   maxOccurs="1" />
       </xs:sequence>
   </xs:complexType>
@@ -191,7 +174,7 @@
                             maxOccurs="unbounded"/>
               </xs:sequence>
             </xs:complexType>
-          </xs:element>
+          </xs:element>           
           <xs:element name="groups" minOccurs="0">
           <xs:complexType>
               <xs:sequence>
@@ -316,7 +299,7 @@
       <xs:element name="honorificSuffix" type="xs:string" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
-
+  
   <xs:complexType name="meta">
     <xs:sequence>
       <xs:element name="created" type="xs:dateTime" minOccurs="0"/>
@@ -340,13 +323,13 @@
    <xs:sequence>
      <xs:element name="name" type="xs:string" minOccurs="0"/>
      <xs:element name="type" type="xs:string" minOccurs="0"/>
+     <xs:element name="multiValued" type="xs:boolean" minOccurs="0"/>
+     <xs:element name="multiValuedAttributeChildName" type="xs:string" minOccurs="0"/>
      <xs:element name="description" type="xs:string" minOccurs="0"/>
      <xs:element name="schema" type="xs:string" minOccurs="0"/>
      <xs:element name="readOnly" type="xs:boolean" minOccurs="0"/>
      <xs:element name="required" type="xs:boolean" minOccurs="0"/>
      <xs:element name="caseExact" type="xs:boolean" minOccurs="0"/>
-     <xs:element name="multiValued" type="xs:boolean" minOccurs="0"/>
-     <xs:element name="multiValuedAttributeChildName" type="xs:string" minOccurs="0"/>
      <xs:element name="subAttributes" minOccurs="0">
        <xs:complexType>
          <xs:sequence>
@@ -384,7 +367,7 @@
             minOccurs="0"/>
           <xs:element name="schema" type="xs:string"
             minOccurs="0"/>
-          <xs:element name="queryEndpoint" type="xs:string"
+          <xs:element name="endpoint" type="xs:string"
             minOccurs="0"/>
           <xs:element name="attributes" minOccurs="0">
           <xs:complexType>
