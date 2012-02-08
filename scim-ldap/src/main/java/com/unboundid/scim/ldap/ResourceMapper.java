@@ -598,6 +598,28 @@ public class ResourceMapper
     return ldapAttributes;
   }
 
+
+
+  /**
+   * Construct an LDAP entry from the provided SCIM object. This method, which
+   * does not need an LDAP interface argument, is provided for the Sync Server
+   * SCIM Sync Destination.
+   *
+   * @param scimObject       The SCIM object to form the contents of the entry.
+   *
+   * @return  An LDAP entry.
+   *
+   * @throws LDAPException  If the entry could not be constructed.
+   * @throws InvalidResourceException if the mapping violates the schema.
+   */
+  public Entry toLDAPEntry(final SCIMObject scimObject)
+      throws LDAPException, InvalidResourceException
+  {
+    return toLDAPEntry(scimObject, null);
+  }
+
+
+
   /**
    * Construct an LDAP entry from the provided SCIM object.
    *
