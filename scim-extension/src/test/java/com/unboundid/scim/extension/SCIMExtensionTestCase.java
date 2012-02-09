@@ -230,6 +230,12 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     userBaseDN = "ou=people," + dsInstance.getPrimaryBaseDN();
 
     dsInstance.getDnsToDumpOnFailureMutable().add("cn=monitor");
+
+    dsInstance.dsconfig(
+        "set-plugin-prop",
+        "--plugin-name", "Processing Time Histogram",
+        "--reset", "invoke-for-internal-operations");
+
     dsInstance.dsconfig(
         "set-log-publisher-prop",
         "--publisher-name", "File-Based Access Logger",
@@ -1209,10 +1215,17 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     GroupResource virtualStaticGroup = getGroup("testVirtualStaticGroup");
 
+    // Make sure that a query doesn't unnecessarily process groups etc.
+    // There should be no more than two internal searches.
+    long beforeCount = dsInstance.getMonitorAsLong(
+        "cn=Processing Time Histogram,cn=monitor", "searchOpsTotalCount");
     user1 = userEndpoint.query("id eq \"" + user1.getId() + "\"",
                                null, null, "userName").iterator().next();
     assertNull(user1.getGroups(),
                "User has the groups attribute that was not requested");
+    long afterCount = dsInstance.getMonitorAsLong(
+        "cn=Processing Time Histogram,cn=monitor", "searchOpsTotalCount");
+    assertTrue(afterCount > beforeCount && afterCount <= beforeCount + 2);
 
     // Verify that the groups attribute is set correctly.
     user1 = userEndpoint.get(user1.getId());

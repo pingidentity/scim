@@ -138,6 +138,22 @@ public class SCIMQueryAttributes
 
 
   /**
+   * Create a new set of query attributes from the provided information.
+   *
+   * @param descriptors         The set of attributes and sub-attributes
+   *                            explicitly requested, or {@code null} if all
+   *                            attributes are requested.
+   */
+  private SCIMQueryAttributes(
+      final Map<AttributeDescriptor,Set<AttributeDescriptor>> descriptors)
+  {
+    this.allAttributesRequested = (descriptors == null);
+    this.descriptors = descriptors;
+  }
+
+
+
+  /**
    * Determine whether all attributes and sub-attributes are requested by
    * these query attributes.
    *
@@ -275,5 +291,77 @@ public class SCIMQueryAttributes
       return SCIMAttribute.create(descriptor,
           SCIMAttributeValue.createComplexValue(subAttributes));
     }
+  }
+
+
+
+  /**
+   * Return query attributes formed by merging these query attributes with the
+   * provided query attributes.
+   *
+   * @param that  The query attributes to be merged with these query attributes
+   *              to form new query attributes.
+   *
+   * @return  The merged query attributes.
+   *
+   * @throws InvalidResourceException  If the query attributes could not be
+   *                                   merged.
+   */
+  public SCIMQueryAttributes merge(final SCIMQueryAttributes that)
+      throws InvalidResourceException
+  {
+    if (this.allAttributesRequested || that.allAttributesRequested)
+    {
+      return new SCIMQueryAttributes(null);
+    }
+
+    final Map<AttributeDescriptor,Set<AttributeDescriptor>> merged =
+        new HashMap<AttributeDescriptor, Set<AttributeDescriptor>>(
+            this.descriptors);
+
+    for (final Map.Entry<AttributeDescriptor,Set<AttributeDescriptor>> e :
+        that.descriptors.entrySet())
+    {
+      final AttributeDescriptor attributeDescriptor = e.getKey();
+      final Set<AttributeDescriptor> thatSet = e.getValue();
+
+      Set<AttributeDescriptor> thisSet = merged.get(attributeDescriptor);
+      if (thisSet == null)
+      {
+        merged.put(attributeDescriptor, thatSet);
+      }
+      else
+      {
+        if (!thisSet.isEmpty())
+        {
+          if (thatSet.isEmpty())
+          {
+            thisSet.clear();
+          }
+          else
+          {
+            thisSet.addAll(thatSet);
+          }
+        }
+      }
+    }
+
+    return new SCIMQueryAttributes(merged);
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString()
+  {
+    final StringBuilder sb = new StringBuilder();
+    sb.append("SCIMQueryAttributes");
+    sb.append("{allAttributesRequested=").append(allAttributesRequested);
+    sb.append(", descriptors=").append(descriptors);
+    sb.append('}');
+    return sb.toString();
   }
 }

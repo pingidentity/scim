@@ -21,10 +21,12 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
@@ -68,7 +70,10 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   private final int maxResults;
 
-  private final SCIMQueryAttributes allAttributes;
+  /**
+   * The requested attributes plus the filter attributes.
+   */
+  private final SCIMQueryAttributes attributes;
 
 
 
@@ -95,8 +100,74 @@ public class ResourceSearchResultListener implements SearchResultListener
     this.resources      = new ArrayList<BaseResource>();
     this.ldapInterface  = ldapInterface;
     this.maxResults     = maxResults;
-    this.allAttributes =
-        new SCIMQueryAttributes(request.getResourceDescriptor(), null);
+    this.attributes     = getFilterAttributes().merge(request.getAttributes());
+  }
+
+
+
+  /**
+   * Create a SCIMQueryAttributes instance representing the attributes
+   * referenced by the request filter.
+   *
+   * @return  A SCIMQueryAttributes instance representing the attributes
+   *          referenced by the request filter.
+   *
+   * @throws InvalidResourceException  If there is an error constructing the
+   *                                   SCIMQueryAttributes instance.
+   */
+  private SCIMQueryAttributes getFilterAttributes()
+      throws InvalidResourceException
+  {
+    final List<AttributePath> attributePaths = new ArrayList<AttributePath>();
+    insertFilterAttributes(request.getFilter(), attributePaths);
+
+    final StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < attributePaths.size(); i++)
+    {
+      if (i != 0)
+      {
+        builder.append(',');
+      }
+
+      builder.append(attributePaths.get(i));
+    }
+
+    return new SCIMQueryAttributes(request.getResourceDescriptor(),
+                                   builder.toString());
+  }
+
+
+
+  /**
+   * Insert the attribute paths referenced by the provided filter into a
+   * provided list of attribute paths.
+   *
+   * @param filter          The filter whose attribute paths are of interest.
+   * @param attributePaths  The list of attribute paths to be updated.
+   */
+  private void insertFilterAttributes(
+      final SCIMFilter filter,
+      final List<AttributePath> attributePaths)
+  {
+    if (filter == null)
+    {
+      return;
+    }
+
+    switch (filter.getFilterType())
+    {
+      case AND:
+      case OR:
+        for (final SCIMFilter f : filter.getFilterComponents())
+        {
+          insertFilterAttributes(f, attributePaths);
+        }
+        break;
+
+      default:
+        attributePaths.add(filter.getFilterAttribute());
+        break;
+    }
   }
 
 
@@ -115,11 +186,11 @@ public class ResourceSearchResultListener implements SearchResultListener
       return;
     }
 
-    try {
-      // Get all the attributes so we can filter on them.
+    try
+    {
+      // Get the request and filter attributes so we can filter on them.
       final SCIMObject scimObject =
-          resourceMapper.toSCIMObject(searchEntry, allAttributes,
-                                      ldapInterface);
+          resourceMapper.toSCIMObject(searchEntry, attributes, ldapInterface);
       final BaseResource resource =
           new BaseResource(request.getResourceDescriptor(), scimObject);
 
@@ -144,7 +215,9 @@ public class ResourceSearchResultListener implements SearchResultListener
           resources.add(returnedResource);
         }
       }
-    } catch (InvalidResourceException e) {
+    }
+    catch (InvalidResourceException e)
+    {
       Debug.debugException(e);
       // TODO: We should find a way to get this exception back to LDAPBackend.
     }

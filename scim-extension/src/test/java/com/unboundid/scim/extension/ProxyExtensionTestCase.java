@@ -57,6 +57,12 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
     proxyInstance.installExtension(extensionZipFile);
 
     dsInstance.startInstance();
+
+    dsInstance.dsconfig(
+        "set-plugin-prop",
+        "--plugin-name", "Processing Time Histogram",
+        "--reset", "invoke-for-internal-operations");
+
     dsInstance.addBaseEntry();
     dsInstance.addEntry("dn: ou=people," + dsInstance.getPrimaryBaseDN(),
             "objectClass: organizationalUnit",
