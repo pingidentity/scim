@@ -385,7 +385,9 @@ public final class SCIMServletExtension
     try
     {
       final List<ResourceMapper> mappers =
-          ResourceMapper.parse(resourcesFileArg.getValue());
+          ResourceMapper.parse(
+              resourcesFileArg.getValue(),
+              serverContext.getInternalRootConnection().getSchema());
       for (final ResourceMapper resourceMapper : mappers)
       {
         resourceMappers.put(resourceMapper.getResourceDescriptor(),
@@ -568,7 +570,9 @@ public final class SCIMServletExtension
 
     try
     {
-      ResourceMapper.parse(useResourcesFileArg.getValue());
+      ResourceMapper.parse(
+          useResourcesFileArg.getValue(),
+          serverContext.getInternalRootConnection().getSchema());
     }
     catch (Exception e)
     {

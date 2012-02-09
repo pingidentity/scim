@@ -154,8 +154,11 @@ public class ResourceMapper
     // No implementation required.
   }
 
+
+
   /**
-   * Parse an XML file defining a set of resource mappings.
+   * Parse an XML file defining a set of resource mappings. The LDAP attribute
+   * mappings are not validated against an LDAP schema.
    *
    * @param file  An XML file defining a set of resource mappings.
    *
@@ -166,6 +169,30 @@ public class ResourceMapper
    * @throws SCIMException  If some other error occurs.
    */
   public static List<ResourceMapper> parse(final File file)
+      throws JAXBException, SAXException, SCIMException
+  {
+    return parse(file, null);
+  }
+
+
+
+  /**
+   * Parse an XML file defining a set of resource mappings.
+   *
+   * @param file        An XML file defining a set of resource mappings.
+   * @param ldapSchema  An LDAP schema to validate the LDAP attribute mappings
+   *                    against. This parameter may be {@code null} if LDAP
+   *                    schema validation is not required.
+   *
+   * @return  A list of resource mappers.
+   *
+   * @throws JAXBException  If an error occurs during the parsing.
+   * @throws SAXException   If the XML schema cannot be instantiated.
+   * @throws SCIMException  If some other error occurs.
+   */
+  public static List<ResourceMapper> parse(
+      final File file,
+      final com.unboundid.ldap.sdk.schema.Schema ldapSchema)
       throws JAXBException, SAXException, SCIMException
   {
     final ObjectFactory factory = new ObjectFactory();
@@ -190,6 +217,22 @@ public class ResourceMapper
         new HashMap<String, LDAPSearchResolver>();
     for (final LDAPSearchParameters p : resources.getLDAPSearch())
     {
+      if (p.getResourceIDMapping() != null)
+      {
+        if (ldapSchema != null)
+        {
+          final String ldapAttribute =
+              p.getResourceIDMapping().getLdapAttribute();
+          if (ldapSchema.getAttributeType(ldapAttribute) == null)
+          {
+            throw new ServerErrorException(
+                "The LDAP attribute '" + ldapAttribute + "' referenced in " +
+                "LDAP Search Parameters '" + p.getId() + "' does not exist " +
+                "in the LDAP schema");
+          }
+        }
+      }
+
       try
       {
         ldapSearchResolvers.put(StaticUtils.toLowerCase(p.getId()),
@@ -243,7 +286,8 @@ public class ResourceMapper
 
         attributeDescriptors[i++] = attributeDescriptor;
         final AttributeMapper m =
-            AttributeMapper.create(attributeDefinition, attributeDescriptor);
+            AttributeMapper.create(attributeDefinition, attributeDescriptor,
+                                   ldapSchema);
         if (m != null)
         {
           attributeMappers.add(m);
@@ -296,6 +340,25 @@ public class ResourceMapper
       final ResourceMapper resourceMapper = create(resource.getMapping());
       final LDAPSearchResolver ldapSearchResolver =
           ldapSearchResolvers.get(StaticUtils.toLowerCase(ldapSearch.getId()));
+
+      if (resource.getLDAPAdd() != null)
+      {
+        if (ldapSchema != null)
+        {
+          for (final FixedAttribute fixedAttribute :
+              resource.getLDAPAdd().getFixedAttribute())
+          {
+            final String ldapAttribute = fixedAttribute.getLdapAttribute();
+            if (ldapSchema.getAttributeType(ldapAttribute) == null)
+            {
+              throw new ServerErrorException(
+                  "The LDAP attribute '" + ldapAttribute + "' referenced by " +
+                  "a fixedAttribute element is not defined in the LDAP schema");
+            }
+          }
+        }
+      }
+
       resourceMapper.initializeMapper(
           resourceDescriptor,
           ldapSearchResolver,

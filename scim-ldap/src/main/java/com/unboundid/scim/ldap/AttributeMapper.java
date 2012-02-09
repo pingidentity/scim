@@ -21,12 +21,15 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
 
 import java.util.ArrayList;
@@ -161,13 +164,19 @@ public abstract class AttributeMapper
    *
    * @param attributeDefinition  The attribute definition.
    * @param attributeDescriptor  The attribute descriptor.
+   * @param ldapSchema  An LDAP schema to validate the LDAP attribute mappings
+   *                    against. This parameter may be {@code null} if LDAP
+   *                    schema validation is not required.
    *
    * @return  An attribute mapper, or {@code null} if the attribute definition
    *          contains no mappings.
+   *
+   * @throws SCIMException  If the attribute definition is not valid.
    */
   public static AttributeMapper create(
       final AttributeDefinition attributeDefinition,
-      final AttributeDescriptor attributeDescriptor)
+      final AttributeDescriptor attributeDescriptor,
+      final Schema ldapSchema) throws SCIMException
   {
     if (attributeDefinition.getSimple() != null)
     {
@@ -177,6 +186,19 @@ public abstract class AttributeMapper
       if (simpleDefinition.getMapping() == null)
       {
         return null;
+      }
+
+      if (ldapSchema != null)
+      {
+        final String ldapAttribute =
+            simpleDefinition.getMapping().getLdapAttribute();
+        if (ldapSchema.getAttributeType(ldapAttribute) == null)
+        {
+          throw new ServerErrorException(
+              "The LDAP attribute '" + ldapAttribute + "' referenced by " +
+              "SCIM attribute '" + attributeDefinition.getName() +
+              "' is not defined in the LDAP schema");
+        }
       }
 
       final AttributeTransformation t =
@@ -206,6 +228,20 @@ public abstract class AttributeMapper
       {
         if (subAttributeDefinition.getMapping() != null)
         {
+          if (ldapSchema != null)
+          {
+            final String ldapAttribute =
+                subAttributeDefinition.getMapping().getLdapAttribute();
+            if (ldapSchema.getAttributeType(ldapAttribute) == null)
+            {
+              throw new ServerErrorException(
+                  "The LDAP attribute '" + ldapAttribute +
+                  "' referenced by SCIM attribute '" +
+                  attributeDefinition.getName() + '.' +
+                  subAttributeDefinition.getName() +
+                  "' is not defined in the LDAP schema");
+            }
+          }
           transformations.add(
               SubAttributeTransformation.create(subAttributeDefinition));
         }
@@ -226,11 +262,27 @@ public abstract class AttributeMapper
 
       final List<CanonicalValueMapper> canonicalValueMappers =
           new ArrayList<CanonicalValueMapper>();
-      for (final CanonicalValue CanonicalValue :
+      for (final CanonicalValue canonicalValue :
           simpleMultiValuedDefinition.getCanonicalValue())
       {
+        if (ldapSchema != null)
+        {
+          for (final SubAttributeMapping m : canonicalValue.getSubMapping())
+          {
+            final String ldapAttribute = m.getLdapAttribute();
+            if (ldapSchema.getAttributeType(ldapAttribute) == null)
+            {
+              throw new ServerErrorException(
+                  "The LDAP attribute '" + ldapAttribute +
+                  "' referenced by SCIM attribute '" +
+                  attributeDefinition.getName() + '.' + m.getName() +
+                  "' is not defined in the LDAP schema");
+            }
+          }
+        }
+
         final CanonicalValueMapper m =
-            CanonicalValueMapper.create(CanonicalValue);
+            CanonicalValueMapper.create(canonicalValue);
         if (m != null)
         {
           canonicalValueMappers.add(m);
@@ -239,6 +291,19 @@ public abstract class AttributeMapper
 
       if (simpleMultiValuedDefinition.getMapping() != null)
       {
+        if (ldapSchema != null)
+        {
+          final String ldapAttribute =
+              simpleMultiValuedDefinition.getMapping().getLdapAttribute();
+          if (ldapSchema.getAttributeType(ldapAttribute) == null)
+          {
+            throw new ServerErrorException(
+                "The LDAP attribute '" + ldapAttribute + "' referenced by " +
+                "SCIM attribute '" + attributeDefinition.getName() +
+                "' is not defined in the LDAP schema");
+          }
+        }
+
         canonicalValueMappers.add(CanonicalValueMapper.create(
             simpleMultiValuedDefinition.getMapping()));
       }
@@ -259,11 +324,27 @@ public abstract class AttributeMapper
       final List<CanonicalValueMapper> canonicalValueMappers =
           new ArrayList<CanonicalValueMapper>();
 
-      for (final CanonicalValue CanonicalValue :
+      for (final CanonicalValue canonicalValue :
           complexMultiValuedDefinition.getCanonicalValue())
       {
+        if (ldapSchema != null)
+        {
+          for (final SubAttributeMapping m : canonicalValue.getSubMapping())
+          {
+            final String ldapAttribute = m.getLdapAttribute();
+            if (ldapSchema.getAttributeType(ldapAttribute) == null)
+            {
+              throw new ServerErrorException(
+                  "The LDAP attribute '" + ldapAttribute +
+                  "' referenced by SCIM attribute '" +
+                  attributeDefinition.getName() + '.' + m.getName() +
+                  "' is not defined in the LDAP schema");
+            }
+          }
+        }
+
         final CanonicalValueMapper m =
-            CanonicalValueMapper.create(CanonicalValue);
+            CanonicalValueMapper.create(canonicalValue);
         if (m != null)
         {
           canonicalValueMappers.add(m);
