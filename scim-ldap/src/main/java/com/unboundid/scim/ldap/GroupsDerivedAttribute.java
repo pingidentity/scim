@@ -145,81 +145,77 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       return null;
     }
 
-    if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
+    try
     {
-      final List<String> attrList = new ArrayList<String>(3);
-      attrList.add(ATTR_CN);
-      attrList.add(ATTR_OBJECT_CLASS);
-      groupResolver.addIdAttribute(attrList);
-      final String[] attrsToGet =
-          attrList.toArray(new String[attrList.size()]);
-
-      // We can use the isMemberOf attribute
-      for (final String dnString : entry.getAttributeValues(ATTR_IS_MEMBER_OF))
+      if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
       {
-        try
-        {
-          // Make sure the group is scoped within the base DN.
-          if (groupResolver.isDnInScope(dnString))
-          {
-            // Retrieve the group entry and passing in the search param filter
-            // if available.
-            SearchRequest searchRequest =
-                new SearchRequest(dnString, SearchScope.BASE,
-                                  groupResolver.getFilterString(),
-                                  attrsToGet);
-            searchRequest.setSizeLimit(1);
-            SearchResultEntry groupEntry =
-                ldapInterface.searchForEntry(searchRequest);
+        final List<String> attrList = new ArrayList<String>(3);
+        attrList.add(ATTR_CN);
+        attrList.add(ATTR_OBJECT_CLASS);
+        groupResolver.addIdAttribute(attrList);
+        final String[] attrsToGet =
+            attrList.toArray(new String[attrList.size()]);
 
-            if(groupEntry != null)
-            {
-              // This group is considered direct iff it is a non-virtual static
-              // group and the entry is listed as a member or uniqueMember of
-              // this group (i.e. it's not nested).
-              boolean isDirect = false;
-              if(!groupEntry.hasObjectClass(OC_GROUP_OF_URLS) &&
-                  !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
-              {
-                // Make sure the entry DN is listed as a member or uniqueMember.
-                searchRequest =
-                    new SearchRequest(dnString, SearchScope.BASE,
-                    groupsFilter(entry.getDN(), false), "1.1");
-                searchRequest.setSizeLimit(1);
-                isDirect = ldapInterface.searchForEntry(searchRequest) != null;
-              }
-              final String resourceID =
-                  groupResolver.getIdFromEntry(groupEntry);
-              values.add(createGroupValue(resourceID,
-                  groupEntry.getAttributeValue(ATTR_CN), isDirect));
-            }
-          }
-        }
-        catch (LDAPException e)
+        // We can use the isMemberOf attribute
+        for (final String dnString :
+            entry.getAttributeValues(ATTR_IS_MEMBER_OF))
         {
-          Debug.debugException(e);
+            // Make sure the group is scoped within the base DN.
+            if (groupResolver.isDnInScope(dnString))
+            {
+              // Retrieve the group entry and passing in the search param filter
+              // if available.
+              SearchRequest searchRequest =
+                  new SearchRequest(dnString, SearchScope.BASE,
+                                    groupResolver.getFilterString(),
+                                    attrsToGet);
+              searchRequest.setSizeLimit(1);
+              SearchResultEntry groupEntry =
+                  ldapInterface.searchForEntry(searchRequest);
+
+              if(groupEntry != null)
+              {
+                // This group is considered direct iff it is a non-virtual
+                // static group and the entry is listed as a member or
+                // uniqueMember of this group (i.e. it's not nested).
+                boolean isDirect = false;
+                if(!groupEntry.hasObjectClass(OC_GROUP_OF_URLS) &&
+                    !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
+                {
+                  // Make sure the entry DN is listed as a member or
+                  // uniqueMember.
+                  searchRequest =
+                      new SearchRequest(dnString, SearchScope.BASE,
+                      groupsFilter(entry.getDN(), false), "1.1");
+                  searchRequest.setSizeLimit(1);
+                  isDirect =
+                      ldapInterface.searchForEntry(searchRequest) != null;
+                }
+                final String resourceID =
+                    groupResolver.getIdFromEntry(groupEntry);
+                values.add(createGroupValue(resourceID,
+                    groupEntry.getAttributeValue(ATTR_CN), isDirect));
+              }
+            }
         }
       }
-    }
-    else
-    {
-      // We can't use isMemberOf so we'll have to find all group entries
-      // that satisfies the search param. This should give us all static groups
-      // (including virtual static groups) that the entry is a member of as
-      // well as all dynamic groups that satisfies the search params.
-      try
+      else
       {
+        // We can't use isMemberOf so we'll have to find all group entries
+        // that satisfies the search param. This should give us all static
+        // groups (including virtual static groups) that the entry is a member
+        // of as well as all dynamic groups that satisfy the search params.
         findGroupsForMember(entry, ldapInterface, groupResolver.getBaseDN(),
             groupsFilter(entry.getDN(), true), values, new LinkedList<DN>(),
             false);
       }
-      catch (LDAPException e)
-      {
-        Debug.debugException(e);
-        Debug.debug(Level.WARNING, DebugType.OTHER,
-                    "Error searching for values of the groups attribute", e);
-        return null;
-      }
+    }
+    catch (LDAPException e)
+    {
+      Debug.debugException(e);
+      throw new InvalidResourceException(
+          "Error searching for values of the groups attribute: " +
+          e.getMessage(), e);
     }
 
     if (values.isEmpty())

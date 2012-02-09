@@ -137,39 +137,40 @@ public class MembersDerivedAttribute extends DerivedAttribute
   {
     final List<SCIMAttributeValue> values = new ArrayList<SCIMAttributeValue>();
 
-    final Set<String> attrSet = groupResolver.getFilterAndIdAttributes();
-    if(userResolver != null)
+    try
     {
-      attrSet.addAll(userResolver.getFilterAndIdAttributes());
-    }
-    final String[] attrsToGet = attrSet.toArray(new String[attrSet.size()]);
-
-    String[] members = null;
-
-    if (entry.hasObjectClass(OC_GROUP_OF_NAMES) ||
-            entry.hasObjectClass(OC_GROUP_OF_ENTRIES))
-    {
-      if (entry.hasAttribute(ATTR_MEMBER))
+      final Set<String> attrSet = groupResolver.getFilterAndIdAttributes();
+      if(userResolver != null)
       {
-        members = entry.getAttributeValues(ATTR_MEMBER);
+        attrSet.addAll(userResolver.getFilterAndIdAttributes());
       }
-    }
-    else if (entry.hasObjectClass(OC_GROUP_OF_UNIQUE_NAMES))
-    {
-      if (entry.hasAttribute(ATTR_UNIQUE_MEMBER))
+      final String[] attrsToGet = attrSet.toArray(new String[attrSet.size()]);
+
+      String[] members = null;
+
+      if (entry.hasObjectClass(OC_GROUP_OF_NAMES) ||
+              entry.hasObjectClass(OC_GROUP_OF_ENTRIES))
       {
-        members = entry.getAttributeValues(ATTR_UNIQUE_MEMBER);
-      }
-    }
-    else if (entry.hasObjectClass(OC_GROUP_OF_URLS))
-    {
-      //Determine the dynamic group members, their 'type' and their resource ID
-      if(entry.hasAttribute(ATTR_MEMBER_URL))
-      {
-        final String[] memberURLs = entry.getAttributeValues(ATTR_MEMBER_URL);
-        for(String url : memberURLs)
+        if (entry.hasAttribute(ATTR_MEMBER))
         {
-          try
+          members = entry.getAttributeValues(ATTR_MEMBER);
+        }
+      }
+      else if (entry.hasObjectClass(OC_GROUP_OF_UNIQUE_NAMES))
+      {
+        if (entry.hasAttribute(ATTR_UNIQUE_MEMBER))
+        {
+          members = entry.getAttributeValues(ATTR_UNIQUE_MEMBER);
+        }
+      }
+      else if (entry.hasObjectClass(OC_GROUP_OF_URLS))
+      {
+        // Determine the dynamic group members, their 'type' and their
+        // resource ID.
+        if(entry.hasAttribute(ATTR_MEMBER_URL))
+        {
+          final String[] memberURLs = entry.getAttributeValues(ATTR_MEMBER_URL);
+          for(String url : memberURLs)
           {
             final LDAPURL ldapURL = new LDAPURL(url);
             final SearchRequest searchRequest =
@@ -186,23 +187,14 @@ public class MembersDerivedAttribute extends DerivedAttribute
               }
             }
           }
-          catch(LDAPException e)
-          {
-            Debug.debugException(e);
-            Debug.debug(Level.WARNING, DebugType.OTHER,
-                    "Error searching for values of the members attribute", e);
-            return null;
-          }
         }
       }
-    }
 
-    //Determine the 'type' and resource ID for static and virtual static groups
-    if (members != null)
-    {
-      for (final String memberDN : members)
+      // Determine the 'type' and resource ID for static and virtual static
+      // groups.
+      if (members != null)
       {
-        try
+        for (final String memberDN : members)
         {
           if ((userResolver != null &&
                userResolver.isDnInScope(memberDN)) ||
@@ -221,11 +213,14 @@ public class MembersDerivedAttribute extends DerivedAttribute
             }
           }
         }
-        catch(LDAPException e)
-        {
-          Debug.debugException(e);
-        }
       }
+    }
+    catch (LDAPException e)
+    {
+      Debug.debugException(e);
+      throw new InvalidResourceException(
+          "Error searching for values of the members attribute: " +
+          e.getMessage(), e);
     }
 
     if (values.isEmpty())
