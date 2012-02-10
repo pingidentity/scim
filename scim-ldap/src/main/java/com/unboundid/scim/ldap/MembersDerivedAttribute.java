@@ -32,6 +32,7 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.ArrayList;
@@ -133,7 +134,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
       final Entry entry,
       final LDAPRequestInterface ldapInterface,
       final LDAPSearchResolver groupResolver)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final List<SCIMAttributeValue> values = new ArrayList<SCIMAttributeValue>();
 
@@ -218,7 +219,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new InvalidResourceException(
+      throw ResourceMapper.toSCIMException(
           "Error searching for values of the members attribute: " +
           e.getMessage(), e);
     }
@@ -269,14 +270,13 @@ public class MembersDerivedAttribute extends DerivedAttribute
    * @return  The member value created, or {@code null} if the member entry
    *          is not a SCIM group or user resource.
    *
-   * @throws  InvalidResourceException  If the attribute descriptor for the
-   *                                    derived attribute is missing a
-   *                                    sub-attribute.
+   * @throws  SCIMException  If the attribute descriptor for the derived
+   *                         attribute is missing a sub-attribute.
    */
   private SCIMAttributeValue createMemberValue(
       final LDAPSearchResolver groupResolver,
       final Entry entry)
-      throws InvalidResourceException
+      throws SCIMException
   {
     List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(2);
 

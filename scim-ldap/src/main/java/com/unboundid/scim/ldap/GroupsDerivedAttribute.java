@@ -33,6 +33,7 @@ import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.ArrayList;
@@ -133,7 +134,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   public SCIMAttribute toSCIMAttribute(final Entry entry,
                                        final LDAPRequestInterface ldapInterface,
                                        final LDAPSearchResolver userResolver)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final List<SCIMAttributeValue> values = new ArrayList<SCIMAttributeValue>();
 
@@ -213,7 +214,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw new InvalidResourceException(
+      throw ResourceMapper.toSCIMException(
           "Error searching for values of the groups attribute: " +
           e.getMessage(), e);
     }
@@ -240,7 +241,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                                final Collection<Attribute> attributes,
                                final LDAPRequestInterface ldapInterface,
                                final LDAPSearchResolver groupResolver)
-      throws InvalidResourceException
+      throws SCIMException
   {
     // No implementation required because this attribute is read-only.
   }

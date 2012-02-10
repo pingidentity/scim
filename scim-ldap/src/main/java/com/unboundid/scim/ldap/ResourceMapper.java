@@ -23,13 +23,12 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
+import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.InvalidResourceException;
-import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
@@ -672,11 +671,10 @@ public class ResourceMapper
    *
    * @return  An LDAP entry.
    *
-   * @throws LDAPException  If the entry could not be constructed.
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException  If the entry could not be constructed.
    */
   public Entry toLDAPEntry(final SCIMObject scimObject)
-      throws LDAPException, InvalidResourceException
+      throws SCIMException
   {
     return toLDAPEntry(scimObject, null);
   }
@@ -692,12 +690,11 @@ public class ResourceMapper
    *
    * @return  An LDAP entry.
    *
-   * @throws LDAPException  If the entry could not be constructed.
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException  If the entry could not be constructed.
    */
   public Entry toLDAPEntry(final SCIMObject scimObject,
                            final LDAPRequestInterface ldapInterface)
-      throws LDAPException, InvalidResourceException
+      throws SCIMException
   {
     Entry entry = new Entry("");
 
@@ -758,12 +755,12 @@ public class ResourceMapper
    * @return  A list of LDAP attributes mapped from the SCIM object. This should
    *          never be {@code null} but may be empty.
    *
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException  If the attributes could not be mapped.
    */
   public List<Attribute> toLDAPAttributes(
       final SCIMObject scimObject,
       final LDAPRequestInterface ldapInterface)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final List<Attribute> attributes = new ArrayList<Attribute>();
 
@@ -831,13 +828,13 @@ public class ResourceMapper
    * @return  A list of LDAP modifications mapped from the SCIM object. This
    *          should never be {@code null} but may be empty.
    *
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException If the modifications could not be mapped.
    */
   public List<Modification> toLDAPModifications(
       final Entry currentEntry,
       final SCIMObject scimObject,
       final LDAPRequestInterface ldapInterface)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final List<Attribute> attributes =
         toLDAPAttributes(scimObject, ldapInterface);
@@ -854,11 +851,10 @@ public class ResourceMapper
    *
    * @return  An LDAP filter or {@code null} if the SCIM filter could not be
    *          mapped and will not match anything.
-   * @throws InvalidResourceException if the filter contains an undefined
-   *                                  attribute.
+   * @throws SCIMException  If an error occurs during the mapping.
    */
   public Filter toLDAPFilter(final SCIMFilter filter)
-      throws InvalidResourceException
+      throws SCIMException
   {
     if (filter == null)
     {
@@ -901,10 +897,10 @@ public class ResourceMapper
    * @param sortParameters  The SCIM sort parameters to be mapped.
    *
    * @return  An LDAP sort control.
-   * @throws InvalidResourceException if the sort parameters are invalid.
+   * @throws SCIMException  If the sort parameters could not be mapped.
    */
   public Control toLDAPSortControl(final SortParameters sortParameters)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final AttributePath attributePath = sortParameters.getSortBy();
     final AttributeDescriptor attributeDescriptor =
@@ -936,12 +932,12 @@ public class ResourceMapper
    *
    * @return  A list of SCIM attributes mapped from the LDAP entry. This should
    *          never be {@code null} but may be empty.
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException   If the attributes could not be mapped.
    */
   public List<SCIMAttribute> toSCIMAttributes(
       final Entry entry,
       final SCIMQueryAttributes queryAttributes,
-      final LDAPRequestInterface ldapInterface) throws InvalidResourceException
+      final LDAPRequestInterface ldapInterface) throws SCIMException
   {
     final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>();
 
@@ -1015,12 +1011,12 @@ public class ResourceMapper
    *
    * @return  A SCIM object mapped from the LDAP entry, or {@code null} if this
    *          entry cannot be mapped to a SCIM object.
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException   If the entry could not be mapped.
    */
   public SCIMObject toSCIMObject(final Entry entry,
                                  final SCIMQueryAttributes queryAttributes,
                                  final LDAPRequestInterface ldapInterface)
-      throws InvalidResourceException
+      throws SCIMException
   {
     if (searchResolver.getFilter() != null)
     {
@@ -1108,11 +1104,10 @@ public class ResourceMapper
    *
    * @return  The LDAP filter component, or {@code null} if the filter
    *          component could not be mapped and will not match anything.
-   * @throws InvalidResourceException if the filter contains an undefined
-   *                                  attribute.
+   * @throws SCIMException  If an error occurs during the mapping.
    */
   private Filter toLDAPFilterComponent(final SCIMFilter filter)
-      throws InvalidResourceException {
+      throws SCIMException {
     final SCIMFilterType filterType = filter.getFilterType();
 
     switch (filterType)
@@ -1241,11 +1236,10 @@ public class ResourceMapper
    *
    * @return  The resource ID of the entry.
    *
-   * @throws InvalidResourceException  If the resource ID could not be
-   *                                   determined.
+   * @throws SCIMException  If the resource ID could not be determined.
    */
   public String getIdFromEntry(final Entry entry)
-      throws InvalidResourceException
+      throws SCIMException
   {
     return searchResolver.getIdFromEntry(entry);
   }
@@ -1261,13 +1255,59 @@ public class ResourceMapper
    *
    * @return  The LDAP entry for the given resource ID.
    *
-   * @throws ResourceNotFoundException  If the resource ID was not found.
+   * @throws SCIMException  If the entry could not be read.
    */
   public Entry getEntry(final LDAPRequestInterface ldapInterface,
                         final String resourceID,
                         final String... attributes)
-      throws ResourceNotFoundException
+      throws SCIMException
   {
     return searchResolver.getEntry(ldapInterface, resourceID, attributes);
+  }
+
+
+
+
+
+
+  /**
+   * Translate an LDAP exception to a SCIM exception.
+   *
+   * @param e  The LDAP exception to be translated.
+   *
+   * @return  The SCIM exception.
+   */
+  public static SCIMException toSCIMException(final LDAPException e)
+  {
+    return toSCIMException(e.getMessage(), e);
+  }
+
+
+
+  /**
+   * Translate an LDAP exception to a SCIM exception.
+   *
+   * @param errorMessage  The error message to use in the SCIM exception.
+   * @param e             The LDAP exception to be translated.
+   *
+   * @return  The SCIM exception.
+   */
+  public static SCIMException toSCIMException(final String errorMessage,
+                                              final LDAPException e)
+  {
+    switch (e.getResultCode().intValue())
+    {
+      case ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE:
+        return SCIMException.createException(403, errorMessage);
+
+      case ResultCode.NO_SUCH_OBJECT_INT_VALUE:
+        return SCIMException.createException(404, errorMessage);
+
+      case ResultCode.ENTRY_ALREADY_EXISTS_INT_VALUE:
+        return SCIMException.createException(409, errorMessage);
+
+      default:
+        return SCIMException.createException(400, errorMessage);
+    }
   }
 }

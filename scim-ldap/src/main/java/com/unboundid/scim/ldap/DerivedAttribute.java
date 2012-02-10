@@ -21,8 +21,8 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.w3c.dom.Element;
 
@@ -177,12 +177,12 @@ public abstract class DerivedAttribute
    *                       derived attribute.
    *
    * @return  A SCIM attribute, or {@code null} if no attribute was created.
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException if an error occurs.
    */
   public abstract SCIMAttribute toSCIMAttribute(
       final Entry entry,
       final LDAPRequestInterface ldapInterface,
-      final LDAPSearchResolver searchResolver) throws InvalidResourceException;
+      final LDAPSearchResolver searchResolver) throws SCIMException;
 
 
   /**
@@ -195,13 +195,13 @@ public abstract class DerivedAttribute
    * @param searchResolver The LDAPSearchResolver for resources containing this
    *                       derived attribute.
    *
-   * @throws InvalidResourceException if the mapping violates the schema.
+   * @throws SCIMException if an error occurs.
    */
   public abstract void toLDAPAttributes(
       final SCIMObject scimObject,
       final Collection<Attribute> attributes,
       final LDAPRequestInterface ldapInterface,
-      final LDAPSearchResolver searchResolver) throws InvalidResourceException;
+      final LDAPSearchResolver searchResolver) throws SCIMException;
 
 
 

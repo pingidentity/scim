@@ -396,7 +396,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw toSCIMException(e);
+      throw ResourceMapper.toSCIMException(e);
     }
   }
 
@@ -481,7 +481,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw toSCIMException(e);
+      throw ResourceMapper.toSCIMException(e);
     }
   }
 
@@ -494,10 +494,11 @@ public abstract class LDAPBackend
   public void deleteResource(final DeleteResourceRequest request)
       throws SCIMException
   {
+    final ResourceMapper mapper =
+        getResourceMapper(request.getResourceDescriptor());
+
     try
     {
-      final ResourceMapper mapper =
-          getResourceMapper(request.getResourceDescriptor());
       final LDAPRequestInterface ldapInterface =
           getLDAPRequestInterface(request.getAuthenticatedUserID());
 
@@ -519,7 +520,7 @@ public abstract class LDAPBackend
         throw new ResourceNotFoundException(
             "Resource " + request.getResourceID() + " not found");
       }
-      throw toSCIMException(e);
+      throw ResourceMapper.toSCIMException(e);
     }
   }
 
@@ -620,7 +621,7 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
-      throw toSCIMException(e);
+      throw ResourceMapper.toSCIMException(e);
     }
   }
 
@@ -639,8 +640,7 @@ public abstract class LDAPBackend
    * @param queryAttributes  The request query attributes, or {@code null} if
    *                         the attributes should not be pared down.
    *
-   * @throws InvalidResourceException  If the resource ID could not be
-   *                                   determined.
+   * @throws SCIMException  If an error occurs.
    */
   public static void setIdAndMetaAttributes(
       final ResourceMapper resourceMapper,
@@ -648,7 +648,7 @@ public abstract class LDAPBackend
       final SCIMRequest request,
       final Entry entry,
       final SCIMQueryAttributes queryAttributes)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final String resourceID = resourceMapper.getIdFromEntry(entry);
     resource.setId(resourceID);
@@ -915,32 +915,5 @@ public abstract class LDAPBackend
       l |= (bytes[i] & 0xFF);
     }
     return new Date(l);
-  }
-
-
-
-  /**
-   * Translate an LDAP exception to a SCIM exception.
-   *
-   * @param e  The LDAP exception to be translated.
-   *
-   * @return  The SCIM exception.
-   */
-  protected SCIMException toSCIMException(final LDAPException e)
-  {
-    switch (e.getResultCode().intValue())
-    {
-      case ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE:
-        return SCIMException.createException(403, e.getMessage());
-
-      case ResultCode.NO_SUCH_OBJECT_INT_VALUE:
-        return SCIMException.createException(404, e.getMessage());
-
-      case ResultCode.ENTRY_ALREADY_EXISTS_INT_VALUE:
-        return SCIMException.createException(409, e.getMessage());
-
-      default:
-        return SCIMException.createException(400, e.getMessage());
-    }
   }
 }

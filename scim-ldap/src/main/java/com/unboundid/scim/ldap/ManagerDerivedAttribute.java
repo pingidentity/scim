@@ -24,6 +24,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class ManagerDerivedAttribute extends DerivedAttribute
   public SCIMAttribute toSCIMAttribute(final Entry entry,
                                        final LDAPRequestInterface ldapInterface,
                                        final LDAPSearchResolver searchResolver)
-      throws InvalidResourceException
+      throws SCIMException
   {
     if (entry.hasAttribute("manager"))
     {
@@ -117,7 +118,7 @@ public class ManagerDerivedAttribute extends DerivedAttribute
                                final Collection<Attribute> attributes,
                                final LDAPRequestInterface ldapInterface,
                                final LDAPSearchResolver searchResolver)
-      throws InvalidResourceException
+      throws SCIMException
   {
     final SCIMAttribute scimAttribute =
         scimObject.getAttribute(getAttributeDescriptor().getSchema(),
