@@ -74,12 +74,26 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "retention-policy:Free Disk Space Retention Policy");
 
     instance.dsconfig(
+        "create-log-publisher",
+        "--publisher-name", "HTTP Detailed Access",
+        "--type", "detailed-http-operation",
+        "--set", "enabled:true",
+        "--set", "log-file:logs/http-detailed-access",
+        "--set", "log-request-headers:header-names-and-values",
+        "--set", "log-response-headers:header-names-and-values",
+        "--set", "log-request-parameters:parameter-names-and-values",
+        "--set", "rotation-policy:24 Hours Time Limit Rotation Policy",
+        "--set", "rotation-policy:Size Limit Rotation Policy",
+        "--set", "retention-policy:File Count Retention Policy",
+        "--set", "retention-policy:Free Disk Space Retention Policy");
+
+    instance.dsconfig(
         "create-connection-handler",
         "--handler-name", "HTTP",
         "--type", "http",
         "--set", "enabled:true",
         "--set", "http-servlet-extension:SCIM",
-        "--set", "http-operation-log-publisher:HTTP Common Access",
+        "--set", "http-operation-log-publisher:HTTP Detailed Access",
         "--set", "listen-port:" + listenPort);
 
     instance.dsconfig(
@@ -88,7 +102,7 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--type", "http",
         "--set", "enabled:true",
         "--set", "http-servlet-extension:" + "SCIM",
-        "--set", "http-operation-log-publisher:HTTP Common Access",
+        "--set", "http-operation-log-publisher:HTTP Detailed Access",
         "--set", "listen-port:" + secureListenPort,
         "--set", "use-ssl:true",
         "--set", "key-manager-provider:JKS",

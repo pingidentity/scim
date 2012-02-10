@@ -28,14 +28,21 @@ dsconfig create-http-servlet-extension --extension-name "SCIM" --type third-part
 #
 # Create a HTTP log publisher.
 #
+# This script creates a detailed log publisher which uses an UnboundID
+# proprietary format. Here is an example of how to create a standard
+# W3C common log format publisher instead:
+#
+# dsconfig create-log-publisher --publisher-name "HTTP Common Access" --type common-log-file-http-operation --set enabled:true --set log-file:logs/http-common-access --set "rotation-policy:24 Hours Time Limit Rotation Policy" --set "rotation-policy:Size Limit Rotation Policy" --set "retention-policy:File Count Retention Policy" --set "retention-policy:Free Disk Space Retention Policy"
+#
 
-dsconfig create-log-publisher --publisher-name "HTTP Common Access" --type common-log-file-http-operation --set enabled:true --set log-file:logs/http-common-access --set "rotation-policy:24 Hours Time Limit Rotation Policy" --set "rotation-policy:Size Limit Rotation Policy" --set "retention-policy:File Count Retention Policy" --set "retention-policy:Free Disk Space Retention Policy"
+dsconfig create-log-publisher --publisher-name "HTTP Detailed Access" --type detailed-http-operation --set enabled:true --set log-file:logs/http-detailed-access --set "rotation-policy:24 Hours Time Limit Rotation Policy" --set "rotation-policy:Size Limit Rotation Policy" --set "retention-policy:File Count Retention Policy" --set "retention-policy:Free Disk Space Retention Policy" --set log-request-headers:header-names-and-values --set log-response-headers:header-names-and-values --set log-request-parameters:parameter-names-and-values
 
 #
-# Create a HTTP connection handler referencing the SCIM servlet extension.
+# Create a HTTP connection handler referencing the SCIM servlet extension and
+# the HTTP log publisher.
 #
 
-dsconfig create-connection-handler --handler-name "HTTPS" --type http --set enabled:true --set http-servlet-extension:SCIM --set "http-operation-log-publisher:HTTP Common Access" --set listen-port:8443 --set use-ssl:true --set key-manager-provider:JKS --set trust-manager-provider:JKS
+dsconfig create-connection-handler --handler-name "HTTPS" --type http --set enabled:true --set http-servlet-extension:SCIM --set "http-operation-log-publisher:HTTP Detailed Access" --set listen-port:8443 --set use-ssl:true --set key-manager-provider:JKS --set trust-manager-provider:JKS
 
 #
 # Add Access Control to allow access to LDAP controls used by the SCIM servlet
