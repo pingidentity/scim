@@ -32,6 +32,7 @@ import com.unboundid.util.FixedRateBarrier;
 import com.unboundid.util.FormattableColumn;
 import com.unboundid.util.HorizontalAlignment;
 import com.unboundid.util.OutputFormat;
+import com.unboundid.util.Validator;
 import com.unboundid.util.ValuePattern;
 import com.unboundid.util.WakeableSleeper;
 import com.unboundid.util.args.ArgumentException;
@@ -45,16 +46,30 @@ import com.unboundid.util.ssl.PromptTrustManager;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
+
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.apache.wink.client.ApacheHttpClientConfig;
 
 import javax.net.ssl.KeyManager;
@@ -78,7 +93,6 @@ import static com.unboundid.scim.sdk.Debug.debugException;
 import static com.unboundid.util.StaticUtils.NO_STRINGS;
 import static com.unboundid.scim.ri.RIMessages.*;
 import static com.unboundid.util.StaticUtils.getExceptionMessage;
-import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
 /**
  * This class provides a tool that can be used to query a SCIM server repeatedly
@@ -708,8 +722,13 @@ public class SCIMQueryRate
 
     // We will use Apache's HttpClient library for this tool.
     final HttpParams params = new BasicHttpParams();
-    params.setBooleanParameter(SO_REUSEADDR, true);
     DefaultHttpClient.setDefaultHttpParams(params);
+    params.setBooleanParameter(CoreConnectionPNames.SO_REUSEADDR, true);
+    params.setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, true);
+    params.setBooleanParameter(
+            CoreConnectionPNames.STALE_CONNECTION_CHECK, false);
+    params.setParameter(
+            ClientPNames.COOKIE_POLICY, CookiePolicy.IGNORE_COOKIES);
 
     SSLUtil sslUtil;
     try
@@ -779,9 +798,16 @@ public class SCIMQueryRate
         {
           password = null;
         }
+
+        Credentials credentials = new UsernamePasswordCredentials(
+                                        authID.getValue(), password);
+        //Set credentials
         httpClient.getCredentialsProvider().setCredentials(
-            new AuthScope(host.getValue(), port.getValue()),
-            new UsernamePasswordCredentials(authID.getValue(), password));
+            new AuthScope(host.getValue(), port.getValue()), credentials);
+
+        //Preemptive auth to increase performance
+        httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(
+                                          new BasicScheme(), credentials), 0);
       }
       catch (IOException e)
       {
@@ -1126,4 +1152,53 @@ public class SCIMQueryRate
 
 
 
+  /**
+   * This class is used by the Apache HTTP Client to provide preemptive
+   * basic authentication. This provides performance benefits because it avoids
+   * having to make two requests (one without credentials and then one with
+   * credentials) for every operation.
+   *
+   * HttpClient does not support preemptive authentication out of the box,
+   * because if misused or used incorrectly the preemptive authentication can
+   * lead to significant security issues, such as sending user credentials in
+   * clear text to an unauthorized third party.
+   */
+  private static class PreemptiveAuthInterceptor
+     implements HttpRequestInterceptor
+  {
+
+    private final AuthScheme authScheme;
+    private final Credentials credentials;
+
+    /**
+     * Construct a new PreemptiveAuthInterceptor.
+     *
+     * @param authScheme The AuthScheme to use.
+     * @param credentials The Credentials to use.
+     */
+    PreemptiveAuthInterceptor(final AuthScheme authScheme,
+                              final Credentials credentials)
+    {
+      this.authScheme = authScheme;
+      this.credentials = credentials;
+      Validator.ensureNotNull(authScheme);
+      Validator.ensureNotNull(credentials);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void process(final HttpRequest request, final HttpContext context)
+        throws HttpException, IOException
+    {
+      AuthState authState = (AuthState) context.getAttribute(
+                                          ClientContext.TARGET_AUTH_STATE);
+      if(authState != null)
+      {
+        authState.setAuthScheme(authScheme);
+        authState.setCredentials(credentials);
+      }
+    }
+  }
 }
