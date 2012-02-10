@@ -650,7 +650,8 @@ public abstract class LDAPBackend
       final SCIMQueryAttributes queryAttributes)
       throws InvalidResourceException
   {
-    resource.setId(resourceMapper.getIdFromEntry(entry));
+    final String resourceID = resourceMapper.getIdFromEntry(entry);
+    resource.setId(resourceID);
 
     Date createDate = null;
     Attribute createTimeAttr = entry.getAttribute("createTimestamp");
@@ -718,7 +719,7 @@ public abstract class LDAPBackend
 
     final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
     uriBuilder.path(resource.getResourceDescriptor().getEndpoint());
-    uriBuilder.path(entry.getDN());
+    uriBuilder.path(resourceID);
 
     resource.setMeta(new Meta(createDate, modifyDate,
         uriBuilder.build(), null));

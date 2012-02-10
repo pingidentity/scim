@@ -540,6 +540,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
     assertNotNull(user1.getMeta().getLocation());
+    assertLocation(user1.getMeta().getLocation(), "Users", userID);
     assertNotNull(user1.getUserName());
     assertEquals(user1.getUserName(), "b jensen");
     assertEquals(user1.getName().getFamilyName(), "Jensen");
@@ -585,6 +586,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertNull(partialUser.getMeta().getCreated());
     assertNull(partialUser.getMeta().getLastModified());
     assertNotNull(partialUser.getMeta().getLocation());
+    assertLocation(user1.getMeta().getLocation(), "Users", userID);
 
     //Verify that we cannot obtain user1 through the Groups endpoint
     SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
@@ -642,6 +644,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertNotNull(group1.getMeta().getCreated());
     assertNotNull(group1.getMeta().getLastModified());
     assertNotNull(group1.getMeta().getLocation());
+    assertLocation(group1.getMeta().getLocation(), "Groups", groupID);
 
     final UserResource user = userEndpoint.get(userID);
     assertNotNull(user.getGroups());
@@ -752,6 +755,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
       assertNull(u.getMeta().getCreated());
       assertNull(u.getMeta().getLastModified());
       assertNotNull(u.getMeta().getLocation());
+      assertLocation(u.getMeta().getLocation(), "Users", u.getId());
       assertNotNull(u.getUserName());
       assertNotNull(u.getName());
       assertNotNull(u.getName().getFormatted());
@@ -899,6 +903,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
     assertNotNull(user1.getMeta().getLocation());
+    assertLocation(user1.getMeta().getLocation(), "Users", user1.getId());
 
     // Check the resource ID.
     assertEquals(endpoint.get(user1.getId()).getId(), user1.getId());
@@ -1074,8 +1079,9 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertTrue(entry2.hasAttributeValue(
         "homePostalAddress", "456 Hollywood Blvd$Hollywood, CA 91608 USA"));
     assertTrue(entry2.hasAttribute("description"));
-    assertNotNull(user1.getMeta().getLastModified());
-    assertNotNull(user1.getMeta().getLocation());
+    assertNotNull(user2.getMeta().getLastModified());
+    assertNotNull(user2.getMeta().getLocation());
+    assertLocation(user2.getMeta().getLocation(), "Users", user2.getId());
 
     // Ensure that we can retrieve the user again using meta.location
     // assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));

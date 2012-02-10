@@ -640,6 +640,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Verify what is returned from the SDK
     assertNotNull(returnedUser);
+    assertTrue(returnedUser.getMeta().getLocation().toString().endsWith(
+        returnedUser.getId()));
     assertEquals(returnedUser.getUserName(), user.getUserName());
     assertEquals(returnedUser.getName().getFormatted(),
                    user.getName().getFormatted());
@@ -783,6 +785,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Verify what is returned from the SDK
     assertEquals(returnedUser.getId(), user.getId());
+    assertTrue(user.getMeta().getLocation().toString().endsWith(user.getId()));
     assertEquals(returnedUser.getUserName(), "testModifyWithPut");
     assertEquals(returnedUser.getName().getFormatted(), "Test User");
     assertEquals(returnedUser.getName().getGivenName(), "Test");
@@ -944,7 +947,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                             final String connectionHandler)
       throws Exception
   {
-    final String uid = "testRetrieve " + connectionHandler;
+    final String uid = "testRetrieve-" + connectionHandler;
     final String dn = "uid=" + uid + "," + userBaseDN;
 
     //Add an entry to the Directory
@@ -976,6 +979,9 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                            "user-resource-get-successful");
     assertNotNull(user);
     assertEquals(user.getId(), userID);
+    assertTrue(user.getMeta().getLocation().toString().endsWith(userID),
+               "location='" + user.getMeta().getLocation() + "' userID='" +
+               userID + "'");
     assertEquals(user.getUserName(), uid);
     assertEquals(user.getUserType(), "Engineer");
     assertEquals(user.getName().getFormatted(), "testRetrieve");
@@ -1743,7 +1749,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     userAlice = userEndpoint.query(
         "userName eq \"alice-" + mediaSubType + "\"").iterator().next();
     assertEquals(responses.get(0).getBulkId(), "alice");
-    assertTrue(responses.get(0).getLocation().contains(userAlice.getId()));
+    assertTrue(responses.get(0).getLocation().endsWith(userAlice.getId()));
 
     try
     {
@@ -1766,7 +1772,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     group = groupEndpoint.query(
         "displayName eq \"group-" + mediaSubType + "\"").iterator().next();
     assertEquals(responses.get(3).getBulkId(), "group");
-    assertTrue(responses.get(3).getLocation().contains(group.getId()));
+    assertTrue(responses.get(3).getLocation().endsWith(group.getId()));
     assertEquals(group.getMembers().iterator().next().getValue(),
                  userAlice.getId());
 

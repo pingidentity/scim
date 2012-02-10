@@ -48,6 +48,7 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -208,6 +209,27 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     // Start a client for the SCIM operations.
     service = new SCIMService(URI.create("http://localhost:" + getSSTestPort()),
         "cn=Manager", "password");
+  }
+
+
+
+  /**
+   * Validate a returned location value.
+   *
+   * @param uri       The location URI to be validated.
+   * @param endpoint  The expected resource endpoint name.
+   * @param id        The expected resource ID.
+   */
+  protected static void assertLocation(final URI uri, final String endpoint,
+                                       final String id)
+  {
+    final UriBuilder builder = UriBuilder.fromPath(endpoint);
+    builder.scheme("http");
+    builder.host("localhost");
+    builder.port(getSSTestPort());
+    builder.path(id);
+
+    assertEquals(uri, builder.build());
   }
 
 
