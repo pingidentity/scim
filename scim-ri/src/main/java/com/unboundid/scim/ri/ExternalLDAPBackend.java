@@ -115,7 +115,7 @@ public class ExternalLDAPBackend extends LDAPBackend
     }
     catch (LDAPException e)
     {
-      throw toSCIMException(e);
+      throw ResourceMapper.toSCIMException(e);
     }
   }
 

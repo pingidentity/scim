@@ -216,7 +216,7 @@ public class ResourceSearchResultListener implements SearchResultListener
         }
       }
     }
-    catch (InvalidResourceException e)
+    catch (SCIMException e)
     {
       Debug.debugException(e);
       // TODO: We should find a way to get this exception back to LDAPBackend.

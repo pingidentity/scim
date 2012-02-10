@@ -131,8 +131,9 @@ public class ServerContextBackend extends LDAPBackend
       return new LDAPRequestInterface(
           serverContext.getInternalConnection(bindDN.toString()));
     }
-    catch (LDAPException e) {
-      throw toSCIMException(e);
+    catch (LDAPException e)
+    {
+      throw ResourceMapper.toSCIMException(e);
     }
   }
 
