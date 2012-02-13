@@ -9,12 +9,15 @@ import com.unboundid.directory.tests.externalinstance.BaseTestCase;
 import com.unboundid.directory.tests.externalinstance.ExternalInstance;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
@@ -163,9 +166,13 @@ public class ServerExtensionTestCase extends BaseTestCase
     final ThreadSafeClientConnManager mgr =
         new ThreadSafeClientConnManager(schemeRegistry);
     final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+
+    final Credentials credentials =
+        new UsernamePasswordCredentials(userName, password);
     httpClient.getCredentialsProvider().setCredentials(
-        new AuthScope(host, -1),
-        new UsernamePasswordCredentials(userName, password));
+        new AuthScope(host, -1), credentials);
+    httpClient.addRequestInterceptor(
+        new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
 
     return new ApacheHttpClientConfig(httpClient);
   }
