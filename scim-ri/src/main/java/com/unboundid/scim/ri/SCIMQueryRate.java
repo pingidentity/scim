@@ -22,6 +22,7 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
@@ -32,7 +33,6 @@ import com.unboundid.util.FixedRateBarrier;
 import com.unboundid.util.FormattableColumn;
 import com.unboundid.util.HorizontalAlignment;
 import com.unboundid.util.OutputFormat;
-import com.unboundid.util.Validator;
 import com.unboundid.util.ValuePattern;
 import com.unboundid.util.WakeableSleeper;
 import com.unboundid.util.args.ArgumentException;
@@ -47,17 +47,11 @@ import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -69,7 +63,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HttpContext;
 import org.apache.wink.client.ApacheHttpClientConfig;
 
 import javax.net.ssl.KeyManager;
@@ -1147,58 +1140,6 @@ public class SCIMQueryRate
     else
     {
       return null;
-    }
-  }
-
-
-
-  /**
-   * This class is used by the Apache HTTP Client to provide preemptive
-   * basic authentication. This provides performance benefits because it avoids
-   * having to make two requests (one without credentials and then one with
-   * credentials) for every operation.
-   *
-   * HttpClient does not support preemptive authentication out of the box,
-   * because if misused or used incorrectly the preemptive authentication can
-   * lead to significant security issues, such as sending user credentials in
-   * clear text to an unauthorized third party.
-   */
-  private static class PreemptiveAuthInterceptor
-     implements HttpRequestInterceptor
-  {
-
-    private final AuthScheme authScheme;
-    private final Credentials credentials;
-
-    /**
-     * Construct a new PreemptiveAuthInterceptor.
-     *
-     * @param authScheme The AuthScheme to use.
-     * @param credentials The Credentials to use.
-     */
-    PreemptiveAuthInterceptor(final AuthScheme authScheme,
-                              final Credentials credentials)
-    {
-      this.authScheme = authScheme;
-      this.credentials = credentials;
-      Validator.ensureNotNull(authScheme);
-      Validator.ensureNotNull(credentials);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void process(final HttpRequest request, final HttpContext context)
-        throws HttpException, IOException
-    {
-      AuthState authState = (AuthState) context.getAttribute(
-                                          ClientContext.TARGET_AUTH_STATE);
-      if(authState != null)
-      {
-        authState.setAuthScheme(authScheme);
-        authState.setCredentials(credentials);
-      }
     }
   }
 }
