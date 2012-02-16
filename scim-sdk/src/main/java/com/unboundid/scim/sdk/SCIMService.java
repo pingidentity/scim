@@ -40,12 +40,13 @@ import java.util.List;
  */
 public class SCIMService
 {
-  private RestClient client;
+  private final RestClient client;
   private final URI baseURL;
 
   private MediaType acceptType = MediaType.APPLICATION_JSON_TYPE;
   private MediaType contentType = MediaType.APPLICATION_JSON_TYPE;
-  private boolean[] overrides = new boolean[3];
+  private final boolean[] overrides = new boolean[3];
+  private String userAgent;
 
   /**
    * Constructs a new SCIMService that is configured from the provided
@@ -298,6 +299,26 @@ public class SCIMService
    */
   public void setAcceptType(final MediaType acceptType) {
     this.acceptType = acceptType;
+  }
+
+  /**
+   * Retrieves the user-agent string that will be used in the HTTP request
+   * headers.
+   *
+   * @return The user-agent string. This may be null, in which case a default
+   * user-agent will be used.
+   */
+  public String getUserAgent() {
+    return userAgent;
+  }
+
+  /**
+   * Sets the user-agent string to use in the request headers.
+   *
+   * @param userAgent The user-agent string that should be used.
+   */
+  public void setUserAgent(final String userAgent) {
+    this.userAgent = userAgent;
   }
 
   /**

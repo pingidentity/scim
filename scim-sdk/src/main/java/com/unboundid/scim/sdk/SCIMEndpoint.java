@@ -67,6 +67,7 @@ public class SCIMEndpoint<R extends BaseResource>
   private final boolean[] overrides = new boolean[3];
   private final RestClient client;
 
+
   /**
    * Create a SCIMEndpoint with the provided information.
    *
@@ -171,6 +172,12 @@ public class SCIMEndpoint<R extends BaseResource>
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
+
+    if(scimService.getUserAgent() != null)
+    {
+      clientResource.header("User-Agent", scimService.getUserAgent());
+    }
+
     if(etag != null && !etag.isEmpty())
     {
       clientResource.header("If-None-Match", etag);
@@ -258,6 +265,10 @@ public class SCIMEndpoint<R extends BaseResource>
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
+    if(scimService.getUserAgent() != null)
+    {
+      clientResource.header("User-Agent", scimService.getUserAgent());
+    }
     if(filter != null)
     {
       clientResource.queryParam("filter", filter);
@@ -355,6 +366,10 @@ public class SCIMEndpoint<R extends BaseResource>
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
+    if(scimService.getUserAgent() != null)
+    {
+      clientResource.header("User-Agent", scimService.getUserAgent());
+    }
 
     StreamingOutput output = new StreamingOutput() {
       public void write(final OutputStream outputStream)
@@ -452,6 +467,10 @@ public class SCIMEndpoint<R extends BaseResource>
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
+    if(scimService.getUserAgent() != null)
+    {
+      clientResource.header("User-Agent", scimService.getUserAgent());
+    }
     if(etag != null && !etag.isEmpty())
     {
       clientResource.header("If-Match", etag);
@@ -551,6 +570,10 @@ public class SCIMEndpoint<R extends BaseResource>
     org.apache.wink.client.Resource clientResource = client.resource(uri);
     clientResource.accept(acceptType);
     clientResource.contentType(contentType);
+    if(scimService.getUserAgent() != null)
+    {
+      clientResource.header("User-Agent", scimService.getUserAgent());
+    }
     if(etag != null && !etag.isEmpty())
     {
       clientResource.header("If-Match", etag);

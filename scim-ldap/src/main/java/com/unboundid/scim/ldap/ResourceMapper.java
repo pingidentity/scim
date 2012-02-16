@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,6 +143,12 @@ public class ResourceMapper
    * resources.xml.
    */
   private AttributeMapper idAttributeMapper;
+  /**
+   * The internal AttributeMapper for the password attribute. This allows a
+   * caller to determine which LDAP attribute is mapped to the SCIM password
+   * attribute, if any.
+   */
+  private AttributeMapper passwordAttributeMapper;
 
   /**
    * Create a new instance of this resource mapper. All resource mappers must
@@ -559,6 +566,10 @@ public class ResourceMapper
     for (final AttributeMapper m : mappers)
     {
       attributeMappers.put(m.getAttributeDescriptor(), m);
+      if (m instanceof PasswordAttributeMapper)
+      {
+        passwordAttributeMapper = m;
+      }
     }
 
     this.derivedAttributes =
@@ -1267,6 +1278,26 @@ public class ResourceMapper
 
 
 
+  /**
+   * Returns the LDAP attribute that the SCIM password attribute maps to,
+   * or <code>null</code> if there is no mapping for the password attribute.
+   *
+   * @return The LDAP attribute name, or <code>null</code> if there is no
+   *  mapping for the password attribute.
+   */
+  public String getPasswordAttribute()
+  {
+    if(passwordAttributeMapper != null)
+    {
+      Iterator<String> iter = passwordAttributeMapper
+                                  .getLDAPAttributeTypes().iterator();
+      if(iter.hasNext())
+      {
+        return iter.next();
+      }
+    }
+    return null;
+  }
 
 
 
