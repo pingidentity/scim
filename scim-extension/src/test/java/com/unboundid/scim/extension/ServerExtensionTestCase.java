@@ -74,9 +74,7 @@ public class ServerExtensionTestCase extends BaseTestCase
                  "resourceMappingFile=extensions/" +
                  "com.unboundid.scim-extension/config/resources.xml",
         "--set", "extension-argument:contextPath=/",
-        "--set", "extension-argument:debugEnabled",
-        "--set", "extension-argument:" +
-                 "tmpDataDir=extensions/com.unboundid.scim-extension/tmp-data"
+        "--set", "extension-argument:debugEnabled"
         );
 
     instance.dsconfig(
@@ -125,7 +123,7 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "key-manager-provider:JKS",
         "--set", "trust-manager-provider:JKS");
 
-    // Verify that the tmpDataDir has the correct permissions.
+    // Verify that the tmpDataDir has been created with the correct permissions.
     if (OperatingSystem.isUNIXBased(OperatingSystem.local()))
     {
       final File tmpDataDir =

@@ -13,6 +13,7 @@ import com.unboundid.directory.sdk.http.types.HTTPServerContext;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.wink.SCIMApplication;
@@ -117,6 +118,12 @@ public final class SCIMServletExtension
    * files containing SCIM request data.
    */
   private static final String ARG_NAME_TMP_DATA_DIR = "tmpDataDir";
+
+  /**
+   * The default value for tmpDataDir.
+   */
+  private static final String DEFAULT_TMP_DATA_DIR =
+      "extensions/com.unboundid.scim-extension/tmp-data";
 
   /**
    * The name of the argument that will be used to define the file permissions
@@ -249,14 +256,15 @@ public final class SCIMServletExtension
                            "associated HTTP connection handler (or the " +
                            "entire server) is stopped and re-started.", "/"));
 
-    // This is a required argument.
+    // This argument has a default.
     parser.addArgument(
         new FileArgument(null, ARG_NAME_TMP_DATA_DIR,
-                         true, 1, "{path}",
+                         false, 1, "{path}",
                          "The path to a directory that will be used to " +
                          "create temporary files containing SCIM request " +
                          "data. Non-absolute paths are relative to the " +
-                         "server root directory.",
+                         "server root directory. The default value is " +
+                         DEFAULT_TMP_DATA_DIR,
                          false, true, false, true));
 
     // This argument has a default.
@@ -487,19 +495,25 @@ public final class SCIMServletExtension
     }
 
     // Create the tmpDataDir directory if it doesn't exist.
-    if (!tmpDataDirArg.getValue().exists())
+    File tmpDataDir = tmpDataDirArg.getValue();
+    if (tmpDataDir == null)
     {
-      if(!tmpDataDirArg.getValue().mkdirs())
+      tmpDataDir =
+          new File(serverContext.getServerRoot(), DEFAULT_TMP_DATA_DIR);
+    }
+    if (!tmpDataDir.exists())
+    {
+      if(!tmpDataDir.mkdirs())
       {
         final String message = String.format(
             "The tmpDataDir directory %s could not be created",
-            tmpDataDirArg.getValue());
+            tmpDataDir);
         throw new LDAPException(ResultCode.OTHER, message);
       }
     }
 
     // Set permissions on the tmpDataDir directory.
-    setPermissions(tmpDataDirArg.getValue(), tmpDataDirPermission);
+    setPermissions(tmpDataDir, tmpDataDirPermission);
 
     // Create the Wink JAX-RS application.
     application = new SCIMApplication(resourceMappers.keySet(), backend);
@@ -509,7 +523,7 @@ public final class SCIMServletExtension
         bulkMaxPayloadSizeArg.getValue().longValue());
     application.setBulkMaxConcurrentRequests(
         bulkMaxConcurrentRequestsArg.getValue());
-    application.setTmpDataDir(tmpDataDirArg.getValue());
+    application.setTmpDataDir(tmpDataDir);
 
     // Create the Wink JAX-RS servlet.
     servlet = new RestServlet()
@@ -726,9 +740,17 @@ public final class SCIMServletExtension
 
     try
     {
-      ResourceMapper.parse(
-          useResourcesFileArg.getValue(),
-          serverContext.getInternalRootConnection().getSchema());
+      // The server context is null if the extension is not yet enabled.
+      final Schema schema;
+      if (serverContext != null)
+      {
+        schema = serverContext.getInternalRootConnection().getSchema();
+      }
+      else
+      {
+        schema = null;
+      }
+      ResourceMapper.parse(useResourcesFileArg.getValue(), schema);
     }
     catch (Exception e)
     {
@@ -771,6 +793,21 @@ public final class SCIMServletExtension
   {
     ResultCode rc = ResultCode.SUCCESS;
 
+    if (servlet == null)
+    {
+      // The servlet is not enabled. It is not clear how to register
+      // our servlet at this point.
+      adminActionsRequired.add(
+          "The changes to the HTTP Servlet Extension will not take effect " +
+          "until the HTTP Connection Handler (or the entire server) is " +
+          "restarted");
+      // We would prefer to return SUCCESS here but unfortunately dsconfig
+      // would be silent and would not report the action required.
+      // This way, it will report a communication error together with the
+      // action required.
+      return ResultCode.OTHER;
+    }
+
     // The path will not change dynamically.  If a different path was given,
     // then report that as a required administrative action.
     final StringArgument contextPathArg =
@@ -778,7 +815,7 @@ public final class SCIMServletExtension
     if (! contextPath.equals(contextPathArg.getValue()))
     {
       adminActionsRequired.add("Changes to the servlet context path will not" +
-           "take effect until the HTTP connection handler (or entire " +
+           "take effect until the HTTP Connection Handler (or entire " +
            "server) is restarted.");
     }
 
@@ -839,20 +876,26 @@ public final class SCIMServletExtension
     }
 
     // Create the tmpDataDir directory if it doesn't exist.
-    if (!tmpDataDirArg.getValue().exists())
+    File tmpDataDir = tmpDataDirArg.getValue();
+    if (tmpDataDir == null)
     {
-      if(!tmpDataDirArg.getValue().mkdirs())
+      tmpDataDir =
+          new File(serverContext.getServerRoot(), DEFAULT_TMP_DATA_DIR);
+    }
+    if (!tmpDataDir.exists())
+    {
+      if(!tmpDataDir.mkdirs())
       {
         final String message = String.format(
             "The tmpDataDir directory %s could not be created",
-            tmpDataDirArg.getValue());
+            tmpDataDir);
         messages.add(message);
         return ResultCode.OTHER;
       }
     }
 
     // Set permissions on the tmpDataDir directory.
-    setPermissions(tmpDataDirArg.getValue(), tmpDataDirPermission);
+    setPermissions(tmpDataDir, tmpDataDirPermission);
 
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
     application.setBulkMaxOperations(
@@ -861,7 +904,7 @@ public final class SCIMServletExtension
         bulkMaxPayloadSizeArg.getValue().longValue());
     application.setBulkMaxConcurrentRequests(
         bulkMaxConcurrentRequestsArg.getValue());
-    application.setTmpDataDir(tmpDataDirArg.getValue());
+    application.setTmpDataDir(tmpDataDir);
 
     final FileArgument useResourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);

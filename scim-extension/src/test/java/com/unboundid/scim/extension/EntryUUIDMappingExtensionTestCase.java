@@ -6,6 +6,7 @@
 package com.unboundid.scim.extension;
 
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import java.io.File;
 
@@ -45,9 +46,20 @@ public class EntryUUIDMappingExtensionTestCase extends SCIMExtensionTestCase
                  "resourceMappingFile=" +
                  getFile("resource/resources-entryUUID.xml"),
         "--set", "extension-argument:contextPath=/",
-        "--set", "extension-argument:debugEnabled",
-        "--set", "extension-argument:" +
-                 "tmpDataDir=extensions/com.unboundid.scim-extension/tmp-data"
+        "--set", "extension-argument:debugEnabled"
     );
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Test
+  public void testConfigurationChange()
+      throws Exception
+  {
+    // The inherited test assumes the default resources.xml configuration file.
+    // There is no need to have the same test repeated here anyway.
   }
 }

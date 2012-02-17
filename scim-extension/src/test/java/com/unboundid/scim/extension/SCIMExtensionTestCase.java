@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.extension;
 
+import com.unboundid.directory.tests.externalinstance.CommandOutput;
 import com.unboundid.directory.tests.externalinstance.DirectoryInstance;
 import com.unboundid.directory.tests.externalinstance.ExternalInstance;
 import com.unboundid.directory.tests.externalinstance.ExternalInstanceManager;
@@ -2488,6 +2489,73 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
           "--extension-name", "SCIM",
           "--remove", "extension-argument:bulkMaxConcurrentRequests=" +
                       bulkMaxConcurrentRequests);
+    }
+  }
+
+
+
+  /**
+   * Tests that an invalid configuration on the HTTP Servlet extension
+   * can be recovered from.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testConfigurationChange()
+      throws Exception
+  {
+    scimInstance.stopInstance();
+    try
+    {
+      // Remove a required extension argument.
+      scimInstance.dsconfigOffline(
+          new String[]
+          {
+              "set-http-servlet-extension-prop",
+              "--extension-name", "SCIM",
+              "--remove",
+              "extension-argument:resourceMappingFile=extensions/" +
+              "com.unboundid.scim-extension/config/resources.xml"
+          });
+      scimInstance.startInstance();
+
+      // The servlet should not be available.
+      try
+      {
+        service.getServiceProviderConfig();
+        fail("The servlet extension should not be running");
+      }
+      catch (SCIMException e)
+      {
+        // Expected.
+        assertEquals(e.getStatusCode(), 404);
+      }
+
+      // Put back the required argument.
+      final String[] fullArgs = TestCaseUtils.combineArgs(
+          scimInstance.withLdapArgs(
+              "set-http-servlet-extension-prop",
+              "--extension-name", "SCIM",
+              "--add",
+              "extension-argument:resourceMappingFile=extensions/" +
+              "com.unboundid.scim-extension/config/resources.xml"
+          ), "-n");
+      final CommandOutput output =
+          scimInstance.runCommandTolerateFailures("dsconfig", null, null,
+                                                  fullArgs);
+      if (output.getReturnValue() != 0)
+      {
+        assertTrue(output.getStderr().contains("will not take effect"));
+        scimInstance.stopInstance();
+        scimInstance.startInstance();
+      }
+
+      // The servlet should now be available.
+      service.getServiceProviderConfig();
+    }
+    finally
+    {
+      scimInstance.startInstance();
     }
   }
 }
