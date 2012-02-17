@@ -64,6 +64,21 @@ public final class AdjustableSemaphore extends Semaphore
 
 
   /**
+   * {@inheritDoc}
+   */
+  @Override
+  public int availablePermits()
+  {
+    // Do not return a negative number of permits. This could happen if
+    // there are threads waiting to acquire a permit and the maximum number
+    // of permits is reduced.
+    final int availablePermits = super.availablePermits();
+    return availablePermits >= 0 ? availablePermits : 0;
+  }
+
+
+
+  /**
    * Set the maximum number of permits.
    *
    * @param maxPermits The maximum number of permits. Must be greater than zero.
