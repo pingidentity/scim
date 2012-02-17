@@ -5,6 +5,7 @@
 
 package com.unboundid.scim.extension;
 
+import com.unboundid.directory.sdk.common.types.LogSeverity;
 import com.unboundid.directory.sdk.common.types.RegisteredMonitorProvider;
 import com.unboundid.directory.sdk.http.api.HTTPServletExtension;
 import com.unboundid.directory.sdk.http.config.HTTPServletExtensionConfig;
@@ -31,6 +32,7 @@ import org.apache.wink.server.internal.servlet.RestServlet;
 import javax.servlet.Filter;
 import javax.servlet.http.HttpServlet;
 import javax.ws.rs.core.Application;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,6 +103,27 @@ public final class SCIMServletExtension
    */
   private static final String ARG_NAME_BULK_MAX_PAYLOAD_SIZE =
       "bulkMaxPayloadSize";
+
+  /**
+   * The name of the argument that will be used to specify the maximum number
+   * of concurrent bulk requests.
+   */
+  private static final String ARG_NAME_BULK_MAX_CONCURRENT_REQUESTS =
+      "bulkMaxConcurrentRequests";
+
+  /**
+   * The name of the argument that will be used to define the path to a
+   * directory that may be used by the SCIM extension to create temporary
+   * files containing SCIM request data.
+   */
+  private static final String ARG_NAME_TMP_DATA_DIR = "tmpDataDir";
+
+  /**
+   * The name of the argument that will be used to define the file permissions
+   * to be set on the tmpDataDir directory.
+   */
+  private static final String ARG_NAME_TMP_DATA_DIR_PERMISSIONS =
+      "tmpDataDirPermissions";
 
   /**
    * The servlet that has been created.
@@ -226,6 +249,29 @@ public final class SCIMServletExtension
                            "associated HTTP connection handler (or the " +
                            "entire server) is stopped and re-started.", "/"));
 
+    // This is a required argument.
+    parser.addArgument(
+        new FileArgument(null, ARG_NAME_TMP_DATA_DIR,
+                         true, 1, "{path}",
+                         "The path to a directory that will be used to " +
+                         "create temporary files containing SCIM request " +
+                         "data. Non-absolute paths are relative to the " +
+                         "server root directory.",
+                         false, true, false, true));
+
+    // This argument has a default.
+    parser.addArgument(
+        new StringArgument(null, ARG_NAME_TMP_DATA_DIR_PERMISSIONS,
+                           true, 1, "{3-octal-digits}",
+                           "Specifies the permissions that should be applied " +
+                           "to the tmpDataDir directory. The permissions " +
+                           "are expressed as a three-digit octal value, " +
+                           "which is the traditional representation for " +
+                           "UNIX file permissions. The default value is 700 " +
+                           "which allows access only by the owner of the " +
+                           "directory.",
+                           "700"));
+
     // Debug log arguments.
     parser.addArgument(
         new BooleanArgument(null, ARG_NAME_DEBUG_ENABLED,
@@ -269,6 +315,17 @@ public final class SCIMServletExtension
                             "The maximum payload size in bytes of a bulk " +
                             "request. The default value is 10000000 bytes.",
                             0, Integer.MAX_VALUE, 10000000));
+
+    // This argument has a default.
+    parser.addArgument(
+        new IntegerArgument(null, ARG_NAME_BULK_MAX_CONCURRENT_REQUESTS,
+                            true, 1, "{integer}",
+                            "The maximum number of bulk requests that may be " +
+                            "processed concurrently by the server. " +
+                            "The default value is 10. Any bulk " +
+                            "request that would cause this limit to be " +
+                            "exceeded is rejected with HTTP status code 503.",
+                            1, Integer.MAX_VALUE, 10));
   }
 
 
@@ -357,8 +414,16 @@ public final class SCIMServletExtension
     final IntegerArgument bulkMaxPayloadSizeArg =
          (IntegerArgument) parser.getNamedArgument(
              ARG_NAME_BULK_MAX_PAYLOAD_SIZE);
+    final IntegerArgument bulkMaxConcurrentRequestsArg =
+         (IntegerArgument) parser.getNamedArgument(
+             ARG_NAME_BULK_MAX_CONCURRENT_REQUESTS);
     final FileArgument resourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
+    final FileArgument tmpDataDirArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_TMP_DATA_DIR);
+    final StringArgument tmpDataDirPermissionsArg =
+         (StringArgument) parser.getNamedArgument(
+             ARG_NAME_TMP_DATA_DIR_PERMISSIONS);
 
     contextPath = contextPathArg.getValue();
 
@@ -405,16 +470,54 @@ public final class SCIMServletExtension
     backend = new ServerContextBackend(resourceMappers, serverContext);
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
 
+    final FilePermission tmpDataDirPermission;
+    try
+    {
+      tmpDataDirPermission =
+          FilePermission.decodeUNIXMode(tmpDataDirPermissionsArg.getValue());
+    }
+    catch(Exception e)
+    {
+      debugException(e);
+      final String message = String.format(
+          "The tmpDataDirPermissions %s is not a valid UNIX permission " +
+          "mode in three-digit octal notation",
+          tmpDataDirPermissionsArg.getValue());
+      throw new LDAPException(ResultCode.OTHER, message, e);
+    }
+
+    // Create the tmpDataDir directory if it doesn't exist.
+    if (!tmpDataDirArg.getValue().exists())
+    {
+      if(!tmpDataDirArg.getValue().mkdirs())
+      {
+        final String message = String.format(
+            "The tmpDataDir directory %s could not be created",
+            tmpDataDirArg.getValue());
+        throw new LDAPException(ResultCode.OTHER, message);
+      }
+    }
+
+    // Set permissions on the tmpDataDir directory.
+    setPermissions(tmpDataDirArg.getValue(), tmpDataDirPermission);
+
     // Create the Wink JAX-RS application.
     application = new SCIMApplication(resourceMappers.keySet(), backend);
     application.setBulkMaxOperations(
         bulkMaxOperationsArg.getValue().longValue());
     application.setBulkMaxPayloadSize(
         bulkMaxPayloadSizeArg.getValue().longValue());
+    application.setBulkMaxConcurrentRequests(
+        bulkMaxConcurrentRequestsArg.getValue());
+    application.setTmpDataDir(tmpDataDirArg.getValue());
 
     // Create the Wink JAX-RS servlet.
     servlet = new RestServlet()
     {
+      private static final long serialVersionUID = 7010592173510938139L;
+
+
+
       @Override
       protected Application getApplication(
           final DeploymentConfiguration configuration)
@@ -434,6 +537,41 @@ public final class SCIMServletExtension
                 "Finished SCIM Servlet Extension initialization");
 
     return servlet;
+  }
+
+
+
+  /**
+   * Attempt to set permissions on the provided file.
+   *
+   * @param file        The file whose permissions are to be set.
+   * @param permission  The file permissions to apply.
+   */
+  private void setPermissions(final File file, final FilePermission permission)
+  {
+    if (FilePermission.canSetPermissions())
+    {
+      try
+      {
+        if(!FilePermission.setPermissions(file, permission))
+        {
+          final String message = String.format(
+              "This platform does not support setting file permissions %s " +
+              "on %s",
+              permission.toString(), file.toString());
+          serverContext.logMessage(LogSeverity.SEVERE_WARNING, message);
+        }
+      }
+      catch(Exception e)
+      {
+        debugException(e);
+        // Log a warning that the permissions were not set.
+        final String message = String.format(
+            "An error occurred while setting file permissions on %s: %s",
+            file.toString(), e.getMessage());
+        serverContext.logMessage(LogSeverity.SEVERE_WARNING, message);
+      }
+    }
   }
 
 
@@ -534,6 +672,24 @@ public final class SCIMServletExtension
          (StringArgument) parser.getNamedArgument(ARG_NAME_DEBUG_TYPE);
     final FileArgument useResourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
+    final StringArgument tmpDataDirPermissionsArg =
+         (StringArgument) parser.getNamedArgument(
+             ARG_NAME_TMP_DATA_DIR_PERMISSIONS);
+
+    try
+    {
+      FilePermission.decodeUNIXMode(tmpDataDirPermissionsArg.getValue());
+    }
+    catch(Exception e)
+    {
+      debugException(e);
+      final String message = String.format(
+          "The tmpDataDirPermissions %s is not a valid UNIX permission " +
+          "mode in three-digit octal notation",
+          tmpDataDirPermissionsArg.getValue());
+      unacceptableReasons.add(message);
+      acceptable = false;
+    }
 
     if (debugLevelArg.isPresent())
     {
@@ -656,12 +812,56 @@ public final class SCIMServletExtension
     final IntegerArgument bulkMaxPayloadSizeArg =
          (IntegerArgument) parser.getNamedArgument(
              ARG_NAME_BULK_MAX_PAYLOAD_SIZE);
+    final IntegerArgument bulkMaxConcurrentRequestsArg =
+         (IntegerArgument) parser.getNamedArgument(
+             ARG_NAME_BULK_MAX_CONCURRENT_REQUESTS);
+    final FileArgument tmpDataDirArg =
+         (FileArgument) parser.getNamedArgument(ARG_NAME_TMP_DATA_DIR);
+    final StringArgument tmpDataDirPermissionsArg =
+         (StringArgument) parser.getNamedArgument(
+             ARG_NAME_TMP_DATA_DIR_PERMISSIONS);
+
+    final FilePermission tmpDataDirPermission;
+    try
+    {
+      tmpDataDirPermission =
+          FilePermission.decodeUNIXMode(tmpDataDirPermissionsArg.getValue());
+    }
+    catch(Exception e)
+    {
+      debugException(e);
+      final String message = String.format(
+          "The tmpDataDirPermissions %s is not a valid UNIX permission " +
+          "mode in three-digit octal notation",
+          tmpDataDirPermissionsArg.getValue());
+      messages.add(message);
+      return ResultCode.OTHER;
+    }
+
+    // Create the tmpDataDir directory if it doesn't exist.
+    if (!tmpDataDirArg.getValue().exists())
+    {
+      if(!tmpDataDirArg.getValue().mkdirs())
+      {
+        final String message = String.format(
+            "The tmpDataDir directory %s could not be created",
+            tmpDataDirArg.getValue());
+        messages.add(message);
+        return ResultCode.OTHER;
+      }
+    }
+
+    // Set permissions on the tmpDataDir directory.
+    setPermissions(tmpDataDirArg.getValue(), tmpDataDirPermission);
 
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
     application.setBulkMaxOperations(
         bulkMaxOperationsArg.getValue().longValue());
     application.setBulkMaxPayloadSize(
         bulkMaxPayloadSizeArg.getValue().longValue());
+    application.setBulkMaxConcurrentRequests(
+        bulkMaxConcurrentRequestsArg.getValue());
+    application.setTmpDataDir(tmpDataDirArg.getValue());
 
     final FileArgument useResourcesFileArg =
          (FileArgument) parser.getNamedArgument(ARG_NAME_RESOURCES_FILE);
@@ -726,9 +926,13 @@ public final class SCIMServletExtension
 
     exampleMap.put(
          Arrays.asList(
-             ARG_NAME_RESOURCES_FILE + "=config/resources.xml"),
+             ARG_NAME_RESOURCES_FILE +
+             "=extensions/com.unboundid.scim-extension/config/resources.xml",
+             ARG_NAME_TMP_DATA_DIR +
+             "=extensions/com.unboundid.scim-extension/tmp-data"),
          "Create a SCIM servlet that handles resources defined in " +
-         "config/resources.xml.");
+         "the specified XML file, and writes temporary request " +
+         "data files to the specified directory.");
 
     return exampleMap;
   }

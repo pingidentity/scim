@@ -26,6 +26,7 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
 
+import java.io.File;
 import java.io.InputStream;
 
 
@@ -99,6 +100,23 @@ public interface Unmarshaller {
    * @throws SCIMException If the bulk content could not be read.
    */
   void bulkUnmarshal(final InputStream inputStream,
+                     final BulkConfig bulkConfig,
+                     final BulkContentHandler handler)
+      throws SCIMException;
+
+
+
+  /**
+   * Reads a SCIM bulk request or response from a file.
+   *
+   * @param file         The file containing the bulk content to be read.
+   * @param bulkConfig   The bulk configuration settings to be enforced.
+   * @param handler      A bulk operation listener to handle the content as it
+   *                     is read.
+   *
+   * @throws SCIMException If the bulk content could not be read.
+   */
+  void bulkUnmarshal(final File file,
                      final BulkConfig bulkConfig,
                      final BulkContentHandler handler)
       throws SCIMException;

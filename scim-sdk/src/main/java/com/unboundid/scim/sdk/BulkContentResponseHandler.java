@@ -34,10 +34,12 @@ public class BulkContentResponseHandler extends BulkContentHandler
   /**
    * {@inheritDoc}
    */
-  public void handleOperation(final int opIndex,
-                              final BulkOperation bulkOperation)
+  public boolean handleOperation(final int opIndex,
+                                 final BulkOperation bulkOperation)
+      throws SCIMException
   {
     operations.add(bulkOperation);
+    return true;
   }
 
 

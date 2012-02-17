@@ -10,6 +10,7 @@ import com.unboundid.directory.tests.externalinstance.ExternalInstance;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
+import com.unboundid.scim.sdk.StaticUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -25,7 +26,14 @@ import org.apache.http.params.HttpParams;
 import org.apache.wink.client.ApacheHttpClientConfig;
 import org.apache.wink.client.ClientConfig;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 import javax.net.ssl.SSLContext;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
@@ -43,10 +51,13 @@ public class ServerExtensionTestCase extends BaseTestCase
    *                          configured.
    * @param listenPort        The HTTP listen port.
    * @param secureListenPort  The HTTPS listen port.
+   *
+   * @throws Exception  If the extension cannot be configured.
    */
   protected static void configureExtension(final ExternalInstance instance,
                                            final int listenPort,
                                            final int secureListenPort)
+      throws Exception
   {
     instance.dsconfig(
         "set-log-publisher-prop",
@@ -63,7 +74,10 @@ public class ServerExtensionTestCase extends BaseTestCase
                  "resourceMappingFile=extensions/" +
                  "com.unboundid.scim-extension/config/resources.xml",
         "--set", "extension-argument:contextPath=/",
-        "--set", "extension-argument:debugEnabled");
+        "--set", "extension-argument:debugEnabled",
+        "--set", "extension-argument:" +
+                 "tmpDataDir=extensions/com.unboundid.scim-extension/tmp-data"
+        );
 
     instance.dsconfig(
         "create-log-publisher",
@@ -110,6 +124,21 @@ public class ServerExtensionTestCase extends BaseTestCase
         "--set", "use-ssl:true",
         "--set", "key-manager-provider:JKS",
         "--set", "trust-manager-provider:JKS");
+
+    // Verify that the tmpDataDir has the correct permissions.
+    if (OperatingSystem.isUNIXBased(OperatingSystem.local()))
+    {
+      final File tmpDataDir =
+          new File(instance.getInstanceRoot(),
+                   "extensions/com.unboundid.scim-extension/tmp-data");
+      final List<String> output = new ArrayList<String>();
+      final int rc = StaticUtils.exec(
+          "ls",
+          new String[] { "-ld", tmpDataDir.getAbsolutePath() },
+          null, null, output);
+      assertEquals(rc, 0);
+      assertTrue(output.get(0).startsWith("drwx------"));
+    }
   }
 
 

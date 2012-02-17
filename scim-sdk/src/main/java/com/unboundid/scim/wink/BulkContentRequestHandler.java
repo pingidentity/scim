@@ -21,6 +21,7 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.BulkStreamResponse;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -69,17 +69,43 @@ public class BulkContentRequestHandler extends BulkContentHandler
   private final Map<String,ResourceDescriptor> descriptors;
 
   /**
+   * The SCIM application.
+   */
+  private final SCIMApplication application;
+
+  /**
+   * The request context for the bulk request.
+   */
+  private final RequestContext requestContext;
+
+  /**
+   * The SCIM backend to process the operations.
+   */
+  private final SCIMBackend backend;
+
+  /**
+   * The bulk stream response to write the operation responses to.
+   */
+  private final BulkStreamResponse bulkStreamResponse;
+
+  /**
    * A map from bulkId to resourceID.
    */
   private final Map<String,String> resourceIDs;
 
   /**
-   * A set containing the index number of bulk operations that contain bulkId
-   * data references.
+   * A set containing the unresolved bulkId data references for the latest
+   * bulk operation.
    */
-  private final Set<Integer> bulkIdRefOperations;
+  private final Set<String> unresolvedBulkIdRefs;
 
-  private final List<BulkOperation> operations;
+
+  private int errorCount = 0;
+
+  /**
+   * The set of defined bulkIds from all operations.
+   */
+  private final Set<String> bulkIds;
 
 
 
@@ -96,15 +122,27 @@ public class BulkContentRequestHandler extends BulkContentHandler
   /**
    * Create a new instance of this bulk operation handler.
    *
-   * @param descriptors  The resource descriptors keyed by endpoint.
+   * @param application         The SCIM application.
+   * @param requestContext      The request context for the bulk request.
+   * @param backend             The SCIM backend to process the operations.
+   * @param bulkStreamResponse  The bulk stream response to write response
+   *                            operations to.
    */
   public BulkContentRequestHandler(
-      final Map<String,ResourceDescriptor> descriptors)
+      final SCIMApplication application,
+      final RequestContext requestContext,
+      final SCIMBackend backend,
+      final BulkStreamResponse bulkStreamResponse)
   {
-    this.descriptors = descriptors;
+    this.descriptors        = application.getDescriptors();
+    this.application        = application;
+    this.requestContext     = requestContext;
+    this.backend            = backend;
+    this.bulkStreamResponse = bulkStreamResponse;
+
     resourceIDs = new HashMap<String, String>();
-    bulkIdRefOperations = new HashSet<Integer>();
-    operations = new ArrayList<BulkOperation>();
+    unresolvedBulkIdRefs = new HashSet<String>();
+    bulkIds = new HashSet<String>();
   }
 
 
@@ -127,7 +165,16 @@ public class BulkContentRequestHandler extends BulkContentHandler
   {
     if (value.startsWith("bulkId:"))
     {
-      bulkIdRefOperations.add(opIndex);
+      final String bulkId = value.substring(7);
+      final String resourceID = resourceIDs.get(bulkId);
+      if (resourceID != null)
+      {
+        return resourceID;
+      }
+      else
+      {
+        unresolvedBulkIdRefs.add(bulkId);
+      }
     }
 
     return value;
@@ -149,39 +196,15 @@ public class BulkContentRequestHandler extends BulkContentHandler
   /**
    * {@inheritDoc}
    */
-  public void handleOperation(final int opIndex,
-                              final BulkOperation bulkOperation)
+  public boolean handleOperation(final int opIndex,
+                                 final BulkOperation bulkOperation)
+      throws SCIMException
   {
-    operations.add(bulkOperation);
-  }
-
-
-
-  /**
-   * Process the bulk operations.
-   *
-   * @param application     The SCIM application.
-   * @param requestContext  The request context for the bulk request.
-   * @param backend         The SCIM backend to process the operations.
-   *
-   * @return  The bulk operation responses.
-   */
-  public List<BulkOperation> processOperations(
-      final SCIMApplication application,
-      final RequestContext requestContext,
-      final SCIMBackend backend)
-  {
-    final Set<String> bulkIds = new HashSet<String>(operations.size());
-    final List<BulkOperation> responses =
-        new ArrayList<BulkOperation>(operations.size());
-    int errorCount = 0;
-
-    for (int opIndex = 0; opIndex < operations.size(); opIndex++)
+    if (errorCount < failOnErrors)
     {
-      final BulkOperation response =
-          processOperation(application, requestContext, bulkIds, backend,
-                           operations.get(opIndex), opIndex);
-      responses.add(response);
+      final BulkOperation response = processOperation(opIndex, bulkOperation);
+      unresolvedBulkIdRefs.clear();
+      bulkStreamResponse.writeBulkOperation(response);
       if (response.getStatus().getDescription() != null &&
           !response.getStatus().getCode().equals("200") &&
           !response.getStatus().getCode().equals("201"))
@@ -189,12 +212,16 @@ public class BulkContentRequestHandler extends BulkContentHandler
         errorCount++;
         if (errorCount == failOnErrors)
         {
-          break;
+          return false;
         }
       }
-    }
 
-    return responses;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
 
 
@@ -202,21 +229,13 @@ public class BulkContentRequestHandler extends BulkContentHandler
   /**
    * Process an operation from a bulk request.
    *
-   * @param application     The SCIM application.
-   * @param requestContext  The bulk request context.
-   * @param bulkIds         The set of defined bulkIds from all operations.
-   * @param backend         The SCIM backend to process the operation.
-   * @param operation       The operation to be processed from the bulk request.
    * @param opIndex         The index of the operation.
+   * @param operation       The operation to be processed from the bulk request.
    *
    * @return  The operation response.
    */
-  private BulkOperation processOperation(final SCIMApplication application,
-                                         final RequestContext requestContext,
-                                         final Set<String> bulkIds,
-                                         final SCIMBackend backend,
-                                         final BulkOperation operation,
-                                         final int opIndex)
+  private BulkOperation processOperation(final int opIndex,
+                                         final BulkOperation operation)
   {
     final BulkOperation.Method method = operation.getMethod();
     final String bulkId = operation.getBulkId();
@@ -361,10 +380,11 @@ public class BulkContentRequestHandler extends BulkContentHandler
             "The bulk operation does not have any resource data");
       }
 
-      // Resolve bulkId references in the data.
-      if (resource != null && bulkIdRefOperations.contains(opIndex))
+      if (!unresolvedBulkIdRefs.isEmpty())
       {
-        resource = resolveBulkIds(resource);
+        throw SCIMException.createException(
+            409, "Cannot resolve bulkId references "
+                 + unresolvedBulkIdRefs);
       }
 
       if (requestContext.getConsumeMediaType().equals(
@@ -448,7 +468,18 @@ public class BulkContentRequestHandler extends BulkContentHandler
       Debug.debugException(e);
       statusCode = e.getStatusCode();
       statusMessage = e.getMessage();
-      resourceStats.incrementStat("post-" + e.getStatusCode());
+      switch (method)
+      {
+        case POST:
+          resourceStats.incrementStat("post-" + e.getStatusCode());
+          break;
+        case PUT:
+          resourceStats.incrementStat("put-" + e.getStatusCode());
+          break;
+        case DELETE:
+          resourceStats.incrementStat("delete-" + e.getStatusCode());
+          break;
+      }
     }
 
     if (requestContext.getProduceMediaType() ==

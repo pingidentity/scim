@@ -30,9 +30,11 @@ import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMBackend;
+import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.apache.wink.common.WinkApplication;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,6 +59,9 @@ public class SCIMApplication extends WinkApplication
   private final SCIMBackend backend;
   private volatile long bulkMaxOperations = Long.MAX_VALUE;
   private volatile long bulkMaxPayloadSize = Long.MAX_VALUE;
+  private volatile File tmpDataDir = null;
+  private AdjustableSemaphore bulkMaxConcurrentRequestsSemaphore =
+      new AdjustableSemaphore(Integer.MAX_VALUE);
 
   /**
    * Create a new SCIMApplication that defines the endpoints provided by the
@@ -210,7 +215,7 @@ public class SCIMApplication extends WinkApplication
 
 
   /**
-   * Sprecify the maximum number of operations permitted in a bulk request.
+   * Specify the maximum number of operations permitted in a bulk request.
    * @param bulkMaxOperations  The maximum number of operations permitted in a
    *                           bulk request.
    */
@@ -222,7 +227,7 @@ public class SCIMApplication extends WinkApplication
 
 
   /**
-   * Sprecify the maximum payload size in bytes of a bulk request.
+   * Specify the maximum payload size in bytes of a bulk request.
    * @param bulkMaxPayloadSize  The maximum payload size in bytes of a bulk
    *                            request.
    */
@@ -234,11 +239,84 @@ public class SCIMApplication extends WinkApplication
 
 
   /**
+   * Specify the maximum number of concurrent bulk requests.
+   * @param bulkMaxConcurrentRequests  The maximum number of concurrent bulk
+   *                                   requests.
+   */
+  public void setBulkMaxConcurrentRequests(final int bulkMaxConcurrentRequests)
+  {
+    bulkMaxConcurrentRequestsSemaphore.setMaxPermits(bulkMaxConcurrentRequests);
+  }
+
+
+
+  /**
    * Retrieve the resource descriptors keyed by name of endpoint.
    * @return  The resource descriptors keyed by name of endpoint.
    */
   public Map<String, ResourceDescriptor> getDescriptors()
   {
     return descriptors;
+  }
+
+
+
+  /**
+   * Return the directory that should be used to store temporary files, or
+   * {@code null} for the system dependent default temporary-file
+   * directory (specified by the system property {@code java.io.tmpdir}.
+   *
+   * @return  The directory that should be used to store temporary files, or
+   *          {@code null} for the system dependent default temporary-file
+   *          directory.
+   */
+  public File getTmpDataDir()
+  {
+    return tmpDataDir;
+  }
+
+
+
+  /**
+   * Return the directory that should be used to store temporary files, or
+   * {@code null} for the system dependent default temporary-file
+   * directory (specified by the system property {@code java.io.tmpdir}.
+   *
+   * @param tmpDataDir  The directory that should be used to store temporary
+   *                    files, or {@code null} for the system dependent default
+   *                    temporary-file directory.
+   */
+  public void setTmpDataDir(final File tmpDataDir)
+  {
+    this.tmpDataDir = tmpDataDir;
+  }
+
+
+
+  /**
+   * Attempt to acquire a permit to process a bulk request.
+   *
+   * @throws SCIMException  If a permit cannot be immediately obtained.
+   */
+  public void acquireBulkRequestPermit()
+      throws SCIMException
+  {
+    if (!bulkMaxConcurrentRequestsSemaphore.tryAcquire())
+    {
+      throw SCIMException.createException(
+          503, "The server is currently processing the maximum number " +
+               "of concurrent bulk requests (" +
+               bulkMaxConcurrentRequestsSemaphore.getMaxPermits() + ")");
+    }
+  }
+
+
+
+  /**
+   * Release a permit to process a bulk request.
+   */
+  public void releaseBulkRequestPermit()
+  {
+    bulkMaxConcurrentRequestsSemaphore.release();
   }
 }

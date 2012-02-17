@@ -23,18 +23,25 @@ import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.ServerErrorException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 
@@ -169,4 +176,92 @@ public class JsonUnmarshaller implements Unmarshaller
 
 
 
+  /**
+   * {@inheritDoc}
+   */
+  public void bulkUnmarshal(final File file,
+                            final BulkConfig bulkConfig,
+                            final BulkContentHandler handler)
+      throws SCIMException
+  {
+    // First pass: ensure the number of operations is less than the max,
+    // and save the failOnErrrors value.
+    final AtomicInteger failOnErrorsValue = new AtomicInteger(-1);
+    final BulkContentHandler preProcessHandler = new BulkContentHandler()
+    {
+      @Override
+      public void handleFailOnErrors(final int failOnErrors)
+      {
+        failOnErrorsValue.set(failOnErrors);
+      }
+    };
+    try
+    {
+      final FileInputStream fileInputStream = new FileInputStream(file);
+      try
+      {
+        final BufferedInputStream bufferedInputStream =
+            new BufferedInputStream(fileInputStream);
+        try
+        {
+          final JsonBulkParser jsonBulkParser =
+              new JsonBulkParser(bufferedInputStream, bulkConfig,
+                                 preProcessHandler);
+          jsonBulkParser.setSkipOperations(true);
+          jsonBulkParser.unmarshal();
+        }
+        finally
+        {
+          bufferedInputStream.close();
+        }
+      }
+      finally
+      {
+        fileInputStream.close();
+      }
+    }
+    catch (IOException e)
+    {
+      Debug.debugException(e);
+      throw new ServerErrorException(
+          "Error pre-processing bulk request: " + e.getMessage());
+    }
+
+    int failOnErrors = failOnErrorsValue.get();
+    if (failOnErrors != -1)
+    {
+      handler.handleFailOnErrors(failOnErrors);
+    }
+
+    // Second pass: Parse fully.
+    try
+    {
+      final FileInputStream fileInputStream = new FileInputStream(file);
+      try
+      {
+        final BufferedInputStream bufferedInputStream =
+            new BufferedInputStream(fileInputStream);
+        try
+        {
+          final JsonBulkParser jsonBulkParser =
+              new JsonBulkParser(bufferedInputStream, bulkConfig, handler);
+          jsonBulkParser.unmarshal();
+        }
+        finally
+        {
+          bufferedInputStream.close();
+        }
+      }
+      finally
+      {
+        fileInputStream.close();
+      }
+    }
+    catch (IOException e)
+    {
+      Debug.debugException(e);
+      throw new ServerErrorException(
+          "Error parsing bulk request: " + e.getMessage());
+    }
+  }
 }

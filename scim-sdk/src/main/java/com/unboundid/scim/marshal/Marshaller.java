@@ -33,7 +33,8 @@ import java.util.List;
  * to an external representation. There are marshaller implementations
  * for XML and JSON. Marshaller implementations are required to be thread-safe.
  */
-public interface Marshaller {
+public interface Marshaller
+{
   /**
    * Write a SCIM object to an output stream.
    *
@@ -41,10 +42,10 @@ public interface Marshaller {
    * @param outputStream  The output stream to which the SCIM object should
    *                      be written.
    *
-   * @throws Exception  If the object could not be written.
+   * @throws SCIMException  If the data could not be written.
    */
   void marshal(BaseResource resource, OutputStream outputStream)
-    throws Exception;
+    throws SCIMException;
 
   /**
    * Write a SCIM listing response to an output stream.
@@ -53,11 +54,11 @@ public interface Marshaller {
    * @param outputStream  The output stream to which the SCIM response should
    *                      be written.
    *
-   * @throws Exception  If the response could not be written.
+   * @throws SCIMException  If the data could not be written.
    */
   void marshal(Resources<? extends BaseResource> response,
                OutputStream outputStream)
-    throws Exception;
+    throws SCIMException;
 
   /**
    * Write a SCIM error response to an output stream.
@@ -66,10 +67,10 @@ public interface Marshaller {
    * @param outputStream  The output stream to which the SCIM response should
    *                      be written.
    *
-   * @throws Exception  If the response could not be written.
+   * @throws SCIMException  If the data could not be written.
    */
   void marshal(SCIMException response, OutputStream outputStream)
-    throws Exception;
+    throws SCIMException;
 
   /**
    * Write the content of a SCIM bulk operation request or response to an
@@ -81,9 +82,9 @@ public interface Marshaller {
    *                      value.
    * @param operations    The bulk operations to include in the content.
    *
-   * @throws Exception  If the content could not be written.
+   * @throws SCIMException  If the data could not be written.
    */
   void bulkMarshal(OutputStream outputStream, int failOnErrors,
                    List<BulkOperation> operations)
-    throws Exception;
+    throws SCIMException;
 }

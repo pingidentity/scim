@@ -49,6 +49,7 @@ public class JsonBulkParser extends JsonParser
   private final BulkContentHandler handler;
   private int operationIndex = 0;
   private JSONTokener tokener;
+  private boolean skipOperations;
 
   /**
    * Create a new instance of this bulk unmarshaller.
@@ -67,6 +68,18 @@ public class JsonBulkParser extends JsonParser
     this.bulkConfig      = bulkConfig;
     this.handler         = handler;
     this.operationIndex = 0;
+  }
+
+
+
+  /**
+   * Specify whether bulk operations should be skipped.
+   *
+   * @param skipOperations  {@code true} if bulk operations should be skipped.
+   */
+  public void setSkipOperations(final boolean skipOperations)
+  {
+    this.skipOperations = skipOperations;
   }
 
 
@@ -199,9 +212,16 @@ public class JsonBulkParser extends JsonParser
                 "The size of the bulk operation exceeds the maxPayloadSize " +
                 "(" + bulkConfig.getMaxPayloadSize() + ")");
           }
-          final BulkOperation bulkOperation =
-              parseBulkOperation((JSONObject)tokener.nextValue());
-          handler.handleOperation(operationIndex, bulkOperation);
+          if (skipOperations)
+          {
+            tokener.nextValue();
+          }
+          else
+          {
+            final BulkOperation bulkOperation =
+                parseBulkOperation((JSONObject)tokener.nextValue());
+            handler.handleOperation(operationIndex, bulkOperation);
+          }
           operationIndex++;
         }
 

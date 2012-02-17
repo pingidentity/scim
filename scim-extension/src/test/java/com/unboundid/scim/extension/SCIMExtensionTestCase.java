@@ -2032,6 +2032,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     try
     {
+      final String beforeDelete404Count =
+          getMonitorAsString(scimInstance, "user-resource-delete-404");
       try
       {
         service.processBulkRequest(operations);
@@ -2043,6 +2045,14 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         // Expected.
         assertEquals(e.getStatusCode(), 413);
       }
+
+      // Ensure no delete operations were attempted.
+      final String afterDelete404Count =
+          getMonitorAsString(scimInstance, "user-resource-delete-404");
+      assertEquals((afterDelete404Count == null ?
+                    0 : Integer.parseInt(afterDelete404Count)),
+                   (beforeDelete404Count == null ?
+                    0 : Integer.parseInt(beforeDelete404Count)));
     }
     finally
     {
@@ -2262,7 +2272,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     };
 
     // Execute a bunch of requests in parallel.
-    final int numRequests = 10;
+    final int numRequests = 100;
     final ThreadPoolExecutor executor =
         new ThreadPoolExecutor(16,                   // min # threads
                                16,                   // max # threads
@@ -2298,5 +2308,186 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     assertEquals(numCaughtExceptions.get(), 0);
     assertEquals(numSuccessfulRequests.get(), numCompletedRequests.get());
+  }
+
+
+
+  /**
+   * Process a bunch of bulk requests in parallel.
+   *
+   * @param numRequests           The total number of bulk requests to process.
+   * @param numThreads            The number of threads to use.
+   * @param operations            The bulk operations for the content of each
+   *                              request.
+   * @param numSuccessfulRequests Returns the number of successful requests.
+   * @param numFailedRequests     Returns the number of failed requests.
+   *
+   * @throws Exception  If the requests could not be processed.
+   */
+  private void processBulkRequestsInParallel(
+      final int numRequests, final int numThreads,
+      final List<BulkOperation> operations,
+      final AtomicInteger numSuccessfulRequests,
+      final AtomicInteger numFailedRequests)
+      throws Exception
+  {
+    numSuccessfulRequests.set(0);
+    numFailedRequests.set(0);
+
+    // Create a runnable to execute a single bulk request with the same
+    // operations.
+    final Runnable runnable = new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        try
+        {
+          service.processBulkRequest(operations);
+          numSuccessfulRequests.incrementAndGet();
+        }
+        catch (Exception e)
+        {
+          numFailedRequests.incrementAndGet();
+          // Ignore.
+        }
+      }
+    };
+
+    // Execute a bunch of requests in parallel.
+    final ThreadPoolExecutor executor =
+        new ThreadPoolExecutor(numThreads,           // min # threads
+                               numThreads,           // max # threads
+                               5, TimeUnit.MINUTES,  // kill after idle
+                               new LinkedBlockingQueue<Runnable>());
+
+    Future<?> future = null;
+    for (int i = 0; i < numRequests; i++)
+    {
+      future = executor.submit(runnable);
+    }
+
+
+    // Make sure all the requests were completed.
+    future.get();
+    TestCaseUtils.assertFutureCondition(new FutureCondition(1000, 120)
+    {
+      @Override
+      public boolean testCondition() throws Exception
+      {
+        return numSuccessfulRequests.get() + numFailedRequests.get() ==
+               numRequests;
+      }
+
+      @Override
+      protected String getConditionDetails()
+      {
+        return "numSuccessfulRequests=" + numSuccessfulRequests +
+               " numFailedRequests=" + numFailedRequests;
+      }
+    });
+  }
+
+
+
+  /**
+   * Tests the bulkMaxOperations configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMaxConcurrentRequests() throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    // Create some bulk operations.
+    final int numUsers = 1;
+    final List<UserResource> users = new ArrayList<UserResource>();
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < numUsers; i++)
+    {
+      final UserResource user = userEndpoint.newResource();
+      user.setName(new Name("User " + i, "User", null, "Test", null, null));
+      user.setUserName("user." + i);
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.POST, "bulkid." + i, null, "/Users", user));
+      users.add(user);
+    }
+
+    for (int i = 0; i < numUsers; i++)
+    {
+      final UserResource user = users.get(i);
+      user.setTitle("Updated Title");
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.PUT, null, null,
+          "/Users/bulkId:bulkid." + i, user));
+    }
+
+    for (int i = 0; i < numUsers; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null,
+          "/Users/bulkId:bulkid." + i, null));
+    }
+
+    final AtomicInteger numSuccessfulRequests = new AtomicInteger(0);
+    final AtomicInteger numFailedRequests = new AtomicInteger(0);
+
+    final int numRequests = 20;
+    final int numThreads = 2;
+
+    // Set the bulkMaxConcurrentRequests setting to 1.
+    scimInstance.dsconfig(
+        "set-http-servlet-extension-prop",
+        "--extension-name", "SCIM",
+        "--add", "extension-argument:bulkMaxConcurrentRequests=1");
+    int bulkMaxConcurrentRequests = 1;
+    try
+    {
+      processBulkRequestsInParallel(numRequests, numThreads, operations,
+                                    numSuccessfulRequests,
+                                    numFailedRequests);
+      assertTrue(numSuccessfulRequests.get() > 0);
+      assertTrue(numFailedRequests.get() > 0);
+
+      // Set the bulkMaxConcurrentRequests setting to 2.
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxConcurrentRequests=" +
+                      bulkMaxConcurrentRequests,
+          "--add", "extension-argument:bulkMaxConcurrentRequests=2");
+      bulkMaxConcurrentRequests = 2;
+
+      processBulkRequestsInParallel(numRequests, numThreads, operations,
+                                    numSuccessfulRequests,
+                                    numFailedRequests);
+      assertEquals(numSuccessfulRequests.get(), numRequests);
+      assertEquals(numFailedRequests.get(), 0);
+
+      // Set the bulkMaxConcurrentRequests setting back to 1.
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxConcurrentRequests=" +
+                      bulkMaxConcurrentRequests,
+          "--add", "extension-argument:bulkMaxConcurrentRequests=1");
+      bulkMaxConcurrentRequests = 1;
+
+      processBulkRequestsInParallel(numRequests, numThreads, operations,
+                                    numSuccessfulRequests,
+                                    numFailedRequests);
+      assertTrue(numSuccessfulRequests.get() > 0);
+      assertTrue(numFailedRequests.get() > 0);
+    }
+    finally
+    {
+      //Clean up
+      scimInstance.dsconfig(
+          "set-http-servlet-extension-prop",
+          "--extension-name", "SCIM",
+          "--remove", "extension-argument:bulkMaxConcurrentRequests=" +
+                      bulkMaxConcurrentRequests);
+    }
   }
 }

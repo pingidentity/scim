@@ -24,12 +24,14 @@ import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.scim.sdk.ServerErrorException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,6 +39,10 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -276,9 +282,85 @@ public class XmlUnmarshaller implements Unmarshaller
                             final BulkContentHandler handler)
       throws SCIMException
   {
-    final XmlBulkParser xmlBulkUnmarshaller =
+    final XmlBulkParser xmlBulkParser =
         new XmlBulkParser(inputStream, bulkConfig, handler);
-    xmlBulkUnmarshaller.unmarshal();
+    xmlBulkParser.unmarshal();
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public void bulkUnmarshal(final File file,
+                            final BulkConfig bulkConfig,
+                            final BulkContentHandler handler)
+      throws SCIMException
+  {
+    // First pass: ensure the number of operations is less than the max.
+    final BulkContentHandler preProcessHandler = new BulkContentHandler() {};
+    try
+    {
+      final FileInputStream fileInputStream = new FileInputStream(file);
+      try
+      {
+        final BufferedInputStream bufferedInputStream =
+            new BufferedInputStream(fileInputStream);
+        try
+        {
+          final XmlBulkParser xmlBulkParser =
+              new XmlBulkParser(bufferedInputStream, bulkConfig,
+                                preProcessHandler);
+          xmlBulkParser.setSkipOperations(true);
+          xmlBulkParser.unmarshal();
+        }
+        finally
+        {
+          bufferedInputStream.close();
+        }
+      }
+      finally
+      {
+        fileInputStream.close();
+      }
+    }
+    catch (IOException e)
+    {
+      Debug.debugException(e);
+      throw new ServerErrorException(
+          "Error pre-processing bulk request: " + e.getMessage());
+    }
+
+    // Second pass: Parse fully.
+    try
+    {
+      final FileInputStream fileInputStream = new FileInputStream(file);
+      try
+      {
+        final BufferedInputStream bufferedInputStream =
+            new BufferedInputStream(fileInputStream);
+        try
+        {
+          final XmlBulkParser xmlBulkParser =
+              new XmlBulkParser(bufferedInputStream, bulkConfig, handler);
+          xmlBulkParser.unmarshal();
+        }
+        finally
+        {
+          bufferedInputStream.close();
+        }
+      }
+      finally
+      {
+        fileInputStream.close();
+      }
+    }
+    catch (IOException e)
+    {
+      Debug.debugException(e);
+      throw new ServerErrorException(
+          "Error parsing bulk request: " + e.getMessage());
+    }
   }
 
 

@@ -45,6 +45,9 @@ public class EntryUUIDMappingExtensionTestCase extends SCIMExtensionTestCase
                  "resourceMappingFile=" +
                  getFile("resource/resources-entryUUID.xml"),
         "--set", "extension-argument:contextPath=/",
-        "--set", "extension-argument:debugEnabled");
+        "--set", "extension-argument:debugEnabled",
+        "--set", "extension-argument:" +
+                 "tmpDataDir=extensions/com.unboundid.scim-extension/tmp-data"
+    );
   }
 }

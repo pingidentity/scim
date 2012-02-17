@@ -58,6 +58,7 @@ public class XmlBulkParser
   private XMLStreamReader xmlStreamReader;
   private int operationIndex = 0;
   private String defaultNamespaceURI;
+  private boolean skipOperations;
 
   /**
    * Create a new instance of this bulk unmarshaller.
@@ -77,6 +78,18 @@ public class XmlBulkParser
     this.handler             = handler;
     this.operationIndex      = 0;
     this.defaultNamespaceURI = null;
+  }
+
+
+
+  /**
+   * Specify whether bulk operations should be skipped.
+   *
+   * @param skipOperations  {@code true} if bulk operations should be skipped.
+   */
+  public void setSkipOperations(final boolean skipOperations)
+  {
+    this.skipOperations = skipOperations;
   }
 
 
@@ -109,7 +122,10 @@ public class XmlBulkParser
                 {
                   defaultNamespaceURI = xmlStreamReader.getNamespaceURI();
                 }
-                parseBulk();
+                if (!parseBulk())
+                {
+                  return;
+                }
               }
               else
               {
@@ -142,10 +158,13 @@ public class XmlBulkParser
    * Parse a Bulk element, and leave the reader positioned on the
    * END_ELEMENT.
    *
+   * @return  {@code true} if operations should continue to be provided,
+   *          or {@code false} if the remaining operations are of no interest.
+   *
    * @throws XMLStreamException  If the XML could not be parsed.
    * @throws SCIMException       If some other error occurred.
    */
-  private void parseBulk()
+  private boolean parseBulk()
       throws XMLStreamException, SCIMException
   {
     while (xmlStreamReader.hasNext())
@@ -160,7 +179,10 @@ public class XmlBulkParser
           }
           else if (xmlStreamReader.getLocalName().equals("Operations"))
           {
-            parseOperations();
+            if (!parseOperations())
+            {
+              return false;
+            }
           }
           else
           {
@@ -169,9 +191,11 @@ public class XmlBulkParser
           break;
 
         case END_ELEMENT:
-          return;
+          return true;
       }
     }
+
+    return true;
   }
 
 
@@ -180,10 +204,13 @@ public class XmlBulkParser
    * Parse an Operations element, and leave the reader positioned on the
    * END_ELEMENT.
    *
+   * @return  {@code true} if operations should continue to be provided,
+   *          or {@code false} if the remaining operations are of no interest.
+   *
    * @throws XMLStreamException  If the XML could not be parsed.
    * @throws SCIMException       If some other error occurred.
    */
-  private void parseOperations()
+  private boolean parseOperations()
       throws XMLStreamException, SCIMException
   {
     while (xmlStreamReader.hasNext())
@@ -207,7 +234,17 @@ public class XmlBulkParser
                   "The size of the bulk operation exceeds the maxPayloadSize " +
                   "(" + bulkConfig.getMaxPayloadSize() + ")");
             }
-            parseOperation();
+            if (skipOperations)
+            {
+              skipElement();
+            }
+            else
+            {
+              if (!parseOperation())
+              {
+                return false;
+              }
+            }
             operationIndex++;
           }
           else
@@ -217,9 +254,11 @@ public class XmlBulkParser
           break;
 
         case END_ELEMENT:
-          return;
+          return true;
       }
     }
+
+    return true;
   }
 
 
@@ -228,10 +267,13 @@ public class XmlBulkParser
    * Parse an Operation element, and leave the reader positioned on the
    * END_ELEMENT.
    *
+   * @return  {@code true} if operations should continue to be provided,
+   *          or {@code false} if the remaining operations are of no interest.
+   *
    * @throws XMLStreamException  If the XML could not be parsed.
    * @throws SCIMException       If some other error occurred.
    */
-  private void parseOperation()
+  private boolean parseOperation()
       throws XMLStreamException, SCIMException
   {
     BulkOperation.Method method = null;
@@ -331,7 +373,7 @@ public class XmlBulkParser
       }
     }
 
-    handler.handleOperation(
+    return handler.handleOperation(
         operationIndex,
         new BulkOperation(method, bulkId, version, path, location,
                           resource, status));
