@@ -59,7 +59,7 @@ public class DeviceResource extends BaseResource
   {
     super(resourceDescriptor);
   }
-   
+
   /**
    * Create a device resource based on the provided SCIMObject.
    *
@@ -71,7 +71,7 @@ public class DeviceResource extends BaseResource
   {
     super(resourceDescriptor, scimObject);
   }
-    
+
   /**
    * Sets the vendor name for this device.
    */
@@ -87,7 +87,7 @@ public class DeviceResource extends BaseResource
        Debug.debugException(e);
      }
    }
-    
+
   /**
    * Retrieves the vendor name for this device.
    *
@@ -100,7 +100,7 @@ public class DeviceResource extends BaseResource
   }
 }
 </pre>
-    
+
               <p>
                 Once you have a custom resource defined, it's nice to have a
                 factory for creating them. The SCIM SDK defines an interface for this
@@ -110,9 +110,9 @@ public class DeviceResource extends BaseResource
                 the service provider which represents your custom resource type. This
                 is done by passing the ResourceFactory into the
                 <tt>SCIMService.getEndpoint(ResourceDescriptor, ResourceFactory&lt;R&gt;)</tt> method.
-                An example is shown below:  
+                An example is shown below:
               </p>
-            
+
 <pre>
 public static final ResourceFactory&lt;DeviceResource&gt; DEVICE_RESOURCE_FACTORY =
      new ResourceFactory&lt;DeviceResource&gt;()
@@ -124,19 +124,19 @@ public static final ResourceFactory&lt;DeviceResource&gt; DEVICE_RESOURCE_FACTOR
             return new DeviceResource(resourceDescriptor, scimObject);
          }
      };
-                  
+
 ResourceDescriptor deviceDescriptor = scimService.getResourceDescriptor("Device");
 SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
   deviceDescriptor, DEVICE_RESOURCE_FACTORY);
 </pre>
-              
+
                <p>
                  At this point, you have a SCIMEndpoint for your custom resource type,
                  with which you can perform queries or add, modify, and delete resources.
                </p>
-              
+
                <h2>Custom Attributes</h2>
-               
+
                <p>
                 There are a set of low-level classes (e.g. SCIMObject, SCIMAttribute, SCIMAttributeValue, etc...)
                 that represent the SCIM data model. These classes are bound to higher-level classes by the
@@ -145,7 +145,7 @@ SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
                 defined in the SCIM core schema. You can also implement your own custom AttributeValueResolver
                 to handle custom attributes exposed by your service provider.
               </p>
-              
+
               <p>
                 <tt>BaseResource</tt> (and all subclasses) are backed by these lower-level SCIM data classes.
                 <tt>AttributeValueResolver</tt> converts Java objects that represent attribute values to/from the
@@ -153,17 +153,17 @@ SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
                 subclasses of BaseResource so that attributes can be retrieved by schema URN and
                 attribute name, and then converted by an AttributeResolver to its Java object.
               </p>
-           
+
               <p>
                 As an example, supposed the Device resource (from above) had a complex attribute called
                 "SupportedFormats" to determine which types multi-media formats were supported by the device.
                 You would likely define a SupportedFormats class to represent this attribute type, and in that
                 class you would create an AttributeValueResolver as follows:
               </p>
-               
+
 <pre>
-public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_RESOLVER =
-         new AttributeValueResolver<SupportedFormats>()
+public static final AttributeValueResolver&lt;SupportedFormats&gt; SUPPORTED_FORMATS_RESOLVER =
+         new AttributeValueResolver&lt;SupportedFormats&gt;()
          {
             public SupportedFormats toInstance(final SCIMAttributeValue value)
             {
@@ -172,13 +172,13 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
                   value.getSingularSubAttributeValue("supportsPhoto", BOOLEAN_RESOLVER),
                   value.getSingularSubAttributeValue("supportsVideo", BOOLEAN_RESOLVER));
             }
-    
+
             public SCIMAttributeValue fromInstance(
                 final AttributeDescriptor attributeDescriptor,
                 final SupportedFormats value) throws InvalidResourceException
             {
-              final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(3);
-    
+              final List&lt;SCIMAttribute&gt; subAttributes = new ArrayList&lt;SCIMAttribute&gt;(3);
+
               if (value.supportsAudio != null)
               {
                 subAttributes.add(
@@ -186,7 +186,7 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
                         attributeDescriptor.getSubAttribute("supportsAudio"),
                         SCIMAttributeValue.createBooleanValue(value.supportsAudio)));
               }
-    
+
               if (value.supportsPhoto != null)
               {
                 subAttributes.add(
@@ -194,7 +194,7 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
                         attributeDescriptor.getSubAttribute("supportsPhoto"),
                         SCIMAttributeValue.createBooleanValue(value.supportsPhoto)));
               }
-              
+
               if (value.supportsVideo != null)
               {
                 subAttributes.add(
@@ -202,7 +202,7 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
                         attributeDescriptor.getSubAttribute("supportsVideo"),
                         SCIMAttributeValue.createBooleanValue(value.supportsVideo)));
               }
-              
+
               return SCIMAttributeValue.createComplexValue(subAttributes);
             }
           };
@@ -212,7 +212,7 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
                 The <tt>com.unboundid.scim.data.Manager</tt> class is another good example
                 of how this works.
               </p>
-              
+
             </td>
           </tr>
         </table>

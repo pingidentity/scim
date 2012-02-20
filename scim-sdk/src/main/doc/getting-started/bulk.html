@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID SCIM SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="resources/unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="resources/images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID SCIM SDK" id="logo">
+          <img src="resources/images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID SCIM SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID SCIM SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Performing Bulk Updates</h2>
+
+              <p>
+                The SCIM SDK provides a way to create and invoke SCIM bulk
+                operations, in which a single POST operation on the Bulk endpoint
+                specifies a set of resource update operations to be processed.
+                The <tt>com.unboundid.scim.sdk.BulkOperation</tt> class represents
+                an individual operation within a bulk operation request or response.
+                Here is a simple example to create a new User and a new Group
+                containing that user as a member, in a single request. Note how
+                the resource ID of the user is referenced by <tt>bulkId:bulkBob</tt>.
+              </p>
+
+<pre>
+  SCIMService scimService; // initialization not shown
+  SCIMEndpoint&lt;UserResource&gt; userEndpoint = service.getUserEndpoint();
+  SCIMEndpoint&lt;GroupResource&gt; groupEndpoint = service.getGroupEndpoint();
+
+  UserResource userBob = userEndpoint.newResource();
+  userBob.setName(new Name("Bob The Builder", "Builder", "The",
+                           "Bob", null, null));
+  userBob.setUserName("bob");
+  userBob.setTitle("Construction Worker");
+
+  GroupResource group = groupEndpoint.newResource();
+  group.setDisplayName("workers");
+  Collection&lt;Entry&lt;String&gt;&gt; members = new ArrayList&lt;Entry&lt;String&gt;&gt;();
+  members.add(new Entry&lt;String&gt;("bulkId:bulkBob", null));
+  group.setMembers(members);
+
+  List&lt;BulkOperation&gt; operations = new ArrayList&lt;BulkOperation&gt;();
+  operations.add(BulkOperation.createRequest(
+      BulkOperation.Method.POST, "bulkBob", null,
+      "/Users", userBob));
+  operations.add(BulkOperation.createRequest(
+      BulkOperation.Method.POST, "group", null,
+      "/Groups", group));
+
+  int failOnErrors = 1;
+  BulkResponse response = service.processBulkRequest(operations, failOnErrors);
+  List&lt;BulkOperation&gt; responses = new ArrayList&lt;BulkOperation&gt;();
+  for (BulkOperation o : response)
+  {
+    responses.add(o);
+  }
+</pre>
+
+              <h2>Creating bulk request content</h2>
+
+              <p>
+                If you just want to create content for a bulk request, use either
+                the <tt>bulkMarshal()</tt> method of one of the <tt>Marshaller</tt>
+                implementations, or one of the <tt>StreamMarshaller</tt> implementations.
+                The <tt>Marshaller</tt> method requires that all the bulk operations be in
+                an in-memory list, which may not be practical for very large
+                requests.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2011&#x2011;2012 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+
