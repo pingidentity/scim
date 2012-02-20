@@ -163,9 +163,10 @@ SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
                
 <pre>
 public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_RESOLVER =
-          new AttributeValueResolver<SupportedFormats>() {
-
-            public SupportedFormats toInstance(final SCIMAttributeValue value) {
+         new AttributeValueResolver<SupportedFormats>()
+         {
+            public SupportedFormats toInstance(final SCIMAttributeValue value)
+            {
               return new SupportedFormats(
                   value.getSingularSubAttributeValue("supportsAudio", BOOLEAN_RESOLVER),
                   value.getSingularSubAttributeValue("supportsPhoto", BOOLEAN_RESOLVER),
@@ -174,13 +175,14 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
     
             public SCIMAttributeValue fromInstance(
                 final AttributeDescriptor attributeDescriptor,
-                final SupportedFormats value) throws InvalidResourceException {
+                final SupportedFormats value) throws InvalidResourceException
+            {
               final List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>(3);
     
               if (value.supportsAudio != null)
               {
                 subAttributes.add(
-                    SCIMAttribute.createSingularAttribute(
+                    SCIMAttribute.create(
                         attributeDescriptor.getSubAttribute("supportsAudio"),
                         SCIMAttributeValue.createBooleanValue(value.supportsAudio)));
               }
@@ -188,7 +190,7 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
               if (value.supportsPhoto != null)
               {
                 subAttributes.add(
-                    SCIMAttribute.createSingularAttribute(
+                    SCIMAttribute.create(
                         attributeDescriptor.getSubAttribute("supportsPhoto"),
                         SCIMAttributeValue.createBooleanValue(value.supportsPhoto)));
               }
@@ -196,7 +198,7 @@ public static final AttributeValueResolver<SupportedFormats> SUPPORTED_FORMATS_R
               if (value.supportsVideo != null)
               {
                 subAttributes.add(
-                    SCIMAttribute.createSingularAttribute(
+                    SCIMAttribute.create(
                         attributeDescriptor.getSubAttribute("supportsVideo"),
                         SCIMAttributeValue.createBooleanValue(value.supportsVideo)));
               }

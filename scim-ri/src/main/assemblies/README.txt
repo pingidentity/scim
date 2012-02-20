@@ -57,7 +57,7 @@ that exercises the basic SCIM operations. The following components are included:
  >$ mvn package
 
  After a successful build, go to the assembled project at
- target/scim-ri-client-1.0.0 and run the example tests:
+ target/scim-ri-client-1.1.0 and run the example tests:
 
  >$ bin/client-test localhost port "cn=directory manager" password
 

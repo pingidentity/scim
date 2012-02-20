@@ -63,13 +63,15 @@ scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
                 <a href="http://hc.apache.org/httpcomponents-client-ga/" target="blank">Apache HttpClient</a>
                 library. This example also uses UnboundID LDAP SDK
                 <tt>com.unboundid.util.ssl</tt>
-                classes to help create a <tt>SSLSocketFactory</tt>.
+                classes to help create a <tt>SSLSocketFactory</tt>. It also demonstrates
+                how to configure the connection manager for preemptive authorization, which
+                can speed up performance.
               </p>
 
 <pre>
 TrustManager trustManager = new TrustStoreTrustManager(
   new File("truststore"), "trustst0re-pAssw0rd", "JKS", true);
-SSLUtil sslUtil = new SSLUtil(null, trustManager);
+SSLUtil sslUtil = new SSLUtil(trustManager);
 
 SSLSocketFactory sslSocketFactory = new SSLSocketFactory(sslUtil.createSSLContext());
 Scheme httpsScheme = new Scheme("https", 443, sslSocketFactory);
@@ -78,13 +80,22 @@ SchemeRegistry schemeRegistry = new SchemeRegistry();
 schemeRegistry.register(httpScheme);
 schemeRegistry.register(httpsScheme);
 
-HttpParams params = new BasicHttpParams();
-params.setBooleanParameter(SO_REUSEADDR, true);
-DefaultHttpClient.setDefaultHttpParams(params);
 ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager(schemeRegistry);
+
+HttpParams params = new BasicHttpParams();
+DefaultHttpClient.setDefaultHttpParams(params);
+HttpConnectionParams.setSoReuseaddr(params, true);
+
 DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
-httpClient.getCredentialsProvider().setCredentials(new AuthScope("localhost", -1),
-  new UsernamePasswordCredentials("uid=bjensen,dc=example,dc=com", "pAssw0rd"));
+
+Credentials credentials = new UsernamePasswordCredentials(
+  "uid=bjensen,dc=example,dc=com", "pAssw0rd");
+  
+httpClient.getCredentialsProvider().setCredentials(
+  new AuthScope("localhost", -1), credentials);
+  
+httpClient.addRequestInterceptor(
+  new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
 
 URI secureUri = URI.create("https://localhost:52443");
 SCIMService secureScimService = new SCIMService(secureUri, new ApacheHttpClientConfig(httpClient));

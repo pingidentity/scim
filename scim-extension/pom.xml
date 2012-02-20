@@ -204,13 +204,13 @@
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.9-SNAPSHOT</version>
+            <version>0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.9-SNAPSHOT</version>
+            <version>0.9</version>
             <classifier>sources</classifier>
             <scope>test</scope>
         </dependency>
