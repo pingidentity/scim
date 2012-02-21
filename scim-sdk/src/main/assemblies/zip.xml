@@ -62,6 +62,10 @@
             <source>${project.build.directory}/${project.build.finalName}-sources.jar</source>
             <destName>sources.jar</destName>
         </file>
+        <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${main.basedir}/resource/Release-Notes.txt</source>
+        </file>
     </files>
     <dependencySets>
         <dependencySet>

@@ -51,6 +51,10 @@
             <source>${project.basedir}/LICENSE.txt</source>
         </file>
         <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${main.basedir}/resource/Release-Notes.txt</source>
+        </file>
+        <file>
             <outputDirectory>config/update</outputDirectory>
             <destName>resources.xml.${build.svn.revision}</destName>
             <source>${main.basedir}/resource/resources.xml</source>

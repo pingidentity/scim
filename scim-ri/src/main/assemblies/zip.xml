@@ -98,6 +98,12 @@
             </includes>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${main.basedir}/resource/Release-Notes.txt</source>
+        </file>
+    </files>
     <dependencySets>
         <dependencySet>
             <outputDirectory>server/lib</outputDirectory>

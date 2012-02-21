@@ -1,0 +1,86 @@
+UnboundID SCIM SDK, Server Extension, and Reference Implementation Release Notes
+
+For full information, visit the project homepage:
+http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim
+
+---------- SCIM 1.1.0 ----------
+
+  * Release Date: February 22, 2012
+
+  * This is an upgrade release with some significant enhancements. Users of
+    previous releases are encouraged to upgrade.
+
+  * New Features
+     
+     - Add support for Bulk operations as defined by the SCIM protocol.
+       Issue:SCIM-31
+          
+     - Allow the SCIM resource ID to be mapped to any LDAP attribute as an
+       alternative to mapping to the LDAP entry DN. The DN does not necessarily
+       meet the requirements of the SCIM specification regarding resource ID
+       immutability since LDAP permits entries to be renamed or moved. The
+       entryUUID attribute, whose read-only value is assigned by the Directory
+       Server, is a possible alternative mapping. Issue:SCIM-149
+       
+     - Update the scim-query-rate tool to use preemptive basic auth, in order to
+       increase performance. Issue:SCIM-189
+       
+     - Add methods to the SCIMService class for specifying the user-agent string
+       to use in the HTTP headers. Issue:SCIM-284
+              
+  * Known Issues and Workarounds
+
+     - In connection failure scenarios, the SCIM SDK may report that HTTP
+       status code 500 was received, even if no response was actually received
+       from the server at all. Currently the SCIM-SDK does not have a mechanism
+       to report local errors such as this. Issue:SCIM-287
+
+  * Resolved Issues
+  
+     - Add the xmlDataFormat attribute to the ServiceProviderConfig endpoint to
+       indicate that the XML data format is supported. Issue:SCIM-233
+  
+     - Update the SCIMEndpoint to catch RuntimeExceptions and wrap them with a
+       SCIMException. Issue:SCIM-236
+       
+     - Fix some cases where emitted XML did not validate against the SCIM core
+       XML schema, due to the incorrect sequence of elements. Also, namespace
+       declarations for resource extension attributes are now omitted where they
+       are not used.
+
+     - Fix an issue where extension attributes in a JSON query response were
+       being discarded during client parsing of the response. Issue:SCIM-247
+       
+     - Update the SCIM Reference Implementation to use Jetty version 8.1.0,
+       which fixes several problems in the IO layer with respect to the latest
+       JVMs and browsers. Issue:DS-5900
+       
+     - Fix an issue whereby a query of a user resource could result in
+       unnecessary searches of the user's group memberships when the query
+       requested specific attributes not including groups. Issue:SCIM-227
+       
+     - The SCIM servlet extension now checks that all LDAP attributes referenced
+       in the resource definitions are defined in the server's LDAP schema.
+       Issue:SCIM-262
+       
+     - Fix an issue where an error was not returned when a user without the
+       unindexed-search privilege performed dynamic group lookup. Issue:SCIM-197
+       
+     - Update the SCIM extension configuration files to use a detailed format
+       HTTP log publisher rather than a common format log publisher.
+       Issue:SCIM-216
+       
+     - Fix an issue in which Base64-encoded binary values caused a class cast
+       exception. Issue:SCIM-293
+
+
+---------- SCIM 1.0.0 ----------
+
+  * Release Date: January 9, 2012
+
+  * This is the first full release of this product. See the product website and
+    bundled documentation for a complete description.
+
+---------------------------------
+
+Copyright 2011-2012 UnboundID Corp. All Rights Reserved.
