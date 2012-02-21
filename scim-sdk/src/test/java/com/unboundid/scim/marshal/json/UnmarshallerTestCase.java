@@ -22,6 +22,7 @@ import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
@@ -90,5 +91,33 @@ public class UnmarshallerTestCase extends SCIMTestCase {
     assertEquals(
         groups.getValues()[2].getAttribute("type").getValue().getStringValue(),
         "US Employees");
+
+    SCIMAttribute x509Certificates =
+        o.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "x509Certificates");
+    assertNotNull(x509Certificates);
+    assertEquals(x509Certificates.getValues().length, 1);
+    final SCIMAttributeValue binaryAttributeValue =
+        x509Certificates.getValues()[0].getAttribute("value").getValue();
+    assertEquals(
+        binaryAttributeValue.getStringValue(),
+        "MIIDQzCCAqygAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwTjELMAkGA1UEBhMCVVMx" +
+        "EzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAoMC2V4YW1wbGUuY29tMRQwEgYD" +
+        "VQQDDAtleGFtcGxlLmNvbTAeFw0xMTEwMjIwNjI0MzFaFw0xMjEwMDQwNjI0MzFa" +
+        "MH8xCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRQwEgYDVQQKDAtl" +
+        "eGFtcGxlLmNvbTEhMB8GA1UEAwwYTXMuIEJhcmJhcmEgSiBKZW5zZW4gSUlJMSIw" +
+        "IAYJKoZIhvcNAQkBFhNiamVuc2VuQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0B" +
+        "AQEFAAOCAQ8AMIIBCgKCAQEA7Kr+Dcds/JQ5GwejJFcBIP682X3xpjis56AK02bc" +
+        "1FLgzdLI8auoR+cC9/Vrh5t66HkQIOdA4unHh0AaZ4xL5PhVbXIPMB5vAPKpzz5i" +
+        "PSi8xO8SL7I7SDhcBVJhqVqr3HgllEG6UClDdHO7nkLuwXq8HcISKkbT5WFTVfFZ" +
+        "zidPl8HZ7DhXkZIRtJwBweq4bvm3hM1Os7UQH05ZS6cVDgweKNwdLLrT51ikSQG3" +
+        "DYrl+ft781UQRIqxgwqCfXEuDiinPh0kkvIi5jivVu1Z9QiwlYEdRbLJ4zJQBmDr" +
+        "SGTMYn4lRc2HgHO4DqB/bnMVorHB0CC6AV1QoFK4GPe1LwIDAQABo3sweTAJBgNV" +
+        "HRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZp" +
+        "Y2F0ZTAdBgNVHQ4EFgQU8pD0U0vsZIsaA16lL8En8bx0F/gwHwYDVR0jBBgwFoAU" +
+        "dGeKitcaF7gnzsNwDx708kqaVt0wDQYJKoZIhvcNAQEFBQADgYEAA81SsFnOdYJt" +
+        "Ng5Tcq+/ByEDrBgnusx0jloUhByPMEVkoMZ3J7j1ZgI8rAbOkNngX8+pKfTiDz1R" +
+        "C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1" +
+        "+GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=");
+    binaryAttributeValue.getBinaryValue();  // Should not throw.
   }
 }

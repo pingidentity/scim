@@ -151,7 +151,8 @@ public class JsonParser
       final AttributeDescriptor attributeDescriptor)
   {
     return SCIMAttribute.create(attributeDescriptor,
-        SCIMAttributeValue.createStringValue(jsonAttribute.toString()));
+        SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
+                                       jsonAttribute.toString()));
   }
 
 
@@ -187,7 +188,8 @@ public class JsonParser
       {
         SCIMAttribute subAttr = SCIMAttribute.create(
             attributeDescriptor.getSubAttribute("value"),
-            SCIMAttributeValue.createStringValue(o.toString()));
+            SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
+                                           o.toString()));
         value = SCIMAttributeValue.createComplexValue(subAttr);
       }
       values.add(value);

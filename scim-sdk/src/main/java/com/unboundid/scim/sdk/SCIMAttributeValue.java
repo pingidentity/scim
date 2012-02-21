@@ -18,7 +18,9 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.data.AttributeValueResolver;
+import com.unboundid.scim.schema.AttributeDescriptor;
 
+import javax.xml.bind.DatatypeConverter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,6 +78,29 @@ public final class SCIMAttributeValue
   {
     this.value = null;
     this.attributes = attributes;
+  }
+
+
+
+  /**
+   * Create a new simple attribute value of the specified data type.
+   *
+   * @param dataType  The data type of the value.
+   * @param value     The string representation of the value.
+   *
+   * @return  The new simple attribute value.
+   */
+  public static SCIMAttributeValue createValue(
+      final AttributeDescriptor.DataType dataType,
+      final String value)
+  {
+    switch (dataType)
+    {
+      case BINARY:
+        return createBinaryValue(DatatypeConverter.parseBase64Binary(value));
+      default:
+        return createStringValue(value);
+    }
   }
 
 

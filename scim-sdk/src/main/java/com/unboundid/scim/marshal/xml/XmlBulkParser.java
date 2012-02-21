@@ -524,7 +524,7 @@ public class XmlBulkParser
   {
     return SCIMAttribute.create(
         attributeDescriptor,
-        SCIMAttributeValue.createStringValue(
+        SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
             handler.transformValue(operationIndex,
                                    xmlStreamReader.getElementText())));
   }

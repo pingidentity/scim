@@ -356,7 +356,8 @@ public class JsonBulkParser extends JsonParser
     final String v =
         handler.transformValue(operationIndex, jsonAttribute.toString());
 
-    return SCIMAttribute.create(attributeDescriptor,
-                                SCIMAttributeValue.createStringValue(v));
+    return SCIMAttribute.create(
+        attributeDescriptor,
+        SCIMAttributeValue.createValue(attributeDescriptor.getDataType(), v));
   }
 }

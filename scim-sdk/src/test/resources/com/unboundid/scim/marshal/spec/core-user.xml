@@ -1,21 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Copyright 2011-2012 UnboundID Corp.
-  ~
-  ~ This program is free software; you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License (GPLv2 only)
-  ~ or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
-  ~ as published by the Free Software Foundation.
-  ~
-  ~ This program is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  ~ GNU General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU General Public License
-  ~ along with this program; if not, see <http://www.gnu.org/licenses>.
-  -->
-
 <scim:User xmlns:scim="urn:scim:schemas:core:1.0">
     <id>uid=005D0000001Az1u,ou=People,dc=example,dc=com</id>
     <meta>
@@ -90,6 +73,8 @@
     </photos>
     <addresses>
         <address>
+            <primary>true</primary>
+            <type>work</type>
             <formatted>100 Universal City Plaza Hollywood, CA 91608 USA
             </formatted>
             <streetAddress>100 Universal City Plaza</streetAddress>
@@ -97,17 +82,15 @@
             <region>CA</region>
             <postalCode>91608</postalCode>
             <country>USA</country>
-            <primary>true</primary>
-            <type>work</type>
         </address>
         <address>
+            <type>home</type>
             <formatted>456 Hollywood Blvd Hollywood, CA 91608 USA</formatted>
             <streetAddress>456 Hollywood Blvd</streetAddress>
             <locality>San Francisco</locality>
             <region>CA</region>
             <postalCode>91608</postalCode>
             <country>USA</country>
-            <type>home</type>
         </address>
     </addresses>
     <groups>
@@ -126,4 +109,28 @@
             <type>US Employees</type>
         </group>
     </groups>
+    <x509Certificates>
+      <x509Certificate>
+        <value>
+          MIIDQzCCAqygAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwTjELMAkGA1UEBhMCVVMx
+          EzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAoMC2V4YW1wbGUuY29tMRQwEgYD
+          VQQDDAtleGFtcGxlLmNvbTAeFw0xMTEwMjIwNjI0MzFaFw0xMjEwMDQwNjI0MzFa
+          MH8xCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRQwEgYDVQQKDAtl
+          eGFtcGxlLmNvbTEhMB8GA1UEAwwYTXMuIEJhcmJhcmEgSiBKZW5zZW4gSUlJMSIw
+          IAYJKoZIhvcNAQkBFhNiamVuc2VuQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0B
+          AQEFAAOCAQ8AMIIBCgKCAQEA7Kr+Dcds/JQ5GwejJFcBIP682X3xpjis56AK02bc
+          1FLgzdLI8auoR+cC9/Vrh5t66HkQIOdA4unHh0AaZ4xL5PhVbXIPMB5vAPKpzz5i
+          PSi8xO8SL7I7SDhcBVJhqVqr3HgllEG6UClDdHO7nkLuwXq8HcISKkbT5WFTVfFZ
+          zidPl8HZ7DhXkZIRtJwBweq4bvm3hM1Os7UQH05ZS6cVDgweKNwdLLrT51ikSQG3
+          DYrl+ft781UQRIqxgwqCfXEuDiinPh0kkvIi5jivVu1Z9QiwlYEdRbLJ4zJQBmDr
+          SGTMYn4lRc2HgHO4DqB/bnMVorHB0CC6AV1QoFK4GPe1LwIDAQABo3sweTAJBgNV
+          HRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZp
+          Y2F0ZTAdBgNVHQ4EFgQU8pD0U0vsZIsaA16lL8En8bx0F/gwHwYDVR0jBBgwFoAU
+          dGeKitcaF7gnzsNwDx708kqaVt0wDQYJKoZIhvcNAQEFBQADgYEAA81SsFnOdYJt
+          Ng5Tcq+/ByEDrBgnusx0jloUhByPMEVkoMZ3J7j1ZgI8rAbOkNngX8+pKfTiDz1R
+          C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1
+          +GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=
+        </value>
+      </x509Certificate>
+    </x509Certificates>
 </scim:User>
