@@ -73,6 +73,19 @@ public class SCIMService
   }
 
   /**
+   * Constructs a new SCIMService with OAuth authentication support
+   * using the provided credentials. This SCIMService will use
+   * <code>java.net.HttpURLConnection</code> for the HTTP layer.
+
+   * @param baseUrl The SCIM Service Provider URL.
+   * @param oAuthToken The OAuth token.
+   */
+  public SCIMService(final URI baseUrl, final OAuthToken oAuthToken) {
+    this(baseUrl, new ClientConfig().handlers(new OAuthSecurityHandler
+      (oAuthToken)));
+  }
+
+  /**
    * Constructs a new SCIMService with basic authentication support
    * using the provided credentials. This SCIMService will use
    * <code>java.net.HttpURLConnection</code> for the HTTP layer.
