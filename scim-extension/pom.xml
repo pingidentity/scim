@@ -21,6 +21,30 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.unboundid.build</groupId>
+                <artifactId>coverage-diff-plugin</artifactId>
+                <version>1.0-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <id>instrument-extension</id>
+                        <goals>
+                            <goal>instrument-server-sdk-extension</goal>
+                        </goals>
+                        <configuration>
+                            <extraLibraryPatterns>
+                                <extraLibraryPattern>scim.*</extraLibraryPattern>
+                            </extraLibraryPatterns>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>coverage-diff</id>
+                        <goals>
+                            <goal>coverage-diff</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -37,7 +61,8 @@
                         <serverInstanceVersion>3.2.1.0-GA</serverInstanceVersion>
                         <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                         <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
-                        <extensionZipFile>${project.build.directory}/${project.build.finalName}.zip</extensionZipFile>
+                        <coverageDataDir>${project.build.directory}</coverageDataDir>
+                        <extensionZipFile>${project.build.directory}/${project.build.finalName}-instrumented.zip</extensionZipFile>
                         <main.basedir>${main.basedir}</main.basedir>
                     </systemPropertyVariables>
                     <properties>
@@ -204,13 +229,13 @@
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.9</version>
+            <version>0.10-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.unboundid.directory.testtools</groupId>
             <artifactId>standalone-ds-test-harness</artifactId>
-            <version>0.9</version>
+            <version>0.10-SNAPSHOT</version>
             <classifier>sources</classifier>
             <scope>test</scope>
         </dependency>
