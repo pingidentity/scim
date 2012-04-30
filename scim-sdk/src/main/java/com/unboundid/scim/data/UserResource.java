@@ -382,9 +382,10 @@ public class UserResource extends BaseResource
    * Retrieves the User's administrative status.
    *
    * @return <code>true</code> if the User's administrative status is active or
-   *         <code>false</code> otherwise.
+   *         <code>false</code> otherwise or <code>null</code> if it is not
+   *         specified.
    */
-  public boolean isActive()
+  public Boolean isActive()
   {
     return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
         "active", AttributeValueResolver.BOOLEAN_RESOLVER);
@@ -396,7 +397,7 @@ public class UserResource extends BaseResource
    * @param active The User's administrative status.
    * @return this resource instance.
    */
-  public UserResource setActive(final boolean active)
+  public UserResource setActive(final Boolean active)
   {
     try {
       setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
