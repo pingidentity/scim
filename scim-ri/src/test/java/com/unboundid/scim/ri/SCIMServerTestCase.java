@@ -1138,7 +1138,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     user3.setPhoneNumbers(null);
 
     // Put the updated user.
-    endpoint.update(user3);
+    final UserResource user4 = endpoint.update(user3);
 
     final Entry entry4 = testDS.getEntry(userDN);
     assertFalse(entry4.hasAttribute("givenName"));
@@ -1152,6 +1152,16 @@ public class SCIMServerTestCase extends SCIMRITestCase
     assertFalse(entry4.hasAttribute("postalCode"));
     assertFalse(entry4.hasAttribute("homePostalAddress"));
     assertTrue(entry4.hasAttribute("description"));
+
+    // Change and attribute that is mapped to a attribute in the RDN and make
+    // sure the DN is changed as well
+    user4.setDisplayName("displayName");
+    user4.setUserName("updated-bjensen");
+
+    endpoint.update(user4);
+
+    final Entry entry5 = testDS.getEntry("uid=updated-bjensen," + userBaseDN);
+    assertTrue(entry5.hasAttributeValue("displayName", "displayName"));
   }
 
 

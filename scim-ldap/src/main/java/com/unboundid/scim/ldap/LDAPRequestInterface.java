@@ -24,6 +24,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPInterface;
 import com.unboundid.ldap.sdk.LDAPResult;
 import com.unboundid.ldap.sdk.LDAPSearchException;
+import com.unboundid.ldap.sdk.ModifyDNRequest;
 import com.unboundid.ldap.sdk.ModifyRequest;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
@@ -147,6 +148,27 @@ public class LDAPRequestInterface
   {
     addControls(modifyRequest);
     return ldapInterface.modify(modifyRequest);
+  }
+
+
+
+  /**
+   * Processes the provided modify DN request.
+   *
+   * @param  modifyDNRequest  The modify DN request to be processed.  It must
+   *                          not be {@code null}.
+   *
+   * @return  The result of processing the modify operation.
+   *
+   * @throws  LDAPException  If the server rejects the modify DN request, or if
+   *                         a problem is encountered while sending the request
+   *                         or reading the response.
+   */
+  public LDAPResult modifyDN(final ModifyDNRequest modifyDNRequest)
+       throws LDAPException
+  {
+    addControls(modifyDNRequest);
+    return ldapInterface.modifyDN(modifyDNRequest);
   }
 
 

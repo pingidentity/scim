@@ -29,6 +29,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
@@ -749,7 +750,7 @@ public class ResourceMapper
     }
 
     // TODO allow SCIM object values to be referenced
-    entry.setDN(dnConstructor.constructValue(entry));
+    entry.setDN(constructEntryDN(entry));
 
     entry = searchResolver.preProcessAddEntry(entry);
     return entry;
@@ -1253,6 +1254,39 @@ public class ResourceMapper
       throws SCIMException
   {
     return searchResolver.getIdFromEntry(entry);
+  }
+
+
+
+  /**
+   * Construct the the entry DN from the entry attributes based on the
+   * LDAP Add parameters.
+   *
+   * @param entry  The LDAP entry to construct the DN from.
+   *
+   * @return  The constructed DN for the entry or {@code null} if the LDAP
+   *          ADD parameters are not defined.
+   *
+   * @throws SCIMException  If the resource ID could not be determined.
+   */
+  public String constructEntryDN(final Entry entry) throws SCIMException
+  {
+    if(dnConstructor != null)
+    {
+      try
+      {
+      return dnConstructor.constructValue(entry);
+      }
+      catch (Exception e)
+      {
+        throw new InvalidResourceException("An error occurred while " +
+            "constructing the DN for a mapped entry: " +
+            e.getLocalizedMessage(), e);
+      }
+    }
+    throw new InvalidResourceException("A DNTemplate must be defined in the " +
+        "LDAPAdd section of the resource mapping configuration to map User " +
+        "resources to LDAP entry DNs.");
   }
 
 

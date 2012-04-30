@@ -27,7 +27,10 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
 import com.unboundid.ldap.sdk.Modification;
+import com.unboundid.ldap.sdk.ModificationType;
+import com.unboundid.ldap.sdk.ModifyDNRequest;
 import com.unboundid.ldap.sdk.ModifyRequest;
+import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
@@ -73,6 +76,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -567,13 +571,86 @@ public abstract class LDAPBackend
 
       if(!mods.isEmpty())
       {
-        final ModifyRequest modifyRequest =
-            new ModifyRequest(currentEntry.getDN(), mods);
-        modifyRequest.addControl(new PostReadRequestControl(requestAttributes));
-        final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
+        // Look for any modifications that will affect the mapped entry's RDN
+        // and split them up.
+        modifiedEntry = currentEntry.duplicate();
+        ListIterator<Modification> iterator = mods.listIterator();
+        while(iterator.hasNext())
+        {
+          Modification mod = iterator.next();
+          if((mod.getModificationType() == ModificationType.INCREMENT ||
+              mod.getModificationType() == ModificationType.REPLACE) &&
+              currentEntry.getRDN().hasAttribute(mod.getAttributeName()))
+          {
+            iterator.remove();
 
-        final PostReadResponseControl c =
-            getPostReadResponseControl(modifyResult);
+            // The modification will affect the RDN so we need to first apply
+            // the mods in memory and reconstruct the DN. We will set the DN to
+            // null first so Entry.applyModifications wouldn't throw any
+            // exceptions about affecting the RDN.
+            modifiedEntry.setDN("");
+            modifiedEntry =
+                Entry.applyModifications(modifiedEntry, true, mod);
+            modifiedEntry.setDN(mapper.constructEntryDN(modifiedEntry));
+
+            // We might have to split the mod values into those that affects
+            // the RDN and those that do not and add them after the mod DN.
+            if(mod.getModificationType() == ModificationType.REPLACE &&
+                mod.getValues().length > 1)
+            {
+              List<String> newValues =
+                  new ArrayList<String>(mod.getValues().length - 1);
+              RDN newRDN = modifiedEntry.getRDN();
+              for(String value : mod.getValues())
+              {
+                if(!newRDN.hasAttributeValue(mod.getAttributeName(), value))
+                {
+                  newValues.add(value);
+                }
+              }
+
+              Modification newMod =
+                  new Modification(ModificationType.ADD,
+                      mod.getAttributeName(),
+                      newValues.toArray(new String[newValues.size()]));
+              iterator.add(newMod);
+            }
+          }
+        }
+
+        PostReadResponseControl c = null;
+        if(!modifiedEntry.getParsedDN().equals(currentEntry.getParsedDN()))
+        {
+          ModifyDNRequest modifyDNRequest =
+              new ModifyDNRequest(currentEntry.getDN(),
+                  modifiedEntry.getRDN().toString(), true);
+
+          // If there are no other mods left, we need to include the
+          // PostReadRequestControl now since we won't be performing a modify
+          // operation later.
+          if(mods.isEmpty())
+          {
+            modifyDNRequest.addControl(
+                new PostReadRequestControl(requestAttributes));
+          }
+          final LDAPResult modifyDNResult =
+              ldapInterface.modifyDN(modifyDNRequest);
+          if(mods.isEmpty())
+          {
+            c = getPostReadResponseControl(modifyDNResult);
+          }
+        }
+
+        if(!mods.isEmpty())
+        {
+          final ModifyRequest modifyRequest =
+              new ModifyRequest(modifiedEntry.getDN(), mods);
+          modifyRequest.addControl(
+                new PostReadRequestControl(requestAttributes));
+          final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
+          c = getPostReadResponseControl(modifyResult);
+        }
+
         if (c != null)
         {
           modifiedEntry = c.getEntry();
