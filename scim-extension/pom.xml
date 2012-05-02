@@ -58,7 +58,7 @@
                         <TERM>xterm</TERM>
                     </environmentVariables>
                     <systemPropertyVariables>
-                        <serverInstanceVersion>3.2.1.0-GA</serverInstanceVersion>
+                        <serverInstanceVersion>3.2.2.2-GA</serverInstanceVersion>
                         <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
                         <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
                         <coverageDataDir>${project.build.directory}</coverageDataDir>
