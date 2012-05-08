@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.1.1</version>
+    <version>1.1.2-SNAPSHOT</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
@@ -39,8 +39,8 @@
     </organization>
 
     <scm>
-        <connection>scm:svn:https://unboundid.svn.cvsdude.com/components/scim/tags/scim-1.1.1</connection>
-        <developerConnection>scm:svn:https://unboundid.svn.cvsdude.com/components/scim/tags/scim-1.1.1</developerConnection>
+        <connection>scm:svn:https://unboundid.svn.cvsdude.com/components/scim/trunk</connection>
+        <developerConnection>scm:svn:https://unboundid.svn.cvsdude.com/components/scim/trunk</developerConnection>
     </scm>
 
     <modules>
