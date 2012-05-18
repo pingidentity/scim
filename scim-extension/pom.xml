@@ -68,7 +68,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>com.unboundid.directory.tests.externalinstance.TestListener</value>
+                            <value>com.unboundid.directory.tests.externalinstance.TestListener,com.unboundid.directory.tests.externalinstance.VersionRestrictionAnnotationTransformer</value>
                         </property>
                     </properties>
                 </configuration>
