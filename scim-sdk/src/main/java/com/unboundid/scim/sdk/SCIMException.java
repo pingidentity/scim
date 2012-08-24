@@ -23,7 +23,7 @@ import java.io.OutputStream;
 
 /**
  * This class is the base class for all custom checked exceptions defined in
- * the SCIM server.
+ * the SCIM SDK.
  */
 public class SCIMException extends Exception implements SCIMResponse
 {
@@ -105,6 +105,7 @@ public class SCIMException extends Exception implements SCIMResponse
   {
     switch(statusCode)
     {
+      case -1  : return new ConnectException(errorMessage);
       case 400 : return new InvalidResourceException(errorMessage);
       case 401 : return new UnauthorizedException(errorMessage);
       case 403 : return new UnsupportedOperationException(errorMessage);

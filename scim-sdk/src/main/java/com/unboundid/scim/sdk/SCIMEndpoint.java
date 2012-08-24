@@ -28,7 +28,15 @@ import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
+import org.apache.http.MethodNotSupportedException;
+import org.apache.http.NoHttpResponseException;
+import org.apache.http.UnsupportedHttpVersionException;
+import org.apache.http.auth.AuthenticationException;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.RedirectException;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientConfigException;
 import org.apache.wink.client.ClientResponse;
@@ -44,6 +52,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.URI;
 import java.util.List;
 
@@ -211,7 +220,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     catch(Exception e)
     {
-      throw SCIMException.createException(getStatusCode(e), e.getMessage());
+      throw SCIMException.createException(getStatusCode(e),
+                                          getExceptionMessage(e));
     }
     finally
     {
@@ -315,7 +325,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     catch(Exception e)
     {
-      throw SCIMException.createException(getStatusCode(e), e.getMessage());
+      throw SCIMException.createException(getStatusCode(e),
+                                          getExceptionMessage(e));
     }
     finally
     {
@@ -407,7 +418,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     catch(Exception e)
     {
-      throw SCIMException.createException(getStatusCode(e), e.getMessage());
+      throw SCIMException.createException(getStatusCode(e),
+                                          getExceptionMessage(e));
     }
     finally
     {
@@ -521,7 +533,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     catch(Exception e)
     {
-      throw SCIMException.createException(getStatusCode(e), e.getMessage());
+      throw SCIMException.createException(getStatusCode(e),
+                                          getExceptionMessage(e));
     }
     finally
     {
@@ -607,7 +620,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     catch(Exception e)
     {
-      throw SCIMException.createException(getStatusCode(e), e.getMessage());
+      throw SCIMException.createException(getStatusCode(e),
+                                          getExceptionMessage(e));
     }
     finally
     {
@@ -732,44 +746,108 @@ public class SCIMEndpoint<R extends BaseResource>
     return scimException;
   }
 
-
   /**
    * Tries to deduce the most appropriate HTTP response code from the given
    * exception. This method expects most exceptions to be one of 3 or 4
-   * expected runtime exceptions that are common to Wink.
+   * expected runtime exceptions that are common to Wink and the Apache Http
+   * Client library.
+   * <p>
+   * Note this method can return -1 for the special case of a
+   * {@link com.unboundid.scim.sdk.ConnectException}, in which the service
+   * provider could not be reached at all.
    *
-   * @param e the Exception instance to analyze
+   * @param t the Exception instance to analyze
    * @return the most appropriate HTTP status code
    */
-  private static int getStatusCode(final Exception e)
+  private static int getStatusCode(final Throwable t)
   {
-    if(e instanceof ClientWebException)
+    Throwable rootCause = t;
+    if(rootCause instanceof ClientRuntimeException)
     {
-      ClientWebException cwe = (ClientWebException) e;
-      return cwe.getResponse().getStatusCode();
+      //Pull the underlying cause out of the ClientRuntimeException
+      rootCause = StaticUtils.getRootCause(t);
     }
-    else if(e instanceof ClientAuthenticationException)
+
+    if(rootCause instanceof HttpResponseException)
     {
-      return 401;
+      HttpResponseException hre = (HttpResponseException) rootCause;
+      return hre.getStatusCode();
     }
-    else if(e instanceof ClientConfigException)
+    else if(rootCause instanceof HttpException)
     {
-      return 400;
-    }
-    else if(e instanceof ClientRuntimeException)
-    {
-      Throwable t = e.getCause();
-      if(t instanceof HttpException)
+      if(rootCause instanceof RedirectException)
+      {
+        return 300;
+      }
+      else if(rootCause instanceof AuthenticationException)
+      {
+        return 401;
+      }
+      else if(rootCause instanceof MethodNotSupportedException)
       {
         return 501;
       }
-      else if(t instanceof IOException)
+      else if(rootCause instanceof UnsupportedHttpVersionException)
       {
-        return 500;
+        return 505;
+      }
+    }
+    else if(rootCause instanceof IOException)
+    {
+      if(rootCause instanceof ConnectException)
+      {
+        return -1;
+      }
+      else if(rootCause instanceof ConnectTimeoutException)
+      {
+        return -1;
+      }
+      else if(rootCause instanceof NoHttpResponseException)
+      {
+        return 503;
+      }
+      else if(rootCause instanceof ConnectionClosedException)
+      {
+        return 503;
       }
     }
 
-    //Default
-    return 500;
+    if(t instanceof ClientWebException)
+    {
+      ClientWebException cwe = (ClientWebException) t;
+      return cwe.getResponse().getStatusCode();
+    }
+    else if(t instanceof ClientAuthenticationException)
+    {
+      return 401;
+    }
+    else if(t instanceof ClientConfigException)
+    {
+      return 400;
+    }
+    else
+    {
+      return 500;
+    }
+  }
+
+  /**
+   * Extracts the exception message from the root cause of the exception if
+   * possible.
+   *
+   * @param t the original Throwable that was caught. This may be null.
+   * @return the exception message from the root cause of the exception, or
+   *         null if the specified Throwable is null or the message cannot be
+   *         determined.
+   */
+  private static String getExceptionMessage(final Throwable t)
+  {
+    if(t == null)
+    {
+      return null;
+    }
+
+    Throwable rootCause = StaticUtils.getRootCause(t);
+    return rootCause.getMessage();
   }
 }

@@ -27,6 +27,7 @@ import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkResponse;
 import com.unboundid.scim.sdk.PageParameters;
+import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -246,7 +247,6 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     dsInstance.dsconfig(
         "set-group-implementation-prop",
         "--implementation-name", "Static",
-        "--set", "support-nested-groups:true",
         "--set", "cache-user-to-group-mappings:false"
     );
 
@@ -550,6 +550,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     user = userEndpoint.update(user);
     assertNotNull(user);
     assertEquals(user.getTitle(), "Engineer");
+    dsInstance.checkCredentials("uid=testPasswordModify," + userBaseDN,
+                                      "oldPassword");
 
     //Now change the password
     user.setPassword("anotherPassword");
@@ -574,7 +576,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     //Verify the password was changed in the Directory
     dsInstance.checkCredentials("uid=testPasswordModify," + userBaseDN,
-        "anotherPassword");
+                                      "anotherPassword");
   }
 
 
@@ -638,6 +640,17 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         getMonitorAsString(scimInstance, "user-resource-post-successful");
     Date createTime = returnedUser.getMeta().getCreated();
     Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    try
+    {
+      //Try to create the same user again
+      userEndpoint.create(user);
+      fail("Expected a 409 response when trying to create duplicate user");
+    }
+    catch (ResourceConflictException e)
+    {
+      //expected (error code is 409)
+    }
 
     //Verify what is returned from the SDK
     assertNotNull(returnedUser);
@@ -2545,7 +2558,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                                                   fullArgs);
       if (output.getReturnValue() != 0)
       {
-        assertTrue(output.getStderr().contains("will not take effect"));
+        assertTrue(output.getStdout().contains("will not take effect"));
         scimInstance.stopInstance();
         scimInstance.startInstance();
       }

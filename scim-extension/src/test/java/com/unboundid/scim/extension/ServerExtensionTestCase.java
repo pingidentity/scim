@@ -10,7 +10,6 @@ import com.unboundid.directory.tests.externalinstance.ExternalInstance;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
-import com.unboundid.scim.sdk.StaticUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -130,7 +129,7 @@ public class ServerExtensionTestCase extends BaseTestCase
           new File(instance.getInstanceRoot(),
                    "extensions/com.unboundid.scim-extension/tmp-data");
       final List<String> output = new ArrayList<String>();
-      final int rc = StaticUtils.exec(
+      final int rc = FilePermission.exec(
           "ls",
           new String[] { "-ld", tmpDataDir.getAbsolutePath() },
           null, null, output);

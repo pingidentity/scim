@@ -70,7 +70,6 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
     dsInstance.dsconfig(
         "set-group-implementation-prop",
         "--implementation-name", "Static",
-        "--set", "support-nested-groups:true",
         "--set", "cache-user-to-group-mappings:false"
     );
 

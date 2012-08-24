@@ -39,7 +39,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
-import com.unboundid.scim.sdk.StaticUtils;
+import com.unboundid.util.StaticUtils;
 import com.unboundid.util.Validator;
 import org.xml.sax.SAXException;
 
@@ -1344,7 +1344,7 @@ public class ResourceMapper
    */
   public static SCIMException toSCIMException(final LDAPException e)
   {
-    return toSCIMException(e.getMessage(), e);
+    return toSCIMException(StaticUtils.getExceptionMessage(e), e);
   }
 
 
@@ -1362,12 +1362,17 @@ public class ResourceMapper
   {
     switch (e.getResultCode().intValue())
     {
+      case ResultCode.INVALID_CREDENTIALS_INT_VALUE:
+        return SCIMException.createException(401, errorMessage);
+
       case ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE:
         return SCIMException.createException(403, errorMessage);
 
       case ResultCode.NO_SUCH_OBJECT_INT_VALUE:
         return SCIMException.createException(404, errorMessage);
 
+      case ResultCode.CONSTRAINT_VIOLATION_INT_VALUE:
+      case ResultCode.ATTRIBUTE_OR_VALUE_EXISTS_INT_VALUE:
       case ResultCode.ENTRY_ALREADY_EXISTS_INT_VALUE:
         return SCIMException.createException(409, errorMessage);
 
