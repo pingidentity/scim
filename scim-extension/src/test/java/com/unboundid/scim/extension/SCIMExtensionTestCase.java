@@ -15,7 +15,9 @@ import com.unboundid.directory.tests.externalinstance.standalone.
 import com.unboundid.directory.tests.externalinstance.util.FutureCondition;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.Entry;
@@ -918,6 +920,87 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
         getMonitorAsString(scimInstance, "user-resource-delete-404");
     assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
         Integer.valueOf(afterCount) - 1);
+  }
+
+
+
+  /**
+   * Tests the behavior of DELETE operations over SCIM if soft-deletes are
+   * enabled on the Directory Server.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testSoftDelete() throws Exception
+  {
+    //Enable soft-deletes on the DS instance
+    dsInstance.dsconfig(
+        "create-soft-delete-policy",
+        "--policy-name", "default-soft-delete-policy",
+        "--set", "auto-soft-delete-connection-criteria:Requests by Root Users");
+
+    dsInstance.dsconfig(
+            "set-global-configuration-prop",
+            "--set", "soft-delete-policy:default-soft-delete-policy");
+
+    scimInstance.getConnectionPool().add(generateUserEntry(
+            "testSoftDelete", userBaseDN, "Test", "User", "password"));
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    UserResource user = getUser("testSoftDelete");
+    String userID = user.getId();
+
+    String beforeCount =
+            getMonitorAsString(scimInstance, "user-resource-delete-successful");
+    userEndpoint.delete(userID);
+    String afterCount =
+            getMonitorAsString(scimInstance, "user-resource-delete-successful");
+
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+            Integer.valueOf(afterCount) - 1);
+
+    beforeCount =
+            getMonitorAsString(scimInstance, "user-resource-delete-404");
+    try
+    {
+      //Should throw ResourceNotFoundException
+      userEndpoint.delete(userID);
+      fail("Expected ResourceNotFoundException when deleting " +
+              "non-existent user");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
+    afterCount =
+            getMonitorAsString(scimInstance, "user-resource-delete-404");
+    assertEquals(beforeCount == null ? 0 : Integer.valueOf(beforeCount),
+            Integer.valueOf(afterCount) - 1);
+
+    //Try to recreate the user. This should succeed, and now we will have both
+    //a real and a soft-deleted version.
+    user = userEndpoint.create(user);
+    assertEntryExists(scimInstance.getConnectionPool(),
+                        "uid=testSoftDelete," + userBaseDN);
+
+    //Delete the user again (now there will be two soft-deleted entries)
+    userEndpoint.delete(user.getId());
+
+    //Delete the soft-deleted entries
+    SearchResult result = scimInstance.getConnectionPool().search(
+      userBaseDN, SearchScope.SUB, "(objectclass=ds-soft-delete-entry)", "1.1");
+    assertEquals(result.getEntryCount(), 2);
+    for(SearchResultEntry e : result.getSearchEntries())
+    {
+      scimInstance.getConnectionPool().delete(e.getDN());
+    }
+
+    //Cleanup
+    dsInstance.dsconfig("set-global-configuration-prop",
+            "--reset", "soft-delete-policy");
+
+    dsInstance.dsconfig("delete-soft-delete-policy",
+                        "--policy-name", "default-soft-delete-policy");
   }
 
 

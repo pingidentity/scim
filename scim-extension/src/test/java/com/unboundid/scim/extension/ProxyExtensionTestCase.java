@@ -194,7 +194,4 @@ public class ProxyExtensionTestCase extends SCIMExtensionTestCase
     m.destroyInstance(proxyInstance.getInstanceId());
     m.destroyInstance(dsInstance.getInstanceId());
   }
-
-
-
 }
