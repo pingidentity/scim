@@ -595,6 +595,136 @@ public class SCIMResource extends AbstractSCIMResource
 
 
   /**
+   * Implement the PATCH operation consuming and producing JSON format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param userID           The target user ID.
+   * @param servletContext   The servlet context for the request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doJsonJsonPatch(final InputStream inputStream,
+                                 @PathParam("userID") final String userID,
+                                 @Context final ServletContext servletContext,
+                                 @Context final SecurityContext securityContext,
+                                 @Context final HttpHeaders headers,
+                                 @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(servletContext, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_JSON_TYPE,
+                    MediaType.APPLICATION_JSON_TYPE);
+    return patchUser(requestContext, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming and producing XML format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param userID           The target user ID.
+   * @param servletContext   The servlet context for the request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}")
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_XML)
+  public Response doXmlXmlPatch(final InputStream inputStream,
+                               @PathParam("userID") final String userID,
+                               @Context final ServletContext servletContext,
+                               @Context final SecurityContext securityContext,
+                               @Context final HttpHeaders headers,
+                               @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(servletContext, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_XML_TYPE,
+                    MediaType.APPLICATION_XML_TYPE);
+    return patchUser(requestContext, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming XML format and producing JSON
+   * format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param userID           The target user ID.
+   * @param servletContext   The servlet context for the request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}")
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doXmlJsonPatch(final InputStream inputStream,
+                                @PathParam("userID") final String userID,
+                                @Context final ServletContext servletContext,
+                                @Context final SecurityContext securityContext,
+                                @Context final HttpHeaders headers,
+                                @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(servletContext, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_XML_TYPE,
+                    MediaType.APPLICATION_JSON_TYPE);
+    return patchUser(requestContext, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming JSON format and producing XML
+   * format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param userID           The target user ID.
+   * @param servletContext   The servlet context for the request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_XML)
+  public Response doJsonXmlPatch(final InputStream inputStream,
+                                @PathParam("userID") final String userID,
+                                @Context final ServletContext servletContext,
+                                @Context final SecurityContext securityContext,
+                                @Context final HttpHeaders headers,
+                                @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(servletContext, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_JSON_TYPE,
+                    MediaType.APPLICATION_XML_TYPE);
+    return patchUser(requestContext, userID, inputStream);
+  }
+
+
+
+  /**
    * Implement the DELETE operation on a specified user resource producing
    * JSON format.
    *

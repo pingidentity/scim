@@ -293,12 +293,12 @@ public class ResourceStats
   /**
    * Number of patch requests that responded in XML format.
    */
-  public static final String PATCH_ACCEPT_XML = "patch-accept-xml";
+  public static final String PATCH_RESPONSE_XML = "patch-response-xml";
 
   /**
    * Number of patch requests that responded in JSON format.
    */
-  public static final String PATCH_ACCEPT_JSON = "patch-accept-json";
+  public static final String PATCH_RESPONSE_JSON = "patch-response-json";
 
   /**
    * Number of patch requests with content in XML format.

@@ -31,8 +31,8 @@ import java.util.Map;
 
 
 /**
- * This class represents a Simple Cloud Identity Management (SCIM) attribute
- * value. Values are categorized as either Simple or Complex.
+ * This class represents a System for Cross-Domain Identity Management (SCIM)
+ * attribute value. Values are categorized as either Simple or Complex.
  *
  * <ul>
  * <li>Simple values can be String, Boolean, DateTime, Integer or Binary.</li>

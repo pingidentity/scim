@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * Contains the resources and their attributes defined in
- * Core Schema 1.0 - draft 2.
+ * Core Schema 1.1.
  */
 public class CoreSchema
 {
@@ -73,15 +73,21 @@ public class CoreSchema
         "attribute's function; e.g., \"work\" or " + "\"home\"",
         SCIMConstants.SCHEMA_URI_CORE, false, false, false, canonicalValues);
 
+    int numSubAttributes = 0;
+    if (subAttributes != null)
+    {
+      numSubAttributes = subAttributes.length;
+    }
+
     int i = 0;
     final AttributeDescriptor[] allSubAttributes;
     if (dataType == AttributeDescriptor.DataType.COMPLEX)
     {
-      allSubAttributes = new AttributeDescriptor[subAttributes.length + 4];
+      allSubAttributes = new AttributeDescriptor[numSubAttributes + 4];
     }
     else
     {
-      allSubAttributes = new AttributeDescriptor[subAttributes.length + 5];
+      allSubAttributes = new AttributeDescriptor[numSubAttributes + 5];
       allSubAttributes[i++] = AttributeDescriptor.createSubAttribute(
         "value", dataType, "The attribute's significant value",
           SCIMConstants.SCHEMA_URI_CORE, false, true, false);
@@ -92,8 +98,9 @@ public class CoreSchema
     allSubAttributes[i++] = type;
     allSubAttributes[i++] = MULTIVALUED_OPERATION;
 
-    System.arraycopy(subAttributes, 0, allSubAttributes, i,
-                     subAttributes.length);
+    if (numSubAttributes > 0) {
+      System.arraycopy(subAttributes, 0, allSubAttributes, i, numSubAttributes);
+    }
 
     return allSubAttributes;
   }
@@ -108,15 +115,24 @@ public class CoreSchema
   static List<AttributeDescriptor> addCommonResourceAttributes(
       final AttributeDescriptor... attributes)
   {
+    int numAttributes = 0;
+    if (attributes != null)
+    {
+      numAttributes = attributes.length;
+    }
+
     List<AttributeDescriptor> attributeList =
-        new ArrayList<AttributeDescriptor>(attributes.length + 3);
+        new ArrayList<AttributeDescriptor>(numAttributes + 3);
 
     // These attributes need to be in the same order as defined in the SCIM XML
     // schema scim-core.xsd.
     attributeList.add(ID);
     attributeList.add(META);
     attributeList.add(EXTERNAL_ID);
-    attributeList.addAll(Arrays.asList(attributes));
+    if (numAttributes > 0)
+    {
+      attributeList.addAll(Arrays.asList(attributes));
+    }
     return attributeList;
   }
 
@@ -159,11 +175,15 @@ public class CoreSchema
           "The version of the Resource being returned",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor META_ATTRIBUTES =
-      AttributeDescriptor.createSubAttribute("attributes",
-          AttributeDescriptor.DataType.STRING,
+      AttributeDescriptor.newAttribute("attributes",
+          "attribute", AttributeDescriptor.DataType.STRING,
           "The names of the attributes to remove from the Resource during a " +
               "PATCH operation",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false);
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
+          AttributeDescriptor.createSubAttribute("value",
+            AttributeDescriptor.DataType.STRING,
+            "The attribute's significant value",
+            SCIMConstants.SCHEMA_URI_CORE, false, true, false));
   private static final AttributeDescriptor META =
       AttributeDescriptor.createAttribute("meta",
           AttributeDescriptor.DataType.COMPLEX,
@@ -262,8 +282,8 @@ public class CoreSchema
           AttributeDescriptor.DataType.STRING,
           "The User's preferred written or spoken language. Generally used " +
               "for selecting a localized User interface.  Valid values are " +
-              "concatenation of the ISO 639-1 two letter language code, an " +
-              "underscore, and the ISO 3166-1 2 letter country code; e.g., " +
+              "concatenation of the ISO 639-1 two-letter language code, an " +
+              "underscore, and the ISO 3166-1 two-letter country code; e.g., " +
               "specifies the language English and country US",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor LOCALE =
@@ -271,9 +291,9 @@ public class CoreSchema
           AttributeDescriptor.DataType.STRING,
           "Used to indicate the User's default location for purposes of " +
               "localizing items such as currency, date time format, " +
-              "ISO 639-1 two letter language code an underscore, and the " +
-              "ISO 3166-1 2 letter country code; e.g., 'en_US' specifies the " +
-              "language English and country US",
+              "ISO 639-1 two-letter language code an underscore, and the " +
+              "ISO 3166-1 two-letter country code; e.g., 'en_US' specifies " +
+              "the language English and country US",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor TIMEZONE =
       AttributeDescriptor.createAttribute("timezone",
@@ -453,7 +473,7 @@ public class CoreSchema
       AttributeDescriptor.createMultiValuedAttribute("members",
           "member", AttributeDescriptor.DataType.STRING,
           "A list of members of the Group",
-          SCIMConstants.SCHEMA_URI_CORE, true, false, false,
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
           new String[] {"User", "Group"});
 
   //// 9.  Service Provider Configuration Schema ////
@@ -638,7 +658,7 @@ public class CoreSchema
       AttributeDescriptor.createSubAttribute("multiValuedAttributeChildName",
           AttributeDescriptor.DataType.STRING,
           "String value specifying the child XML element name; e.g., the " +
-              "'emails' attribute value is 'email', 'phoneNumbers', is " +
+              "'emails' attribute value is 'email', 'phoneNumbers' is " +
               "'phoneNumber'.",
           SCIMConstants.SCHEMA_URI_CORE, true, false, false);
   private static final AttributeDescriptor ATTRIBUTES_DESCRIPTION =
@@ -678,7 +698,8 @@ public class CoreSchema
           "subAttribute", AttributeDescriptor.DataType.COMPLEX,
           "A list specifying the contained attributes",
           SCIMConstants.SCHEMA_URI_CORE, true, false,
-          false, ATTRIBUTES_NAME, ATTRIBUTES_TYPE, ATTRIBUTES_DESCRIPTION,
+          false, ATTRIBUTES_NAME, ATTRIBUTES_TYPE, ATTRIBUTES_MULTIVALUED,
+          ATTRIBUTES_MULTIVALUED_CHILD_NAME, ATTRIBUTES_DESCRIPTION,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT,
           ATTRIBUTES_CANONICAL_VALUES);
 
@@ -696,6 +717,12 @@ public class CoreSchema
   private static final AttributeDescriptor.AttributeDescriptorResolver
         NESTING_ATTRIBUTES_RESOLVER =
         new AttributeDescriptor.AttributeDescriptorResolver(true);
+
+  /**
+   * The SCIM Resource Schema.
+   */
+  public static final ResourceDescriptor RESOURCE_SCHEMA_DESCRIPTOR;
+
   static
   {
     SCIMObject scimObject = new SCIMObject();
@@ -760,12 +787,6 @@ public class CoreSchema
   }
 
   /**
-   * The SCIM Resource Schema.
-   */
-  public static final ResourceDescriptor RESOURCE_SCHEMA_DESCRIPTOR;
-
-
-  /**
    * The SCIM Service Provider Configuration Schema.
    */
   public static final ResourceDescriptor
@@ -781,7 +802,6 @@ public class CoreSchema
           CONFIG_DOCUMENTATION_URL, PATCH_CONFIG, BULK_CONFIG, FILTER_CONFIG,
           CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG, AUTH_SCHEMES,
           XML_DATA_TYPE_CONFIG);
-
 
   /**
    * The SCIM User Schema.

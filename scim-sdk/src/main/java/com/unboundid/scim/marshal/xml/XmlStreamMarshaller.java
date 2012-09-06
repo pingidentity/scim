@@ -490,24 +490,31 @@ public class XmlStreamMarshaller implements StreamMarshaller
     {
       writeChildStartElement(scimAttribute, xmlStreamWriter);
 
-      // Write the subordinate attributes in the order defined by the schema.
-      for (final AttributeDescriptor descriptor :
-          scimAttribute.getAttributeDescriptor().getSubAttributes())
+      if (value.isComplex())
       {
-        final SCIMAttribute a = value.getAttribute(descriptor.getName());
-        if (a != null)
+        // Write the subordinate attributes in the order defined by the schema.
+        for (final AttributeDescriptor descriptor :
+            scimAttribute.getAttributeDescriptor().getSubAttributes())
         {
-          if (a.getAttributeDescriptor().isMultiValued())
+          final SCIMAttribute a = value.getAttribute(descriptor.getName());
+          if (a != null)
           {
-            writeMultiValuedAttribute(a, xmlStreamWriter);
-          }
-          else
-          {
-            writeSingularAttribute(a, xmlStreamWriter);
+            if (a.getAttributeDescriptor().isMultiValued())
+            {
+              writeMultiValuedAttribute(a, xmlStreamWriter);
+            }
+            else
+            {
+              writeSingularAttribute(a, xmlStreamWriter);
+            }
           }
         }
       }
-
+      else
+      {
+        final String stringValue = value.getStringValue();
+        xmlStreamWriter.writeCharacters(stringValue);
+      }
       xmlStreamWriter.writeEndElement();
     }
 
@@ -544,7 +551,14 @@ public class XmlStreamMarshaller implements StreamMarshaller
         final SCIMAttribute a = val.getAttribute(ad.getName());
         if (a != null)
         {
-          writeSingularAttribute(a, xmlStreamWriter);
+          if (ad.isMultiValued())
+          {
+            writeMultiValuedAttribute(a, xmlStreamWriter);
+          }
+          else
+          {
+            writeSingularAttribute(a, xmlStreamWriter);
+          }
         }
       }
     }

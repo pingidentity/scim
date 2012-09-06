@@ -347,11 +347,9 @@ public class ResourceDescriptor extends BaseResource
   @Override
   public int hashCode()
   {
-    int hashCode = 0;
-
-    hashCode += toLowerCase(getSchema()).hashCode();
-    hashCode += toLowerCase(getName()).hashCode();
-
+    int hashCode = 31;
+    hashCode += hashCode * toLowerCase(getSchema()).hashCode();
+    hashCode += hashCode * toLowerCase(getName()).hashCode();
     return hashCode;
   }
 

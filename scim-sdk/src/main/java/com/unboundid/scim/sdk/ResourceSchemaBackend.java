@@ -43,7 +43,8 @@ public class ResourceSchemaBackend extends SCIMBackend
    */
   public ResourceSchemaBackend(
       final Collection<ResourceDescriptor> resourceDescriptors) {
-    this.resourceDescriptors = resourceDescriptors;
+    this.resourceDescriptors =
+            new ArrayList<ResourceDescriptor>(resourceDescriptors);
   }
 
   /**
@@ -166,6 +167,15 @@ public class ResourceSchemaBackend extends SCIMBackend
         "on the Resource Schema");
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public BaseResource patchResource(final PatchResourceRequest request)
+      throws SCIMException {
+    throw new UnsupportedOperationException("PATCH operations are not " +
+            "allowed on the Resource Schema");
+  }
 
   /**
    * Make a copy of the ResourceDescriptor and set the id and meta attributes

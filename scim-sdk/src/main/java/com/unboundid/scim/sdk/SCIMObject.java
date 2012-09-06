@@ -30,9 +30,9 @@ import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
 
 
 /**
- * This class represents a Simple Cloud Identity Management (SCIM) object.
- * A SCIM object may be composed of common schema attributes and a collection
- * of attributes from one or more additional schema definitions.
+ * This class represents a System for Cross-Domain Identity Management (SCIM)
+ * object. A SCIM object may be composed of common schema attributes and a
+ * collection of attributes from one or more additional schema definitions.
  * This class is not designed to be thread-safe.
  */
 public class SCIMObject

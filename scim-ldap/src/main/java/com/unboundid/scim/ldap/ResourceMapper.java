@@ -24,13 +24,16 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
@@ -39,7 +42,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
-import com.unboundid.util.StaticUtils;
+import com.unboundid.scim.sdk.StaticUtils;
 import com.unboundid.util.Validator;
 import org.xml.sax.SAXException;
 
@@ -59,6 +62,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.logging.Level;
 
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
@@ -526,6 +531,7 @@ public class ResourceMapper
   }
 
 
+
   /**
    * Initialize this resource mapper from the provided information.
    *
@@ -675,6 +681,41 @@ public class ResourceMapper
 
 
   /**
+   * Retrieve the set of LDAP attribute types that are mapped from the given
+   * set of SCIM attributes.
+   *
+   * @param scimAttributes  The SCIM attribute names to map.
+   *
+   * @return  The set of LDAP attribute types that are derived from the given
+   *          SCIM attributes.
+   */
+  private Set<String> toLDAPAttributeTypes(final Set<String> scimAttributes)
+  {
+    final Set<String> ldapAttributes = new HashSet<String>();
+    for (final AttributeMapper m : attributeMappers.values())
+    {
+      if (scimAttributes.contains(m.getAttributeDescriptor().getName()))
+      {
+        ldapAttributes.addAll(m.getLDAPAttributeTypes());
+      }
+    }
+
+    for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
+            derivedAttributes.entrySet())
+    {
+      if (scimAttributes.contains(e.getKey().getName()))
+      {
+        final DerivedAttribute derivedAttribute = e.getValue();
+        ldapAttributes.addAll(derivedAttribute.getLDAPAttributeTypes());
+      }
+    }
+
+    return ldapAttributes;
+  }
+
+
+
+  /**
    * Construct an LDAP entry from the provided SCIM object. This method, which
    * does not need an LDAP interface argument, is provided for the Sync Server
    * SCIM Sync Destination.
@@ -757,6 +798,7 @@ public class ResourceMapper
   }
 
 
+
   /**
    * Map the attributes in a SCIM object to LDAP attributes.
    *
@@ -796,6 +838,7 @@ public class ResourceMapper
   }
 
 
+
   /**
    * Retrieve the set of all modifiable LDAP attribute types that should be
    * requested in order to return the current LDAP entry representing the SCIM
@@ -808,13 +851,12 @@ public class ResourceMapper
   public Set<String> getModifiableLDAPAttributeTypes(
       final SCIMObject scimObject)
   {
-    final Set<String> ldapAttributeTypes = new HashSet<String>();
+    final Set<String> ldapAttributeTypes =
+            new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     final boolean hasPasswordAttribute =
         scimObject.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "password");
 
     // Retrieve all LDAP attributes that are mapped from SCIM attributes.
-    // Derived attributes are read-only thus should never be included in LDAP
-    // modifications.
     for (final AttributeMapper m : attributeMappers.values())
     {
       // The password attribute is a special case as it should not be retrieved
@@ -825,8 +867,46 @@ public class ResourceMapper
       }
     }
 
+    for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
+            derivedAttributes.entrySet())
+    {
+      if (!e.getKey().isReadOnly())
+      {
+        final DerivedAttribute derivedAttribute = e.getValue();
+        ldapAttributeTypes.addAll(derivedAttribute.getLDAPAttributeTypes());
+      }
+    }
+
+    SCIMAttribute meta = scimObject.getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "meta");
+    if (meta != null)
+    {
+      //The "attributes" sub-attribute is specifically for deleting attribute
+      //values when performing a PATCH operation.
+      if(meta.getValue().hasAttribute("attributes"))
+      {
+        Set<String> scimAttributes =
+                new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        SCIMAttribute attrToDelete = meta.getValue().getAttribute("attributes");
+        for(SCIMAttributeValue attr : attrToDelete.getValues())
+        {
+          if(attr.isComplex())
+          {
+            scimAttributes.add(attr.getSubAttributeValue("value",
+                    AttributeValueResolver.STRING_RESOLVER));
+          }
+          else
+          {
+            scimAttributes.add(attr.getStringValue());
+          }
+        }
+        ldapAttributeTypes.addAll(toLDAPAttributeTypes(scimAttributes));
+      }
+    }
+
     return ldapAttributeTypes;
   }
+
 
 
   /**
@@ -846,7 +926,7 @@ public class ResourceMapper
       final Entry currentEntry,
       final SCIMObject scimObject,
       final LDAPRequestInterface ldapInterface)
-      throws SCIMException
+          throws SCIMException
   {
     final List<Attribute> attributes =
         toLDAPAttributes(scimObject, ldapInterface);
@@ -854,6 +934,151 @@ public class ResourceMapper
 
     return Entry.diff(currentEntry, entry, false, false);
   }
+
+
+
+  /**
+   * Map the replacement attributes in a SCIM object to LDAP modifications
+   * according to the PATCH specification.
+   *
+   * @param currentEntry   The current LDAP entry representing the SCIM object.
+   * @param scimObject     The object containing attributes to be mapped.
+   * @param ldapInterface  An optional LDAP interface that can be used to
+   *                       derive attributes from other entries.
+   *
+   * @return  A list of LDAP modifications mapped from the SCIM object. This
+   *          should never be {@code null} but may be empty.
+   *
+   * @throws SCIMException If the modifications could not be mapped.
+   */
+  public List<Modification> toLDAPModificationsForPatch(
+          final Entry currentEntry,
+          final SCIMObject scimObject,
+          final LDAPRequestInterface ldapInterface)
+              throws SCIMException
+  {
+    SCIMAttribute meta = scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                                        CoreSchema.META_DESCRIPTOR.getName());
+
+    Entry modifiedEntry = currentEntry.duplicate();
+
+    if (meta != null)
+    {
+      SCIMAttributeValue value = meta.getValue();
+      SCIMAttribute attributesAttr = value.getAttribute("attributes");
+      if (attributesAttr != null)
+      {
+        final Set<String> scimAttributes =
+                new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        for (SCIMAttributeValue val : attributesAttr.getValues())
+        {
+          if (val.isComplex())
+          {
+            scimAttributes.add(val.getSubAttributeValue("value",
+                    AttributeValueResolver.STRING_RESOLVER));
+          }
+          else
+          {
+            scimAttributes.add(val.getStringValue());
+          }
+        }
+
+        Set<String> ldapAttributes = toLDAPAttributeTypes(scimAttributes);
+
+        if (Debug.debugEnabled())
+        {
+          Debug.debug(Level.FINE, DebugType.OTHER,
+                  "LDAP attributes to remove are: " + ldapAttributes);
+        }
+
+        for (String attr : ldapAttributes)
+        {
+          modifiedEntry.removeAttribute(attr);
+        }
+      }
+
+      scimObject.removeAttribute(SCIMConstants.SCHEMA_URI_CORE,
+              CoreSchema.META_DESCRIPTOR.getName());
+    }
+
+    final List<Attribute> ldapAttrsToDelete = new ArrayList<Attribute>();
+    final List<Attribute> ldapAttrsToAdd = new ArrayList<Attribute>();
+    final SCIMObject attrsToReplace = new SCIMObject();
+
+    Set<String> schemas = scimObject.getSchemas();
+    for (String schema : schemas)
+    {
+      Collection<SCIMAttribute> attributes = scimObject.getAttributes(schema);
+      for (SCIMAttribute attr : attributes)
+      {
+        if(attr.getAttributeDescriptor().isMultiValued())
+        {
+          //The attr is multi-valued, so merge it into the new SCIMObject
+          for (SCIMAttributeValue value : attr.getValues())
+          {
+            if(value.isComplex())
+            {
+              String operation = value.getSubAttributeValue(
+                      "operation", AttributeValueResolver.STRING_RESOLVER);
+              if ("delete".equalsIgnoreCase(operation))
+              {
+                //delete this value from the set of values for this attribute
+                SCIMObject tempObject = new SCIMObject();
+                SCIMAttribute attrToDelete =
+                     SCIMAttribute.create(attr.getAttributeDescriptor(), value);
+                tempObject.setAttribute(attrToDelete);
+                ldapAttrsToDelete.addAll(
+                        toLDAPAttributes(tempObject, ldapInterface));
+              }
+              else
+              {
+                //add this value to the set of values for this attribute
+                SCIMObject tempObject = new SCIMObject();
+                SCIMAttribute attrToAdd =
+                     SCIMAttribute.create(attr.getAttributeDescriptor(), value);
+                tempObject.setAttribute(attrToAdd);
+                ldapAttrsToAdd.addAll(
+                        toLDAPAttributes(tempObject, ldapInterface));
+              }
+            }
+          }
+        }
+        else
+        {
+          //The attr is single-valued, so just replace it on the newObject.
+          attrsToReplace.setAttribute(attr);
+        }
+      }
+    }
+
+    //Replace any singular attributes that were specified.
+    final List<Attribute> ldapAttrsToReplace  =
+            toLDAPAttributes(attrsToReplace, ldapInterface);
+    for (Attribute attr : ldapAttrsToReplace)
+    {
+      modifiedEntry.setAttribute(attr);
+    }
+
+    //Remove any specific values from multi-valued attributes.
+    for (Attribute attr : ldapAttrsToDelete)
+    {
+      modifiedEntry.removeAttributeValues(attr.getName(),
+                                          attr.getValueByteArrays());
+    }
+
+    //Merge in any specific value to multi-valued attributes.
+    for (Attribute attr : ldapAttrsToAdd)
+    {
+      modifiedEntry.addAttribute(attr);
+    }
+
+    List<Modification> mods =
+            Entry.diff(currentEntry, modifiedEntry, false, false);
+
+    return mods;
+  }
+
+
 
   /**
    * Map the provided SCIM filter to an LDAP filter.
@@ -889,6 +1114,7 @@ public class ResourceMapper
       return filterComponent;
     }
   }
+
 
 
   /**
@@ -1344,7 +1570,8 @@ public class ResourceMapper
    */
   public static SCIMException toSCIMException(final LDAPException e)
   {
-    return toSCIMException(StaticUtils.getExceptionMessage(e), e);
+    return toSCIMException(
+            com.unboundid.util.StaticUtils.getExceptionMessage(e), e);
   }
 
 

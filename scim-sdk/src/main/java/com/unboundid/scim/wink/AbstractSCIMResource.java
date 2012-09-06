@@ -31,6 +31,7 @@ import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.PageParameters;
+import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.Resources;
@@ -494,6 +495,95 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
             MediaType.APPLICATION_XML_TYPE)
     {
       resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_XML);
+    }
+
+    return responseBuilder.build();
+  }
+
+
+
+  /**
+   * Process a PATCH operation.
+   *
+   * @param requestContext    The request context.
+   * @param userID            The target user ID.
+   * @param inputStream       The content to be consumed.
+   *
+   * @return  The response to the operation.
+   */
+  Response patchUser(final RequestContext requestContext,
+                     final String userID,
+                     final InputStream inputStream)
+  {
+    final Unmarshaller unmarshaller;
+    if (requestContext.getConsumeMediaType().equals(
+            MediaType.APPLICATION_JSON_TYPE))
+    {
+      unmarshaller = new JsonUnmarshaller();
+      resourceStats.incrementStat(ResourceStats.PATCH_CONTENT_JSON);
+    }
+    else
+    {
+      unmarshaller = new XmlUnmarshaller();
+      resourceStats.incrementStat(ResourceStats.PATCH_CONTENT_XML);
+    }
+
+    Response.ResponseBuilder responseBuilder;
+    try {
+      String authID = requestContext.getAuthID();
+      if(authID == null) {
+        throw new UnauthorizedException("Invalid credentials");
+      }
+
+      // Parse the resource.
+      final BaseResource patchedResource = unmarshaller.unmarshal(
+           inputStream, resourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
+
+      final String attributes =
+              requestContext.getUriInfo().getQueryParameters().getFirst(
+                      QUERY_PARAMETER_ATTRIBUTES);
+      final SCIMQueryAttributes queryAttributes =
+              new SCIMQueryAttributes(resourceDescriptor, attributes);
+
+      // Process the request.
+      final PatchResourceRequest patchResourceRequest =
+              new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
+                      authID, resourceDescriptor, userID,
+                      patchedResource.getScimObject(), queryAttributes);
+
+      final BaseResource scimResponse =
+              backend.patchResource(patchResourceRequest);
+
+      // Build the response.
+      if (!queryAttributes.allAttributesRequested())
+      {
+        responseBuilder = Response.status(Response.Status.OK);
+        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                scimResponse);
+      }
+      else
+      {
+        responseBuilder = Response.status(Response.Status.NO_CONTENT);
+      }
+
+      responseBuilder.location(scimResponse.getMeta().getLocation());
+      resourceStats.incrementStat(ResourceStats.PATCH_OK);
+    } catch (SCIMException e) {
+      // Build the response.
+      responseBuilder = Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+              e);
+      resourceStats.incrementStat("patch-" + e.getStatusCode());
+    }
+
+    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_JSON);
+    }
+    else if(requestContext.getProduceMediaType() ==
+            MediaType.APPLICATION_XML_TYPE)
+    {
+      resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_XML);
     }
 
     return responseBuilder.build();

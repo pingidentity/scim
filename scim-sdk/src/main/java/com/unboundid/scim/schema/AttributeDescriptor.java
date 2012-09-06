@@ -120,8 +120,8 @@ public final class AttributeDescriptor {
     public SCIMAttributeValue fromInstance(
         final AttributeDescriptor attributeDescriptor,
         final AttributeDescriptor value) throws InvalidResourceException {
-      final List<SCIMAttribute> attributes =
-          new ArrayList<SCIMAttribute>(6);
+
+      final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>(9);
 
       attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("name"),
@@ -131,6 +131,19 @@ public final class AttributeDescriptor {
           attributeDescriptor.getSubAttribute("type"),
           SCIMAttributeValue.createStringValue(
               value.getDataType().toString())));
+
+
+      attributes.add(SCIMAttribute.create(
+          attributeDescriptor.getSubAttribute("multiValued"),
+          SCIMAttributeValue.createBooleanValue(value.isMultiValued())));
+
+      if (value.isMultiValued())
+      {
+        attributes.add(SCIMAttribute.create(
+          attributeDescriptor.getSubAttribute("multiValuedAttributeChildName"),
+          SCIMAttributeValue.createStringValue(
+                  value.getMultiValuedChildName())));
+      }
 
       attributes.add(SCIMAttribute.create(
           attributeDescriptor.getSubAttribute("description"),
@@ -172,24 +185,44 @@ public final class AttributeDescriptor {
      */
     @Override
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
+
+      DataType dataType = DataType.parse(value.getSubAttributeValue(
+              "type", AttributeValueResolver.STRING_RESOLVER));
+
       return new AttributeDescriptor(
-          value.getSubAttributeValue("name",
-                                     AttributeValueResolver.STRING_RESOLVER),
-          DataType.parse(value.getSubAttributeValue(
-              "type",
-              AttributeValueResolver.STRING_RESOLVER)),
-          false, null,
-          value.getSubAttributeValue("description",
-                                     AttributeValueResolver.STRING_RESOLVER),
+
+          value.getSubAttributeValue(
+             "name", AttributeValueResolver.STRING_RESOLVER),
+
+          dataType,
+
+          value.getSubAttributeValue(
+              "multiValued", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          value.getSubAttributeValue(
+              "multiValuedAttributeChildName",
+                  AttributeValueResolver.STRING_RESOLVER),
+
+          value.getSubAttributeValue(
+              "description", AttributeValueResolver.STRING_RESOLVER),
+
           schema,
-          value.getSubAttributeValue("readOnly",
-                                     AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSubAttributeValue("required",
-                                     AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSubAttributeValue("caseExact",
-                                     AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSubAttributeValues("canonicalValues",
-                                      Entry.STRINGS_RESOLVER), null);
+
+          value.getSubAttributeValue(
+              "readOnly", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          value.getSubAttributeValue(
+              "required", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          value.getSubAttributeValue(
+              "caseExact", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          value.getSubAttributeValues(
+              "canonicalValues", Entry.STRINGS_RESOLVER),
+
+          Arrays.asList(AttributeDescriptor.createSubAttribute(
+               "value", dataType, "The attribute's significant value",
+                SCIMConstants.SCHEMA_URI_CORE, false, true, false)));
     }
   }
 
@@ -220,33 +253,46 @@ public final class AttributeDescriptor {
      */
     @Override
     public AttributeDescriptor toInstance(final SCIMAttributeValue value) {
-      String schemaValue = value.getSubAttributeValue("schema",
-          AttributeValueResolver.STRING_RESOLVER);
-      boolean multiValued = value.getSubAttributeValue("multiValued",
-          AttributeValueResolver.BOOLEAN_RESOLVER);
+      String schemaValue = value.getSubAttributeValue(
+          "schema", AttributeValueResolver.STRING_RESOLVER);
+
+      boolean multiValued = value.getSubAttributeValue(
+          "multiValued", AttributeValueResolver.BOOLEAN_RESOLVER);
+
       String multiValuedChildName = null;
-      if(multiValued)
+      if (multiValued)
       {
         multiValuedChildName = value.getSubAttributeValue(
             "multiValuedAttributeChildName",
             AttributeValueResolver.STRING_RESOLVER);
       }
+
       return new AttributeDescriptor(
-          value.getSubAttributeValue("name",
-                                     AttributeValueResolver.STRING_RESOLVER),
+
+          value.getSubAttributeValue(
+              "name", AttributeValueResolver.STRING_RESOLVER),
+
           DataType.parse(value.getSubAttributeValue(
-              "type",
-              AttributeValueResolver.STRING_RESOLVER)),
+              "type", AttributeValueResolver.STRING_RESOLVER)),
+
           multiValued, multiValuedChildName,
-          value.getSubAttributeValue("description",
-                                     AttributeValueResolver.STRING_RESOLVER),
+
+          value.getSubAttributeValue(
+              "description", AttributeValueResolver.STRING_RESOLVER),
+
           schemaValue,
-          value.getSubAttributeValue("readOnly",
-                                     AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSubAttributeValue("required",
-                                     AttributeValueResolver.BOOLEAN_RESOLVER),
-          value.getSubAttributeValue("caseExact",
-              AttributeValueResolver.BOOLEAN_RESOLVER), null,
+
+          value.getSubAttributeValue(
+              "readOnly", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          value.getSubAttributeValue(
+              "required", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          value.getSubAttributeValue(
+              "caseExact", AttributeValueResolver.BOOLEAN_RESOLVER),
+
+          null,
+
           value.getSubAttributeValues(
               allowNesting ? "attributes" : "subAttributes",
               allowNesting ? this :
@@ -355,8 +401,8 @@ public final class AttributeDescriptor {
    * @param name                 The attribute's name.
    * @param dataType             The attribute's data type.
    * @param multiValued          Whether the attribute is multiValued.
-   * @param multiValuedChildName String value specifying the child XML element
-   *                             name.
+   * @param multiValuedChildName The child XML element name for multi-valued
+   *                             attributes.
    * @param description          The attribute's human readable description.
    * @param schema               The attribute's associated schema.
    * @param readOnly             Whether the attribute is mutable.
@@ -410,7 +456,6 @@ public final class AttributeDescriptor {
     }
   }
 
-
   /**
    * The URI for the schema that defines the SCIM attribute.
    *
@@ -420,7 +465,6 @@ public final class AttributeDescriptor {
   public String getSchema() {
     return schema;
   }
-
 
   /**
    * The attribute name to be used in any external representation of the SCIM
@@ -441,7 +485,6 @@ public final class AttributeDescriptor {
   public boolean isMultiValued() {
     return multiValued;
   }
-
 
   /**
    * The child XML element name for multi-valued attributes; e.g., the
@@ -466,7 +509,6 @@ public final class AttributeDescriptor {
   {
     return subAttributes == null ? null : subAttributes.values();
   }
-
 
   /**
    * Retrieves the attribute descriptor for a specified subordinate attribute
@@ -493,7 +535,6 @@ public final class AttributeDescriptor {
     return subAttribute;
   }
 
-
   /**
    * Retrieves a list of canonical type values.
    *
@@ -506,7 +547,6 @@ public final class AttributeDescriptor {
     return canonicalValues;
   }
 
-
   /**
    * Retrieve the data type for this attribute.
    *
@@ -517,8 +557,6 @@ public final class AttributeDescriptor {
   {
     return dataType;
   }
-
-
 
   /**
    * Retrieves this attribute's human readable description.
@@ -622,8 +660,7 @@ public final class AttributeDescriptor {
   }
 
   /**
-   * Create a new simple attribute descriptor with the provided
-   * information.
+   * Create a new sub-attribute descriptor with the provided information.
    *
    * @param name            The attribute's name.
    * @param dataType        The attribute's data type.
@@ -633,7 +670,7 @@ public final class AttributeDescriptor {
    * @param required        Whether the attribute is required.
    * @param caseExact       Whether the string attribute is case sensitive.
    * @param canonicalValues A collection of canonical values.
-   * @return                A new singular simple attribute descriptor with the
+   * @return                A new singular sub-attribute descriptor with the
    *                        provided information.
    */
   public static AttributeDescriptor createSubAttribute(
@@ -658,22 +695,18 @@ public final class AttributeDescriptor {
         description, schema, readOnly, required, caseExact, values, null);
   }
 
-
-
   /**
-   * Create a new complex attribute descriptor with the provided information.
-   *
+   * Create a new singular attribute descriptor with the provided information.
    *
    * @param name                 The attribute's name.
    * @param dataType             The attribute's data type.
-   *                             attribute is multi-valued or {@code null}.
    * @param description          The attribute's human readable description.
    * @param schema               The attribute's associated schema.
    * @param readOnly             Whether the attribute is mutable.
    * @param required             Whether the attribute is required.
    * @param caseExact            Whether the string attribute is case sensitive.
    * @param subAttributes        A list specifying the contained attributes.
-   * @return                     A new singular complex attribute descriptor
+   * @return                     A new singular attribute descriptor
    *                             with the provided information.
    */
   public static AttributeDescriptor createAttribute(
@@ -685,18 +718,15 @@ public final class AttributeDescriptor {
         required, caseExact, subAttributes);
   }
 
-
-
   /**
    * Create a new multi-valued attribute descriptor with the provided
    * information. The normative sub-attributes for multi-valued attributes
    * (ie. type, primary, display, operation, value) will be added.
    *
-   *
    * @param name                 The attribute's name.
-   * @param multiValuedChildName The attribute's child XML element name if this.
+   * @param multiValuedChildName The child XML element name for multi-valued
+   *                             attributes.
    * @param dataType             The attribute's data type.
-   *                             attribute is multi-valued or {@code null}.
    * @param description          The attribute's human readable description.
    * @param schema               The attribute's associated schema.
    * @param readOnly             Whether the attribute is mutable.
@@ -704,7 +734,7 @@ public final class AttributeDescriptor {
    * @param caseExact            Whether the string attribute is case sensitive.
    * @param canonicalValues The list of canonical values for the type attribute.
    * @param subAttributes        A list specifying the contained attributes.
-   * @return                     A new singular complex attribute descriptor
+   * @return                     A new multi-valued attribute descriptor
    *                             with the provided information.
    */
   public static AttributeDescriptor createMultiValuedAttribute(
@@ -720,24 +750,22 @@ public final class AttributeDescriptor {
             dataType, canonicalValues, subAttributes));
   }
 
-
-
   /**
-   * Create a new attribute descriptor with the provided information.
-   *
+   * Create a new attribute descriptor for a singular attribute with the
+   * provided information.
    *
    * @param name                 The attribute's name.
-   * @param multiValuedChildName The attribute's child XML element name if this.
+   * @param multiValuedChildName The child XML element name for multi-valued
+   *                             attributes.
    * @param dataType             The attribute's data type.
-   *                             attribute is multi-valued or {@code null}.
    * @param description          The attribute's human readable description.
    * @param schema               The attribute's associated schema.
    * @param readOnly             Whether the attribute is mutable.
    * @param required             Whether the attribute is required.
    * @param caseExact            Whether the string attribute is case sensitive.
    * @param subAttributes        A list specifying the contained attributes.
-   * @return                     A new singular complex attribute descriptor
-   *                             with the provided information.
+   * @return                     A new attribute descriptor with the provided
+   *                             information.
    */
   static AttributeDescriptor newAttribute(
       final String name, final String multiValuedChildName,
@@ -745,8 +773,13 @@ public final class AttributeDescriptor {
       final boolean readOnly, final boolean required, final boolean caseExact,
       final AttributeDescriptor... subAttributes)
   {
+    Collection<AttributeDescriptor> subAttrs = null;
+    if (subAttributes != null)
+    {
+      subAttrs = Arrays.asList(subAttributes);
+    }
     return new AttributeDescriptor(name, dataType, multiValuedChildName != null,
         multiValuedChildName, description, schema, readOnly, required,
-        caseExact, null, Arrays.asList(subAttributes));
+        caseExact, null, subAttrs);
   }
 }

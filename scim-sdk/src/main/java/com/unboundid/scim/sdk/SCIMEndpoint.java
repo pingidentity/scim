@@ -26,6 +26,8 @@ import com.unboundid.scim.marshal.json.JsonMarshaller;
 import com.unboundid.scim.marshal.json.JsonUnmarshaller;
 import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
+import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import org.apache.http.ConnectionClosedException;
@@ -55,6 +57,7 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.URI;
 import java.util.List;
+
 
 /**
  * This class represents a SCIM endpoint (ie. Users, Groups, etc.) and handles
@@ -435,7 +438,8 @@ public class SCIMEndpoint<R extends BaseResource>
   }
 
   /**
-   * Update the existing resource with the one provided.
+   * Update the existing resource with the one provided (using the HTTP PUT
+   * method).
    *
    * @param resource The modified resource to be updated.
    * @return The updated resource returned by the service provider.
@@ -448,10 +452,10 @@ public class SCIMEndpoint<R extends BaseResource>
   }
 
   /**
-   * Update the existing resource with the one provided. This update is
-   * conditional upon the provided entity tag matching the tag from the
-   * current resource. If (and only if) they match, the update will be
-   * performed.
+   * Update the existing resource with the one provided (using the HTTP PUT
+   * method). This update is conditional upon the provided entity tag matching
+   * the tag from the current resource. If (and only if) they match, the update
+   * will be performed.
    *
    * @param resource The modified resource to be updated.
    * @param etag The entity tag value that is the expected value for the target
@@ -547,6 +551,174 @@ public class SCIMEndpoint<R extends BaseResource>
         Debug.debugException(e);
       }
     }
+  }
+
+  /**
+   * Update the existing resource with the one provided (using the HTTP PATCH
+   * method). Note that if the {@code attributesToDelete} parameter is
+   * specified, those attributes will be removed from the resource before the
+   * {@code attributesToUpdate} are merged into the resource.
+   *
+   * @param id The ID of the resource to update.
+   * @param etag The entity tag value that is the expected value for the target
+   *             resource. A value of <code>null</code> will not set an
+   *             etag precondition and a value of "*" will perform an
+   *             unconditional update.
+   * @param attributesToUpdate The list of attributes (and their new values) to
+   *                           update on the resource.
+   * @param attributesToDelete The list of attributes to delete on the resource.
+   * @param requestedAttributes The attributes of updated resource to return.
+   * @return The updated resource returned by the service provider, or
+   *         {@code null} if the {@code requestedAttributes} parameter was not
+   *         specified.
+   * @throws SCIMException If an error occurs.
+   */
+  public R update(final String id, final String etag,
+                  final List<SCIMAttribute> attributesToUpdate,
+                  final List<String> attributesToDelete,
+                  final String... requestedAttributes)
+          throws SCIMException
+  {
+    if(id == null)
+    {
+      throw new InvalidResourceException("Resource must have a valid ID");
+    }
+    URI uri =
+            UriBuilder.fromUri(scimService.getBaseURL()).path(
+                    resourceDescriptor.getEndpoint()).path(id).build();
+    org.apache.wink.client.Resource clientResource = client.resource(uri);
+    clientResource.accept(acceptType);
+    clientResource.contentType(contentType);
+    addAttributesQuery(clientResource, requestedAttributes);
+
+    if(scimService.getUserAgent() != null)
+    {
+      clientResource.header("User-Agent", scimService.getUserAgent());
+    }
+    if(etag != null && !etag.isEmpty())
+    {
+      clientResource.header("If-Match", etag);
+    }
+
+    SCIMObject scimObject = new SCIMObject();
+    if(attributesToDelete != null)
+    {
+      SCIMAttributeValue[] values =
+              new SCIMAttributeValue[attributesToDelete.size()];
+      for(int i = 0; i < attributesToDelete.size(); i++)
+      {
+        values[i] = SCIMAttributeValue.createStringValue(
+                            attributesToDelete.get(i));
+      }
+
+      AttributeDescriptor subDescriptor =
+              CoreSchema.META_DESCRIPTOR.getSubAttribute("attributes");
+
+      SCIMAttribute attributes = SCIMAttribute.create(subDescriptor, values);
+
+      SCIMAttribute meta = SCIMAttribute.create(
+              CoreSchema.META_DESCRIPTOR,
+              SCIMAttributeValue.createComplexValue(attributes));
+
+      scimObject.setAttribute(meta);
+    }
+
+    if(attributesToUpdate != null)
+    {
+      for(SCIMAttribute attr : attributesToUpdate)
+      {
+        if(!attr.getAttributeDescriptor().isReadOnly())
+        {
+          scimObject.setAttribute(attr);
+        }
+      }
+    }
+
+    final BaseResource resource = resourceFactory.createResource(
+                                      resourceDescriptor, scimObject);
+
+    StreamingOutput output = new StreamingOutput() {
+      public void write(final OutputStream outputStream)
+              throws IOException, WebApplicationException {
+        try {
+          marshaller.marshal(resource, outputStream);
+        } catch (Exception e) {
+          throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
+        }
+      }
+    };
+
+    InputStream entity = null;
+    try
+    {
+      ClientResponse response;
+      if(overrides[1])
+      {
+        clientResource.header("X-HTTP-Method-Override", "PATCH");
+        response = clientResource.post(output);
+      }
+      else
+      {
+        response = clientResource.invoke("PATCH", ClientResponse.class, output);
+      }
+
+      entity = response.getEntity(InputStream.class);
+
+      if(response.getStatusType() == Response.Status.OK)
+      {
+        R patchedResource = unmarshaller.unmarshal(entity, resourceDescriptor,
+                resourceFactory);
+        addMissingMetaData(response, patchedResource);
+        return patchedResource;
+      }
+      else if (response.getStatusType() == Response.Status.NO_CONTENT)
+      {
+         return null;
+      }
+      else
+      {
+        throw createErrorResponseException(response, entity);
+      }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e),
+              getExceptionMessage(e));
+    }
+    finally
+    {
+      try {
+        if (entity != null) {
+          entity.close();
+        }
+      } catch (IOException e) {
+        Debug.debugException(e);
+      }
+    }
+  }
+
+  /**
+   * Update the existing resource with the one provided (using the HTTP PATCH
+   * method). Note that if the {@code attributesToDelete} parameter is
+   * specified, those attributes will be removed from the resource before the
+   * {@code attributesToUpdate} are merged into the resource.
+   *
+   * @param id The ID of the resource to update.
+   * @param attributesToUpdate The list of attributes (and their new values) to
+   *                           update on the resource.
+   * @param attributesToDelete The list of attributes to delete on the resource.
+   * @throws SCIMException If an error occurs.
+   */
+  public void update(final String id,
+                     final List<SCIMAttribute> attributesToUpdate,
+                     final List<String> attributesToDelete)
+           throws SCIMException
+  {
+    update(id, null, attributesToUpdate, attributesToDelete);
   }
 
   /**

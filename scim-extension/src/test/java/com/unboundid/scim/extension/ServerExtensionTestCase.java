@@ -236,12 +236,25 @@ public class ServerExtensionTestCase extends BaseTestCase
                                       final String attribute)
       throws LDAPException
   {
+    final String dn = getMonitorEntryDN(connectionHandler);
+    final Entry entry = instance.readEntry(dn);
+    return entry.getAttributeValue(attribute);
+  }
+
+
+
+  /**
+   * Get the SCIM monitor entry DN.
+   *
+   * @param connectionHandler  The name of the connection handler.
+   * @return The DN of the SCIM Servlet monitor entry.
+   */
+  protected String getMonitorEntryDN (final String connectionHandler)
+  {
     final StringBuilder builder = new StringBuilder();
     builder.append("cn=SCIM Servlet (");
     builder.append(connectionHandler);
     builder.append(") [from ThirdPartyHTTPServletExtension:SCIM],cn=monitor");
-
-    final Entry entry = instance.readEntry(builder.toString());
-    return entry.getAttributeValue(attribute);
+    return builder.toString();
   }
 }

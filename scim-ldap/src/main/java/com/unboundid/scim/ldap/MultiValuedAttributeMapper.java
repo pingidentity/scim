@@ -95,6 +95,9 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
 
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Set<String> getLDAPAttributeTypes()
   {
@@ -103,6 +106,9 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
 
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Filter toLDAPFilter(final SCIMFilter filter)
       throws InvalidResourceException
@@ -245,6 +251,9 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
 
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public ServerSideSortRequestControl toLDAPSortControl(
       final SortParameters sortParameters)
@@ -312,6 +321,9 @@ public class MultiValuedAttributeMapper extends AttributeMapper
 
 
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void toLDAPAttributes(final SCIMObject scimObject,
                                final Collection<Attribute> attributes)
@@ -359,12 +371,14 @@ public class MultiValuedAttributeMapper extends AttributeMapper
           }
         }
       }
-
     }
   }
 
 
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public SCIMAttribute toSCIMAttribute(final Entry entry)
       throws InvalidResourceException {

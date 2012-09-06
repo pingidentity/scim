@@ -182,14 +182,14 @@ public class SCIMApplication extends WinkApplication
                            scimObject);
 
     serviceProviderConfig.setId(SCHEMA_URI_CORE);
-    serviceProviderConfig.setPatchConfig(new PatchConfig(false));
+    serviceProviderConfig.setPatchConfig(new PatchConfig(true));
     serviceProviderConfig.setBulkConfig(
         new BulkConfig(true, bulkMaxOperations, bulkMaxPayloadSize));
     serviceProviderConfig.setFilterConfig(new FilterConfig(true,
         backend.getConfig().getMaxResults()));
     serviceProviderConfig.setChangePasswordConfig(
-        new ChangePasswordConfig(false));
-    serviceProviderConfig.setSortConfig(new SortConfig(false));
+        new ChangePasswordConfig(true));
+    serviceProviderConfig.setSortConfig(new SortConfig(true));
     serviceProviderConfig.setETagConfig(new ETagConfig(false));
 
     final List<AuthenticationScheme> authenticationSchemes =

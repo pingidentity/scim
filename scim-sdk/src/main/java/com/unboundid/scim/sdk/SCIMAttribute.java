@@ -29,9 +29,9 @@ import javax.xml.bind.DatatypeConverter;
 
 
 /**
- * This class represents a Simple Cloud Identity Management (SCIM) attribute.
- * Attributes are categorized as either single-valued or multi-valued. This
- * class allows for the following kinds of attributes.
+ * This class represents a System for Cross-Domain Identity Management (SCIM)
+ * attribute. Attributes are categorized as either single-valued or
+ * multi-valued. This class allows for the following kinds of attributes.
  *
  * <ol>
  * <li>Simple type (String, Boolean, DateTime, Integer or Binary).

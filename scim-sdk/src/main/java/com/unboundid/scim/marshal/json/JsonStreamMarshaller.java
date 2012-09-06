@@ -475,19 +475,53 @@ public class JsonStreamMarshaller implements StreamMarshaller
     jsonWriter.array();
     for (SCIMAttributeValue value : values)
     {
-      jsonWriter.object();
-      for (SCIMAttribute attribute : value.getAttributes().values())
+      if (value.isComplex())
       {
-        if (attribute.getAttributeDescriptor().isMultiValued())
+        jsonWriter.object();
+        for (SCIMAttribute attribute : value.getAttributes().values())
         {
-          this.writeMultiValuedAttribute(attribute, jsonWriter);
+          if (attribute.getAttributeDescriptor().isMultiValued())
+          {
+            this.writeMultiValuedAttribute(attribute, jsonWriter);
+          }
+          else
+          {
+            this.writeSingularAttribute(attribute, jsonWriter);
+          }
+        }
+        jsonWriter.endObject();
+      }
+      else
+      {
+        if (scimAttribute.getAttributeDescriptor().getDataType() != null)
+        {
+          switch (scimAttribute.getAttributeDescriptor().getDataType())
+          {
+            case BOOLEAN:
+              jsonWriter.value(value.getBooleanValue());
+              break;
+
+            case DECIMAL:
+              jsonWriter.value(value.getDecimalValue());
+              break;
+
+            case INTEGER:
+              jsonWriter.value(value.getIntegerValue());
+              break;
+
+            case BINARY:
+            case DATETIME:
+            case STRING:
+            default:
+              jsonWriter.value(value.getStringValue());
+              break;
+          }
         }
         else
         {
-          this.writeSingularAttribute(attribute, jsonWriter);
+          jsonWriter.value(value.getStringValue());
         }
       }
-      jsonWriter.endObject();
     }
     jsonWriter.endArray();
   }
@@ -513,7 +547,14 @@ public class JsonStreamMarshaller implements StreamMarshaller
       jsonWriter.object();
       for (SCIMAttribute a : val.getAttributes().values())
       {
-        this.writeSingularAttribute(a, jsonWriter);
+        if (a.getAttributeDescriptor().isMultiValued())
+        {
+          this.writeMultiValuedAttribute(a, jsonWriter);
+        }
+        else
+        {
+          this.writeSingularAttribute(a, jsonWriter);
+        }
       }
       jsonWriter.endObject();
     }

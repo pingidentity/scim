@@ -132,4 +132,19 @@ public abstract class SCIMBackend
    */
   public abstract BaseResource putResource(
       final PutResourceRequest request) throws SCIMException;
+
+
+
+  /**
+   * Update the contents of an existing resource with attributes specified.
+   *
+   *
+   * @param request  The Patch Resource request.
+   *
+   * @return  The response to the request.
+   *
+   * @throws SCIMException if an error occurs while processing the request.
+   */
+  public abstract BaseResource patchResource(
+          final PatchResourceRequest request) throws SCIMException;
 }

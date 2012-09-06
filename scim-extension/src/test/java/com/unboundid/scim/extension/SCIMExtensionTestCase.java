@@ -26,15 +26,19 @@ import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkResponse;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.Status;
@@ -851,7 +855,6 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     {
       //Try to update an entry that doesn't exist
       user.setId("uid=fakeUserName," + userBaseDN);
-      user.setUserName("fakeUserName");
       userEndpoint.update(user);
       fail("Expected ResourceNotFoundException when updating " +
             "non-existent user");
@@ -869,13 +872,224 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
 
   /**
+   * Tests a basic modify operation against a User using PATCH.
    *
    * @throws Exception If the test fails.
    */
-  @Test(enabled = false)
+  @Test
   public void testModifyWithPatch() throws Exception
   {
-    //This is an optional feature of the spec and has not been implemented yet.
+    //Add an entry to the Directory
+    dsInstance.addEntry("dn: uid=testModifyWithPatch," + userBaseDN,
+                        "objectclass: top",
+                        "objectclass: person",
+                        "objectclass: organizationalPerson",
+                        "objectclass: inetOrgPerson",
+                        "uid: testModifyWithPatch",
+                        "userPassword: oldPassword",
+                        "cn: testModifyWithPatch",
+                        "givenname: Test",
+                        "sn: User",
+                        "telephoneNumber: 512-123-4567",
+                        "homePhone: 972-987-6543",
+                        "mail: testEmail.1@example.com",
+                        "mail: testEmail.2@example.com");
+
+    //Update the entry via SCIM
+    UserResource user = getUser("testModifyWithPatch");
+    assertNotNull(user);
+
+    //This will change the 'cn' to 'Test User'
+    user.setName(new Name("Test User", "User", null, "Test", null, null));
+
+    //Other simple attributes to patch
+    user.setUserType("Employee");
+    user.setPassword("anotherPassword");
+    user.setTitle("Chief of Operations");
+    user.setDisplayName("Test Modify with PATCH");
+
+    //Try an attribute in the extended schema
+    user.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+            AttributeValueResolver.STRING_RESOLVER, "456");
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    List<SCIMAttribute> attrsToUpdate = new ArrayList<SCIMAttribute>(6);
+    final SCIMObject scimObject = user.getScimObject();
+
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "name"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "userType"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "password"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "title"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(
+              SCIMConstants.SCHEMA_URI_CORE, "displayName"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(
+              SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber"));
+
+    userEndpoint.update(user.getId(), attrsToUpdate, null);
+
+    //Verify the contents of the entry in the Directory
+    SearchResultEntry entry =
+            dsInstance.getConnectionPool().getEntry(
+                    "uid=testModifyWithPatch," + userBaseDN);
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("inetOrgPerson"));
+    assertEquals(entry.getAttributeValue("uid"), "testModifyWithPatch");
+    assertEquals(entry.getAttributeValue("cn"), "Test User");
+    assertEquals(entry.getAttributeValue("givenname"), "Test");
+    assertEquals(entry.getAttributeValue("sn"), "User");
+    assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("displayName"),
+            "Test Modify with PATCH");
+    dsInstance.checkCredentials(entry.getDN(), "anotherPassword");
+
+    //Verify that existing attributes did not get touched
+    assertEquals(entry.getAttributeValue("telephoneNumber"), "512-123-4567");
+    assertEquals(entry.getAttributeValue("homePhone"), "972-987-6543");
+    assertEquals(entry.getAttributeValues("mail").length, 2);
+
+    //Make the exact same update again; this should result in no net change to
+    //the Directory entry, but should not fail.
+    String monitoryEntryDN = getMonitorEntryDN("HTTP");
+
+    long beforeCount = scimInstance.getMonitorAsLong(
+            monitoryEntryDN, "user-resource-patch-successful");
+
+    userEndpoint.update(user.getId(), attrsToUpdate, null);
+
+    long afterCount = scimInstance.getMonitorAsLong(
+            monitoryEntryDN, "user-resource-patch-successful");
+
+    assertEquals(beforeCount, afterCount - 1);
+
+    try
+    {
+      //Try to update an entry that doesn't exist
+      userEndpoint.update(
+              "uid=fakeUserName," + userBaseDN, attrsToUpdate, null);
+      fail("Expected ResourceNotFoundException when patching " +
+              "non-existent user");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
+    afterCount = scimInstance.getMonitorAsLong(
+            monitoryEntryDN, "user-resource-patch-404");
+    assertEquals(afterCount, 1);
+
+    //Try a more complex patch, where we simultaneously delete a few attributes
+    //and update a few more. Specifically, we are going to delete the phone
+    //numbers completely and also remove one of the name attributes and replace
+    //it with another.
+    attrsToUpdate.clear();
+
+    List<String> attrsToDelete = list("phoneNumbers", "name.familyName");
+
+    SCIMAttributeValue value =
+            SCIMAttributeValue.createStringValue("testEmail.1@example.com");
+    SCIMAttribute email1Value = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("value"), value);
+
+    value = SCIMAttributeValue.createStringValue("work");
+    SCIMAttribute emailType = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("type"), value);
+
+    value = SCIMAttributeValue.createStringValue("delete");
+    SCIMAttribute email1Operation = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("operation"), value);
+
+    SCIMAttributeValue email2 = SCIMAttributeValue.createComplexValue(
+                                  email1Value, emailType, email1Operation);
+
+    value = SCIMAttributeValue.createStringValue("testEmail.3@example.com");
+    SCIMAttribute email3Value = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("value"), value);
+
+    SCIMAttributeValue email3 = SCIMAttributeValue.createComplexValue(
+                                  email3Value, emailType);
+
+    SCIMAttribute emails = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+           "emails"), email2, email3);
+
+    attrsToUpdate.add(emails);
+
+    value = SCIMAttributeValue.createStringValue("PatchedUser");
+    SCIMAttributeValue familyNameValue = SCIMAttributeValue.createComplexValue(
+         SCIMAttribute.create(CoreSchema.USER_DESCRIPTOR.getAttribute(
+               SCIMConstants.SCHEMA_URI_CORE, "name").getSubAttribute(
+                   "familyName"), value));
+
+    SCIMAttribute familyName = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+             "name"), familyNameValue);
+
+    attrsToUpdate.add(familyName);
+
+    //Do the PATCH, this time testing the version of the method that returns
+    //the resource.
+
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual modifyTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
+    String[] attrsToGet = { "userName", "title", "userType",
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION + ":employeeNumber" };
+    UserResource returnedUser = userEndpoint.update(user.getId(), null,
+                                  attrsToUpdate, attrsToDelete, attrsToGet);
+    Date lastModified = returnedUser.getMeta().getLastModified();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    //Verify the contents of the entry in the Directory
+    entry = dsInstance.getConnectionPool().getEntry(
+                    "uid=testModifyWithPatch," + userBaseDN);
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("inetOrgPerson"));
+    assertEquals(entry.getAttributeValue("uid"), "testModifyWithPatch");
+    assertEquals(entry.getAttributeValue("cn"), "Test User");
+    assertEquals(entry.getAttributeValue("givenname"), "Test");
+    assertEquals(entry.getAttributeValue("sn"), "PatchedUser");
+    assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("displayName"),
+            "Test Modify with PATCH");
+    dsInstance.checkCredentials(entry.getDN(), "anotherPassword");
+
+    assertFalse(entry.hasAttribute("telephoneNumber"));
+    assertFalse(entry.hasAttribute("homePhone"));
+    assertEquals(entry.getAttributeValues("mail").length, 2);
+    List<String> emailList = Arrays.asList(entry.getAttributeValues("mail"));
+    assertFalse(emailList.contains("testEmail.1@example.com"));
+    assertTrue(emailList.contains("testEmail.2@example.com"));
+    assertTrue(emailList.contains("testEmail.3@example.com"));
+
+    //Verify what is returned from the SDK
+    assertEquals(returnedUser.getId(), user.getId());
+    assertTrue(
+            returnedUser.getMeta().getLocation().toString()
+                    .endsWith(user.getId()));
+    assertEquals(returnedUser.getUserName(), "testModifyWithPatch");
+    assertEquals(returnedUser.getTitle(), user.getTitle());
+    assertEquals(returnedUser.getUserType(), user.getUserType());
+    assertNull(returnedUser.getPassword());
+    assertTrue(lastModified.after(startTime));
+    assertTrue(lastModified.before(endTime));
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+            AttributeValueResolver.STRING_RESOLVER), "456");
   }
 
 
@@ -1402,6 +1616,48 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     member = virtualStaticGroup.getMembers().iterator().next();
     assertEquals(member.getValue(), user1.getId());
     assertTrue(member.getType().equalsIgnoreCase("user"));
+
+    //Test updating a Group via PATCH. First, add a new user to the DS and then
+    //patch the groupOfUniqueNames to add this user as a member.
+    dsInstance.getConnectionPool().add(
+        generateUserEntry("patchUser", userBaseDN, "Test", "User", "password"));
+
+    UserResource user2 = getUser("patchUser");
+
+    SCIMAttributeValue value =
+            SCIMAttributeValue.createStringValue(user2.getId());
+    SCIMAttribute idValue = SCIMAttribute.create(
+            CoreSchema.GROUP_DESCRIPTOR.getAttribute(
+               SCIMConstants.SCHEMA_URI_CORE, "members")
+                    .getSubAttribute("value"), value);
+
+    value = SCIMAttributeValue.createStringValue(
+                user2.getName().getFormatted());
+    SCIMAttribute displayValue = SCIMAttribute.create(
+            CoreSchema.GROUP_DESCRIPTOR.getAttribute(
+                SCIMConstants.SCHEMA_URI_CORE, "members")
+                    .getSubAttribute("display"), value);
+
+    SCIMAttributeValue complexValue =
+            SCIMAttributeValue.createComplexValue(idValue, displayValue);
+    SCIMAttribute membersAttr = SCIMAttribute.create(
+            CoreSchema.GROUP_DESCRIPTOR.getAttribute(
+                SCIMConstants.SCHEMA_URI_CORE, "members"), complexValue);
+
+    List<SCIMAttribute> attrsToUpdate = new ArrayList<SCIMAttribute>(1);
+    attrsToUpdate.add(membersAttr);
+
+    groupEndpoint.update(groupOfUniqueNames.getId(), attrsToUpdate, null);
+
+    groupOfUniqueNames = getGroup("groupOfUniqueNames");
+    assertNotNull(groupOfUniqueNames.getMembers());
+    assertEquals(groupOfUniqueNames.getMembers().size(), 2);
+    for(Entry<String> entry : groupOfUniqueNames.getMembers())
+    {
+      assertTrue(entry.getValue().equals(user1.getId()) ||
+                 entry.getValue().equals(user2.getId()));
+      assertTrue(entry.getType().equalsIgnoreCase("user"));
+    }
   }
 
 
@@ -1559,14 +1815,14 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     final ServiceProviderConfig config = service.getServiceProviderConfig();
 
     // These assertions need to be updated as optional features are implemented.
-    assertFalse(config.getPatchConfig().isSupported());
+    assertTrue(config.getPatchConfig().isSupported());
     assertTrue(config.getBulkConfig().isSupported());
     assertTrue(config.getBulkConfig().getMaxOperations() > 0);
     assertTrue(config.getBulkConfig().getMaxPayloadSize() > 0);
     assertTrue(config.getFilterConfig().isSupported());
     assertTrue(config.getFilterConfig().getMaxResults() > 0);
-    assertFalse(config.getChangePasswordConfig().isSupported());
-    assertFalse(config.getSortConfig().isSupported());
+    assertTrue(config.getChangePasswordConfig().isSupported());
+    assertTrue(config.getSortConfig().isSupported());
     assertFalse(config.getETagConfig().isSupported());
     assertTrue(config.getAuthenticationSchemes().size() > 0);
     assertTrue(config.getXmlDataFormatConfig().isSupported());

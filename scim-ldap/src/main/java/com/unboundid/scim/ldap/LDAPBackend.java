@@ -45,7 +45,9 @@ import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
@@ -691,6 +693,195 @@ public abstract class LDAPBackend
       for (final SCIMAttribute a : scimAttributes)
       {
         Validator.ensureTrue(resource.getScimObject().addAttribute(a));
+      }
+
+      return resource;
+    }
+    catch (LDAPException e)
+    {
+      Debug.debugException(e);
+      throw ResourceMapper.toSCIMException(e);
+    }
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public BaseResource patchResource(final PatchResourceRequest request)
+          throws SCIMException
+  {
+    final ResourceMapper mapper =
+            getResourceMapper(request.getResourceDescriptor());
+
+    // Retrieve all modifiable mapped attributes to get the current state of
+    // the resource.
+    final Set<String> mappedAttributeSet =
+          mapper.getModifiableLDAPAttributeTypes(request.getResourceObject());
+    final String[] mappedAttributes = new String[mappedAttributeSet.size()];
+    mappedAttributeSet.toArray(mappedAttributes);
+
+    final String resourceID = request.getResourceID();
+    final List<Modification> mods = new ArrayList<Modification>();
+    Entry modifiedEntry = null;
+    try
+    {
+      final LDAPRequestInterface ldapInterface =
+              getLDAPRequestInterface(request.getAuthenticatedUserID());
+      final Entry currentEntry =
+              mapper.getEntry(ldapInterface, resourceID, mappedAttributes);
+
+      mods.addAll(mapper.toLDAPModificationsForPatch(currentEntry,
+              request.getResourceObject(), ldapInterface));
+
+      final Set<String> requestAttributeSet = new HashSet<String>();
+      requestAttributeSet.addAll(
+            mapper.toLDAPAttributeTypes(request.getAttributes()));
+      requestAttributeSet.addAll(getLastModAttributes());
+      String[] requestAttributes = new String[requestAttributeSet.size()];
+      requestAttributeSet.toArray(requestAttributes);
+
+      if(!mods.isEmpty())
+      {
+        // Look for any modifications that will affect the mapped entry's RDN
+        // and split them up.
+        modifiedEntry = currentEntry.duplicate();
+        ListIterator<Modification> iterator = mods.listIterator();
+        while(iterator.hasNext())
+        {
+          Modification mod = iterator.next();
+          if((mod.getModificationType() == ModificationType.INCREMENT ||
+                  mod.getModificationType() == ModificationType.REPLACE) &&
+                  currentEntry.getRDN().hasAttribute(mod.getAttributeName()))
+          {
+            iterator.remove();
+
+            // The modification will affect the RDN so we need to first apply
+            // the mods in memory and reconstruct the DN. We will set the DN to
+            // null first so Entry.applyModifications wouldn't throw any
+            // exceptions about affecting the RDN.
+            modifiedEntry.setDN("");
+            modifiedEntry =
+                    Entry.applyModifications(modifiedEntry, true, mod);
+            modifiedEntry.setDN(mapper.constructEntryDN(modifiedEntry));
+
+            // We might have to split the mod values into those that affects
+            // the RDN and those that do not and add them after the mod DN.
+            if(mod.getModificationType() == ModificationType.REPLACE &&
+                    mod.getValues().length > 1)
+            {
+              List<String> newValues =
+                      new ArrayList<String>(mod.getValues().length - 1);
+              RDN newRDN = modifiedEntry.getRDN();
+              for(String value : mod.getValues())
+              {
+                if(!newRDN.hasAttributeValue(mod.getAttributeName(), value))
+                {
+                  newValues.add(value);
+                }
+              }
+
+              Modification newMod =
+                      new Modification(ModificationType.ADD,
+                              mod.getAttributeName(),
+                              newValues.toArray(new String[newValues.size()]));
+              iterator.add(newMod);
+            }
+          }
+        }
+
+        if (Debug.debugEnabled())
+        {
+          Debug.debug(Level.FINE, DebugType.OTHER,
+                  "Patching resource, mods=" + mods);
+        }
+
+        PostReadResponseControl c = null;
+        if(!modifiedEntry.getParsedDN().equals(currentEntry.getParsedDN()))
+        {
+          ModifyDNRequest modifyDNRequest =
+                  new ModifyDNRequest(currentEntry.getDN(),
+                          modifiedEntry.getRDN().toString(), true);
+
+          // If there are no other mods left AND we need to return the resource,
+          // then we need to include the PostReadRequestControl now since we
+          // won't be performing a modify operation later.
+          if(mods.isEmpty())
+          {
+            modifyDNRequest.addControl(
+                    new PostReadRequestControl(requestAttributes));
+          }
+          final LDAPResult modifyDNResult =
+                  ldapInterface.modifyDN(modifyDNRequest);
+          if(mods.isEmpty())
+          {
+            c = getPostReadResponseControl(modifyDNResult);
+          }
+        }
+
+        if(!mods.isEmpty())
+        {
+          final ModifyRequest modifyRequest =
+                  new ModifyRequest(modifiedEntry.getDN(), mods);
+          modifyRequest.addControl(
+                new PostReadRequestControl(requestAttributes));
+          final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
+          c = getPostReadResponseControl(modifyResult);
+        }
+
+        if (c != null)
+        {
+          modifiedEntry = c.getEntry();
+
+          // Work around issue DS-5918.
+          if (modifiedEntry.hasAttribute("entryUUID"))
+          {
+            final SearchRequest r =
+                    new SearchRequest(modifiedEntry.getDN(),
+                            SearchScope.BASE,
+                            Filter.createPresenceFilter("objectClass"),
+                            requestAttributes);
+            r.setSizeLimit(1);
+            final Entry actualEntry = ldapInterface.searchForEntry(r);
+            if (actualEntry != null)
+            {
+              modifiedEntry = actualEntry;
+            }
+          }
+        }
+      }
+      else
+      {
+        // No modifications were necessary (the mod set was empty).
+        // Fetch the entry again, this time with the required return attributes.
+        modifiedEntry =
+                mapper.getEntry(ldapInterface, resourceID, requestAttributes);
+      }
+
+      final BaseResource resource =
+              new BaseResource(request.getResourceDescriptor());
+      setIdAndMetaAttributes(mapper, resource, request, modifiedEntry,
+              request.getAttributes());
+
+      //Only if the 'attributes' query parameter was specified do we need to
+      //worry about returning anything other than the meta attributes.
+      if (!request.getAttributes().allAttributesRequested())
+      {
+        final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
+              modifiedEntry, request.getAttributes(), ldapInterface);
+
+        for (final SCIMAttribute a : scimAttributes)
+        {
+          Validator.ensureTrue(resource.getScimObject().addAttribute(a));
+        }
+      }
+
+      if (Debug.debugEnabled())
+      {
+        Debug.debug(Level.FINE, DebugType.OTHER,
+              "Returning resource from PATCH request: " + resource.toString());
       }
 
       return resource;

@@ -53,8 +53,9 @@ import static com.unboundid.scim.sdk.Debug.debugException;
 
 
 /**
- * This class implements a stand-alone Simple Cloud Identity Management (SCIM)
- * server that uses an LDAP server as its resource storage repository.
+ * This class implements a stand-alone System for Cross-Domain Identity
+ * Management (SCIM) server that uses an LDAP server as its resource storage
+ * repository.
  */
 public class SCIMServer
 {

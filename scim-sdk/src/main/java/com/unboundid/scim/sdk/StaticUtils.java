@@ -18,6 +18,8 @@
 package com.unboundid.scim.sdk;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -143,6 +145,53 @@ public final class StaticUtils
     }
 
     return new String(charArray);
+  }
+
+
+
+  /**
+   * Creates a string representation of the elements in the
+   * <code>list</code> separated by <code>separator</code>.
+   *
+   * @param list the list to print
+   * @param separator to use between elements
+   *
+   * @return String representing the list
+   */
+  public static String listToString(final List<?> list, final String separator)
+  {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < list.size(); i++) {
+      sb.append(list.get(i));
+      if (i < list.size() - 1) {
+        sb.append(separator);
+      }
+    }
+    return sb.toString();
+  }
+
+
+
+  /**
+   * Creates a string representation of the elements in the
+   * <code>collection</code> separated by <code>separator</code>.
+   *
+   * @param collection to print
+   * @param separator to use between elements
+   *
+   * @return String representing the collection
+   */
+  public static String collectionToString(final Collection<?> collection,
+                                          final String separator)
+  {
+    StringBuilder sb = new StringBuilder();
+    for (Iterator<?> iter = collection.iterator(); iter.hasNext();) {
+      sb.append(iter.next());
+      if (iter.hasNext()) {
+        sb.append(separator);
+      }
+    }
+    return sb.toString();
   }
 
 
