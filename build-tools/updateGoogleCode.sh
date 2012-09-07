@@ -36,25 +36,25 @@ do
     echo "Merging files for revision $IDX..."
 
     #Handle Build Tools
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/build-tools/src build-tools/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/build-tools/src build-tools/src
 
     #Handle Config
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/config config
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/config config
 
     #Handle Resources
     if [[ -z "$SKIP_RESOURCE_FOLDER" ]]
     then
-      svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/resource resource
+      svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/resource resource
     fi
 
     #Handle SCIM-SDK
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-sdk/src scim-sdk/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-sdk/src scim-sdk/src
 
     #Handle SCIM-LDAP
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-ldap/src scim-ldap/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-ldap/src scim-ldap/src
 
     #Handle SCIM-RI
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk/scim-ri/src scim-ri/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-ri/src scim-ri/src
 
     STATUS=`svn status | grep -v -E '^(\?)'`
     if [[ -z "$STATUS" ]]

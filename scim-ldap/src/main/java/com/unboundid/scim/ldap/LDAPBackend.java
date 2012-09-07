@@ -213,6 +213,7 @@ public abstract class LDAPBackend
     requestAttributeSet.addAll(
         mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.addAll(getLastModAttributes());
+    requestAttributeSet.add("objectClass");
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -422,6 +423,7 @@ public abstract class LDAPBackend
     requestAttributeSet.addAll(
         mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.addAll(getLastModAttributes());
+    requestAttributeSet.add("objectClass");
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -559,13 +561,14 @@ public abstract class LDAPBackend
       final Entry currentEntry =
           mapper.getEntry(ldapInterface, resourceID, mappedAttributes);
 
-      mods.addAll(mapper.toLDAPModifications(currentEntry,
-          request.getResourceObject(), ldapInterface));
+      mods.addAll(mapper.toLDAPModificationsForPut(currentEntry,
+          request.getResourceObject(), mappedAttributes, ldapInterface));
 
       final Set<String> requestAttributeSet = new HashSet<String>();
       requestAttributeSet.addAll(
           mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.addAll(getLastModAttributes());
+      requestAttributeSet.add("objectClass");
 
       final String[] requestAttributes =
           new String[requestAttributeSet.size()];
@@ -740,6 +743,8 @@ public abstract class LDAPBackend
       requestAttributeSet.addAll(
             mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.addAll(getLastModAttributes());
+      requestAttributeSet.add("objectClass");
+
       String[] requestAttributes = new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
 

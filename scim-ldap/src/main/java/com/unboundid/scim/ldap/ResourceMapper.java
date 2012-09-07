@@ -914,6 +914,7 @@ public class ResourceMapper
    *
    * @param currentEntry   The current LDAP entry representing the SCIM object.
    * @param scimObject     The object containing attributes to be mapped.
+   * @param mappedAttributeNames The names of the modifiable attributes.
    * @param ldapInterface  An optional LDAP interface that can be used to
    *                       derive attributes from other entries.
    *
@@ -922,9 +923,10 @@ public class ResourceMapper
    *
    * @throws SCIMException If the modifications could not be mapped.
    */
-  public List<Modification> toLDAPModifications(
+  public List<Modification> toLDAPModificationsForPut(
       final Entry currentEntry,
       final SCIMObject scimObject,
+      final String[] mappedAttributeNames,
       final LDAPRequestInterface ldapInterface)
           throws SCIMException
   {
@@ -932,7 +934,7 @@ public class ResourceMapper
         toLDAPAttributes(scimObject, ldapInterface);
     final Entry entry = new Entry(currentEntry.getDN(), attributes);
 
-    return Entry.diff(currentEntry, entry, false, false);
+    return Entry.diff(currentEntry, entry, false, false, mappedAttributeNames);
   }
 
 
@@ -962,6 +964,9 @@ public class ResourceMapper
 
     Entry modifiedEntry = currentEntry.duplicate();
 
+    final Set<String> attrsToDiff =
+            new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
     if (meta != null)
     {
       SCIMAttributeValue value = meta.getValue();
@@ -984,6 +989,7 @@ public class ResourceMapper
         }
 
         Set<String> ldapAttributes = toLDAPAttributeTypes(scimAttributes);
+        attrsToDiff.addAll(ldapAttributes);
 
         if (Debug.debugEnabled())
         {
@@ -1013,7 +1019,7 @@ public class ResourceMapper
       {
         if(attr.getAttributeDescriptor().isMultiValued())
         {
-          //The attr is multi-valued, so merge it into the new SCIMObject
+          //The attr is multi-valued, so merge it into the current value
           for (SCIMAttributeValue value : attr.getValues())
           {
             if(value.isComplex())
@@ -1057,6 +1063,7 @@ public class ResourceMapper
     for (Attribute attr : ldapAttrsToReplace)
     {
       modifiedEntry.setAttribute(attr);
+      attrsToDiff.add(attr.getName());
     }
 
     //Remove any specific values from multi-valued attributes.
@@ -1064,16 +1071,19 @@ public class ResourceMapper
     {
       modifiedEntry.removeAttributeValues(attr.getName(),
                                           attr.getValueByteArrays());
+      attrsToDiff.add(attr.getName());
     }
 
     //Merge in any specific value to multi-valued attributes.
     for (Attribute attr : ldapAttrsToAdd)
     {
       modifiedEntry.addAttribute(attr);
+      attrsToDiff.add(attr.getName());
     }
 
     List<Modification> mods =
-            Entry.diff(currentEntry, modifiedEntry, false, false);
+            Entry.diff(currentEntry, modifiedEntry, false, false,
+                    attrsToDiff.toArray(new String[attrsToDiff.size()]));
 
     return mods;
   }

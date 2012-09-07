@@ -63,11 +63,6 @@ public class MembersDerivedAttribute extends DerivedAttribute
   private static final String ATTR_MEMBER = "member";
 
   /**
-   * The name of the LDAP objectClass attribute.
-   */
-  private static final String ATTR_OBJECT_CLASS = "objectClass";
-
-  /**
    * The name of the LDAP uniqueMember attribute.
    */
   private static final String ATTR_UNIQUE_MEMBER = "uniqueMember";
@@ -116,7 +111,6 @@ public class MembersDerivedAttribute extends DerivedAttribute
   {
     ldapAttributeTypes.add(ATTR_MEMBER);
     ldapAttributeTypes.add(ATTR_UNIQUE_MEMBER);
-    ldapAttributeTypes.add(ATTR_OBJECT_CLASS);
     ldapAttributeTypes.add(ATTR_MEMBER_URL);
   }
 
@@ -399,7 +393,4 @@ public class MembersDerivedAttribute extends DerivedAttribute
       }
     }
   }
-
-
-
 }
