@@ -154,11 +154,17 @@
   </xs:complexType>
 
   <xs:complexType name="AttributeMapping">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
     <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
     <xs:attribute name="transform" type="xs:string"/>
   </xs:complexType>
 
   <xs:complexType name="SubAttributeMapping">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
     <xs:attribute name="name" type="xs:Name" use="required"/>
     <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
     <xs:attribute name="transform" type="xs:string"/>

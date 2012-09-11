@@ -751,8 +751,7 @@ public final class AttributeDescriptor {
   }
 
   /**
-   * Create a new attribute descriptor for a singular attribute with the
-   * provided information.
+   * Create a new attribute descriptor with the provided information.
    *
    * @param name                 The attribute's name.
    * @param multiValuedChildName The child XML element name for multi-valued

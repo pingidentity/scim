@@ -22,6 +22,11 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;
+import org.w3c.dom.Element;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Attribute mapping transformations may be used to alter the value of mapped
@@ -52,14 +57,23 @@ import com.unboundid.util.ByteString;
 public abstract class Transformation
 {
   /**
+   * The map of arguments provided to this transformation. This maps the
+   * element name to its value. See getArguments() for an example.
+   */
+  private final Map<String,String> arguments = new HashMap<String,String>();
+
+  /**
    * Create a transformation from the name of a class that extends the
    * {@code Transformation} abstract class.
    *
    * @param className  The name of a class that extends {@code Transformation}.
+   * @param args       The set of arguments that are configured for this
+   *                   {@code Transformation}.
    *
    * @return  A new instance of the transformation class.
    */
-  public static Transformation create(final String className)
+  public static Transformation create(final String className,
+                                      final List<Object> args)
   {
     if (className == null)
     {
@@ -97,7 +111,18 @@ public abstract class Transformation
           "Class '" + className + "' is not a Transformation");
     }
 
-    return (Transformation)object;
+    Transformation t = (Transformation)object;
+    if(args != null)
+    {
+      for(Object o : args)
+      {
+        Element e = (Element) o;
+        String name = e.getTagName();
+        String value = e.getTextContent();
+        t.arguments.put(name, value);
+      }
+    }
+    return t;
   }
 
 
@@ -134,4 +159,26 @@ public abstract class Transformation
    * @return  The LDAP filter value as a string.
    */
   public abstract String toLDAPFilterValue(final String scimFilterValue);
+
+  /**
+   * Returns the arguments map for this Transformation. The arguments map is
+   * constructed from the child elements of the <mapping> element.
+   * For example, a derivation like the following:
+   * <PRE>
+   *   &lt;mapping ldapAttribute="title"
+   *               transform="com.example.ExampleTransformation"&gt;
+   *     &lt;key1&gt;value1&lt;/key1&gt;
+   *     &lt;key2&gt;value2&lt;/key2&gt;
+   *   &lt;/mapping&gt;
+   * </PRE>
+   * would have an arguments map containing 'key1' and 'key2' with values
+   * 'value1' and 'value2'.
+   *
+   * @return a map of argument names to argument values. This is modifiable,
+   *         and will never be null.
+   */
+  public final Map<String,String> getArguments()
+  {
+    return arguments;
+  }
 }

@@ -468,7 +468,7 @@ public class CoreSchema
       AttributeDescriptor.createAttribute("displayName",
           AttributeDescriptor.DataType.STRING,
           "A human readable name for the Group",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false);
+          SCIMConstants.SCHEMA_URI_CORE, false, true, false);
   private static final AttributeDescriptor MEMBERS =
       AttributeDescriptor.createMultiValuedAttribute("members",
           "member", AttributeDescriptor.DataType.STRING,

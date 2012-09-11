@@ -55,7 +55,7 @@ public class AttributeTransformation
   {
     final String ldapAttribute = mapping.getLdapAttribute();
     final Transformation transformation =
-        Transformation.create(mapping.getTransform());
+        Transformation.create(mapping.getTransform(), mapping.getAny());
 
     return new AttributeTransformation(ldapAttribute, transformation);
   }

@@ -78,7 +78,7 @@ public class SubAttributeTransformation
     final String subAttribute = mapping.getName();
     final String ldapAttribute = mapping.getLdapAttribute();
     final Transformation transformation =
-        Transformation.create(mapping.getTransform());
+        Transformation.create(mapping.getTransform(), mapping.getAny());
 
     final AttributeTransformation at =
         new AttributeTransformation(ldapAttribute, transformation);

@@ -112,9 +112,11 @@ public class UserResourceMapperTestCase
     Collection<com.unboundid.scim.data.Entry<String>> phoneNumbers =
         new ArrayList<com.unboundid.scim.data.Entry<String>>(2);
     phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
-        "800-864-8377", "work", false));
+        "tel:+1-800-864-8377", "work", false));
     phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
-        "818-123-4567", "mobile", false));
+        "tel:+1-818-123-4567", "mobile", false));
+    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
+        "tel:+1-324-231-4567", "pager", false));
     user.setPhoneNumbers(phoneNumbers);
 
     final ResourceMapper mapper = getUserResourceMapper();
@@ -133,8 +135,9 @@ public class UserResourceMapperTestCase
     assertTrue(entry.hasAttributeValue("l", "Hollywood"));
     assertTrue(entry.hasAttributeValue("st", "CA"));
     assertTrue(entry.hasAttributeValue("postalCode", "91608"));
-    assertTrue(entry.hasAttributeValue("telephoneNumber", "800-864-8377"));
-
+    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 800-864-8377"));
+    assertTrue(entry.hasAttributeValue("mobile", "+1 818-123-4567"));
+    assertTrue(entry.hasAttributeValue("pager", "+1 324-231-4567"));
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
         mapper.toSCIMAttributes(
@@ -143,6 +146,9 @@ public class UserResourceMapperTestCase
     {
       user2.addAttribute(a);
     }
+
+    UserResource resource = new UserResource(CoreSchema.USER_DESCRIPTOR, user2);
+    assertTrue(resource.getPhoneNumbers().containsAll(phoneNumbers));
 
     final Entry entry2 =
         new Entry("cn=test", mapper.toLDAPAttributes(user2, null));
@@ -188,7 +194,8 @@ public class UserResourceMapperTestCase
     assertTrue(entry.hasAttributeValue("l", "Sioux City"));
     assertTrue(entry.hasAttributeValue("st", "IL"));
     assertTrue(entry.hasAttributeValue("postalCode", "24769"));
-    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 319 805 3070"));
+    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 319-805-3070"));
+    // This number is not a valid number so it shouldn't be reformatted.
     assertTrue(entry.hasAttributeValue("homePhone", "+1 003 490 8631"));
   }
 
@@ -296,20 +303,32 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getAttributeName(), "mail");
     assertEquals(filter.getAssertionValue(), "test");
 
-    filter = mapper.toLDAPFilter(SCIMFilter.parse("phoneNumbers eq \"test\""));
+    filter = mapper.toLDAPFilter(
+        SCIMFilter.parse("phoneNumbers eq \"tel:+1-512-456-7890;ext=123\""));
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
-    assertEquals(filter.getComponents().length, 3);
+    assertEquals(filter.getComponents().length, 5);
     assertEquals(filter.getComponents()[0].getAttributeName(),
-        "telephoneNumber");
-    assertEquals(filter.getComponents()[0].getAssertionValue(), "test");
+        "pager");
+    assertEquals(filter.getComponents()[0].getAssertionValue(),
+        "+1 512-456-7890 ext. 123");
     assertEquals(filter.getComponents()[1].getAttributeName(),
-        "homePhone");
-    assertEquals(filter.getComponents()[1].getAssertionValue(), "test");
+        "telephoneNumber");
+    assertEquals(filter.getComponents()[1].getAssertionValue(),
+        "+1 512-456-7890 ext. 123");
     assertEquals(filter.getComponents()[2].getAttributeName(),
+        "homePhone");
+    assertEquals(filter.getComponents()[2].getAssertionValue(),
+        "+1 512-456-7890 ext. 123");
+    assertEquals(filter.getComponents()[3].getAttributeName(),
         "facsimileTelephoneNumber");
-    assertEquals(filter.getComponents()[2].getAssertionValue(), "test");
+    assertEquals(filter.getComponents()[3].getAssertionValue(),
+        "+1 512-456-7890 ext. 123");
+    assertEquals(filter.getComponents()[4].getAttributeName(),
+        "mobile");
+    assertEquals(filter.getComponents()[4].getAssertionValue(),
+        "+1 512-456-7890 ext. 123");
 
     try
     {
@@ -443,12 +462,6 @@ public class UserResourceMapperTestCase
     control = mapper.toLDAPSortControl(
         new SortParameters("name.middleName", "ascending"));
     assertNull(control);
-
-    control = mapper.toLDAPSortControl(
-        new SortParameters("phoneNumbers", "ascending"));
-    sss = (ServerSideSortRequestControl) control;
-    assertEquals(sss.getSortKeys().length, 1);
-    assertEquals(sss.getSortKeys()[0].getAttributeName(), "telephoneNumber");
 
     control = mapper.toLDAPSortControl(
         new SortParameters("addresses.locality", "ascending"));

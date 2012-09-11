@@ -1045,9 +1045,9 @@ public class SCIMServerTestCase extends SCIMRITestCase
     final Collection<com.unboundid.scim.data.Entry<String>> phoneNumbers =
         new ArrayList<com.unboundid.scim.data.Entry<String>>(2);
     phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
-        "800-864-8377", "work", false));
+        "tel:+1-800-864-8377", "work", false));
     phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
-        "818-123-4567", "home", false));
+        "+1-818-123-4567", "home", false));
     user1.setPhoneNumbers(phoneNumbers);
 
     final Collection<Address> addresses =
@@ -1068,8 +1068,8 @@ public class SCIMServerTestCase extends SCIMRITestCase
     final Entry entry2 = testDS.getEntry(userDN);
     assertTrue(entry2.hasAttributeValue("givenName", "Barbara"));
     assertTrue(entry2.hasAttributeValue("mail", "bjensen@example.com"));
-    assertTrue(entry2.hasAttributeValue("telephoneNumber", "800-864-8377"));
-    assertTrue(entry2.hasAttributeValue("homePhone", "818-123-4567"));
+    assertTrue(entry2.hasAttributeValue("telephoneNumber", "+1 800-864-8377"));
+    assertTrue(entry2.hasAttributeValue("homePhone", "+1 818-123-4567"));
     assertTrue(entry2.hasAttributeValue(
         "postalAddress", "100 Universal City Plaza$Hollywood, CA 91608 USA"));
     assertTrue(entry2.hasAttributeValue("street", "100 Universal City Plaza"));
@@ -1121,7 +1121,7 @@ public class SCIMServerTestCase extends SCIMRITestCase
     final Entry entry3 = testDS.getEntry(userDN);
     assertFalse(entry3.hasAttribute("givenName"));
     assertTrue(entry3.hasAttributeValue("mail", "bjensen@example.com"));
-    assertTrue(entry3.hasAttributeValue("telephoneNumber", "800-864-8377"));
+    assertTrue(entry3.hasAttributeValue("telephoneNumber", "+1 800-864-8377"));
     assertFalse(entry3.hasAttribute("homePhone"));
     assertTrue(entry3.hasAttributeValue(
         "postalAddress", "100 Universal City Plaza$Hollywood, CA 91608 USA"));

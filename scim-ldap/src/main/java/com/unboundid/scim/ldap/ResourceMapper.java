@@ -1434,7 +1434,8 @@ public class ResourceMapper
               new ArrayList<SubAttributeTransformation>();
 
     final Transformation dateTransformation =
-        Transformation.create(GeneralizedTimeTransformation.class.getName());
+        Transformation.create(GeneralizedTimeTransformation.class.getName(),
+            null);
 
     transformations.add(new SubAttributeTransformation("created",
            new AttributeTransformation("createTimestamp", dateTransformation)));

@@ -221,16 +221,59 @@
       <description>Phone numbers for the User</description>
       <simpleMultiValued childName="phoneNumber" dataType="string">
         <canonicalValue name="work">
-          <subMapping name="value" ldapAttribute="telephoneNumber"/>
+          <subMapping name="value" ldapAttribute="telephoneNumber"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <!--
+             ! The ISO 3166-1 two-letter region code that denotes the expected
+             ! region of the phone numbers. This is only used if the number
+             ! being canonicalized is not written in international format.
+             !-->
+            <defaultCountry>US</defaultCountry>
+            <!--
+             ! The format to use when transforming phone numbers between RFC3966
+             ! and LDAP formats. The allowable values are: {INTERNATIONAL,
+             ! NATIONAL, E164, RFC3966}. The INTERNATIONAL and NATIONAL formats
+             ! are consistent with the definition in ITU-T Recommendation
+             ! E. 123. For example, the following number will be written as
+             ! "+1 512-345-6789" in INTERNATIONAL format, and as
+             ! "(512) 345-6789" in NATIONAL format. E164 format is as per
+             ! INTERNATIONAL format but with no formatting applied,
+             ! e.g. "+15123456789". RFC3966 is as per INTERNATIONAL format, but
+             ! with all spaces and other separating symbols replaced with a
+             ! hyphen, and with any phone number extension appended with
+             ! ";ext=".
+             !-->
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
         </canonicalValue>
         <canonicalValue name="home">
-          <subMapping name="value" ldapAttribute="homePhone"/>
+          <subMapping name="value" ldapAttribute="homePhone"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
         </canonicalValue>
-        <canonicalValue name="mobile"/>
+        <canonicalValue name="mobile">
+          <subMapping name="value" ldapAttribute="mobile"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
         <canonicalValue name="fax">
-          <subMapping name="value" ldapAttribute="facsimileTelephoneNumber"/>
+          <subMapping name="value" ldapAttribute="facsimileTelephoneNumber"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
         </canonicalValue>
-        <canonicalValue name="pager"/>
+        <canonicalValue name="pager">
+          <subMapping name="value" ldapAttribute="pager"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
         <canonicalValue name="other"/>
       </simpleMultiValued>
     </attribute>
@@ -433,7 +476,7 @@
     </LDAPAdd>
 
     <attribute name="displayName" schema="urn:scim:schemas:core:1.0"
-               readOnly="false" required="false">
+               readOnly="false" required="true">
       <description>A human readable name for the Group</description>
       <simple dataType="string">
         <mapping ldapAttribute="cn"/>
@@ -441,7 +484,7 @@
     </attribute>
 
     <attribute name="members" schema="urn:scim:schemas:core:1.0"
-               readOnly="false" required="true">
+               readOnly="false" required="false">
       <description>A list of members of the Group</description>
       <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute">
         <LDAPSearchRef idref="userSearchParams"/>

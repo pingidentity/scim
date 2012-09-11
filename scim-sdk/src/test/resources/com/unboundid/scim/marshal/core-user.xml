@@ -36,7 +36,7 @@
   </emails>
   <phoneNumbers>
     <phoneNumber>
-      <value>+1 319 805 3070</value>
+      <value>tel:+1-319-805-3070</value>
       <primary>false</primary>
       <type>work</type>
     </phoneNumber>
