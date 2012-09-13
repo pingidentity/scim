@@ -22,7 +22,6 @@ import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import org.testng.annotations.AfterSuite;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -56,18 +55,6 @@ public class SCIMTestCase
   protected static File getResourceFile(final String fileName)
   {
     return new File(SCIMTestCase.class.getResource(fileName).getFile());
-  }
-
-  /**
-   * Clean up after the test suite.
-   *
-   * @throws  Exception  If an unexpected problem occurs.
-   */
-  @AfterSuite
-  public static void cleanUpTestSuite()
-      throws Exception
-  {
-    // Nothing needed by default
   }
 
 

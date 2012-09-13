@@ -88,6 +88,12 @@ import static org.testng.Assert.fail;
  * Test coverage for the SCIM server extension. This class tests the extension
  * running in the Directory Server, and serves as a base class to allow the
  * extension to be tested in the Proxy Server.
+ *
+ * NOTE: The scim-extension module is being deprecated and moved into the core
+ *       build so please do not add new test cases in this class. Instead, add
+ *       them to the SCIMServerTestCase class in the scim-ri module. If the test
+ *       case will only work with a full Directory Server, please add them to
+ *       the SCIMHTTPServletExtensionTest class in the core build.
  */
 @Test(sequential = true)
 public class SCIMExtensionTestCase extends ServerExtensionTestCase

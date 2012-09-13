@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 UnboundID Corp.
+ * Copyright 2011-2012 UnboundID Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License (GPLv2 only)
@@ -17,24 +17,22 @@
 
 package com.unboundid.scim.ri;
 
+import com.unboundid.scim.sdk.SCIMService;
 
-import org.testng.annotations.BeforeClass;
+import javax.ws.rs.core.MediaType;
 
 /**
- * Tests the server with the resource ID mapped to the LDAP entryUUID attribute.
+ * This class provides test coverage for the SCIMServer class with JSON content
+ * and JSON response.
  */
-public class EntryUUIDMappingRITestCase extends SCIMServerTestCase
+public class JsonJsonSCIMServerTestCase extends SCIMServerTestCase
 {
-  /**
-   * Set up the test class to use an alternative resource mapping.
-   *
-   * @throws Exception  If the test class cannot be set up.
-   */
-  @BeforeClass
-  public void setUp() throws Exception
+  @Override
+  protected SCIMService createSCIMService(String userName, String password)
   {
-    SCIMServerConfig config = new SCIMServerConfig();
-    config.setResourcesFile(getFile("resource/resources-entryUUID.xml"));
-    reconfigureTestSuite(config);
+    SCIMService service = super.createSCIMService(userName, password);
+    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
+    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
+    return service;
   }
 }

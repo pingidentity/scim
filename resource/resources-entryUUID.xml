@@ -217,17 +217,40 @@
       <description>Phone numbers for the User</description>
       <simpleMultiValued childName="phoneNumber" dataType="string">
         <canonicalValue name="work">
-          <subMapping name="value" ldapAttribute="telephoneNumber"/>
+          <subMapping name="value" ldapAttribute="telephoneNumber"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
         </canonicalValue>
         <canonicalValue name="home">
-          <subMapping name="value" ldapAttribute="homePhone"/>
+          <subMapping name="value" ldapAttribute="homePhone"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
         </canonicalValue>
-        <canonicalValue name="mobile"/>
+        <canonicalValue name="mobile">
+          <subMapping name="value" ldapAttribute="mobile"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
         <canonicalValue name="fax">
-          <subMapping name="value" ldapAttribute="facsimileTelephoneNumber"/>
+          <subMapping name="value" ldapAttribute="facsimileTelephoneNumber"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
         </canonicalValue>
-        <canonicalValue name="pager"/>
-        <canonicalValue name="other"/>
+        <canonicalValue name="pager">
+          <subMapping name="value" ldapAttribute="pager"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
       </simpleMultiValued>
     </attribute>
 

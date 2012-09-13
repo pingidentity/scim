@@ -194,6 +194,19 @@
             <scope>test</scope>
             <classifier>tests</classifier>
         </dependency>
+        <dependency>
+            <groupId>com.unboundid.directory.testtools</groupId>
+            <artifactId>standalone-ds-test-harness</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.directory.testtools</groupId>
+            <artifactId>standalone-ds-test-harness</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <classifier>sources</classifier>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

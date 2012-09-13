@@ -17,69 +17,107 @@
 
 package com.unboundid.scim.ri;
 
+import com.unboundid.directory.tests.externalinstance.TestCaseUtils;
+import com.unboundid.directory.tests.externalinstance.util.FutureCondition;
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.sdk.Attribute;
-import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
+import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.data.Address;
+import com.unboundid.scim.data.AttributeValueResolver;
+import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.GroupResource;
+import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Name;
+import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.BulkResponse;
+import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMEndpoint;
+import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.PageParameters;
+import com.unboundid.scim.sdk.Status;
+import com.unboundid.scim.sdk.UnauthorizedException;
+import com.unboundid.scim.wink.ResourceStats;
 import org.testng.annotations.Test;
 
-import javax.ws.rs.core.MediaType;
-
-import java.io.File;
 import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import static com.unboundid.scim.sdk.SCIMConstants.
     SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE;
-
+import static java.util.Arrays.asList;
 
 
 /**
  * This class provides test coverage for the SCIMServer class.
  */
-public class SCIMServerTestCase extends SCIMRITestCase
+public abstract class SCIMServerTestCase extends SCIMRITestCase
 {
-
-  private final String userBaseDN = "ou=people,dc=example,dc=com";
-
-
   /**
    * Provides test coverage for accessing a specific API version.
    *
    * @throws Exception  If the test fails.
    */
-  @Test(dependsOnMethods = "testPostUser")
+  @Test
   public void testAPIVersion()
       throws Exception
   {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    // Create a user directly on the test DS.
+    testDS.add(generateUserEntry("b jensen", userBaseDN,
+        "Barbara", "Jensen", "password",
+        new Attribute("mail", "user.1@example.com"),
+        new Attribute("l", "Austin"),
+        new Attribute("postalCode", "78759")));
+
     SCIMService v1Service =
         new SCIMService(URI.create("http://localhost:"+getSSTestPort()+"/v1"),
             "cn=Manager", "password");
+    SCIMEndpoint<UserResource> endpoint = v1Service.getUserEndpoint();
 
-    SCIMEndpoint<UserResource> userEndpoint =
-        v1Service.getUserEndpoint();
-    userEndpoint.query(null);
+    // Determine the user ID.
+    final String userID = endpoint.query(null).iterator().next().getId();
+
+    // Fetch the user through the SCIM client.
+    final UserResource user1 = endpoint.get(userID);
+    assertNotNull(user1);
+    assertEquals(user1.getId(), userID);
   }
 
 
@@ -97,8 +135,8 @@ public class SCIMServerTestCase extends SCIMRITestCase
         service.getResourceSchemaEndpoint();
     final ResourceDescriptor userDescriptor =
         schemaEndpoint.get(SCHEMA_URI_CORE +
-                           SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
-                           "User");
+            SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
+            "User");
 
     // Make sure the convenience method works and returns the
     // same descriptor.
@@ -165,344 +203,6 @@ public class SCIMServerTestCase extends SCIMRITestCase
    */
   @Test
   public void testGetUser()
-      throws Exception
-  {
-    // Test receiving XML content.
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testGetUser(service);
-
-    // Test receiving JSON content.
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testGetUser(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for the GET operation on a group resource.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testGetGroup()
-      throws Exception
-  {
-    // Test receiving XML content.
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testGetGroup(service);
-
-    // Test receiving JSON content.
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testGetGroup(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for the GET operation to fetch selected users.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testGetUsers()
-      throws Exception
-  {
-    // Test receiving XML content.
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testGetUsers(service);
-
-    // Test receiving JSON content.
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testGetUsers(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for the GET operation to fetch sorted users.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testGetSortedUsers()
-      throws Exception
-  {
-    // Test receiving XML content.
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testGetSortedUsers(service);
-
-    // Test receiving JSON content.
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testGetSortedUsers(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for the GET operation to fetch pages of users.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testGetPaginatedUsers()
-      throws Exception
-  {
-    // Test receiving XML content.
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testGetPaginatedUsers(service);
-
-    // Test receiving JSON content.
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testGetPaginatedUsers(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for the POST operation on a user resource.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testPostUser()
-      throws Exception
-  {
-    // Test sending and receiving XML content.
-    service.setContentType(MediaType.APPLICATION_XML_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testPostUser(service);
-
-    // Test sending and receiving JSON content.
-    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testPostUser(service);
-
-    // Test sending XML and receiving JSON content.
-    service.setContentType(MediaType.APPLICATION_XML_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testPostUser(service);
-
-    // Test sending JSON and receiving XML content.
-    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testPostUser(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for the PUT operation on a user resource.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testPutUser()
-      throws Exception
-  {
-    // Test sending and receiving XML content.
-    service.setContentType(MediaType.APPLICATION_XML_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testPutUser(service);
-
-    // Test sending and receiving JSON content.
-    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testPutUser(service);
-
-    // Test sending XML and receiving JSON content.
-    service.setContentType(MediaType.APPLICATION_XML_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testPutUser(service);
-
-    // Test sending JSON and receiving XML content.
-    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testPutUser(service);
-  }
-
-
-
-  /**
-   * Provides test coverage for write operations on a group resource.
-   *
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testWriteGroup()
-      throws Exception
-  {
-    // Test sending and receiving XML content.
-    service.setContentType(MediaType.APPLICATION_XML_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testWriteGroup(service);
-
-    // Test sending and receiving JSON content.
-    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testWriteGroup(service);
-
-    // Test sending XML and receiving JSON content.
-    service.setContentType(MediaType.APPLICATION_XML_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-    testWriteGroup(service);
-
-    // Test sending JSON and receiving XML content.
-    service.setContentType(MediaType.APPLICATION_JSON_TYPE);
-    service.setAcceptType(MediaType.APPLICATION_XML_TYPE);
-    testWriteGroup(service);
-  }
-
-
-  /**
-   * Verifies that we support Users and Groups with different base DNs and that
-   * we can still search for a Group and get all of its members (even though
-   * they're in a different part of the DIT), and that we can search for a user
-   * and get all of its groups (even though they're in a different part of the
-   * DIT).
-   * @throws Exception  If the test failed.
-   */
-  @Test
-  public void testDifferentBaseDNs() throws Exception
-  {
-    //Switch the RI server to use a different resources.xml
-    File f = getFile(
-       "scim-ri/src/test/resources/resources-different-base-dns.xml");
-    assertTrue(f.exists());
-    reconfigureTestSuite(f);
-
-    // Get a reference to the in-memory test DS.
-    final InMemoryDirectoryServer testDS = getTestDS();
-    testDS.add(generateDomainEntry("example", "dc=com"));
-    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
-    testDS.add(generateOrgEntry("example.com", null));
-
-    // Create some users under dc=example,dc=com
-    UserResource user1 = new UserResource(CoreSchema.USER_DESCRIPTOR);
-    Name name1 = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
-        "Barbara", "Ms", "III");
-    user1.setUserName("bjensen");
-    user1.setName(name1);
-    user1.setPassword("4wrj2U81j");
-
-    UserResource user2 = new UserResource(CoreSchema.USER_DESCRIPTOR);
-    Name name2 = new Name("Mr. John D. Smith", "Smith", "D",
-        "John", "Mr", null);
-    user2.setUserName("jsmith");
-    user2.setName(name2);
-    user2.setPassword("Rls3xj2%4");
-
-    // Post the users via SCIM, returning selected attributes.
-    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-    user1 = endpoint.create(user1, "id", "meta");
-    user2 = endpoint.create(user2, "id", "meta");
-
-    //Verify the users were created under ou=people,dc=example,dc=com
-    assertEquals(
-            DN.getParent(user1.getId()), new DN(userBaseDN));
-    assertEquals(
-            DN.getParent(user2.getId()), new DN(userBaseDN));
-
-    //Create a group containing both users
-    SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
-    GroupResource group1 = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
-    group1.setDisplayName("group1");
-    Set<com.unboundid.scim.data.Entry<String>> members1 =
-          new HashSet<com.unboundid.scim.data.Entry<String>>();
-    members1.add(new com.unboundid.scim.data.Entry<String>(
-                              user1.getId(), "User", false));
-    members1.add(new com.unboundid.scim.data.Entry<String>(
-                              user2.getId(), "User", false));
-    group1.setMembers(members1);
-    group1 = grpEndpoint.create(group1, "id", "meta", "members");
-
-    //Verify that the group was created under o=example.com and contains
-    //both members
-    assertEquals(DN.getParent(group1.getId()), new DN("o=example.com"));
-    assertEquals(group1.getMembers().size(), 2);
-
-    //Verify that the members have the correct base DN
-    for(com.unboundid.scim.data.Entry<String> entry : group1.getMembers())
-    {
-      DN dn = new DN(entry.getValue());
-      assertTrue(dn.isDescendantOf(userBaseDN, false));
-    }
-
-    //Create another group under o=example.com
-    GroupResource group2 = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
-    group2.setDisplayName("group2");
-    Set<com.unboundid.scim.data.Entry<String>> members2 =
-          new HashSet<com.unboundid.scim.data.Entry<String>>();
-    members2.add(new com.unboundid.scim.data.Entry<String>(
-                                user1.getId(), "User", false));
-    members2.add(new com.unboundid.scim.data.Entry<String>(
-                                group1.getId(), "Group", false));
-    group2.setMembers(members2);
-    group2 = grpEndpoint.create(group2, "id", "meta", "members");
-
-    //Verify that the group was created under o=example.com and contains
-    //both members
-    assertEquals(DN.getParent(group2.getId()), new DN("o=example.com"));
-    assertEquals(group2.getMembers().size(), 2);
-    for(com.unboundid.scim.data.Entry<String> entry : group2.getMembers())
-    {
-      DN dn = new DN(entry.getValue());
-      if(entry.getType().equalsIgnoreCase("user"))
-      {
-        assertTrue(dn.isDescendantOf(userBaseDN, false));
-      }
-      else if(entry.getType().equalsIgnoreCase("group"))
-      {
-        assertTrue(dn.isDescendantOf("o=example.com", false));
-      }
-      else
-      {
-        fail("Unknown base DN for group member: " + dn);
-      }
-    }
-
-    //Verify that user1 correctly identifies its two groups which should
-    //both be direct.
-    user1 = endpoint.get(user1.getId(), "id", "meta", "groups");
-    assertEquals(user1.getGroups().size(), 2);
-    for(com.unboundid.scim.data.Entry<String> entry : user1.getGroups())
-    {
-      DN dn = new DN(entry.getValue());
-      assertTrue(dn.isDescendantOf("o=example.com", false));
-      assertEquals(entry.getType(), "direct");
-    }
-
-    //Verify that user2 correctly identifies its two groups which should
-    //both be direct.
-    user2 = endpoint.get(user2.getId(), "id", "meta", "groups");
-    assertEquals(user2.getGroups().size(), 2);
-    for(com.unboundid.scim.data.Entry<String> entry : user2.getGroups())
-    {
-      DN dn = new DN(entry.getValue());
-      assertTrue(dn.isDescendantOf("o=example.com", false));
-      if(entry.getDisplay().equals("group1"))
-      {
-        assertEquals(entry.getType(), "direct");
-      }
-      else if(entry.getDisplay().equals("group2"))
-      {
-        assertEquals(entry.getType(), "indirect");
-      }
-    }
-
-    //Cleanup
-    reconfigureTestSuite(getFile("resource/resources.xml"));
-  }
-
-
-
-  /**
-   * Provides test coverage for the GET operation on a user resource.
-   *
-   * @param service  The SCIM service to use during the test.
-   *
-   * @throws Exception  If the test failed.
-   */
-  private void testGetUser(final SCIMService service)
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -607,11 +307,10 @@ public class SCIMServerTestCase extends SCIMRITestCase
   /**
    * Provides test coverage for the GET operation on a Group resource.
    *
-   * @param service  The SCIM service to use during the test.
-   *
    * @throws Exception  If the test failed.
    */
-  private void testGetGroup(final SCIMService service)
+  @Test
+  public void testGetGroup()
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -670,11 +369,10 @@ public class SCIMServerTestCase extends SCIMRITestCase
   /**
    * Provides test coverage for the GET operation to fetch selected users.
    *
-   * @param service  The SCIM client to use during the test.
-   *
    * @throws Exception  If the test failed.
    */
-  private void testGetUsers(final SCIMService service)
+  @Test
+  public void testGetUsers()
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -776,11 +474,10 @@ public class SCIMServerTestCase extends SCIMRITestCase
   /**
    * Provides test coverage for the GET operation to fetch sorted users.
    *
-   * @param service  The SCIM client to use during the test.
-   *
    * @throws Exception  If the test failed.
    */
-  private void testGetSortedUsers(final SCIMService service)
+  @Test
+  public void testGetSortedUsers()
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -822,358 +519,12 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
 
   /**
-   * Provides test coverage for the GET operation to fetch pages of users.
-   *
-   * @param service  The SCIM client to use during the test.
-   *
-   * @throws Exception  If the test failed.
-   */
-  private void testGetPaginatedUsers(final SCIMService service)
-      throws Exception
-  {
-    // Get a reference to the in-memory test DS.
-    final InMemoryDirectoryServer testDS = getTestDS();
-    testDS.add(generateDomainEntry("example", "dc=com"));
-    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
-
-    // Create some users directly on the test DS.
-    final long NUM_USERS = 4;
-    for (int i = 0; i < NUM_USERS; i++)
-    {
-      final String uid = "user." + i;
-      testDS.add(generateUserEntry(uid, userBaseDN,
-          "Test", "User", "password"));
-    }
-
-    // Fetch the users one page at a time with page size equal to 1.
-    int pageSize = 1;
-    final Set<String> userIDs = new HashSet<String>();
-    for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
-    {
-      SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-      Resources<UserResource> resources = endpoint.query(null, null,
-          new PageParameters(startIndex, pageSize));
-      assertEquals(resources.getTotalResults(), NUM_USERS);
-      assertEquals(resources.getStartIndex(), startIndex);
-      assertEquals(resources.getItemsPerPage(), pageSize);
-      for (final UserResource resource : resources)
-      {
-        final String userID = resource.getId();
-        userIDs.add(userID);
-      }
-    }
-
-    assertEquals(userIDs.size(), NUM_USERS);
-  }
-
-
-
-  /**
-   * Provides test coverage for the POST operation on a user resource.
-   *
-   * @param service  The SCIM client to use during the test.
-   *
-   * @throws Exception  If the test failed.
-   */
-  private void testPostUser(final SCIMService service)
-      throws Exception
-  {
-    // Get a reference to the in-memory test DS.
-    final InMemoryDirectoryServer testDS = getTestDS();
-    testDS.add(generateDomainEntry("example", "dc=com"));
-    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
-
-    // Create the contents for a new user.
-    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
-    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
-        "Barbara", "Ms", "III");
-    user.setUserName("bjensen");
-    user.setName(name);
-
-    // Post the user via SCIM, returning selected attributes.
-    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-    final UserResource user1 = endpoint.create(user, "id", "meta");
-
-    // Check the returned user.
-    assertNotNull(user1);
-    assertNotNull(user1.getId());
-    assertNull(user1.getName());
-    assertNull(user1.getUserName());
-    assertNotNull(user1.getMeta());
-    assertNotNull(user1.getMeta().getCreated());
-    assertNotNull(user1.getMeta().getLastModified());
-    assertNotNull(user1.getMeta().getLocation());
-    assertLocation(user1.getMeta().getLocation(), "Users", user1.getId());
-
-    // Check the resource ID.
-    assertEquals(endpoint.get(user1.getId()).getId(), user1.getId());
-
-    // Verify that the entry was actually created.
-    final Entry entry = testDS.getEntry("uid=bjensen," + userBaseDN);
-    assertNotNull(entry);
-    assertTrue(entry.hasAttributeValue("sn", "Jensen"));
-    assertTrue(entry.hasAttributeValue("cn", "Ms. Barbara J Jensen III"));
-    assertTrue(entry.hasAttributeValue("givenName", "Barbara"));
-
-    // Verify that we can fetch the user using the returned resource URI.
-    //assertNotNull(client.getUserByURI(response.getResourceURI()));
-    //assertEquals(response.getResourceURI(), user1.getMeta().getLocation());
-  }
-
-
-
-  /**
-   * Provides test coverage for the DELETE operation on a user resource.
+   * Provides test coverage for the write operations on a group resource.
    *
    * @throws Exception  If the test failed.
    */
   @Test
-  public void testDeleteUser()
-      throws Exception
-  {
-    // Get a reference to the in-memory test DS.
-    final InMemoryDirectoryServer testDS = getTestDS();
-    testDS.add(generateDomainEntry("example", "dc=com"));
-    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
-
-    // Create a user directly on the test DS.
-    final String userDN = "uid=bjensen," + userBaseDN;
-    testDS.add(generateUserEntry("bjensen", userBaseDN,
-        "Barbara", "Jensen", "password"));
-
-
-    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-
-    // Determine the user ID.
-    final String userID = endpoint.query(null).iterator().next().getId();
-
-    // Delete the user through SCIM.
-    endpoint.delete(userID);
-
-    // Attempt to delete the user again.
-    try
-    {
-      endpoint.delete(userID);
-      assertTrue(false, "Should throw ResourceNotFoundException");
-    }
-    catch (ResourceNotFoundException e)
-    {
-      //expected
-    }
-
-    // Verify that the entry was actually deleted.
-    final Entry entry = testDS.getEntry(userDN);
-    assertNull(entry);
-
-    // Create the contents for a user to be created via SCIM.
-//    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
-//    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
-//        "Barbara", "Ms", "III");
-//    user.setUserName("bjensen");
-//    user.setName(name);
-
-    // Create the user via SCIM.
-    //final UserResource response = endpoint.create(user);
-
-    // Delete the user by providing the returned resource URI.
-    //assertTrue(client.deleteResourceByURI(response.getResourceURI()));
-
-    // Verify that the entry was actually deleted.
-    //assertNull(testDS.getEntry(userDN));
-
-    // Tidy up.
-    //client.stopClient();
-  }
-
-
-
-  /**
-   * Provides test coverage for the PUT operation on a user resource.
-   *
-   * @param service  The SCIM client to use during the test.
-   *
-   * @throws Exception  If the test failed.
-   */
-  private void testPutUser(final SCIMService service)
-      throws Exception
-  {
-    // Get a reference to the in-memory test DS.
-    final InMemoryDirectoryServer testDS = getTestDS();
-    testDS.add(generateDomainEntry("example", "dc=com"));
-    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
-
-    // The ID of the test user.
-    final String userDN = "uid=bjensen," + userBaseDN;
-
-    // Create the contents for a new user.
-    final UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR);
-    final Name name = new Name("Ms. Barbara J Jensen III", "Jensen", "J",
-        "Barbara", "Ms", "III");
-    user.setUserName("bjensen");
-    user.setName(name);
-    user.setId(userDN);
-
-    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
-    // Attempt to replace a user that does not exist.
-    try
-    {
-      endpoint.update(user);
-      assertTrue(false, "Should've thrown a ResourceNotFoundException");
-    }
-    catch(ResourceNotFoundException e)
-    {
-      // expected
-    }
-
-    // Post a new user.
-    final UserResource user1 = endpoint.create(user);
-
-    // Add a value that should be preserved during SCIM updates.
-    testDS.modify(userDN, new Modification(ModificationType.ADD, "description",
-        "This value should be preserved"));
-
-    // Add some values to the user.
-
-    user1.getName().setGivenName("Barbara");
-
-    final Collection<com.unboundid.scim.data.Entry<String>> emails =
-        new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
-    emails.add(new com.unboundid.scim.data.Entry<String>(
-        "bjensen@example.com", "work", false));
-    user1.setEmails(emails);
-
-    final Collection<com.unboundid.scim.data.Entry<String>> phoneNumbers =
-        new ArrayList<com.unboundid.scim.data.Entry<String>>(2);
-    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
-        "tel:+1-800-864-8377", "work", false));
-    phoneNumbers.add(new com.unboundid.scim.data.Entry<String>(
-        "+1-818-123-4567", "home", false));
-    user1.setPhoneNumbers(phoneNumbers);
-
-    final Collection<Address> addresses =
-        new ArrayList<Address>(2);
-    final Address workAddress = new Address("100 Universal City Plaza\n" +
-        "Hollywood, CA 91608 USA", "100 Universal City Plaza", "Hollywood",
-        "CA", "91608", "USA", "work", false);
-    final Address homeAddress = new Address("456 Hollywood Blvd\nHollywood, " +
-        "CA 91608 USA", null, null, null, null, null, "home", false);
-    addresses.add(workAddress);
-    addresses.add(homeAddress);
-    user1.setAddresses(addresses);
-
-    // Put the updated user.
-    final UserResource user2 = endpoint.update(user1);
-
-    // Verify that the LDAP entry was updated correctly.
-    final Entry entry2 = testDS.getEntry(userDN);
-    assertTrue(entry2.hasAttributeValue("givenName", "Barbara"));
-    assertTrue(entry2.hasAttributeValue("mail", "bjensen@example.com"));
-    assertTrue(entry2.hasAttributeValue("telephoneNumber", "+1 800-864-8377"));
-    assertTrue(entry2.hasAttributeValue("homePhone", "+1 818-123-4567"));
-    assertTrue(entry2.hasAttributeValue(
-        "postalAddress", "100 Universal City Plaza$Hollywood, CA 91608 USA"));
-    assertTrue(entry2.hasAttributeValue("street", "100 Universal City Plaza"));
-    assertTrue(entry2.hasAttributeValue("l", "Hollywood"));
-    assertTrue(entry2.hasAttributeValue("st", "CA"));
-    assertTrue(entry2.hasAttributeValue("postalCode", "91608"));
-    assertTrue(entry2.hasAttributeValue(
-        "homePostalAddress", "456 Hollywood Blvd$Hollywood, CA 91608 USA"));
-    assertTrue(entry2.hasAttribute("description"));
-    assertNotNull(user2.getMeta().getLastModified());
-    assertNotNull(user2.getMeta().getLocation());
-    assertLocation(user2.getMeta().getLocation(), "Users", user2.getId());
-
-    // Ensure that we can retrieve the user again using meta.location
-    // assertNotNull(client.getUserByURI(user1.getMeta().getLocation()));
-
-    // Remove some values from the user.
-
-    Name newName = user2.getName();
-    newName.setGivenName(null);
-    user2.setName(newName);
-
-    final Collection<com.unboundid.scim.data.Entry<String>> newPhoneNumbers =
-        new ArrayList<com.unboundid.scim.data.Entry<String>>(1);
-    for (final com.unboundid.scim.data.Entry<String> a :
-        user2.getPhoneNumbers())
-    {
-      if (a.getType().equalsIgnoreCase("work"))
-      {
-        newPhoneNumbers.add(a);
-      }
-    }
-    user2.setPhoneNumbers(newPhoneNumbers);
-
-    final Collection<Address> newAddresses =
-        new ArrayList<Address>(1);
-    for (final Address a : user2.getAddresses())
-    {
-      if (a.getType().equalsIgnoreCase("work"))
-      {
-        newAddresses.add(a);
-      }
-    }
-    user2.setAddresses(newAddresses);
-
-    // Put the updated user.
-    final UserResource user3 = endpoint.update(user2);
-
-    final Entry entry3 = testDS.getEntry(userDN);
-    assertFalse(entry3.hasAttribute("givenName"));
-    assertTrue(entry3.hasAttributeValue("mail", "bjensen@example.com"));
-    assertTrue(entry3.hasAttributeValue("telephoneNumber", "+1 800-864-8377"));
-    assertFalse(entry3.hasAttribute("homePhone"));
-    assertTrue(entry3.hasAttributeValue(
-        "postalAddress", "100 Universal City Plaza$Hollywood, CA 91608 USA"));
-    assertTrue(entry3.hasAttributeValue("street", "100 Universal City Plaza"));
-    assertTrue(entry3.hasAttributeValue("l", "Hollywood"));
-    assertTrue(entry3.hasAttributeValue("st", "CA"));
-    assertTrue(entry3.hasAttributeValue("postalCode", "91608"));
-    assertFalse(entry3.hasAttribute("homePostalAddress"));
-    assertTrue(entry3.hasAttribute("description"));
-
-    // Remove some more values from the user.
-    user3.setEmails(null);
-    user3.setAddresses(null);
-    user3.setPhoneNumbers(null);
-
-    // Put the updated user.
-    final UserResource user4 = endpoint.update(user3);
-
-    final Entry entry4 = testDS.getEntry(userDN);
-    assertFalse(entry4.hasAttribute("givenName"));
-    assertFalse(entry4.hasAttribute("mail"));
-    assertFalse(entry4.hasAttribute("telephoneNumber"));
-    assertFalse(entry4.hasAttribute("homePhone"));
-    assertFalse(entry4.hasAttribute("postalAddress"));
-    assertFalse(entry4.hasAttribute("street"));
-    assertFalse(entry4.hasAttribute("l"));
-    assertFalse(entry4.hasAttribute("st"));
-    assertFalse(entry4.hasAttribute("postalCode"));
-    assertFalse(entry4.hasAttribute("homePostalAddress"));
-    assertTrue(entry4.hasAttribute("description"));
-
-    // Change and attribute that is mapped to a attribute in the RDN and make
-    // sure the DN is changed as well
-    user4.setDisplayName("displayName");
-    user4.setUserName("updated-bjensen");
-
-    endpoint.update(user4);
-
-    final Entry entry5 = testDS.getEntry("uid=updated-bjensen," + userBaseDN);
-    assertTrue(entry5.hasAttributeValue("displayName", "displayName"));
-  }
-
-
-
-  /**
-   * Provides test coverage for the write operations on a group resource.
-   *
-   * @param service  The SCIM client to use during the test.
-   *
-   * @throws Exception  If the test failed.
-   */
-  private void testWriteGroup(final SCIMService service)
+  public void testWriteGroup()
       throws Exception
   {
     // Get a reference to the in-memory test DS.
@@ -1325,6 +676,1839 @@ public class SCIMServerTestCase extends SCIMRITestCase
 
     // Delete the user.
     endpoint.delete(user1.getId());
+  }
+
+
+
+  /**
+   * Retrieve the user resource that has the provided userName value.
+   *
+   * @param userName  The userName of the user to be retrieved.
+   *
+   * @return  The user resource.
+   *
+   * @throws SCIMException  If the resource could not be retrieved.
+   */
+  private UserResource getUser(final String userName)
+      throws SCIMException
+  {
+    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+
+    final Resources<UserResource> resources =
+        endpoint.query("userName eq \"" + userName + "\"");
+
+    return resources.iterator().next();
+  }
+
+
+
+  /**
+   * Tests modifying a user password through SCIM using modify.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPasswordModify() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    testDS.add("dn: uid=testPasswordModify," + userBaseDN,
+        "objectclass: top",
+        "objectclass: person",
+        "objectclass: organizationalPerson",
+        "objectclass: inetOrgPerson",
+        "uid: testPasswordModify",
+        "userPassword: oldPassword",
+        "cn: testPasswordModify",
+        "givenname: Test",
+        "sn: User");
+
+    //Update the entry via SCIM
+    SCIMService userService = createSCIMService("uid=testPasswordModify," +
+        userBaseDN, "oldPassword");
+    SCIMEndpoint<UserResource> userEndpoint = userService.getUserEndpoint();
+    UserResource user = getUser("testPasswordModify");
+    assertNotNull(user);
+
+    //Verify that not including the password attribute in the PUT will not
+    //affect the current value
+    user.setPassword(null);
+    user.setTitle("Engineer");
+    user = userEndpoint.update(user);
+    assertNotNull(user);
+    assertEquals(user.getTitle(), "Engineer");
+    assertEquals(testDS.bind("uid=testPasswordModify," + userBaseDN,
+        "oldPassword").getResultCode(), ResultCode.SUCCESS);
+
+    //Now change the password
+    user.setPassword("anotherPassword");
+
+    UserResource returnedUser = userEndpoint.update(user, "id");
+
+    //Verify what is returned from the SDK
+    assertEquals(returnedUser.getId(), user.getId());
+    assertNull(returnedUser.getPassword());
+
+    //We shouldn't be able to use this service anymore since it is using
+    //the old credentials
+    try
+    {
+      userEndpoint.get(user.getId());
+      assertTrue(false, "Expected Unauthorized return code");
+    }
+    catch(SCIMException e)
+    {
+      // Expected.
+    }
+
+    //Verify the password was changed in the Directory
+    assertEquals(testDS.bind("uid=testPasswordModify," + userBaseDN,
+        "anotherPassword").getResultCode(), ResultCode.SUCCESS);
+  }
+
+
+
+  /**
+   * Tests basic resource creation through SCIM.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPostUser() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    //Create a new user
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    UserResource manager = userEndpoint.newResource();
+    manager.setUserName("myManager");
+    manager.setName(
+        new Name("Mr. Manager", "Manager", null, null, "Mr.", null));
+    manager = userEndpoint.create(manager);
+
+    UserResource user = userEndpoint.newResource();
+    user.setUserName("jdoe");
+    user.setName(
+        new Name("John C. Doe", "Doe", "Charles", "John", null, "Sr."));
+    user.setPassword("newPassword");
+    user.setTitle("Vice President");
+    user.setUserType("Employee");
+    Collection<com.unboundid.scim.data.Entry<String>> emails =
+        new HashSet<com.unboundid.scim.data.Entry<String>>(1);
+    emails.add(new com.unboundid.scim.data.Entry<String>(
+        "j.doe@example.com", "work", true));
+    user.setEmails(emails);
+    user.setLocale(Locale.US.getDisplayName());
+    user.setTimeZone(TimeZone.getDefault().getID());
+    user.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER,
+            new Manager(manager.getId(), "Mr. Manager"));
+
+    //Verify basic properties of UserResource
+    assertEquals(user.getUserName(), "jdoe");
+    assertEquals(user.getName().getFormatted(), "John C. Doe");
+    assertEquals(user.getPassword(), "newPassword");
+    assertEquals(user.getTitle(), "Vice President");
+    assertEquals(user.getUserType(), "Employee");
+    assertEquals(user.getEmails().iterator().next().getValue(),
+                          "j.doe@example.com");
+    assertEquals(user.getLocale(), Locale.US.getDisplayName());
+    assertEquals(user.getTimeZone(), TimeZone.getDefault().getID());
+    assertEquals(user.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getDisplayName(), "Mr. Manager");
+
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual createTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_OK);
+    UserResource returnedUser = userEndpoint.create(user);
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_OK);
+    Date createTime = returnedUser.getMeta().getCreated();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    try
+    {
+      //Try to create the same user again
+      userEndpoint.create(user);
+      fail("Expected a 409 response when trying to create duplicate user");
+    }
+    catch (ResourceConflictException e)
+    {
+      //expected (error code is 409)
+    }
+
+    //Verify what is returned from the SDK
+    assertNotNull(returnedUser);
+    assertTrue(returnedUser.getMeta().getLocation().toString().endsWith(
+        returnedUser.getId()));
+    assertEquals(returnedUser.getUserName(), user.getUserName());
+    assertEquals(returnedUser.getName().getFormatted(),
+                   user.getName().getFormatted());
+    assertNull(returnedUser.getPassword());
+    assertEquals(returnedUser.getTitle(), user.getTitle());
+    assertEquals(returnedUser.getUserType(), user.getUserType());
+    assertEquals(returnedUser.getEmails().iterator().next().getValue(),
+        user.getEmails().iterator().next().getValue());
+    assertTrue(createTime.after(startTime));
+    assertTrue(createTime.before(endTime));
+    assertEquals(beforeCount, afterCount - 1);
+
+    //TODO: no LDAP schema for Locale
+    //assertEquals(returnedUser.getLocale(), user.getLocale());
+
+    //TODO: no LDAP schema for TimeZone
+    //assertEquals(returnedUser.getTimeZone(), user.getTimeZone());
+
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getManagerId(),
+                 user.getSingularAttributeValue(
+                   SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+                   Manager.MANAGER_RESOLVER).getManagerId());
+
+    //Verify what is actually in the Directory
+    SearchResultEntry entry = testDS.getEntry(
+                                          "uid=jdoe," + userBaseDN, "*", "+");
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("iNetOrgPerson"));
+    assertEquals(entry.getAttributeValue("cn"), "John C. Doe");
+    assertEquals(entry.getAttributeValue("givenName"), "John");
+    assertEquals(entry.getAttributeValue("sn"), "Doe");
+    assertEquals(entry.getAttributeValue("title"), "Vice President");
+    assertEquals(entry.getAttributeValue("mail"), "j.doe@example.com");
+    assertTrue(entry.getAttributeValue("manager").equalsIgnoreCase(
+        "uid=myManager," + userBaseDN));
+    assertEquals(testDS.bind(entry.getDN(), "newPassword").getResultCode(),
+        ResultCode.SUCCESS);
+
+    System.out.println("Full user entry:\n" + entry.toLDIFString());
+
+    // Verify that a query returns all attributes including extension
+    // attributes.
+    returnedUser = userEndpoint.query("userName eq \"jdoe\"").iterator().next();
+    System.out.println(returnedUser);
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getManagerId(),
+                 user.getSingularAttributeValue(
+                   SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+                   Manager.MANAGER_RESOLVER).getManagerId());
+
+    //Create a new group
+    SCIMEndpoint<GroupResource> grpEndpoint = service.getGroupEndpoint();
+    GroupResource group = grpEndpoint.newResource();
+    group.setDisplayName("Engineering");
+    Collection<com.unboundid.scim.data.Entry<String>> members =
+        new HashSet<com.unboundid.scim.data.Entry<String>>();
+    members.add(new com.unboundid.scim.data.Entry<String>(
+        returnedUser.getId(), "User", false));
+    group.setMembers(members);
+
+    //Verify the basic properties of GroupResource
+    assertEquals(group.getDisplayName(), "Engineering");
+    assertEquals(group.getMembers().iterator().next().getValue(),
+                          returnedUser.getId());
+
+    //Do the create and verify what is returned from the endpoint
+    startTime = new Date(System.currentTimeMillis() - 500);
+    beforeCount =
+        getStatsForResource("Group").getStat(ResourceStats.POST_OK);
+    GroupResource returnedGroup = grpEndpoint.create(group);
+    afterCount =
+        getStatsForResource("Group").getStat(ResourceStats.POST_OK);
+    createTime = returnedGroup.getMeta().getCreated();
+    endTime = new Date(System.currentTimeMillis() + 500);
+
+    assertNotNull(returnedGroup);
+    assertEquals(returnedGroup.getDisplayName(), group.getDisplayName());
+    assertTrue(createTime.after(startTime));
+    assertTrue(createTime.before(endTime));
+    assertEquals(returnedGroup.getMembers().iterator().next().getValue(),
+        group.getMembers().iterator().next().getValue());
+    assertEquals(beforeCount, afterCount - 1);
+
+    //Verify what is actually in the Directory
+    SearchResultEntry groupEntry = testDS.getEntry(
+        "cn=Engineering," + groupBaseDN, "*", "+");
+    assertNotNull(groupEntry);
+    assertTrue(groupEntry.hasObjectClass("groupOfUniqueNames"));
+    assertEquals(groupEntry.getAttributeValue("cn"), "Engineering");
+    assertTrue(groupEntry.getAttributeValue("uniqueMember").
+        equalsIgnoreCase(entry.getDN()), entry.toLDIFString());
+
+    System.out.println("Full group entry:\n" + groupEntry.toLDIFString());
+  }
+
+
+
+  /**
+   * Tests a basic modify operation against a user resource using PUT.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testPutUser() throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    //Add an entry to the Directory
+    testDS.add("dn: uid=testModifyWithPut," + userBaseDN,
+                      "objectclass: top",
+                      "objectclass: person",
+                      "objectclass: organizationalPerson",
+                      "objectclass: inetOrgPerson",
+                      "uid: testModifyWithPut",
+                      "userPassword: oldPassword",
+                      "cn: testModifyWithPut",
+                      "givenname: Test",
+                      "sn: User");
+
+    //Update the entry via SCIM
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    UserResource user = getUser("testModifyWithPut");
+    assertNotNull(user);
+    //This will change the 'cn' to 'Test User'
+    user.setName(new Name("Test User", "User", null, "Test", null, null));
+    user.setUserType("Employee");
+    user.setPassword("anotherPassword");
+    user.setTitle("Chief of Operations");
+    user.setDisplayName("Test Modify with PUT");
+    user.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+              AttributeValueResolver.STRING_RESOLVER, "456");
+
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual modifyTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
+    UserResource returnedUser = userEndpoint.update(user);
+    Date lastModified = returnedUser.getMeta().getLastModified();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    //Verify what is returned from the SDK
+    assertEquals(returnedUser.getId(), user.getId());
+    assertTrue(user.getMeta().getLocation().toString().endsWith(user.getId()));
+    assertEquals(returnedUser.getUserName(), "testModifyWithPut");
+    assertEquals(returnedUser.getName().getFormatted(), "Test User");
+    assertEquals(returnedUser.getName().getGivenName(), "Test");
+    assertEquals(returnedUser.getName().getFamilyName(), "User");
+    assertNull(returnedUser.getPassword());
+    assertEquals(returnedUser.getTitle(), user.getTitle());
+    assertEquals(returnedUser.getDisplayName(), user.getDisplayName());
+    assertTrue(lastModified.after(startTime));
+    assertTrue(lastModified.before(endTime));
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+              AttributeValueResolver.STRING_RESOLVER), "456");
+
+    //Verify the contents of the entry in the Directory
+    SearchResultEntry entry =
+      testDS.getEntry(
+          "uid=testModifyWithPut," + userBaseDN);
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("inetOrgPerson"));
+    assertEquals(entry.getAttributeValue("uid"), "testModifyWithPut");
+    assertEquals(entry.getAttributeValue("cn"), "Test User");
+    assertEquals(entry.getAttributeValue("givenname"), "Test");
+    assertEquals(entry.getAttributeValue("sn"), "User");
+    assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("displayName"),
+                                                   "Test Modify with PUT");
+    assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
+        ResultCode.SUCCESS);
+
+    //Make the exact same update again; this should result in no net change to
+    //the Directory entry, but should not fail.
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_OK);
+    returnedUser = userEndpoint.update(user);
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_OK);
+
+    assertEquals(beforeCount, afterCount - 1);
+
+    // Again, an update with the previously returned content should not fail.
+    userEndpoint.update(returnedUser);
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_NOT_FOUND);
+    try
+    {
+      //Try to update an entry that doesn't exist
+      user.setId("uid=fakeUserName," + userBaseDN);
+      userEndpoint.update(user);
+      fail("Expected ResourceNotFoundException when updating " +
+            "non-existent user");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_NOT_FOUND);
+    assertEquals(beforeCount, afterCount - 1);
+  }
+
+
+
+  /**
+   * Tests a basic modify operation against a User using PATCH.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testPatchUser()
+      throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    //Add an entry to the Directory
+    testDS.add("dn: uid=testModifyWithPatch," + userBaseDN,
+        "objectclass: top",
+        "objectclass: person",
+        "objectclass: organizationalPerson",
+        "objectclass: inetOrgPerson",
+        "uid: testModifyWithPatch",
+        "userPassword: oldPassword",
+        "cn: testModifyWithPatch",
+        "givenname: Test",
+        "sn: User",
+        "telephoneNumber: 512-123-4567",
+        "homePhone: 972-987-6543",
+        "mail: testEmail.1@example.com",
+        "mail: testEmail.2@example.com");
+
+    //Update the entry via SCIM
+    UserResource user = getUser("testModifyWithPatch");
+    assertNotNull(user);
+
+    //This will change the 'cn' to 'Test User'
+    user.setName(new Name("Test User", "User", null, "Test", null, null));
+
+    //Other simple attributes to patch
+    user.setUserType("Employee");
+    user.setPassword("anotherPassword");
+    user.setTitle("Chief of Operations");
+    user.setDisplayName("Test Modify with PATCH");
+
+    //Try an attribute in the extended schema
+    user.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+            AttributeValueResolver.STRING_RESOLVER, "456");
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    List<SCIMAttribute> attrsToUpdate = new ArrayList<SCIMAttribute>(6);
+    final SCIMObject scimObject = user.getScimObject();
+
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "name"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "userType"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "password"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "title"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(
+              SCIMConstants.SCHEMA_URI_CORE, "displayName"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(
+              SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber"));
+
+    userEndpoint.update(user.getId(), attrsToUpdate, null);
+
+    //Verify the contents of the entry in the Directory
+    SearchResultEntry entry = testDS.getEntry(
+                    "uid=testModifyWithPatch," + userBaseDN);
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("inetOrgPerson"));
+    assertEquals(entry.getAttributeValue("uid"), "testModifyWithPatch");
+    assertEquals(entry.getAttributeValue("cn"), "Test User");
+    assertEquals(entry.getAttributeValue("givenname"), "Test");
+    assertEquals(entry.getAttributeValue("sn"), "User");
+    assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("displayName"),
+            "Test Modify with PATCH");
+    assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
+        ResultCode.SUCCESS);
+
+    //Verify that existing attributes did not get touched
+    assertEquals(entry.getAttributeValue("telephoneNumber"), "512-123-4567");
+    assertEquals(entry.getAttributeValue("homePhone"), "972-987-6543");
+    assertEquals(entry.getAttributeValues("mail").length, 2);
+
+    //Make the exact same update again; this should result in no net change to
+    //the Directory entry, but should not fail.
+
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
+
+    userEndpoint.update(user.getId(), attrsToUpdate, null);
+
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
+
+    assertEquals(beforeCount, afterCount - 1);
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_NOT_FOUND);
+    try
+    {
+      //Try to update an entry that doesn't exist
+      userEndpoint.update(
+              "uid=fakeUserName," + userBaseDN, attrsToUpdate, null);
+      fail("Expected ResourceNotFoundException when patching " +
+              "non-existent user");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_NOT_FOUND);
+    assertEquals(beforeCount, afterCount - 1);
+
+    //Try a more complex patch, where we simultaneously delete a few attributes
+    //and update a few more. Specifically, we are going to delete the phone
+    //numbers completely and also remove one of the name attributes and replace
+    //it with another.
+    attrsToUpdate.clear();
+
+    List<String> attrsToDelete = Collections.unmodifiableList(
+        asList("phoneNumbers", "name.familyName"));
+
+    SCIMAttributeValue value =
+            SCIMAttributeValue.createStringValue("testEmail.1@example.com");
+    SCIMAttribute email1Value = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("value"), value);
+
+    value = SCIMAttributeValue.createStringValue("work");
+    SCIMAttribute emailType = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("type"), value);
+
+    value = SCIMAttributeValue.createStringValue("delete");
+    SCIMAttribute email1Operation = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("operation"), value);
+
+    SCIMAttributeValue email2 = SCIMAttributeValue.createComplexValue(
+                                  email1Value, emailType, email1Operation);
+
+    value = SCIMAttributeValue.createStringValue("testEmail.3@example.com");
+    SCIMAttribute email3Value = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "emails").getSubAttribute("value"), value);
+
+    SCIMAttributeValue email3 = SCIMAttributeValue.createComplexValue(
+                                  email3Value, emailType);
+
+    SCIMAttribute emails = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+           "emails"), email2, email3);
+
+    attrsToUpdate.add(emails);
+
+    value = SCIMAttributeValue.createStringValue("PatchedUser");
+    SCIMAttributeValue familyNameValue = SCIMAttributeValue.createComplexValue(
+         SCIMAttribute.create(CoreSchema.USER_DESCRIPTOR.getAttribute(
+               SCIMConstants.SCHEMA_URI_CORE, "name").getSubAttribute(
+                   "familyName"), value));
+
+    SCIMAttribute familyName = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+             "name"), familyNameValue);
+
+    attrsToUpdate.add(familyName);
+
+    //Do the PATCH, this time testing the version of the method that returns
+    //the resource.
+
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual modifyTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
+    String[] attrsToGet = { "userName", "title", "userType",
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION + ":employeeNumber" };
+    UserResource returnedUser = userEndpoint.update(user.getId(), null,
+                                  attrsToUpdate, attrsToDelete, attrsToGet);
+    Date lastModified = returnedUser.getMeta().getLastModified();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    //Verify the contents of the entry in the Directory
+    entry = testDS.getEntry(
+        "uid=testModifyWithPatch," + userBaseDN);
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("inetOrgPerson"));
+    assertEquals(entry.getAttributeValue("uid"), "testModifyWithPatch");
+    assertEquals(entry.getAttributeValue("cn"), "Test User");
+    assertEquals(entry.getAttributeValue("givenname"), "Test");
+    assertEquals(entry.getAttributeValue("sn"), "PatchedUser");
+    assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("displayName"),
+            "Test Modify with PATCH");
+    assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
+        ResultCode.SUCCESS);
+
+    assertFalse(entry.hasAttribute("telephoneNumber"));
+    assertFalse(entry.hasAttribute("homePhone"));
+    assertEquals(entry.getAttributeValues("mail").length, 2);
+    List<String> emailList = Arrays.asList(entry.getAttributeValues("mail"));
+    assertFalse(emailList.contains("testEmail.1@example.com"));
+    assertTrue(emailList.contains("testEmail.2@example.com"));
+    assertTrue(emailList.contains("testEmail.3@example.com"));
+
+    //Verify what is returned from the SDK
+    assertEquals(returnedUser.getId(), user.getId());
+    assertTrue(
+            returnedUser.getMeta().getLocation().toString()
+                    .endsWith(user.getId()));
+    assertEquals(returnedUser.getUserName(), "testModifyWithPatch");
+    assertEquals(returnedUser.getTitle(), user.getTitle());
+    assertEquals(returnedUser.getUserType(), user.getUserType());
+    assertNull(returnedUser.getPassword());
+    assertTrue(lastModified.after(startTime));
+    assertTrue(lastModified.before(endTime));
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+            AttributeValueResolver.STRING_RESOLVER), "456");
+  }
+
+
+
+  /**
+   * Tests the basic DELETE functionality via SCIM.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testDeleteUser() throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    testDS.add(
+       generateUserEntry("testDelete", userBaseDN, "Test", "User", "password"));
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final String userID = getUser("testDelete").getId();
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
+    userEndpoint.delete(userID);
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
+
+    assertEquals(beforeCount, afterCount - 1);
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
+    try
+    {
+      //Should throw ResourceNotFoundException
+      userEndpoint.delete(userID);
+      fail("Expected ResourceNotFoundException when deleting " +
+              "non-existent user");
+    }
+    catch(ResourceNotFoundException e)
+    {
+      //expected
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
+    assertEquals(beforeCount, afterCount - 1);
+  }
+
+
+
+  /**
+   * Tests retrieval of a simple user resource.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testGetUser2()
+      throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    final String uid = "testRetrieve";
+    final String dn = "uid=" + uid + "," + userBaseDN;
+
+    //Add an entry to the Directory
+    testDS.add("dn: " + dn,
+                      "objectclass: top",
+                      "objectclass: person",
+                      "objectclass: organizationalPerson",
+                      "objectclass: inetOrgPerson",
+                      "uid: " + uid,
+                      "userPassword: anotherPassword",
+                      "cn: testRetrieve",
+                      "givenname: Test",
+                      "sn: User",
+                      "title: Chief of R&D",
+                      "displayName: John Smith",
+                      "mail: jsmith@example.com",
+                      "employeeType: Engineer");
+
+    final String userID = getUser(uid).getId();
+
+    //Try to retrieve the user via SCIM
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.GET_OK);
+    UserResource user = userEndpoint.get(userID);
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.GET_OK);
+    assertNotNull(user);
+    assertEquals(user.getId(), userID);
+    assertTrue(user.getMeta().getLocation().toString().endsWith(userID),
+               "location='" + user.getMeta().getLocation() + "' userID='" +
+               userID + "'");
+    assertEquals(user.getUserName(), uid);
+    assertEquals(user.getUserType(), "Engineer");
+    assertEquals(user.getName().getFormatted(), "testRetrieve");
+    assertEquals(user.getName().getGivenName(), "Test");
+    assertEquals(user.getName().getFamilyName(), "User");
+    assertEquals(user.getTitle(), "Chief of R&D");
+    assertEquals(user.getDisplayName(), "John Smith");
+    assertEquals(user.getEmails().iterator().next().getValue(),
+                                                "jsmith@example.com");
+    assertNull(user.getPassword());
+
+    //Retrieve the user with only the 'userName' and 'password' attribute
+    user = userEndpoint.get(userID, null, "userName", "password");
+    assertNotNull(user);
+    assertEquals(user.getId(), userID);
+    assertEquals(user.getUserName(), uid);
+    assertNull(user.getUserType());
+    assertNull(user.getName());
+    assertNull(user.getTitle());
+    assertNull(user.getDisplayName());
+    assertNull(user.getEmails());
+    assertNull(user.getPassword());
+
+    //Make sure the stats were updated properly
+    assertEquals(beforeCount, afterCount - 1);
+  }
+
+
+
+  /**
+   * Tests the list/query resources functionality using all the different
+   * filter types.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testFiltering() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    final SimpleDateFormat formatter =
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+    long halfwayTime = 0;
+
+    // Create some users.
+    final long NUM_USERS = 10;
+    for (int i = 0; i < NUM_USERS; i++)
+    {
+      if(i == NUM_USERS / 2)
+      {
+        //Record the time when half the entries have been created
+        Thread.sleep(300);
+        halfwayTime = System.currentTimeMillis();
+        Thread.sleep(300);
+      }
+
+      final String uid = "filterUser." + i;
+
+      com.unboundid.ldap.sdk.Entry e;
+
+      if(i % 2 == 0)
+      {
+        e = generateUserEntry(uid, userBaseDN, "Test", "User", "password",
+                new Attribute("mail", uid + "@example.com",
+                                            "evenNumber@example.com"));
+      }
+      else if(i % 3 == 0)
+      {
+        e = generateUserEntry(uid, userBaseDN, "Test", "User", "password",
+                new Attribute("displayName", uid));
+      }
+      else
+      {
+        e = generateUserEntry(uid, userBaseDN, "Test", "User", "password",
+                new Attribute("title", "Engineer"));
+      }
+
+      testDS.add(e);
+    }
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    //
+    // All of the filters used below first check if the userName starts with
+    // "filterUser" so that we only consider the users created for this test.
+    //
+
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.QUERY_OK);
+
+    //Test 'eq' (equals)
+    Resources<UserResource> results =
+        userEndpoint.query("userName sw \"filterUser\" and " +
+                               "emails eq \"filterUser.6@example.com\"");
+    assertEquals(results.getTotalResults(), 1);
+    Iterator<UserResource> iter = results.iterator();
+    UserResource user = iter.next();
+    assertEquals(user.getUserName(), "filterUser.6");
+    assertFalse(iter.hasNext());
+
+    //Test 'co' (contains)
+    results =
+      userEndpoint.query("userName sw \"filterUser\" and " +
+                             "emails co \"User.4@example\"");
+    assertEquals(results.getTotalResults(), 1);
+    iter = results.iterator();
+    user = iter.next();
+    assertEquals(user.getUserName(), "filterUser.4");
+    assertFalse(iter.hasNext());
+
+    //Test 'sw' (starts with)
+    results =
+      userEndpoint.query("userName sw \"filterUser\" and title sw \"Eng\"");
+    assertEquals(results.getTotalResults(), 3);
+    iter = results.iterator();
+    while(iter.hasNext())
+    {
+      user = iter.next();
+      String uid = user.getUserName();
+      int idx = Integer.parseInt(uid.substring(uid.indexOf(".") + 1));
+      assertTrue(idx % 2 != 0);
+      assertTrue(idx % 3 != 0);
+    }
+
+    //Test 'pr' (present)
+    results = userEndpoint.query("userName sw \"filterUser\" and emails pr");
+    assertEquals(results.getTotalResults(), 5);
+    iter = results.iterator();
+    while(iter.hasNext())
+    {
+      user = iter.next();
+      String uid = user.getUserName();
+      int idx = Integer.parseInt(uid.substring(uid.indexOf(".") + 1));
+      assertTrue(idx % 2 == 0);
+    }
+
+    //Test 'gt' (greater than)
+    Date halfwayDate = new Date(halfwayTime);
+    String formattedTime = formatter.format(halfwayDate);
+    results = userEndpoint.query("userName sw \"filterUser\" and " +
+                                 "meta.created gt \"" + formattedTime + "\"");
+    assertEquals(results.getTotalResults(), 5);
+    iter = results.iterator();
+    while(iter.hasNext())
+    {
+      user = iter.next();
+      String uid = user.getUserName();
+      int idx = Integer.parseInt(uid.substring(uid.indexOf(".") + 1));
+      assertTrue(idx >= 5);
+    }
+
+    //Test 'lt' (less than)
+    results = userEndpoint.query("userName sw \"filterUser\" and " +
+                                 "meta.created lt \"" + formattedTime + "\"");
+    assertEquals(results.getTotalResults(), 5);
+    iter = results.iterator();
+    while(iter.hasNext())
+    {
+      user = iter.next();
+      String uid = user.getUserName();
+      int idx = Integer.parseInt(uid.substring(uid.indexOf(".") + 1));
+      assertTrue(idx < 5);
+    }
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.QUERY_OK);
+    assertEquals(beforeCount, afterCount - 6);
+  }
+
+
+
+  /**
+   * Provides test coverage for pagination.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPagination() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    // Create some users.
+    final Set<String> userDNs = new HashSet<String>();
+    final long NUM_USERS = 10;
+    for (int i = 0; i < NUM_USERS; i++)
+    {
+      final String uid = "paginationUser." + i;
+      testDS.add(
+          generateUserEntry(uid, userBaseDN,
+                            "Test", "User", "password"));
+      userDNs.add("uid=" + uid + "," + userBaseDN);
+    }
+
+    // Fetch the users one page at a time with page size equal to 1.
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    int pageSize = 1;
+    for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
+    {
+      final Resources<UserResource> resources =
+          userEndpoint.query("userName sw \"paginationUser\"", null,
+                             new PageParameters(startIndex, pageSize));
+      assertEquals(resources.getTotalResults(), NUM_USERS);
+      assertEquals(resources.getStartIndex(), startIndex);
+      assertEquals(resources.getItemsPerPage(), pageSize);
+    }
+    assertEquals(userDNs.size(), NUM_USERS);
+
+    // Create some groups.
+    final long NUM_GROUPS = 10;
+    for (int i = 0; i < NUM_GROUPS; i++)
+    {
+      final String cn = "paginationGroup." + i;
+      testDS.add(
+          generateGroupOfNamesEntry(cn, groupBaseDN, userDNs));
+    }
+
+    // Fetch the groups one page at a time with page size equal to 3.
+    final SCIMEndpoint<GroupResource> groupEndpoint =
+           service.getGroupEndpoint();
+    pageSize = 3;
+    final Set<String> groupIDs = new HashSet<String>();
+    for (long startIndex = 1; startIndex <= NUM_GROUPS; startIndex += pageSize)
+    {
+      final Resources<GroupResource> resources =
+        groupEndpoint.query("displayName sw \"paginationGroup\"",
+          new SortParameters("displayName", "ascending"),
+          new PageParameters(startIndex, pageSize));
+
+      assertEquals(resources.getTotalResults(), NUM_GROUPS);
+      assertEquals(resources.getStartIndex(), startIndex);
+
+      int numResources = 0;
+      for (final GroupResource resource : resources)
+      {
+        numResources++;
+        groupIDs.add(resource.getId());
+      }
+      assertEquals(resources.getItemsPerPage(), numResources);
+    }
+    assertEquals(groupIDs.size(), NUM_GROUPS);
+
+    // Attempt to fetch resources from a non-existent page.
+    final long startIndex = NUM_GROUPS + 1;
+    final Resources<GroupResource> resources =
+        groupEndpoint.query("displayName sw \"paginationGroup\"",
+          new SortParameters("displayName", "ascending"),
+          new PageParameters(startIndex, pageSize));
+    assertEquals(resources.getTotalResults(), NUM_GROUPS);
+    assertEquals(resources.getItemsPerPage(), 0);
+    assertEquals(resources.getStartIndex(), startIndex);
+  }
+
+
+
+  /**
+   * Tests the maxResults configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testMaxResults() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    // Lower the maxResults setting.
+    final int maxResults = 1;
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setResourcesFile(getFile("resource/resources.xml"));
+    config.setMaxResults(maxResults);
+    reconfigureTestSuite(config);
+
+    // Create some users.
+    final long NUM_USERS = 10;
+    for (int i = 0; i < NUM_USERS; i++)
+    {
+      final String uid = "maxResultsUser." + i;
+      testDS.add(
+          generateUserEntry(uid, userBaseDN, "Test", "User", "password"));
+    }
+
+    // Try to fetch more users than can be returned.
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    final Resources<UserResource> resources = userEndpoint.query(null);
+    assertEquals(resources.getTotalResults(), maxResults);
+
+    //Clean up
+    config.setMaxResults(Integer.MAX_VALUE);
+    reconfigureTestSuite(config);
+  }
+
+
+  /**
+   * Tests the Service Provider Config endpoint.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testServiceProviderConfig() throws Exception
+  {
+    final ServiceProviderConfig config = service.getServiceProviderConfig();
+
+    // These assertions need to be updated as optional features are implemented.
+    assertTrue(config.getPatchConfig().isSupported());
+    assertTrue(config.getBulkConfig().isSupported());
+    assertTrue(config.getBulkConfig().getMaxOperations() > 0);
+    assertTrue(config.getBulkConfig().getMaxPayloadSize() > 0);
+    assertTrue(config.getFilterConfig().isSupported());
+    assertTrue(config.getFilterConfig().getMaxResults() > 0);
+    assertTrue(config.getChangePasswordConfig().isSupported());
+    assertTrue(config.getSortConfig().isSupported());
+    assertFalse(config.getETagConfig().isSupported());
+    assertTrue(config.getAuthenticationSchemes().size() > 0);
+    assertTrue(config.getXmlDataFormatConfig().isSupported());
+
+    for (final AuthenticationScheme s : config.getAuthenticationSchemes())
+    {
+      assertNotNull(s.getName());
+      assertNotNull(s.getDescription());
+    }
+  }
+
+
+
+  /**
+   * Tests HTTP Basic Auth.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testBasicAuth() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    // Create a new user.
+    final String dn = "uid=basicAuthUser," + userBaseDN;
+    testDS.add(
+        generateUserEntry(
+            "basicAuthUser", userBaseDN, "Basic", "User", "password"));
+    final String id = getUser("basicAuthUser").getId();
+
+    // Create a client service that authenticates as the user.
+    final SCIMService basicAuthService = createSCIMService(dn, "password");
+
+    // Check that the authenticated user can read its own entry.
+    final SCIMEndpoint<UserResource> endpoint =
+        basicAuthService.getUserEndpoint();
+    final UserResource userResource = endpoint.get(id);
+    assertNotNull(userResource);
+
+    System.out.println("basicAuthUser = " + userResource);
+    assertNotNull(userResource.getMeta().getCreated());
+    assertNotNull(userResource.getMeta().getLastModified());
+  }
+
+
+
+  /**
+   * Tests HTTP Basic Auth with the wrong credentials.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test(expectedExceptions = UnauthorizedException.class)
+  public void testBasicAuthInvalidCredentials()
+      throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    // Create a new user.
+    final String dn = "uid=invalidCredentials," + userBaseDN;
+    testDS.add(
+        generateUserEntry(
+            "invalidCredentials", userBaseDN, "Basic", "User", "password"));
+    final String id = getUser("invalidCredentials").getId();
+
+    // Create a client service that authenticates with the wrong password.
+    final SCIMService basicAuthService = createSCIMService(dn, "assword");
+
+    basicAuthService.getUserEndpoint().get(id);
+  }
+
+
+
+  /**
+   * Tests the SCIM Bulk operation.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulk() throws Exception
+  {
+    final String mediaSubType = service.getContentType().getSubtype() + "-" +
+        service.getAcceptType().getSubtype();
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    final SCIMEndpoint<GroupResource> groupEndpoint =
+        service.getGroupEndpoint();
+
+    UserResource userAlice = userEndpoint.newResource();
+    userAlice.setName(new Name("Alice Ecila", "Ecila", null,
+                               "Alice", null, null));
+    userAlice.setUserName("alice-" + mediaSubType);
+
+    UserResource userBob = userEndpoint.newResource();
+    userBob.setName(new Name("Bob The Builder", "Builder", "The",
+                             "Bob", null, null));
+    userBob.setUserName("bob-" + mediaSubType);
+    userBob = userEndpoint.create(userBob);
+    userBob.setTitle("Construction Worker");
+    userBob.setSingularAttributeValue(
+        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+        Manager.MANAGER_RESOLVER,
+        new Manager("bulkId:alice", "Miss Manager"));
+
+    UserResource userDave = userEndpoint.newResource();
+    userDave.setName(new Name("Dave Allen", "Allen", null,
+                              "Dave", null, null));
+    userDave.setUserName("dave-" + mediaSubType);
+    userDave = userEndpoint.create(userDave);
+
+    GroupResource group = groupEndpoint.newResource();
+    group.setDisplayName("group-" + mediaSubType);
+    Collection<com.unboundid.scim.data.Entry<String>> members =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>();
+    members.add(new com.unboundid.scim.data.Entry<String>(
+        "bulkId:alice", null));
+    group.setMembers(members);
+
+    final long beforeBulkSuccessCount =
+        getStatsForResource("Bulk").getStat(ResourceStats.POST_OK);
+    final long beforeBulkContentCount =
+        getStatsForResource("Bulk").getStat("post-content-" +
+            service.getContentType().getSubtype());
+    final long beforeBulkResponseCount =
+        getStatsForResource("Bulk").getStat("post-response-" +
+            service.getAcceptType().getSubtype());
+
+    final long beforeUserPostSuccessCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_OK);
+    final long beforeUserPutSuccessCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_OK);
+    final long beforeUserDeleteSuccessCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
+    final long beforeGroupPostSuccessCount =
+        getStatsForResource("Group").getStat(ResourceStats.POST_OK);
+
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "alice", null,
+        "/Users", userAlice));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.PUT, "bob", null,
+        "/Users/" + userBob.getId(), userBob));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.DELETE, null, null,
+        "/Users/" + userDave.getId(), null));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "group", null,
+        "/Groups", group));
+
+    final BulkResponse response = service.processBulkRequest(operations);
+    final List<BulkOperation> responses = new ArrayList<BulkOperation>();
+    for (final BulkOperation o : response)
+    {
+      responses.add(o);
+    }
+
+    final long afterBulkSuccessCount =
+        getStatsForResource("Bulk").getStat(ResourceStats.POST_OK);
+    final long afterBulkContentCount =
+        getStatsForResource("Bulk").getStat("post-content-" +
+            service.getContentType().getSubtype());
+    final long afterBulkResponseCount =
+        getStatsForResource("Bulk").getStat("post-response-" +
+            service.getAcceptType().getSubtype());
+
+    assertTrue(afterBulkSuccessCount > beforeBulkSuccessCount);
+    assertTrue(afterBulkContentCount > beforeBulkContentCount);
+    assertTrue(afterBulkResponseCount > beforeBulkResponseCount);
+
+    final long afterUserPostSuccessCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_OK);
+    final long afterUserPutSuccessCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_OK);
+    final long afterUserDeleteSuccessCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
+    final long afterGroupPostSuccessCount =
+        getStatsForResource("Group").getStat(ResourceStats.POST_OK);
+
+    assertEquals(afterUserPostSuccessCount, beforeUserPostSuccessCount+ 1);
+    assertEquals(afterUserPutSuccessCount, beforeUserPutSuccessCount + 1);
+    assertEquals(afterUserDeleteSuccessCount, beforeUserDeleteSuccessCount + 1);
+    assertEquals(afterGroupPostSuccessCount, beforeGroupPostSuccessCount + 1);
+
+
+    assertEquals(responses.size(), operations.size());
+
+    for (int i = 0; i < operations.size(); i++)
+    {
+      final BulkOperation o = operations.get(i);
+      final BulkOperation r = responses.get(i);
+
+      assertEquals(o.getMethod(), r.getMethod());
+      assertEquals(o.getBulkId(), r.getBulkId());
+      assertNotNull(r.getLocation());
+      assertNotNull(r.getStatus());
+
+      if (o.getMethod() == BulkOperation.Method.POST)
+      {
+        assertEquals(r.getStatus().getCode(), "201");
+      }
+      else
+      {
+        assertEquals(r.getStatus().getCode(), "200");
+      }
+    }
+
+    userAlice = userEndpoint.query(
+        "userName eq \"alice-" + mediaSubType + "\"").iterator().next();
+    assertEquals(responses.get(0).getBulkId(), "alice");
+    assertTrue(responses.get(0).getLocation().endsWith(userAlice.getId()));
+
+    try
+    {
+      userEndpoint.get(userDave.getId());
+      fail("User Dave was not deleted");
+    }
+    catch (SCIMException e)
+    {
+      // Expected.
+      assertEquals(e.getStatusCode(), 404);
+    }
+
+    userBob = userEndpoint.get(userBob.getId());
+    assertEquals(userBob.getTitle(), "Construction Worker");
+    assertEquals(userBob.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER).getManagerId(),
+                 userAlice.getId());
+
+    group = groupEndpoint.query(
+        "displayName eq \"group-" + mediaSubType + "\"").iterator().next();
+    assertEquals(responses.get(3).getBulkId(), "group");
+    assertTrue(responses.get(3).getLocation().endsWith(group.getId()));
+    assertEquals(group.getMembers().iterator().next().getValue(),
+                 userAlice.getId());
+
+    groupEndpoint.delete(group.getId());
+  }
+
+
+
+  /**
+   * Tests that the server returns the correct response for invalid SCIM Bulk
+   * operations.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testInvalidBulk()
+      throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource testUser = userEndpoint.newResource();
+    testUser.setName(new Name("Test Invalid Bulk", "Bulk", null,
+                              "Test", null, null));
+    testUser.setUserName("test-invalid-bulk");
+
+    final SCIMEndpoint<GroupResource> groupEndpoint =
+        service.getGroupEndpoint();
+
+    final GroupResource testGroup = groupEndpoint.newResource();
+    testGroup.setDisplayName("test-invalid-bulk");
+    final Collection<com.unboundid.scim.data.Entry<String>> members =
+        new ArrayList<com.unboundid.scim.data.Entry<String>>();
+    members.add(new com.unboundid.scim.data.Entry<String>(
+        "bulkId:undefined", null));
+    testGroup.setMembers(members);
+
+    // Missing method.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(null, null, null, "/Users", null),
+        "400");
+
+    // POST with missing bulkId.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, null, null,
+                                    "/Users", testUser),
+        "400");
+
+    // Missing path.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null, null,
+                                    null, null),
+        "400");
+
+    // POST with missing data.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "user", null,
+                                    "/Users", null),
+        "400");
+
+    // POST specifies path with a resource ID.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "user", null,
+                                    "/Users/1", testUser),
+        "400");
+
+    // DELETE specifies a path with no resource ID.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null, null,
+                                    "/Users", null),
+        "400");
+
+    // Undefined bulkId reference in the data.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "group", null,
+                                    "/Groups/", testGroup),
+        "409");
+
+    // PATCH is not supported.
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.PATCH, null, null,
+                                    "/Users/1", testUser),
+        "501");
+  }
+
+
+
+  /**
+   * Tests that the server returns the correct response for an invalid SCIM Bulk
+   * operation.
+   *
+   * @param o                     An invalid operation.
+   * @param expectedResponseCode  The expected response code.
+   *
+   * @throws Exception If the test fails.
+   */
+  private void testInvalidBulkOperation(final BulkOperation o,
+                                        final String expectedResponseCode)
+      throws Exception
+  {
+    // We allow either the request to fail or the individual operation to fail
+    // within the request.
+    final BulkResponse response;
+    try
+    {
+      response = service.processBulkRequest(Arrays.asList(o));
+      final Status status = response.iterator().next().getStatus();
+
+      assertNotNull(status);
+      assertEquals(status.getCode(), expectedResponseCode);
+      assertNotNull(status.getDescription());
+    }
+    catch (SCIMException e)
+    {
+      assertEquals(String.valueOf(e.getStatusCode()), expectedResponseCode);
+      assertNotNull(e.getMessage());
+    }
+  }
+
+
+
+  /**
+   * Tests that the server returns the correct response to a SCIM Bulk request
+   * which contains two operations with the same bulkId.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testDuplicateBulkId()
+      throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource testUser1 = userEndpoint.newResource();
+    testUser1.setName(new Name("Test Duplicate BulkId", "BulkId", null,
+                              "Test", null, null));
+    testUser1.setUserName("test-duplicate-bulkid-1");
+
+    final UserResource testUser2 = userEndpoint.newResource();
+    testUser2.setName(new Name("Test Duplicate BulkId", "BulkId", null,
+                              "Test", null, null));
+    testUser2.setUserName("test-duplicate-bulkid-2");
+
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>(2);
+    operations.add(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "bulkid1", null,
+                                    "/Users", testUser1));
+    operations.add(
+        BulkOperation.createRequest(BulkOperation.Method.POST, "bulkid1", null,
+                                    "/Users", testUser2));
+
+    final BulkResponse bulkResponse = service.processBulkRequest(operations);
+    final List<BulkOperation> responses = new ArrayList<BulkOperation>();
+    for (final BulkOperation o : bulkResponse)
+    {
+      responses.add(o);
+    }
+
+    assertEquals(responses.get(0).getStatus().getCode(), "201");
+    assertEquals(responses.get(1).getStatus().getCode(), "400");
+  }
+
+
+
+  /**
+   * Tests the bulkMaxPayloadSize configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMaxPayloadSize() throws Exception
+  {
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 100; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null, "/Users/" + i, null));
+    }
+
+    // Lower the bulkMaxPayloadSize setting.
+    int bulkMaxPayloadSize = 1000;
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setBulkMaxPayloadSize(bulkMaxPayloadSize);
+    reconfigureTestSuite(config);
+
+    try
+    {
+      try
+      {
+        service.processBulkRequest(operations);
+        fail("The bulkMaxPayloadSize was intentionally exceeded but the " +
+             "bulk request was not rejected");
+      }
+      catch (SCIMException e)
+      {
+        // Expected.
+        assertEquals(e.getStatusCode(), 413);
+      }
+    }
+    finally
+    {
+      //Clean up
+      config.setBulkMaxPayloadSize(Long.MAX_VALUE);
+      reconfigureTestSuite(config);
+    }
+
+    // Increase the bulkMaxPayloadSize setting.
+    bulkMaxPayloadSize = 10000;
+    config.setBulkMaxPayloadSize(bulkMaxPayloadSize);
+    reconfigureTestSuite(config);
+
+    try
+    {
+      // The same request should now succeed (although all the operations fail)
+      service.processBulkRequest(operations);
+    }
+    finally
+    {
+      //Clean up
+      config.setBulkMaxPayloadSize(Long.MAX_VALUE);
+      reconfigureTestSuite(config);
+    }
+  }
+
+
+
+  /**
+   * Tests the bulkMaxOperations configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMaxOperations() throws Exception
+  {
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 100; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null, "/Users/" + i, null));
+    }
+
+    // Lower the bulkMaxOperations setting.
+    int bulkMaxOperations = 99;
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setBulkMaxOperations(bulkMaxOperations);
+    reconfigureTestSuite(config);
+
+    try
+    {
+      final long beforeDelete404Count =
+          getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
+      try
+      {
+        service.processBulkRequest(operations);
+        fail("The bulkMaxOperations was intentionally exceeded but the " +
+             "bulk request was not rejected");
+      }
+      catch (SCIMException e)
+      {
+        // Expected.
+        assertEquals(e.getStatusCode(), 413);
+      }
+
+      // Ensure no delete operations were attempted.
+      final long afterDelete404Count =
+          getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
+      assertEquals(afterDelete404Count, beforeDelete404Count);
+    }
+    finally
+    {
+      //Clean up
+      config.setBulkMaxOperations(Long.MAX_VALUE);
+      reconfigureTestSuite(config);
+    }
+
+    // Increase the bulkMaxPayloadSize setting.
+    bulkMaxOperations = 100;
+    config.setBulkMaxOperations(bulkMaxOperations);
+    reconfigureTestSuite(config);
+
+    try
+    {
+      // The same request should now succeed (although all the operations fail)
+      service.processBulkRequest(operations);
+    }
+    finally
+    {
+      //Clean up
+      config.setBulkMaxOperations(Long.MAX_VALUE);
+      reconfigureTestSuite(config);
+    }
+  }
+
+
+
+  /**
+   * Tests the Bulk request failOnErrors value.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testFailOnErrors() throws Exception
+  {
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < 10; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null, "/Users/" + i, null));
+    }
+
+    assertEquals(getSize(service.processBulkRequest(operations, 1)), 1);
+    assertEquals(getSize(service.processBulkRequest(operations, 9)), 9);
+    assertEquals(getSize(service.processBulkRequest(operations, 10)), 10);
+    assertEquals(getSize(service.processBulkRequest(operations, -1)), 10);
+  }
+
+
+
+  /**
+   * Determine the number of operations in a bulk response.
+   *
+   * @param bulkResponse  The bulk response to be sized.
+   *
+   * @return  The number of operations in the bulk response.
+   */
+  private int getSize(final BulkResponse bulkResponse)
+  {
+    int count = 0;
+    for (final BulkOperation o : bulkResponse)
+    {
+      count++;
+    }
+
+    return count;
+  }
+
+
+
+  /**
+   * Our implementation of Bulk operations permits a bulkId reference to be
+   * used as a resource ID in the path. This method tests that feature.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkIdInPath() throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource testUser = userEndpoint.newResource();
+    testUser.setName(new Name("Test BulkId In Path", "Path", null,
+                              "Test", null, null));
+    testUser.setUserName("test-bulkid-in-path");
+
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.POST, "user", null,
+        "/Users", testUser));
+    operations.add(BulkOperation.createRequest(
+        BulkOperation.Method.DELETE, null, null,
+        "/Users/" + "bulkId:user", null));
+
+    final BulkResponse response = service.processBulkRequest(operations);
+    final List<BulkOperation> responses = new ArrayList<BulkOperation>();
+    for (final BulkOperation o : response)
+    {
+      responses.add(o);
+    }
+
+    assertEquals(responses.size(), operations.size());
+
+    for (int i = 0; i < operations.size(); i++)
+    {
+      final BulkOperation o = operations.get(i);
+      final BulkOperation r = responses.get(i);
+
+      if (o.getMethod() == BulkOperation.Method.POST)
+      {
+        assertEquals(r.getStatus().getCode(), "201");
+      }
+      else
+      {
+        assertEquals(r.getStatus().getCode(), "200");
+      }
+    }
+
+    assertEquals(userEndpoint.query(
+        "userName eq \"test-bulkid-in-path\"").getTotalResults(), 0);
+  }
+
+
+
+  /**
+   * Process a bunch of bulk requests in parallel.
+   *
+   * @param numRequests           The total number of bulk requests to process.
+   * @param numThreads            The number of threads to use.
+   * @param operations            The bulk operations for the content of each
+   *                              request.
+   * @param numSuccessfulRequests Returns the number of successful requests.
+   * @param numFailedRequests     Returns the number of failed requests.
+   *
+   * @throws Exception  If the requests could not be processed.
+   */
+  private void processBulkRequestsInParallel(
+      final int numRequests, final int numThreads,
+      final List<BulkOperation> operations,
+      final AtomicInteger numSuccessfulRequests,
+      final AtomicInteger numFailedRequests)
+      throws Exception
+  {
+    numSuccessfulRequests.set(0);
+    numFailedRequests.set(0);
+
+    // Create a runnable to execute a single bulk request with the same
+    // operations.
+    final Runnable runnable = new Runnable()
+    {
+      public void run()
+      {
+        try
+        {
+          service.processBulkRequest(operations);
+          numSuccessfulRequests.incrementAndGet();
+        }
+        catch (Exception e)
+        {
+          numFailedRequests.incrementAndGet();
+          // Ignore.
+        }
+      }
+    };
+
+    // Execute a bunch of requests in parallel.
+    final ThreadPoolExecutor executor =
+        new ThreadPoolExecutor(numThreads,           // min # threads
+                               numThreads,           // max # threads
+                               5, TimeUnit.MINUTES,  // kill after idle
+                               new LinkedBlockingQueue<Runnable>());
+
+    Future<?> future = null;
+    for (int i = 0; i < numRequests; i++)
+    {
+      future = executor.submit(runnable);
+    }
+
+
+    // Make sure all the requests were completed.
+    future.get();
+    TestCaseUtils.assertFutureCondition(new FutureCondition(1000, 120)
+    {
+      @Override
+      public boolean testCondition() throws Exception
+      {
+        return numSuccessfulRequests.get() + numFailedRequests.get() ==
+               numRequests;
+      }
+
+      @Override
+      protected String getConditionDetails()
+      {
+        return "numSuccessfulRequests=" + numSuccessfulRequests +
+               " numFailedRequests=" + numFailedRequests;
+      }
+    });
+  }
+
+
+
+  /**
+   * Tests the bulkMaxOperations configuration setting.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBulkMaxConcurrentRequests() throws Exception
+  {
+    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    // Create some bulk operations.
+    final int numUsers = 1;
+    final List<UserResource> users = new ArrayList<UserResource>();
+    final List<BulkOperation> operations = new ArrayList<BulkOperation>();
+    for (int i = 0; i < numUsers; i++)
+    {
+      final UserResource user = userEndpoint.newResource();
+      user.setName(new Name("User " + i, "User", null, "Test", null, null));
+      user.setUserName("user." + i);
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.POST, "bulkid." + i, null, "/Users", user));
+      users.add(user);
+    }
+
+    for (int i = 0; i < numUsers; i++)
+    {
+      final UserResource user = users.get(i);
+      user.setTitle("Updated Title");
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.PUT, null, null,
+          "/Users/bulkId:bulkid." + i, user));
+    }
+
+    for (int i = 0; i < numUsers; i++)
+    {
+      operations.add(BulkOperation.createRequest(
+          BulkOperation.Method.DELETE, null, null,
+          "/Users/bulkId:bulkid." + i, null));
+    }
+
+    final AtomicInteger numSuccessfulRequests = new AtomicInteger(0);
+    final AtomicInteger numFailedRequests = new AtomicInteger(0);
+
+    final int numRequests = 20;
+    final int numThreads = 2;
+
+    // Set the bulkMaxConcurrentRequests setting to 1.
+    int bulkMaxConcurrentRequests = 1;
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setBulkMaxConcurrentRequests(bulkMaxConcurrentRequests);
+    reconfigureTestSuite(config);
+
+    try
+    {
+      processBulkRequestsInParallel(numRequests, numThreads, operations,
+                                    numSuccessfulRequests,
+                                    numFailedRequests);
+      assertTrue(numSuccessfulRequests.get() > 0);
+      assertTrue(numFailedRequests.get() > 0);
+
+      // Set the bulkMaxConcurrentRequests setting to 2.
+      bulkMaxConcurrentRequests = 2;
+      config.setBulkMaxConcurrentRequests(bulkMaxConcurrentRequests);
+      reconfigureTestSuite(config);
+
+      processBulkRequestsInParallel(numRequests, numThreads, operations,
+                                    numSuccessfulRequests,
+                                    numFailedRequests);
+      assertEquals(numSuccessfulRequests.get(), numRequests);
+      assertEquals(numFailedRequests.get(), 0);
+
+      // Set the bulkMaxConcurrentRequests setting back to 1.
+      bulkMaxConcurrentRequests = 1;
+      config.setBulkMaxConcurrentRequests(bulkMaxConcurrentRequests);
+      reconfigureTestSuite(config);
+
+      processBulkRequestsInParallel(numRequests, numThreads, operations,
+                                    numSuccessfulRequests,
+                                    numFailedRequests);
+      assertTrue(numSuccessfulRequests.get() > 0);
+      assertTrue(numFailedRequests.get() > 0);
+    }
+    finally
+    {
+      //Clean up
+      config.setBulkMaxConcurrentRequests(Integer.MAX_VALUE);
+      reconfigureTestSuite(config);
+    }
   }
 
 }

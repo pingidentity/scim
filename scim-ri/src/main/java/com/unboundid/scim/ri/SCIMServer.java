@@ -262,6 +262,10 @@ public class SCIMServer
           new ServletContextHandler(contextHandlerCollection,
               normalizedBaseURI);
       application = new SCIMApplication(resourceMappers.keySet(), backend);
+      application.setBulkMaxConcurrentRequests(
+          config.getBulkMaxConcurrentRequests());
+      application.setBulkMaxOperations(config.getBulkMaxOperations());
+      application.setBulkMaxPayloadSize(config.getBulkMaxPayloadSize());
       newBackends.put(contextHandler, application);
 
       // Configure authentication.

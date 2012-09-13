@@ -57,6 +57,25 @@ public class SCIMServerConfig
    */
   private String accessLogFile;
 
+  /**
+   * The maximum number of operations permitted in a bulk request.
+   */
+  private long bulkMaxOperations = Long.MAX_VALUE;
+
+  /**
+   * The maximum payload size in bytes of a bulk request.
+   */
+  private long bulkMaxPayloadSize = Long.MAX_VALUE;
+
+  /**
+   * The maximum number of concurrent bulk requests.
+   */
+  private int bulkMaxConcurrentRequests = Integer.MAX_VALUE;
+
+  /**
+   * The maximum number of resources that are returned in a response.
+   */
+  private int maxResults = Integer.MAX_VALUE;
 
 
   /**
@@ -191,5 +210,99 @@ public class SCIMServerConfig
   public void setSslContext(final SSLContext sslContext)
   {
     this.sslContext = sslContext;
+  }
+
+
+
+  /**
+   * Retrieve the maximum number of concurrent bulk requests.
+   *
+   * @return The maximum number of concurrent bulk requests.
+   */
+  public int getBulkMaxConcurrentRequests()
+  {
+    return bulkMaxConcurrentRequests;
+  }
+
+
+
+  /**
+   * Specify the maximum number of concurrent bulk requests.
+   * @param bulkMaxConcurrentRequests  The maximum number of concurrent bulk
+   *                                   requests.
+   */
+  public void setBulkMaxConcurrentRequests(final int bulkMaxConcurrentRequests)
+  {
+    this.bulkMaxConcurrentRequests = bulkMaxConcurrentRequests;
+  }
+
+
+
+  /**
+   * Retrieve the maximum number of operations permitted in a bulk request.
+   * @return The maximum number of operations permitted in a bulk request.
+   */
+  public long getBulkMaxOperations()
+  {
+    return bulkMaxOperations;
+  }
+
+
+
+  /**
+   * Specify the maximum number of operations permitted in a bulk request.
+   * @param bulkMaxOperations  The maximum number of operations permitted in a
+   *                           bulk request.
+   */
+  public void setBulkMaxOperations(final long bulkMaxOperations)
+  {
+    this.bulkMaxOperations = bulkMaxOperations;
+  }
+
+
+
+  /**
+   * Retrieve the maximum payload size in bytes of a bulk request.
+   *
+   * @return The maximum payload size in bytes of a bulk request.
+   */
+  public long getBulkMaxPayloadSize()
+  {
+    return bulkMaxPayloadSize;
+  }
+
+
+
+  /**
+   * Specify the maximum payload size in bytes of a bulk request.
+   * @param bulkMaxPayloadSize  The maximum payload size in bytes of a bulk
+   *                            request.
+   */
+  public void setBulkMaxPayloadSize(final long bulkMaxPayloadSize)
+  {
+    this.bulkMaxPayloadSize = bulkMaxPayloadSize;
+  }
+
+
+
+  /**
+   * Retrieve the maximum number of resources that are returned in a response.
+   * @return  The maximum number of resources that are returned in a response.
+   */
+  public int getMaxResults()
+  {
+    return maxResults;
+  }
+
+
+
+  /**
+   * Specify the maximum number of resources that are returned in a response.
+   * @param maxResults  The maximum number of resources that are returned in
+   *                    a response.
+   */
+  public void setMaxResults(final int maxResults)
+  {
+    this.maxResults = maxResults;
   }
 }

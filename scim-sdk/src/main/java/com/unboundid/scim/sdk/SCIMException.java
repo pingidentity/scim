@@ -103,6 +103,24 @@ public class SCIMException extends Exception implements SCIMResponse
   public static SCIMException createException(final int statusCode,
                                               final String errorMessage)
   {
+    return createException(statusCode, errorMessage, null);
+  }
+
+  /**
+   * Create the appropriate SCIMException from the provided information.
+   *
+   * @param statusCode    The HTTP status code for this SCIM exception.
+   * @param errorMessage  The error message for this SCIM exception.
+   * @param cause         The cause (which is saved for later retrieval by the
+   *                      {@link #getCause()} method).  (A <tt>null</tt> value
+   *                      is permitted, and indicates that the cause is
+   *                      nonexistent or unknown.)
+   * @return The appropriate SCIMException from the provided information.
+   */
+  public static SCIMException createException(final int statusCode,
+                                              final String errorMessage,
+                                              final Exception cause)
+  {
     switch(statusCode)
     {
       case -1  : return new ConnectException(errorMessage);
@@ -112,7 +130,7 @@ public class SCIMException extends Exception implements SCIMResponse
       case 404 : return new ResourceNotFoundException(errorMessage);
       case 409 : return new ResourceConflictException(errorMessage);
       case 500 : return new ServerErrorException(errorMessage);
-      default : return new SCIMException(statusCode, errorMessage);
+      default : return new SCIMException(statusCode, errorMessage, cause);
     }
   }
 }

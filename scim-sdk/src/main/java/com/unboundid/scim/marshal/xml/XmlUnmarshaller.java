@@ -409,8 +409,20 @@ public class XmlUnmarshaller implements Unmarshaller
       {
         continue;
       }
-      values.add(
-          createComplexAttribute(attribute, attributeDescriptor));
+      if(attribute.getChildNodes().getLength() > 1 ||
+          attribute.getFirstChild().getNodeType() != Node.TEXT_NODE)
+      {
+        values.add(
+            createComplexAttribute(attribute, attributeDescriptor));
+      }
+      else
+      {
+        SCIMAttribute subAttr = SCIMAttribute.create(
+            attributeDescriptor.getSubAttribute("value"),
+            SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
+                attribute.getTextContent()));
+        values.add(SCIMAttributeValue.createComplexValue(subAttr));
+      }
     }
     SCIMAttributeValue[] vals =
         new SCIMAttributeValue[values.size()];

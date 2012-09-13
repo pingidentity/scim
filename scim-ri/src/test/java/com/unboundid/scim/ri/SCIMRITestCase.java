@@ -37,12 +37,28 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.SCIMTestCase;
+import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMService;
+import com.unboundid.scim.wink.ResourceStats;
+import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.util.LDAPTestUtils;
 import com.unboundid.util.ssl.KeyStoreKeyManager;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.wink.client.ApacheHttpClientConfig;
+import org.apache.wink.client.ClientConfig;
 import org.testng.Assert;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
@@ -61,6 +77,7 @@ import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.List;
 
+import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
 
 
 /**
@@ -75,6 +92,8 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   // A SCIM server that can be used for testing.
   private static volatile SCIMServer testSS;
 
+  private static volatile SCIMApplication scimApplication;
+
   // The port number of the SCIM server instance.
   private static int ssPort = -1;
 
@@ -86,6 +105,16 @@ public abstract class SCIMRITestCase extends SCIMTestCase
    */
   protected static SCIMService service;
 
+  /**
+   * The base DN for groups.
+   */
+  protected final String groupBaseDN = "dc=example,dc=com";
+
+  /**
+   * The base DN for users.
+   */
+  protected final String userBaseDN = "ou=people,dc=example,dc=com";
+
 
   /**
    * Creates the in-memory directory server instance that can be used for
@@ -94,7 +123,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
    * @throws  Exception  If an unexpected problem occurs.
    */
   @BeforeSuite()
-  public static synchronized void setUpTestSuite()
+  public synchronized void setUpTestSuite()
          throws Exception
   {
     if (testDS != null)
@@ -131,7 +160,9 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     testDS = new InMemoryDirectoryServer(cfg);
     testDS.startListening();
 
-    reconfigureTestSuite(getFile("resource/resources.xml"));
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setResourcesFile(getFile("resource/resources.xml"));
+    reconfigureTestSuite(config);
   }
 
 
@@ -142,13 +173,14 @@ public abstract class SCIMRITestCase extends SCIMTestCase
    * @throws  Exception  If an unexpected problem occurs.
    */
   @AfterSuite()
-  public static synchronized void cleanUpTestSuite()
+  public synchronized void cleanUpTestSuite()
          throws Exception
   {
     if (testSS != null)
     {
       testSS.shutdown();
       testSS = null;
+      scimApplication = null;
     }
 
     ldapBackend.finalizeBackend();
@@ -165,13 +197,12 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   /**
    * Configures the SCIMServer to use the given resource mapping file.
    *
-   * @param resourceMappingFile the file to use as the mapping file
+   * @param ssConfig the SCIM Server config.
    *
    * @throws  Exception  If an unexpected problem occurs.
    */
-  protected static synchronized void reconfigureTestSuite(
-                                      final File resourceMappingFile)
-         throws Exception
+  protected synchronized void reconfigureTestSuite(
+      SCIMServerConfig ssConfig) throws Exception
   {
     if (testSS != null)
     {
@@ -184,10 +215,12 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     }
 
     ssPort = getFreePort();
-    final SCIMServerConfig ssConfig = new SCIMServerConfig();
     ssConfig.setListenPort(ssPort);
     ssConfig.setMaxThreads(16);
-    ssConfig.setResourcesFile(resourceMappingFile);
+    if(ssConfig.getResourcesFile() == null)
+    {
+      ssConfig.setResourcesFile(getFile("resource/resources.xml"));
+    }
 
     final LDAPExternalServerConfig ldapConfig =
         new LDAPExternalServerConfig();
@@ -203,12 +236,51 @@ public abstract class SCIMRITestCase extends SCIMTestCase
 
     ldapBackend = new ExternalLDAPBackend(testSS.getResourceMappers(),
                                           ldapConfig);
-    testSS.registerBackend("/", ldapBackend);
+    ldapBackend.getConfig().setMaxResults(ssConfig.getMaxResults());
+    scimApplication = testSS.registerBackend("/", ldapBackend);
     testSS.startListening();
 
     // Start a client for the SCIM operations.
-    service = new SCIMService(URI.create("http://localhost:" + getSSTestPort()),
-        "cn=Manager", "password");
+    service = createSCIMService("cn=Manager", "password");
+  }
+
+
+
+  /**
+   * Create an Wink client config from the provided information.
+   * The returned client config may be used to create a SCIM service object.
+   *
+   * @param userName    The HTTP Basic Auth user name.
+   * @param password    The HTTP Basic Auth password.
+   *
+   * @return  An Apache Wink client.
+   */
+  protected SCIMService createSCIMService(final String userName,
+                                          final String password)
+  {
+    final Scheme httpScheme =
+        new Scheme("http", 80, PlainSocketFactory.getSocketFactory());
+    SchemeRegistry schemeRegistry = new SchemeRegistry();
+    schemeRegistry.register(httpScheme);
+
+    final HttpParams params = new BasicHttpParams();
+    params.setBooleanParameter(SO_REUSEADDR, true);
+    DefaultHttpClient.setDefaultHttpParams(params);
+    final ThreadSafeClientConnManager mgr =
+        new ThreadSafeClientConnManager(schemeRegistry);
+    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+
+    final Credentials credentials =
+        new UsernamePasswordCredentials(userName, password);
+    httpClient.getCredentialsProvider().setCredentials(
+        new AuthScope("localhost", -1), credentials);
+    httpClient.addRequestInterceptor(
+        new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
+
+    final ClientConfig clientConfig = new ApacheHttpClientConfig(httpClient);
+
+    return new SCIMService(URI.create("http://localhost:" + getSSTestPort()),
+        clientConfig);
   }
 
 
@@ -3063,6 +3135,18 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   {
     final File baseDir = new File(System.getProperty("main.basedir"));
     return new File(baseDir, path);
+  }
+
+  /**
+   * Retrieve the stats for a given resource.
+   *
+   * @param resourceName  The name of the resource.
+   *
+   * @return  The stats for the requested resource.
+   */
+  protected static ResourceStats getStatsForResource(String resourceName)
+  {
+    return scimApplication.getStatsForResource(resourceName);
   }
 
 }

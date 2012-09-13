@@ -224,7 +224,7 @@ public class SCIMEndpoint<R extends BaseResource>
     catch(Exception e)
     {
       throw SCIMException.createException(getStatusCode(e),
-                                          getExceptionMessage(e));
+                                          getExceptionMessage(e), e);
     }
     finally
     {
@@ -329,7 +329,7 @@ public class SCIMEndpoint<R extends BaseResource>
     catch(Exception e)
     {
       throw SCIMException.createException(getStatusCode(e),
-                                          getExceptionMessage(e));
+                                          getExceptionMessage(e), e);
     }
     finally
     {
@@ -422,7 +422,7 @@ public class SCIMEndpoint<R extends BaseResource>
     catch(Exception e)
     {
       throw SCIMException.createException(getStatusCode(e),
-                                          getExceptionMessage(e));
+                                          getExceptionMessage(e), e);
     }
     finally
     {
@@ -538,7 +538,7 @@ public class SCIMEndpoint<R extends BaseResource>
     catch(Exception e)
     {
       throw SCIMException.createException(getStatusCode(e),
-                                          getExceptionMessage(e));
+                                          getExceptionMessage(e), e);
     }
     finally
     {
@@ -687,7 +687,7 @@ public class SCIMEndpoint<R extends BaseResource>
     catch(Exception e)
     {
       throw SCIMException.createException(getStatusCode(e),
-              getExceptionMessage(e));
+                                          getExceptionMessage(e), e);
     }
     finally
     {
@@ -793,7 +793,7 @@ public class SCIMEndpoint<R extends BaseResource>
     catch(Exception e)
     {
       throw SCIMException.createException(getStatusCode(e),
-                                          getExceptionMessage(e));
+                                          getExceptionMessage(e), e);
     }
     finally
     {
