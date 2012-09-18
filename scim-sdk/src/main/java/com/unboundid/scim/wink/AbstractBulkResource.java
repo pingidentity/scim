@@ -28,6 +28,7 @@ import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.sdk.BulkStreamResponse;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
+import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMResponse;
@@ -69,7 +70,10 @@ public class AbstractBulkResource
    */
   private final SCIMBackend backend;
 
-
+  /**
+   * The OAuth 2.0 bearer token handler. This may be null.
+   */
+  private final OAuthTokenHandler tokenHandler;
 
   /**
    * Create a new instance of the bulk resource.
@@ -80,14 +84,18 @@ public class AbstractBulkResource
    *                           end-point.
    * @param backend            The SCIMBackend to use to process individual
    *                           operations within a bulk operation.
+   * @param tokenHandler       The token handler to use for OAuth
+   *                           authentication.
    */
   public AbstractBulkResource(final SCIMApplication application,
                               final ResourceStats bulkResourceStats,
-                              final SCIMBackend backend)
+                              final SCIMBackend backend,
+                              final OAuthTokenHandler tokenHandler)
   {
     this.application       = application;
     this.bulkResourceStats = bulkResourceStats;
     this.backend           = backend;
+    this.tokenHandler      = tokenHandler;
   }
 
 
@@ -120,7 +128,7 @@ public class AbstractBulkResource
     try
     {
       String authID = requestContext.getAuthID();
-      if(authID == null)
+      if(authID == null && tokenHandler == null)
       {
         throw new UnauthorizedException("Invalid credentials");
       }
@@ -182,7 +190,8 @@ public class AbstractBulkResource
           {
             final BulkContentRequestHandler handler =
                 new BulkContentRequestHandler(application, requestContext,
-                                              backend, bulkStreamResponse);
+                                              backend, bulkStreamResponse,
+                                              tokenHandler);
             unmarshaller.bulkUnmarshal(requestFile, bulkConfig, handler);
 
             // Build the response.

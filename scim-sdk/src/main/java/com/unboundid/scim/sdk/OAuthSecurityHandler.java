@@ -16,17 +16,16 @@
  */
 package com.unboundid.scim.sdk;
 
-import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientRequest;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.handlers.ClientHandler;
 import org.apache.wink.client.handlers.HandlerContext;
-import org.apache.wink.common.http.HttpStatus;
 
 /**
  * This class provides OAuth Authentication handling.
  */
-public class OAuthSecurityHandler implements ClientHandler {
+public class OAuthSecurityHandler implements ClientHandler
+{
   /**
    * The stringified OAuth token authorization header.
    */
@@ -36,7 +35,8 @@ public class OAuthSecurityHandler implements ClientHandler {
    * Constructs a fully initialized OAuthSecurityHandler handler.
    * @param token Fully constructed OAuth Token
    */
-  public OAuthSecurityHandler(final OAuthToken token) {
+  public OAuthSecurityHandler(final OAuthToken token)
+  {
     this.authorizationHeader = token.getFormattedValue();
   }
 
@@ -49,14 +49,9 @@ public class OAuthSecurityHandler implements ClientHandler {
    * @throws Exception Thrown if error handling authentication.
    */
   public ClientResponse handle(final ClientRequest request,
-                               final HandlerContext context) throws Exception {
+                               final HandlerContext context) throws Exception
+  {
     request.getHeaders().putSingle("Authorization", this.authorizationHeader);
-    ClientResponse response = context.doChain(request);
-    if (response.getStatusCode() == HttpStatus.UNAUTHORIZED.getCode()) {
-      throw new ClientAuthenticationException(this.authorizationHeader);
-    } else {
-      // error presumably unrelated to authentication
-      return response;
-    }
+    return context.doChain(request);
   }
 }

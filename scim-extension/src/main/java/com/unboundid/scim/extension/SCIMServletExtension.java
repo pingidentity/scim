@@ -516,7 +516,7 @@ public final class SCIMServletExtension
     setPermissions(tmpDataDir, tmpDataDirPermission);
 
     // Create the Wink JAX-RS application.
-    application = new SCIMApplication(resourceMappers.keySet(), backend);
+    application = new SCIMApplication(resourceMappers.keySet(), backend, null);
     application.setBulkMaxOperations(
         bulkMaxOperationsArg.getValue().longValue());
     application.setBulkMaxPayloadSize(

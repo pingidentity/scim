@@ -25,6 +25,8 @@ import com.unboundid.scim.sdk.BulkStreamResponse;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.OAuthTokenHandler;
+import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -35,8 +37,12 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.Status;
+import com.unboundid.scim.sdk.UnauthorizedException;
+
+import static com.unboundid.scim.wink.AbstractSCIMResource.validateOAuthToken;
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -82,6 +88,11 @@ public class BulkContentRequestHandler extends BulkContentHandler
    * The SCIM backend to process the operations.
    */
   private final SCIMBackend backend;
+
+  /**
+   * The OAuth 2.0 bearer token handler. This may be null.
+   */
+  private final OAuthTokenHandler tokenHandler;
 
   /**
    * The bulk stream response to write the operation responses to.
@@ -127,17 +138,20 @@ public class BulkContentRequestHandler extends BulkContentHandler
    * @param backend             The SCIM backend to process the operations.
    * @param bulkStreamResponse  The bulk stream response to write response
    *                            operations to.
+   * @param tokenHandler        The OAuth token handler implementation to use.
    */
   public BulkContentRequestHandler(
       final SCIMApplication application,
       final RequestContext requestContext,
       final SCIMBackend backend,
-      final BulkStreamResponse bulkStreamResponse)
+      final BulkStreamResponse bulkStreamResponse,
+      final OAuthTokenHandler tokenHandler)
   {
     this.descriptors        = application.getDescriptors();
     this.application        = application;
     this.requestContext     = requestContext;
     this.backend            = backend;
+    this.tokenHandler       = tokenHandler;
     this.bulkStreamResponse = bulkStreamResponse;
 
     resourceIDs = new HashMap<String, String>();
@@ -256,11 +270,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
       {
         throw new InvalidResourceException(
             "The bulk operation does not specify a HTTP method");
-      }
-
-      if (method == BulkOperation.Method.PATCH)
-      {
-        throw SCIMException.createException(501, "PATCH is not supported");
       }
 
       if (path == null)
@@ -398,6 +407,9 @@ public class BulkContentRequestHandler extends BulkContentHandler
           case PUT:
             resourceStats.incrementStat(ResourceStats.PUT_CONTENT_JSON);
             break;
+          case PATCH:
+            resourceStats.incrementStat(ResourceStats.PATCH_CONTENT_JSON);
+            break;
         }
       }
       else
@@ -410,6 +422,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
           case PUT:
             resourceStats.incrementStat(ResourceStats.PUT_CONTENT_XML);
             break;
+          case PATCH:
+            resourceStats.incrementStat(ResourceStats.PATCH_CONTENT_XML);
         }
       }
 
@@ -421,12 +435,34 @@ public class BulkContentRequestHandler extends BulkContentHandler
       switch (method)
       {
         case POST:
-          final BaseResource postedResource = backend.postResource(
-              new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                                      requestContext.getAuthID(),
-                                      descriptor,
-                                      resource.getScimObject(),
-                                      queryAttributes));
+          PostResourceRequest postResourceRequest =
+               new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
+                                       requestContext.getAuthID(),
+                                       descriptor,
+                                       resource.getScimObject(),
+                                       queryAttributes);
+
+          if (requestContext.getAuthID() == null)
+          {
+            AtomicReference<String> authIDRef = new AtomicReference<String>();
+            Response response = validateOAuthToken(requestContext,
+                                  postResourceRequest, authIDRef, tokenHandler);
+            if (response != null)
+            {
+              throw new UnauthorizedException("Invalid credentials");
+            }
+            else
+            {
+              String authID = authIDRef.get();
+              postResourceRequest = new PostResourceRequest(
+                              requestContext.getUriInfo().getBaseUri(),
+                              authID, descriptor, resource.getScimObject(),
+                              queryAttributes);
+            }
+          }
+
+          final BaseResource postedResource =
+                  backend.postResource(postResourceRequest);
 
           resourceID = postedResource.getId();
           locationBuilder.path(resourceID);
@@ -436,24 +472,96 @@ public class BulkContentRequestHandler extends BulkContentHandler
           break;
 
         case PUT:
-          backend.putResource(
-              new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                                     requestContext.getAuthID(),
-                                     descriptor,
-                                     resourceID,
-                                     resource.getScimObject(),
-                                     queryAttributes));
+          PutResourceRequest putResourceRequest =
+                new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
+                                       requestContext.getAuthID(),
+                                       descriptor,
+                                       resourceID,
+                                       resource.getScimObject(),
+                                       queryAttributes);
+
+          if (requestContext.getAuthID() == null)
+          {
+            AtomicReference<String> authIDRef = new AtomicReference<String>();
+            Response response = validateOAuthToken(requestContext,
+                                   putResourceRequest, authIDRef, tokenHandler);
+            if (response != null)
+            {
+              throw new UnauthorizedException("Invalid credentials");
+            }
+            else
+            {
+              String authID = authIDRef.get();
+              putResourceRequest = new PutResourceRequest(
+                      requestContext.getUriInfo().getBaseUri(),
+                      authID, descriptor, resourceID, resource.getScimObject(),
+                      queryAttributes);
+            }
+          }
+
+          backend.putResource(putResourceRequest);
           location = locationBuilder.build().toString();
           resourceStats.incrementStat(ResourceStats.PUT_OK);
           break;
 
+        case PATCH:
+          PatchResourceRequest patchResourceRequest =
+              new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
+                                       requestContext.getAuthID(),
+                                       descriptor,
+                                       resourceID,
+                                       resource.getScimObject(),
+                                       queryAttributes);
+
+          if (requestContext.getAuthID() == null)
+          {
+            AtomicReference<String> authIDRef = new AtomicReference<String>();
+            Response response = validateOAuthToken(requestContext,
+                                 patchResourceRequest, authIDRef, tokenHandler);
+            if (response != null)
+            {
+              throw new UnauthorizedException("Invalid credentials");
+            }
+            else
+            {
+              String authID = authIDRef.get();
+              patchResourceRequest = new PatchResourceRequest(
+                      requestContext.getUriInfo().getBaseUri(),
+                      authID, descriptor, resourceID, resource.getScimObject(),
+                      queryAttributes);
+            }
+          }
+
+          backend.patchResource(patchResourceRequest);
+          resourceStats.incrementStat(ResourceStats.PATCH_OK);
+          break;
+
         case DELETE:
-          backend.deleteResource(new DeleteResourceRequest(
-              requestContext.getUriInfo().getBaseUri(),
-              requestContext.getAuthID(),
-              descriptor,
-              resourceID));
-          location = locationBuilder.build().toString();
+          DeleteResourceRequest deleteResourceRequest =
+             new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
+                                       requestContext.getAuthID(),
+                                       descriptor,
+                                       resourceID);
+
+          if (requestContext.getAuthID() == null)
+          {
+            AtomicReference<String> authIDRef = new AtomicReference<String>();
+            Response response = validateOAuthToken(requestContext,
+                                deleteResourceRequest, authIDRef, tokenHandler);
+            if (response != null)
+            {
+              throw new UnauthorizedException("Invalid credentials");
+            }
+            else
+            {
+              String authID = authIDRef.get();
+              deleteResourceRequest = new DeleteResourceRequest(
+                      requestContext.getUriInfo().getBaseUri(),
+                      authID, descriptor, resourceID);
+            }
+          }
+
+          backend.deleteResource(deleteResourceRequest);
           resourceStats.incrementStat(ResourceStats.DELETE_OK);
           break;
       }
@@ -476,6 +584,9 @@ public class BulkContentRequestHandler extends BulkContentHandler
         case PUT:
           resourceStats.incrementStat("put-" + e.getStatusCode());
           break;
+        case PATCH:
+          resourceStats.incrementStat("patch-" + e.getStatusCode());
+          break;
         case DELETE:
           resourceStats.incrementStat("delete-" + e.getStatusCode());
           break;
@@ -493,6 +604,9 @@ public class BulkContentRequestHandler extends BulkContentHandler
         case PUT:
           resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_JSON);
           break;
+        case PATCH:
+          resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_JSON);
+          break;
       }
     }
     else if (requestContext.getProduceMediaType() ==
@@ -506,6 +620,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
       case PUT:
         resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_XML);
         break;
+      case PATCH:
+        resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_XML);
       }
     }
 

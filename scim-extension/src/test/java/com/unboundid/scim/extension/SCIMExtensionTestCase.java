@@ -976,6 +976,8 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
     assertEquals(beforeCount, afterCount - 1);
 
+    beforeCount = scimInstance.getMonitorAsLong(
+            monitoryEntryDN, "user-resource-patch-404");
     try
     {
       //Try to update an entry that doesn't exist
@@ -990,7 +992,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     }
     afterCount = scimInstance.getMonitorAsLong(
             monitoryEntryDN, "user-resource-patch-404");
-    assertEquals(afterCount, 1);
+    assertEquals(beforeCount, afterCount - 1);
 
     //Try a more complex patch, where we simultaneously delete a few attributes
     //and update a few more. Specifically, we are going to delete the phone
@@ -2092,7 +2094,13 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
       assertEquals(o.getMethod(), r.getMethod());
       assertEquals(o.getBulkId(), r.getBulkId());
-      assertNotNull(r.getLocation());
+
+      if (o.getMethod() == BulkOperation.Method.POST
+              || o.getMethod() == BulkOperation.Method.PUT)
+      {
+        assertNotNull(r.getLocation());
+      }
+
       assertNotNull(r.getStatus());
 
       if (o.getMethod() == BulkOperation.Method.POST)
@@ -2207,11 +2215,11 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
                                     "/Groups/", testGroup),
         "409");
 
-    // PATCH is not supported.
+    // PATCH a resource that doesn't exist.
     testInvalidBulkOperation(
         BulkOperation.createRequest(BulkOperation.Method.PATCH, null, null,
                                     "/Users/1", testUser),
-        "501");
+        "404");
   }
 
 

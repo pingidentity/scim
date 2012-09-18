@@ -26,6 +26,7 @@ import com.unboundid.scim.data.PatchConfig;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.SortConfig;
 import com.unboundid.scim.data.XmlDataFormatConfig;
+import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
@@ -57,11 +58,13 @@ public class SCIMApplication extends WinkApplication
   private final Map<String,ResourceDescriptor> descriptors;
   private final Map<String,ResourceStats> resourceStats;
   private final SCIMBackend backend;
+  private final boolean supportsOAuth;
   private volatile long bulkMaxOperations = Long.MAX_VALUE;
   private volatile long bulkMaxPayloadSize = Long.MAX_VALUE;
   private volatile File tmpDataDir = null;
   private AdjustableSemaphore bulkMaxConcurrentRequestsSemaphore =
       new AdjustableSemaphore(Integer.MAX_VALUE);
+
 
   /**
    * Create a new SCIMApplication that defines the endpoints provided by the
@@ -69,10 +72,13 @@ public class SCIMApplication extends WinkApplication
    *
    * @param resourceDescriptors The ResourceDescriptors to serve.
    * @param backend The backend that should be used to process the requests.
+   * @param tokenHandler The OAuthTokenHandler implementation to use (this may
+   *                     be {@code null}.
    */
   public SCIMApplication(
       final Collection<ResourceDescriptor> resourceDescriptors,
-      final SCIMBackend backend)
+      final SCIMBackend backend,
+      final OAuthTokenHandler tokenHandler)
   {
     descriptors =
         new HashMap<String, ResourceDescriptor>(resourceDescriptors.size());
@@ -102,27 +108,30 @@ public class SCIMApplication extends WinkApplication
     ResourceSchemaBackend resourceSchemaBackend =
         new ResourceSchemaBackend(resourceDescriptors);
     instances.add(new SCIMResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend));
+        stats, resourceSchemaBackend, tokenHandler));
     instances.add(new XMLQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend));
+        stats, resourceSchemaBackend, tokenHandler));
     instances.add(new JSONQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend));
+        stats, resourceSchemaBackend, tokenHandler));
     statsCollection.add(stats);
 
     for(ResourceDescriptor resourceDescriptor : resourceDescriptors)
     {
       stats = new ResourceStats(resourceDescriptor.getName());
-      instances.add(new SCIMResource(resourceDescriptor, stats, backend));
-      instances.add(new XMLQueryResource(resourceDescriptor, stats, backend));
-      instances.add(new JSONQueryResource(resourceDescriptor, stats, backend));
+      instances.add(new SCIMResource(resourceDescriptor,
+              stats, backend, tokenHandler));
+      instances.add(new XMLQueryResource(resourceDescriptor,
+              stats, backend, tokenHandler));
+      instances.add(new JSONQueryResource(resourceDescriptor,
+              stats, backend, tokenHandler));
       statsCollection.add(stats);
     }
 
     // The Bulk operation endpoint.
     stats = new ResourceStats("Bulk");
-    instances.add(new BulkResource(this, stats, backend));
-    instances.add(new JSONBulkResource(this, stats, backend));
-    instances.add(new XMLBulkResource(this, stats, backend));
+    instances.add(new BulkResource(this, stats, backend, tokenHandler));
+    instances.add(new JSONBulkResource(this, stats, backend, tokenHandler));
+    instances.add(new XMLBulkResource(this, stats, backend, tokenHandler));
     statsCollection.add(stats);
 
     this.resourceStats =
@@ -132,6 +141,15 @@ public class SCIMApplication extends WinkApplication
       resourceStats.put(s.getName(), s);
     }
     this.backend = backend;
+
+    if (tokenHandler != null)
+    {
+      supportsOAuth = true;
+    }
+    else
+    {
+      supportsOAuth = false;
+    }
   }
 
 
@@ -193,10 +211,10 @@ public class SCIMApplication extends WinkApplication
     serviceProviderConfig.setETagConfig(new ETagConfig(false));
 
     final List<AuthenticationScheme> authenticationSchemes =
-        new ArrayList<AuthenticationScheme>();
+        new ArrayList<AuthenticationScheme>(2);
     authenticationSchemes.add(
         new AuthenticationScheme(
-            "HttpBasic",
+            "Http Basic",
             "The HTTP Basic Access Authentication scheme. This scheme is not " +
             "considered to be a secure method of user authentication (unless " +
             "used in conjunction with some external secure system such as " +
@@ -204,7 +222,23 @@ public class SCIMApplication extends WinkApplication
             "as cleartext.",
             "http://www.ietf.org/rfc/rfc2617.txt",
             "http://en.wikipedia.org/wiki/Basic_access_authentication",
-            null, false));
+            "httpbasic", true));
+
+    if (supportsOAuth)
+    {
+      authenticationSchemes.add(
+        new AuthenticationScheme(
+            "OAuth 2.0",
+            "The OAuth 2.0 Bearer Token Authentication scheme. OAuth enables " +
+            "clients to access protected resources by obtaining an access " +
+            "token, which is defined in draft-ietf-oauth-v2-31 as \"a string " +
+            "representing an access authorization issued to the client\", " +
+            "rather than using the resource owner's credentials directly.",
+            "http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-23",
+            "http://oauth.net/2/",
+            "oauth2", false));
+    }
+
     serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
 
     serviceProviderConfig.setXmlDataFormatConfig(new XmlDataFormatConfig(true));

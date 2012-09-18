@@ -261,7 +261,8 @@ public class SCIMServer
       final ServletContextHandler contextHandler =
           new ServletContextHandler(contextHandlerCollection,
               normalizedBaseURI);
-      application = new SCIMApplication(resourceMappers.keySet(), backend);
+      application = new SCIMApplication(
+              resourceMappers.keySet(), backend, null);
       application.setBulkMaxConcurrentRequests(
           config.getBulkMaxConcurrentRequests());
       application.setBulkMaxOperations(config.getBulkMaxOperations());

@@ -18,6 +18,7 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.SCIMBackend;
 
 import javax.servlet.ServletContext;
@@ -61,13 +62,16 @@ public class SCIMResource extends AbstractSCIMResource
    * @param resourceDescriptor  The resource descriptor to use.
    * @param resourceStats       The ResourceStats instance to use.
    * @param backend             The SCIMBackend to use to process requests.
+   * @param tokenHandler        The token handler to use for OAuth
+   *                            authentication.
    */
   public SCIMResource(final ResourceDescriptor resourceDescriptor,
                       final ResourceStats resourceStats,
-                      final SCIMBackend backend)
+                      final SCIMBackend backend,
+                      final OAuthTokenHandler tokenHandler)
   {
     super(resourceDescriptor.getEndpoint(), resourceDescriptor,
-          resourceStats, backend);
+          resourceStats, backend, tokenHandler);
   }
 
 

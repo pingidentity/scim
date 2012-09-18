@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.wink;
 
+import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.SCIMBackend;
 
 import javax.servlet.ServletContext;
@@ -50,12 +51,15 @@ public class XMLBulkResource extends AbstractBulkResource
    *                           end-point.
    * @param backend            The SCIMBackend to use to process individual
    *                           operations within a bulk operation.
+   * @param tokenHandler       The token handler to use for OAuth
+   *                           authentication.
    */
   public XMLBulkResource(final SCIMApplication application,
                          final ResourceStats bulkResourceStats,
-                         final SCIMBackend backend)
+                         final SCIMBackend backend,
+                         final OAuthTokenHandler tokenHandler)
   {
-    super(application, bulkResourceStats, backend);
+    super(application, bulkResourceStats, backend, tokenHandler);
   }
 
 

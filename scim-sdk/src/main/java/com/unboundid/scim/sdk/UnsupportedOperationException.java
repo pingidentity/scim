@@ -20,7 +20,7 @@ package com.unboundid.scim.sdk;
 /**
  * Signals the service provider does not support the requested operation.
  *
- * This exception corresponds to HTTP response code 403 FORBIDDEN.
+ * This exception corresponds to HTTP response code 501 (NOT IMPLEMENTED).
  */
 public class UnsupportedOperationException extends SCIMException
 {
@@ -31,6 +31,6 @@ public class UnsupportedOperationException extends SCIMException
    * @param errorMessage  The error message for this SCIM exception.
    */
   public UnsupportedOperationException(final String errorMessage) {
-    super(403, errorMessage);
+    super(501, errorMessage);
   }
 }
