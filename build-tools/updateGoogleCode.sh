@@ -18,7 +18,7 @@ svn checkout $COMMON_GOOGLE_OPTS --trust-server-cert https://scimsdk.googlecode.
 cd scimsdk
 
 CURRENT_REVISION=`cat .ubid-revision`
-LATEST_REVISION=`svn info $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
+LATEST_REVISION=`svn info $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
 echo "Google Code revision is $CURRENT_REVISION."
 echo "Latest CVSDude revision is $LATEST_REVISION."
 echo
@@ -86,7 +86,7 @@ do
     fi
 
     #If the tests pass, get the commit message for this revision, and use it when committing the changes to Google Code
-    LOG_MESSAGE=`svn log -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid-svn.cvsdude.com/components/scim/trunk`
+    LOG_MESSAGE=`svn log -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk`
 
     #Update state file (.ubid-revision)
     echo -n $IDX > .ubid-revision
@@ -99,3 +99,14 @@ do
       svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS --trust-server-cert
     fi
 done
+
+CURRENT_REVISION=`cat .ubid-revision`
+if [[ $CURRENT_REVISION -lt $LATEST_REVISION ]]
+then
+   echo "Updating .ubid-revision file..."
+   echo -n $LATEST_REVISION > .ubid-revision
+   svn commit -m "Updating .ubid-revision state file with the latest revision from the UnboundID repository." \
+     $COMMON_GOOGLE_OPTS --trust-server-cert .ubid-revision
+fi
+
+echo "Finished."
