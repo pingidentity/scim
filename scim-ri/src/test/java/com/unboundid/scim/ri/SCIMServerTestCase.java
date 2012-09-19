@@ -17,8 +17,6 @@
 
 package com.unboundid.scim.ri;
 
-import com.unboundid.directory.tests.externalinstance.TestCaseUtils;
-import com.unboundid.directory.tests.externalinstance.util.FutureCondition;
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
@@ -2397,31 +2395,23 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
                                5, TimeUnit.MINUTES,  // kill after idle
                                new LinkedBlockingQueue<Runnable>());
 
-    Future<?> future = null;
+    List<Future<?>> futures = new ArrayList<Future<?>>(numRequests);
     for (int i = 0; i < numRequests; i++)
     {
-      future = executor.submit(runnable);
+      futures.add(executor.submit(runnable));
     }
 
 
     // Make sure all the requests were completed.
-    future.get();
-    TestCaseUtils.assertFutureCondition(new FutureCondition(1000, 120)
+    for (int i = 0; i < numRequests; i++)
     {
-      @Override
-      public boolean testCondition() throws Exception
-      {
-        return numSuccessfulRequests.get() + numFailedRequests.get() ==
-               numRequests;
-      }
+      Future<?> f = futures.get(i);
+      f.get();
+    }
 
-      @Override
-      protected String getConditionDetails()
-      {
-        return "numSuccessfulRequests=" + numSuccessfulRequests +
-               " numFailedRequests=" + numFailedRequests;
-      }
-    });
+    assertEquals(numSuccessfulRequests.get() + numFailedRequests.get(),
+            numRequests, "numSuccessfulRequests=" + numSuccessfulRequests +
+               " numFailedRequests=" + numFailedRequests);
   }
 
 
