@@ -3,6 +3,49 @@ UnboundID SCIM SDK, Server Extension, and Reference Implementation Release Notes
 For full information, visit the project homepage:
 http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim
 
+---------- SCIM 1.2.0 ----------
+
+  * Release Date: October 31, 2012
+
+  * This is an upgrade release with some significant enhancements. Users of
+    previous releases are encouraged to upgrade.
+
+  * New Features
+
+     - Add support for authentication to SCIM via OAuth 2.0 bearer tokens. This
+       requires an OAuthTokenHandler extension built with the UnboundID Server
+       SDK in order to decode and validate tokens. Issue:DS-6763
+
+     - Add support for the PATCH operation in the SCIM SDK and server
+       implementation. This allows for resources to be partially updated without
+       having to send the entire contents of the resource across the network,
+       reducing network and processing overhead. This is especially beneficial
+       for resources with many attributes, such as Groups. Issue:DS-6853
+
+     - Comply with the SCIM 1.1 schema changes: The 'phoneNumbers' attribute now
+       uses the RFC3966 syntax, the group 'displayName' attribute now required,
+       the group 'members' attribute is no longer required. To accommodate for
+       possible differences in LDAP's phone number format, several arguments are
+       added to the new TelephoneNumberTransformation so that the mapping
+       behavior may be customized to fit the environment. Details about the
+       arguments are in the resources.xml file. Issue:DS-6892
+
+     - Add batch scripts so that the SCIM Reference Implementation tools can be
+       run on Windows. Issue:DS-6770
+
+  * Resolved Issues
+
+     - Fixed a bug with the XML un-marshaller where it didn't parse
+       multi-valued simple attributes correctly. Issue:DS-6892
+
+     - Make sure that the SCIM extension behaves correctly when soft-deletes are
+       enabled in the Directory Server. Issue:DS-6890
+
+     - Enhance the SCIMException code to handle more types of errors and add a
+       generic ConnectException to represent a true connection error where there
+       is no response from the target server. Issue:SCIM-287
+
+
 ---------- SCIM 1.1.1 ----------
 
   * Release Date: May 9, 2012
