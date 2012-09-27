@@ -21,8 +21,14 @@ import java.io.File;
 /**
  * Test coverage for the SCIM server extension running in the Proxy Server.
  * The test methods are inherited from the SCIMExtensionTestCase.
+ *
+ * NOTE: The SCIM-Extension module is being deprecated and moved into the core
+ *       build so please do not add new test cases in this class. Instead, add
+ *       them to the SCIMServerTestCase class in the SCIM-RI module. If the test
+ *       case will only work with a full Directory Server, please add them to
+ *       the SCIMHTTPServletExtensionTest class in the core build.
  */
-@Test(sequential = true)
+@Test(sequential = true, enabled = false)
 public class ProxyExtensionTestCase extends SCIMExtensionTestCase
 {
   /**

@@ -89,13 +89,13 @@ import static org.testng.Assert.fail;
  * running in the Directory Server, and serves as a base class to allow the
  * extension to be tested in the Proxy Server.
  *
- * NOTE: The scim-extension module is being deprecated and moved into the core
+ * NOTE: The SCIM-Extension module is being deprecated and moved into the core
  *       build so please do not add new test cases in this class. Instead, add
- *       them to the SCIMServerTestCase class in the scim-ri module. If the test
+ *       them to the SCIMServerTestCase class in the SCIM-RI module. If the test
  *       case will only work with a full Directory Server, please add them to
  *       the SCIMHTTPServletExtensionTest class in the core build.
  */
-@Test(sequential = true)
+@Test(sequential = true, enabled = false)
 public class SCIMExtensionTestCase extends ServerExtensionTestCase
 {
   /**
@@ -321,7 +321,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void enablePlugin() throws Exception
   {
     assertEquals(getMonitorAsString(scimInstance, "version"), Version.VERSION);
@@ -334,7 +334,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testGroupsAttribute() throws Exception
   {
     dsInstance.addEntry("dn: uid=testGroupMember1," + userBaseDN,
@@ -529,7 +529,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testPasswordModify() throws Exception
   {
     //Add an entry to the Directory
@@ -598,7 +598,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testCreate() throws Exception
   {
     //Create a new user
@@ -772,7 +772,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testModifyWithPut() throws Exception
   {
     //Add an entry to the Directory
@@ -882,7 +882,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testModifyWithPatch() throws Exception
   {
     //Add an entry to the Directory
@@ -1107,7 +1107,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testDelete() throws Exception
   {
     dsInstance.getConnectionPool().add(
@@ -1152,7 +1152,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testSoftDelete() throws Exception
   {
     //Enable soft-deletes on the DS instance
@@ -1232,7 +1232,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testRetrieve() throws Exception
   {
     testRetrieve(service, "HTTP");
@@ -1245,7 +1245,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testRetrieveSecure() throws Exception
   {
     testRetrieve(secureService, "HTTPS");
@@ -1337,7 +1337,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testFiltering() throws Exception
   {
     final SimpleDateFormat formatter =
@@ -1472,24 +1472,11 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
 
 
   /**
-   * Tests the password change operation via SCIM.
-   *
-   * @throws Exception If the test fails.
-   */
-  @Test(enabled = false)
-  public void testChangePassword() throws Exception
-  {
-    //This is an optional feature of the spec and has not been implemented yet.
-  }
-
-
-
-  /**
    * Tests Group resources and the groups attribute.
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testGroups() throws Exception
   {
     final SCIMEndpoint<GroupResource> groupEndpoint =
@@ -1675,7 +1662,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testPagination() throws Exception
   {
     // Create some users.
@@ -1756,7 +1743,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testMaxResults() throws Exception
   {
     // Lower the maxResults setting.
@@ -1794,7 +1781,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test passes.
    */
-  @Test(expectedExceptions = AssertionError.class)
+  @Test(expectedExceptions = AssertionError.class, enabled = false)
   public void testInvalidConfiguration() throws Exception
   {
     // Create a resources configuration that is not valid because it defines
@@ -1817,7 +1804,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testServiceProviderConfig() throws Exception
   {
     final ServiceProviderConfig config = service.getServiceProviderConfig();
@@ -1849,7 +1836,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception  If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBasicAuth() throws Exception
   {
     // Create a new user.
@@ -1885,7 +1872,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    * @throws SCIMException                  If the test fails.
    * @throws URISyntaxException             If the test fails.
    */
-  @Test(expectedExceptions = UnauthorizedException.class)
+  @Test(expectedExceptions = UnauthorizedException.class, enabled = false)
   public void testBasicAuthInvalidCredentials()
       throws UnauthorizedException, LDAPException, SCIMException,
              URISyntaxException
@@ -1912,7 +1899,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBulkJson() throws Exception
   {
     final MediaType origContentType = service.getContentType();
@@ -1938,7 +1925,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBulkXml() throws Exception
   {
     final MediaType origContentType = service.getContentType();
@@ -2154,7 +2141,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testInvalidBulk()
       throws Exception
   {
@@ -2264,7 +2251,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testDuplicateBulkId()
       throws Exception
   {
@@ -2306,7 +2293,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBulkMaxPayloadSize() throws Exception
   {
     final List<BulkOperation> operations = new ArrayList<BulkOperation>();
@@ -2379,7 +2366,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBulkMaxOperations() throws Exception
   {
     final List<BulkOperation> operations = new ArrayList<BulkOperation>();
@@ -2462,7 +2449,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testFailOnErrors() throws Exception
   {
     final List<BulkOperation> operations = new ArrayList<BulkOperation>();
@@ -2506,7 +2493,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBulkIdInPath() throws Exception
   {
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -2561,7 +2548,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testConcurrentBulkOperations() throws Exception
   {
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -2762,7 +2749,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testBulkMaxConcurrentRequests() throws Exception
   {
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -2866,7 +2853,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
    *
    * @throws Exception If the test fails.
    */
-  @Test
+  @Test(enabled = false)
   public void testConfigurationChange()
       throws Exception
   {

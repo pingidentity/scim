@@ -15,7 +15,14 @@ import java.io.File;
 /**
  * Tests the extension with the resource ID mapped to the LDAP entryUUID
  * attribute.
+ *
+ * NOTE: The SCIM-Extension module is being deprecated and moved into the core
+ *       build so please do not add new test cases in this class. Instead, add
+ *       them to the SCIMServerTestCase class in the SCIM-RI module. If the test
+ *       case will only work with a full Directory Server, please add them to
+ *       the SCIMHTTPServletExtensionTest class in the core build.
  */
+@Test(enabled = false)
 public class EntryUUIDMappingExtensionTestCase extends SCIMExtensionTestCase
 {
   /**
@@ -55,7 +62,7 @@ public class EntryUUIDMappingExtensionTestCase extends SCIMExtensionTestCase
   /**
    * {@inheritDoc}
    */
-  @Test
+  @Test(enabled = false)
   public void testConfigurationChange()
       throws Exception
   {
