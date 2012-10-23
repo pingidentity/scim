@@ -5,7 +5,7 @@ http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim
 
 ---------- SCIM 1.2.0 ----------
 
-  * Release Date: October 31, 2012
+  * Release Date: October 26, 2012
 
   * This is an upgrade release with some significant enhancements. Users of
     previous releases are encouraged to upgrade.

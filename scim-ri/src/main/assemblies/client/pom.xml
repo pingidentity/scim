@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-sdk</artifactId>
-            <version>1.1.1</version>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.wink</groupId>
@@ -73,11 +73,6 @@
             <groupId>org.apache.wink</groupId>
             <artifactId>wink-client</artifactId>
             <version>1.1.3-incubating</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.6.1</version>
         </dependency>
     </dependencies>
 </project>

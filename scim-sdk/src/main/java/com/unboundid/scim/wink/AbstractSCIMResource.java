@@ -832,14 +832,11 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * @return             {@code null} if the token was successfully validated,
    *                     otherwise a Response instance containing the error
    *                     information.
-   * @throws UnauthorizedException if it looks like the client tried to use
-   *         basic auth unsuccessfully.
    */
   static Response validateOAuthToken(final RequestContext context,
                                      final SCIMRequest request,
                                      final AtomicReference<String> authIDRef,
                                      final OAuthTokenHandler tokenHandlerImpl)
-                throws UnauthorizedException
   {
     HttpHeaders headers = context.getHeaders();
     List<String> headerList = headers.getRequestHeader("Authorization");
@@ -936,14 +933,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
         return invalidRequest(t.getMessage());
       }
     }
-    if(authorization.length == 2 &&
-        authorization[0].equalsIgnoreCase("Basic") &&
-          authorization[1].length() > 0)
+    else if(authorization.length == 2 &&
+              authorization[0].equalsIgnoreCase("Basic") &&
+                authorization[1].length() > 0)
     {
       //The client tried to do Basic Authentication, and since we made it here,
-      //it failed. The response should already have the WWW-Authenticate: Basic
-      //header set. We just need to throw an exception.
-      throw new UnauthorizedException("Invalid credentials");
+      //it failed.
+      Response.ResponseBuilder builder = Response.status(401);
+      builder.header("WWW-Authenticate", "Basic realm=SCIM");
+      return builder.build();
     }
     else
     {
