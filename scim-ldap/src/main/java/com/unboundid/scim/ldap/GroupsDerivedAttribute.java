@@ -35,6 +35,7 @@ import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
+import com.unboundid.util.StaticUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -216,7 +217,7 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       Debug.debugException(e);
       throw ResourceMapper.toSCIMException(
           "Error searching for values of the groups attribute: " +
-          e.getMessage(), e);
+          StaticUtils.getExceptionMessage(e), e);
     }
 
     if (values.isEmpty())

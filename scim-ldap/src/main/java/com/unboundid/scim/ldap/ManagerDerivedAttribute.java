@@ -19,15 +19,12 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
-import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
-import com.unboundid.scim.sdk.ServerErrorException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -127,38 +124,16 @@ public class ManagerDerivedAttribute extends DerivedAttribute
                                 getAttributeDescriptor().getName());
     if (scimAttribute != null)
     {
-      try
+      final SCIMAttribute managerId =
+          scimAttribute.getValue().getAttribute("managerId");
+      if (managerId == null)
       {
-        final SCIMAttribute managerId =
-            scimAttribute.getValue().getAttribute("managerId");
-        if (managerId == null)
-        {
-          throw new InvalidResourceException(
-              "The manager attribute does not have a managerId");
-        }
-        final String resourceID = managerId.getValue().getStringValue();
-        final String dn = searchResolver.getDnFromId(ldapInterface, resourceID);
-        attributes.add(new Attribute("manager", dn));
+        throw new InvalidResourceException(
+            "The manager attribute does not have a managerId");
       }
-      catch (SCIMException e)
-      {
-        Debug.debugException(e);
-        throw e;
-      }
-      catch (LDAPException e)
-      {
-        Debug.debugException(e);
-        throw ResourceMapper.toSCIMException(
-            "Error mapping managerId to a manager DN: " +
-            e.getMessage(), e);
-      }
-      catch (Exception e)
-      {
-        Debug.debugException(e);
-        throw new ServerErrorException(
-            "Error mapping managerId to a manager DN: " +
-            e.getMessage());
-      }
+      final String resourceID = managerId.getValue().getStringValue();
+      final String dn = searchResolver.getDnFromId(ldapInterface, resourceID);
+      attributes.add(new Attribute("manager", dn));
     }
   }
 }

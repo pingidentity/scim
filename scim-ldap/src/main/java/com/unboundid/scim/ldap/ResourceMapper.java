@@ -1600,6 +1600,10 @@ public class ResourceMapper
   {
     switch (e.getResultCode().intValue())
     {
+      case ResultCode.NO_SUCH_ATTRIBUTE_INT_VALUE:
+      case ResultCode.INVALID_ATTRIBUTE_SYNTAX_INT_VALUE:
+        return SCIMException.createException(400, errorMessage);
+
       case ResultCode.INVALID_CREDENTIALS_INT_VALUE:
         return SCIMException.createException(401, errorMessage);
 
@@ -1615,7 +1619,7 @@ public class ResourceMapper
         return SCIMException.createException(409, errorMessage);
 
       default:
-        return SCIMException.createException(400, errorMessage);
+        return SCIMException.createException(500, errorMessage);
     }
   }
 }
