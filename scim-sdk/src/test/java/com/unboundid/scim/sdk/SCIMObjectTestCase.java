@@ -28,6 +28,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 import java.util.Collection;
 import java.util.Date;
@@ -61,6 +62,11 @@ public class SCIMObjectTestCase
         SCIMAttribute.create(
             CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "id"),
             SCIMAttributeValue.createStringValue(uuid.toString()));
+
+    final SCIMAttribute userName =
+        SCIMAttribute.create(
+            CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "userName"),
+            SCIMAttributeValue.createStringValue("bjensen@example.com"));
 
     final SCIMAttribute name = SCIMAttribute.create(
         CoreSchema.USER_DESCRIPTOR.getAttribute(coreSchema, "name"),
@@ -96,6 +102,25 @@ public class SCIMObjectTestCase
             CoreSchema.USER_DESCRIPTOR.getAttribute(enterpriseUserSchema,
                 "employeeNumber"),
             SCIMAttributeValue.createStringValue("1000001"));
+
+    final AttributeDescriptor managerDescriptor =
+        CoreSchema.USER_DESCRIPTOR.getAttribute(enterpriseUserSchema,
+            "manager");
+    final SCIMAttribute incompleteManager =
+        SCIMAttribute.create(managerDescriptor,
+            SCIMAttributeValue.createComplexValue(
+                SCIMAttribute.create(
+                    managerDescriptor.getSubAttribute("displayName"),
+                    SCIMAttributeValue.createStringValue("incomplete"))));
+    final SCIMAttribute completeManager =
+        SCIMAttribute.create(managerDescriptor,
+            SCIMAttributeValue.createComplexValue(
+                SCIMAttribute.create(
+                    managerDescriptor.getSubAttribute("managerId"),
+                    SCIMAttributeValue.createStringValue("manid")),
+                SCIMAttribute.create(
+                    managerDescriptor.getSubAttribute("displayName"),
+                    SCIMAttributeValue.createStringValue("complete"))));
 
     final SCIMObject user = new SCIMObject();
     assertTrue(user.addAttribute(userID));
@@ -154,8 +179,42 @@ public class SCIMObjectTestCase
     assertFalse(user.addAttribute(meta));
     user.setAttribute(meta);
 
+    try
+    {
+      user.checkSchema(CoreSchema.USER_DESCRIPTOR, false);
+      fail("Schema checking should have failed due to missing required attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected
+    }
+
+    // Add the required attribute and try again.
+    user.addAttribute(userName);
+    user.checkSchema(CoreSchema.USER_DESCRIPTOR, true);
+
+    user.addAttribute(incompleteManager);
+
+    try
+    {
+      user.checkSchema(CoreSchema.USER_DESCRIPTOR, true);
+      fail("Schema checking should have failed due to missing required " +
+          "sub-attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected
+    }
+
+    user.removeAttribute(enterpriseUserSchema, "manager");
+    user.addAttribute(completeManager);
+
+    user.checkSchema(CoreSchema.USER_DESCRIPTOR, true);
+
     assertTrue(user.removeAttribute(coreSchema, "id"));
     assertFalse(user.removeAttribute(coreSchema, "id"));
+    assertTrue(user.removeAttribute(coreSchema, "userName"));
+    assertFalse(user.removeAttribute(coreSchema, "userName"));
     assertTrue(user.removeAttribute(coreSchema, "meta"));
     assertFalse(user.removeAttribute(coreSchema, "meta"));
     assertTrue(user.removeAttribute(coreSchema, "name"));
@@ -165,6 +224,7 @@ public class SCIMObjectTestCase
     assertFalse(user.hasSchema(coreSchema));
 
     assertTrue(user.removeAttribute(enterpriseUserSchema, "employeeNumber"));
+    assertTrue(user.removeAttribute(enterpriseUserSchema, "manager"));
     assertFalse(user.hasSchema(enterpriseUserSchema));
 
     assertTrue(user.getSchemas().isEmpty());

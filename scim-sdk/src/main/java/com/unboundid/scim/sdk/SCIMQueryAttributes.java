@@ -144,7 +144,7 @@ public class SCIMQueryAttributes
    *                            explicitly requested, or {@code null} if all
    *                            attributes are requested.
    */
-  private SCIMQueryAttributes(
+  public SCIMQueryAttributes(
       final Map<AttributeDescriptor,Set<AttributeDescriptor>> descriptors)
   {
     this.allAttributesRequested = (descriptors == null);

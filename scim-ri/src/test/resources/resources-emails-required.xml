@@ -18,10 +18,14 @@
 <scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
 
   <!--
-   ! This SCIM configuration file defines a mapping almost identical to
-   ! the one shipped with the SCIM servlet extension. The difference is that
-   ! the SCIM resource ID is mapped to the LDAP entryUUID attribute instead
-   ! of the LDAP entry DN.
+   ! This configuration file serves two purposes.
+   !
+   ! 1. It defines the SCIM Resource Schema. The Resource Schema is
+   !    generated from this configuration file in the forms specified in
+   !    the SCIM protocol.
+   !
+   ! 2. It may also specify a mapping between SCIM and LDAP for the resources.
+   !
    !-->
 
   <!-- SCIM User with a mapping to inetOrgPerson -->
@@ -201,14 +205,10 @@
     </attribute>
 
     <attribute name="emails" schema="urn:scim:schemas:core:1.0"
-               readOnly="false" required="false">
+               readOnly="false" required="true">
       <description>E-mail addresses for the User</description>
       <simpleMultiValued childName="email" dataType="string">
-        <canonicalValue name="work">
-          <subMapping name="value" ldapAttribute="mail"/>
-        </canonicalValue>
-        <canonicalValue name="home"/>
-        <canonicalValue name="other"/>
+        <mapping ldapAttribute="mail"/>
       </simpleMultiValued>
     </attribute>
 
@@ -219,7 +219,26 @@
         <canonicalValue name="work">
           <subMapping name="value" ldapAttribute="telephoneNumber"
                       transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <!--
+             ! The ISO 3166-1 two-letter region code that denotes the expected
+             ! region of the phone numbers. This is only used if the number
+             ! being canonicalized is not written in international format.
+             !-->
             <defaultCountry>US</defaultCountry>
+            <!--
+             ! The format to use when transforming phone numbers between RFC3966
+             ! and LDAP formats. The allowable values are: {INTERNATIONAL,
+             ! NATIONAL, E164, RFC3966}. The INTERNATIONAL and NATIONAL formats
+             ! are consistent with the definition in ITU-T Recommendation
+             ! E. 123. For example, the following number will be written as
+             ! "+1 512-345-6789" in INTERNATIONAL format, and as
+             ! "(512) 345-6789" in NATIONAL format. E164 format is as per
+             ! INTERNATIONAL format but with no formatting applied,
+             ! e.g. "+15123456789". RFC3966 is as per INTERNATIONAL format, but
+             ! with all spaces and other separating symbols replaced with a
+             ! hyphen, and with any phone number extension appended with
+             ! ";ext=".
+             !-->
             <ldapFormat>INTERNATIONAL</ldapFormat>
           </subMapping>
         </canonicalValue>
@@ -251,6 +270,7 @@
             <ldapFormat>INTERNATIONAL</ldapFormat>
           </subMapping>
         </canonicalValue>
+        <canonicalValue name="other"/>
       </simpleMultiValued>
     </attribute>
 
@@ -452,7 +472,7 @@
     </LDAPAdd>
 
     <attribute name="displayName" schema="urn:scim:schemas:core:1.0"
-               readOnly="false" required="false">
+               readOnly="false" required="true">
       <description>A human readable name for the Group</description>
       <simple dataType="string">
         <mapping ldapAttribute="cn"/>
@@ -460,7 +480,7 @@
     </attribute>
 
     <attribute name="members" schema="urn:scim:schemas:core:1.0"
-               readOnly="false" required="true">
+               readOnly="false" required="false">
       <description>A list of members of the Group</description>
       <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute">
         <LDAPSearchRef idref="userSearchParams"/>
@@ -482,9 +502,10 @@
     <baseDN>ou=people,dc=example,dc=com</baseDN>
     <filter>(objectClass=inetOrgPerson)</filter>
     <!--
-     ! Map the user resource ID to entryUUID rather than DN.
+     ! Uncomment the following line to map the user resource ID to entryUUID
+     ! rather than DN.
      !-->
-    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
+    <!--<resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>-->
   </LDAPSearch>
 
   <!--
@@ -496,9 +517,10 @@
     <baseDN>dc=example,dc=com</baseDN>
     <filter>(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
     <!--
-     ! Map the group resource ID to entryUUID rather than DN.
+     ! Uncomment the following line to map the group resource ID to entryUUID
+     ! rather than DN.
      !-->
-    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
+    <!--<resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>-->
   </LDAPSearch>
 
 </scim-ldap:resources>

@@ -36,6 +36,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkResponse;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
@@ -786,9 +787,21 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
     UserResource manager = userEndpoint.newResource();
-    manager.setUserName("myManager");
     manager.setName(
         new Name("Mr. Manager", "Manager", null, null, "Mr.", null));
+
+    // Try to create the user with a missing required attribute
+    try
+    {
+      userEndpoint.create(manager);
+      fail("Expected a 400 response when trying to create user with " +
+          "missing required attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    manager.setUserName("myManager");
     manager = userEndpoint.create(manager);
 
     UserResource user = userEndpoint.newResource();
@@ -805,10 +818,12 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     user.setEmails(emails);
     user.setLocale(Locale.US.getDisplayName());
     user.setTimeZone(TimeZone.getDefault().getID());
+
+    // Set a missing required sub-attribute (managerId)
     user.setSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
             Manager.MANAGER_RESOLVER,
-            new Manager(manager.getId(), "Mr. Manager"));
+            new Manager(null, "Mr. Manager"));
 
     //Verify basic properties of UserResource
     assertEquals(user.getUserName(), "jdoe");
@@ -824,14 +839,35 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
             Manager.MANAGER_RESOLVER).getDisplayName(), "Mr. Manager");
 
+    // Try to create the user with a missing required sub-attribute
+    long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
+    try
+    {
+      userEndpoint.create(user);
+      fail("Expected a 400 response when trying to create user with " +
+          "missing required attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
+    user.setSingularAttributeValue(
+        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+        Manager.MANAGER_RESOLVER,
+        new Manager(manager.getId(), "Mr. Manager"));
+
     //Mark the start and end time with a 500ms buffer on either side, because
     //the Directory Server will record the actual createTimestamp using the
     //TimeThread, which only updates once every 100ms.
     Date startTime = new Date(System.currentTimeMillis() - 500);
-    long beforeCount =
+    beforeCount =
         getStatsForResource("User").getStat(ResourceStats.POST_OK);
     UserResource returnedUser = userEndpoint.create(user);
-    long afterCount =
+    afterCount =
         getStatsForResource("User").getStat(ResourceStats.POST_OK);
     Date createTime = returnedUser.getMeta().getCreated();
     Date endTime = new Date(System.currentTimeMillis() + 500);
@@ -891,12 +927,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(testDS.bind(entry.getDN(), "newPassword").getResultCode(),
         ResultCode.SUCCESS);
 
-    System.out.println("Full user entry:\n" + entry.toLDIFString());
-
     // Verify that a query returns all attributes including extension
     // attributes.
     returnedUser = userEndpoint.query("userName eq \"jdoe\"").iterator().next();
-    System.out.println(returnedUser);
     assertEquals(returnedUser.getSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
             Manager.MANAGER_RESOLVER).getManagerId(),
@@ -945,8 +978,6 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(groupEntry.getAttributeValue("cn"), "Engineering");
     assertTrue(groupEntry.getAttributeValue("uniqueMember").
         equalsIgnoreCase(entry.getDN()), entry.toLDIFString());
-
-    System.out.println("Full group entry:\n" + groupEntry.toLDIFString());
   }
 
 
@@ -1043,6 +1074,24 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     // Again, an update with the previously returned content should not fail.
     userEndpoint.update(returnedUser);
+
+    // Try to put the user with a missing required attribute
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_BAD_REQUEST);
+    returnedUser.setUserName(null);
+    try
+    {
+      userEndpoint.update(returnedUser);
+      fail("Expected a 400 response when trying to create user with " +
+          "missing required attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
 
     beforeCount =
         getStatsForResource("User").getStat(ResourceStats.PUT_NOT_FOUND);
@@ -1293,6 +1342,24 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(returnedUser.getSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
             AttributeValueResolver.STRING_RESOLVER), "456");
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_BAD_REQUEST);
+    attrsToDelete = Collections.unmodifiableList(
+        asList("userName"));
+    try
+    {
+      userEndpoint.update(user.getId(), null, null, attrsToDelete, null);
+      fail("Expected a 400 response when trying to patch user by " +
+          "deleting required attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
   }
 
 

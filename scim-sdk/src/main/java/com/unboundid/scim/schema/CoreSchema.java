@@ -450,7 +450,7 @@ public class CoreSchema
       AttributeDescriptor.createSubAttribute("managerId",
           AttributeDescriptor.DataType.STRING,
           "The id of the SCIM resource representing the User's manager",
-          SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, false, false);
+          SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, false, true, false);
   private static final AttributeDescriptor MANAGER_DISPLAY_NAME =
       AttributeDescriptor.createSubAttribute("displayName",
           AttributeDescriptor.DataType.STRING,
@@ -834,4 +834,9 @@ public class CoreSchema
    * The SCIM AttributeDescriptor for the id attribute.
    */
   public static final AttributeDescriptor ID_DESCRIPTOR = ID;
+
+  /**
+   * The SCIM AttributeDescriptor for the externalId attribute.
+   */
+  public static final AttributeDescriptor EXTERNAL_ID_DESCRIPTOR = EXTERNAL_ID;
 }

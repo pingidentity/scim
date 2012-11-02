@@ -659,7 +659,19 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       else
       {
-        response = clientResource.invoke("PATCH", ClientResponse.class, output);
+        try
+        {
+          // WINK client doesn't have an invoke method where it always
+          // returns a ClientResponse like the other put, post, and get methods.
+          // This throws a ClientWebException if the server returns a non 200
+          // code.
+          response =
+              clientResource.invoke("PATCH", ClientResponse.class, output);
+        }
+        catch (ClientWebException e)
+        {
+          response = e.getResponse();
+        }
       }
 
       entity = response.getEntity(InputStream.class);

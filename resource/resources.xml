@@ -434,7 +434,7 @@
         <LDAPSearchRef idref="userSearchParams"/>
       </derivation>
       <complex>
-        <subAttribute name="managerId" dataType="string">
+        <subAttribute name="managerId" dataType="string" required="true" >
           <description>The id of the SCIM resource representing the User's
               manager</description>
         </subAttribute>

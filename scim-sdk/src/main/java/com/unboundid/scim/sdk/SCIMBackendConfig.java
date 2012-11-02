@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.sdk;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -30,6 +31,11 @@ public class SCIMBackendConfig
    * The maximum number of resources that are returned in a response.
    */
   private final AtomicInteger maxResults = new AtomicInteger(Integer.MAX_VALUE);
+
+  /**
+   * Whether to perform schema checking.
+   */
+  private final AtomicBoolean checkSchema = new AtomicBoolean(true);
 
 
 
@@ -52,5 +58,31 @@ public class SCIMBackendConfig
   public void setMaxResults(final int maxResults)
   {
     this.maxResults.set(maxResults);
+  }
+
+
+
+  /**
+   * Whether to perform schema checking.
+   *
+   * @return {@code true} to perform schema checking and
+   *         {@code false} otherwise.
+   */
+  public boolean isCheckSchema()
+  {
+    return checkSchema.get();
+  }
+
+
+
+  /**
+   * Specify whether to perform schema checking.
+   *
+   * @param checkSchema {@code true} to perform schema checking and
+   *                    {@code false} otherwise.
+   */
+  public void setCheckSchema(final boolean checkSchema)
+  {
+    this.checkSchema.set(checkSchema);
   }
 }

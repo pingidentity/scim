@@ -17,6 +17,10 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.CoreSchema;
+import com.unboundid.scim.schema.ResourceDescriptor;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -177,14 +181,7 @@ public class SCIMObject
     final LinkedHashMap<String, SCIMAttribute> attrs =
         attributes.get(toLowerCase(schema));
 
-    if (attrs == null)
-    {
-      return false;
-    }
-    else
-    {
-      return attrs.containsKey(toLowerCase(name));
-    }
+    return attrs != null && attrs.containsKey(toLowerCase(name));
   }
 
 
@@ -324,13 +321,92 @@ public class SCIMObject
     final String attributeName = filter.getFilterAttribute().getAttributeName();
 
     final SCIMAttribute attribute = getAttribute(schema, attributeName);
-    if (attribute == null)
-    {
-      return false;
-    }
+    return attribute != null && attribute.matchesFilter(filter);
 
-    return attribute.matchesFilter(filter);
   }
+
+
+
+  /**
+   * Check this object for potential schema violations based on the provided
+   * resource descriptor.
+   *
+   *
+   * @param resourceDescriptor The ResourceDescriptor to check against.
+   * @param includeCommonAttributes Whether to enforce the schema for common
+   *                                attributes like id and meta.
+   * @throws InvalidResourceException If a schema violation is found.
+   */
+  public void checkSchema(final ResourceDescriptor resourceDescriptor,
+                          final boolean includeCommonAttributes)
+      throws InvalidResourceException
+  {
+    // Make sure all required attributes are present
+    for(String schema : resourceDescriptor.getAttributeSchemas())
+    {
+      for(AttributeDescriptor attributeDescriptor :
+          resourceDescriptor.getAttributes(schema))
+      {
+        if(!includeCommonAttributes &&
+            (attributeDescriptor.equals(CoreSchema.ID_DESCRIPTOR) ||
+                attributeDescriptor.equals(CoreSchema.META_DESCRIPTOR) ||
+                attributeDescriptor.equals(CoreSchema.EXTERNAL_ID_DESCRIPTOR)))
+        {
+          continue;
+        }
+
+        if(attributeDescriptor.isRequired())
+        {
+          if(!hasAttribute(schema, attributeDescriptor.getName()))
+          {
+            throw new InvalidResourceException("Attribute '" +
+                schema + ":" + attributeDescriptor.getName() +
+                "' is required");
+          }
+        }
+        else
+        {
+          Collection<AttributeDescriptor> subAttributes =
+              attributeDescriptor.getSubAttributes();
+          SCIMAttribute attribute =
+              getAttribute(schema, attributeDescriptor.getName());
+          if(subAttributes != null && attribute != null)
+          {
+            // Make sure all required sub-attributes are present as well
+            for(AttributeDescriptor subAttribute : subAttributes)
+            {
+              if(subAttribute.isRequired())
+              {
+                if(attributeDescriptor.isMultiValued())
+                {
+                  for(SCIMAttributeValue value : attribute.getValues())
+                  {
+                    if(!value.hasAttribute(subAttribute.getName()))
+                    {
+                      throw new InvalidResourceException("Sub-Attribute '" +
+                          schema + ":" + attributeDescriptor.getName() + "." +
+                          subAttribute.getName() + "' is required for all " +
+                          "values of the multi-valued attribute");
+                    }
+                  }
+                }
+                else
+                {
+                  if(!attribute.getValue().hasAttribute(subAttribute.getName()))
+                  {
+                    throw new InvalidResourceException("Sub-Attribute '" +
+                        schema + ":" + attributeDescriptor.getName() + "." +
+                        subAttribute.getName() + "' is required");
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
 
 
   /**
@@ -347,11 +423,8 @@ public class SCIMObject
 
     SCIMObject that = (SCIMObject) o;
 
-    if (!attributes.equals(that.attributes)) {
-      return false;
-    }
+    return attributes.equals(that.attributes);
 
-    return true;
   }
 
 
