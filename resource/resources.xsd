@@ -172,7 +172,7 @@
 
   <xs:complexType name="LDAPSearchParameters">
     <xs:sequence>
-      <xs:element name="baseDN" type="xs:string" maxOccurs="1"/>
+      <xs:element name="baseDN" type="xs:string" maxOccurs="unbounded"/>
       <xs:element name="filter" type="xs:string"/>
       <xs:element name="resourceIDMapping" type="ResourceIDMapping"
                   minOccurs="0" maxOccurs="1"/>

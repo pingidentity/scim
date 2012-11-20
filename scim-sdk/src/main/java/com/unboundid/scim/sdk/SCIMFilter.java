@@ -101,8 +101,30 @@ public class SCIMFilter
   public static SCIMFilter parse(final String filterString)
       throws SCIMException
   {
-    final FilterParser parser = new FilterParser(filterString);
+    final FilterParser parser = new FilterParser(filterString,
+                                                 SCIMConstants.SCHEMA_URI_CORE);
+    return parser.parse();
+  }
 
+
+
+  /**
+   * Parse a filter from its string representation.
+   *
+   * @param filterString  The string representation of the filter expression.
+   * @param defaultSchema The default schema that should be assumed when parsing
+   *                      attributes without the schema explicitly defined in
+   *                      the URN.
+   *
+   * @return  The parsed filter.
+   *
+   * @throws  SCIMException  If the filter string could not be parsed.
+   */
+  public static SCIMFilter parse(final String filterString,
+                                 final String defaultSchema)
+          throws SCIMException
+  {
+    final FilterParser parser = new FilterParser(filterString, defaultSchema);
     return parser.parse();
   }
 

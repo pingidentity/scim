@@ -39,10 +39,12 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
 
+import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_BASE_ID;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_FILTER;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_PAGE_SIZE;
 import static com.unboundid.scim.sdk.SCIMConstants.
     QUERY_PARAMETER_PAGE_START_INDEX;
+import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SCOPE;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_BY;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
 
@@ -84,6 +86,9 @@ public class SCIMResource extends AbstractSCIMResource
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
    * @param filterString     The filter query parameter, or {@code null}.
+   * @param baseID           The SCIM resource ID of the search base entry,
+   *                         or {@code null}.
+   * @param searchScope      The LDAP search scope to use, or {@code null}.
    * @param sortBy           The sortBy query parameter, or {@code null}.
    * @param sortOrder        The sortOrder query parameter, or {@code null}.
    * @param pageStartIndex   The startIndex query parameter, or {@code null}.
@@ -99,6 +104,10 @@ public class SCIMResource extends AbstractSCIMResource
                             @Context final UriInfo uriInfo,
                             @QueryParam(QUERY_PARAMETER_FILTER)
                             final String filterString,
+                            @QueryParam(QUERY_PARAMETER_BASE_ID)
+                            final String baseID,
+                            @QueryParam(QUERY_PARAMETER_SCOPE)
+                            final String searchScope,
                             @QueryParam(QUERY_PARAMETER_SORT_BY)
                             final String sortBy,
                             @QueryParam(QUERY_PARAMETER_SORT_ORDER)
@@ -113,8 +122,8 @@ public class SCIMResource extends AbstractSCIMResource
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
 
-    return getUsers(requestContext, filterString, sortBy, sortOrder,
-                    pageStartIndex, pageSize);
+    return getUsers(requestContext, filterString, baseID, searchScope,
+                    sortBy, sortOrder, pageStartIndex, pageSize);
   }
 
 
@@ -127,6 +136,9 @@ public class SCIMResource extends AbstractSCIMResource
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
    * @param filterString     The filter query parameter, or {@code null}.
+   * @param baseID           The SCIM resource ID of the search base entry,
+   *                         or {@code null}.
+   * @param searchScope      The LDAP search scope to use, or {@code null}.
    * @param sortBy           The sortBy query parameter, or {@code null}.
    * @param sortOrder        The sortOrder query parameter, or {@code null}.
    * @param pageStartIndex   The startIndex query parameter, or {@code null}.
@@ -142,6 +154,10 @@ public class SCIMResource extends AbstractSCIMResource
                            @Context final UriInfo uriInfo,
                            @QueryParam(QUERY_PARAMETER_FILTER)
                            final String filterString,
+                           @QueryParam(QUERY_PARAMETER_BASE_ID)
+                           final String baseID,
+                           @QueryParam(QUERY_PARAMETER_SCOPE)
+                           final String searchScope,
                            @QueryParam(QUERY_PARAMETER_SORT_BY)
                            final String sortBy,
                            @QueryParam(QUERY_PARAMETER_SORT_ORDER)
@@ -156,8 +172,8 @@ public class SCIMResource extends AbstractSCIMResource
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
 
-    return getUsers(requestContext, filterString, sortBy, sortOrder,
-                    pageStartIndex, pageSize);
+    return getUsers(requestContext, filterString, baseID, searchScope,
+                    sortBy, sortOrder, pageStartIndex, pageSize);
   }
 
 

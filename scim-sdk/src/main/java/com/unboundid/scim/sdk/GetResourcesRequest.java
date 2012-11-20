@@ -35,6 +35,16 @@ public final class GetResourcesRequest extends ResourceReturningRequest
   private final SCIMFilter filter;
 
   /**
+   * The SCIM resource ID of the search base entry.
+   */
+  private final String baseID;
+
+  /**
+   * The LDAP search scope to use.
+   */
+  private final String searchScope;
+
+  /**
    * The sorting parameters of the request.
    */
   private final SortParameters sortParameters;
@@ -55,6 +65,10 @@ public final class GetResourcesRequest extends ResourceReturningRequest
    * @param resourceDescriptor    The ResourceDescriptor associated with this
    *                              request.
    * @param filter                The filter parameters of the request.
+   * @param baseID                The SCIM resource ID of the search base entry,
+   *                              or {@code null}.
+   * @param searchScope           The LDAP search scope to use, or {@code null}
+   *                              if the default (whole-subtree) should be used.
    * @param sortParameters        The sorting parameters of the request.
    * @param pageParameters        The pagination parameters of the request.
    * @param attributes            The set of requested attributes.
@@ -63,12 +77,16 @@ public final class GetResourcesRequest extends ResourceReturningRequest
                              final String authenticatedUserID,
                              final ResourceDescriptor resourceDescriptor,
                              final SCIMFilter filter,
+                             final String baseID,
+                             final String searchScope,
                              final SortParameters sortParameters,
                              final PageParameters pageParameters,
                              final SCIMQueryAttributes attributes)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
     this.filter         = filter;
+    this.baseID         = baseID;
+    this.searchScope    = searchScope;
     this.sortParameters = sortParameters;
     this.pageParameters = pageParameters;
   }
@@ -83,6 +101,29 @@ public final class GetResourcesRequest extends ResourceReturningRequest
   public SCIMFilter getFilter()
   {
     return filter;
+  }
+
+
+  /**
+   * Retrieve the base-id parameter of the request.
+   *
+   * @return  The base-id parameter of the request.
+   */
+  public String getBaseID()
+  {
+    return baseID;
+  }
+
+
+
+  /**
+   * Retrieve the scope parameter of the request.
+   *
+   * @return  The scope parameter of the request.
+   */
+  public String getSearchScope()
+  {
+    return searchScope;
   }
 
 

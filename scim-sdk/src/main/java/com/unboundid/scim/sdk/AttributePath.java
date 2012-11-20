@@ -17,6 +17,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.schema.CoreSchema;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,6 +107,60 @@ public class AttributePath
     {
       return new AttributePath(SCIMConstants.SCHEMA_URI_CORE, attributeName,
                                subAttributeName);
+    }
+  }
+
+
+
+  /**
+   * Parse an attribute path.
+   *
+   * @param path  The attribute path.
+   * @param defaultSchema The default schema to assume for attributes that do
+   *                      not have the schema part of the urn specified. The
+   *                      'id', 'externalId', and 'meta' attributes will always
+   *                      assume the SCIM Core schema.
+   *
+   * @return The parsed attribute path.
+   */
+  public static AttributePath parse(final String path,
+                                    final String defaultSchema)
+  {
+    final Matcher matcher = pattern.matcher(path);
+
+    if (!matcher.matches() || matcher.groupCount() != 5)
+    {
+      throw new IllegalArgumentException(
+              String.format(
+                "'%s' does not match '[schema:]attr[.sub-attr]' format", path));
+    }
+
+    final String attributeSchema = matcher.group(2);
+    final String attributeName = matcher.group(3);
+    final String subAttributeName = matcher.group(5);
+
+    if (attributeSchema != null)
+    {
+      return new AttributePath(attributeSchema, attributeName,
+              subAttributeName);
+    }
+    else
+    {
+      if (attributeName.equalsIgnoreCase(
+                  CoreSchema.ID_DESCRIPTOR.getName()) ||
+          attributeName.equalsIgnoreCase(
+                  CoreSchema.EXTERNAL_ID_DESCRIPTOR.getName()) ||
+          attributeName.equalsIgnoreCase(
+                  CoreSchema.META_DESCRIPTOR.getName()))
+      {
+        return new AttributePath(SCIMConstants.SCHEMA_URI_CORE, attributeName,
+                subAttributeName);
+      }
+      else
+      {
+        return new AttributePath(defaultSchema, attributeName,
+                subAttributeName);
+      }
     }
   }
 

@@ -65,6 +65,12 @@ public class ResourceDescriptor extends BaseResource
   private Map<String, Map<String, AttributeDescriptor>> attributesCache;
 
   /**
+   * Whether to use "strict mode" when looking up an attribute
+   * that doesn't exist in the attributesCache.
+   */
+  private boolean strictMode = true;
+
+  /**
    * Constructs a new ResourceDescriptor from a existing SCIMObject.
    *
    * @param resourceDescriptor The Resource Schema descriptor.
@@ -97,7 +103,6 @@ public class ResourceDescriptor extends BaseResource
                                           final String name)
       throws InvalidResourceException
   {
-    // TODO: Should we implement a strict and non strict mode?
     initAttributesCache();
     AttributeDescriptor attributeDescriptor = null;
     Map<String, AttributeDescriptor> map =
@@ -108,9 +113,18 @@ public class ResourceDescriptor extends BaseResource
     }
     if(attributeDescriptor == null)
     {
-      throw new InvalidResourceException("Attribute " + schema +
-          SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + name +
-          " is not defined for resource " + getName());
+      if (strictMode)
+      {
+        throw new InvalidResourceException("Attribute " + schema +
+            SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + name +
+            " is not defined for resource " + getName());
+      }
+      else
+      {
+        attributeDescriptor = AttributeDescriptor.createAttribute(name,
+                AttributeDescriptor.DataType.STRING, null, schema,
+                true, false, false);
+      }
     }
     return attributeDescriptor;
   }
@@ -161,7 +175,20 @@ public class ResourceDescriptor extends BaseResource
         AttributeValueResolver.STRING_RESOLVER);
   }
 
-
+  /**
+   * Sets the "strict mode" for this ResourceDescriptor. If strict mode is off,
+   * then a call to {@link #getAttribute(String, String)} where the requested
+   * attribute does not exist in the attributesCache will result in the method
+   * generating an AttributeDescriptor on the fly. If strict mode were on in
+   * this case, it would throw an exception because that attribute was not
+   * defined.
+   *
+   * @param strictMode a boolean indicating whether to use strict mode or not.
+   */
+  public void setStrictMode(final boolean strictMode)
+  {
+    this.strictMode = strictMode;
+  }
 
   /**
    * Sets the name of the resource to be used in any external representation
@@ -183,8 +210,6 @@ public class ResourceDescriptor extends BaseResource
     return this;
   }
 
-
-
   /**
    * Retrieves the list of all attribute descriptors defined in the resource.
    *
@@ -196,8 +221,6 @@ public class ResourceDescriptor extends BaseResource
     return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
         "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER);
   }
-
-
 
   /**
    * Sets the list of attribute descriptors for the resource.
@@ -218,8 +241,6 @@ public class ResourceDescriptor extends BaseResource
     }
     return this;
   }
-
-
 
   /**
    * Returns the resource's XML schema (namespace) name.
@@ -290,7 +311,6 @@ public class ResourceDescriptor extends BaseResource
     return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
         "endpoint", AttributeValueResolver.STRING_RESOLVER);
   }
-
 
   /**
    * Sets the Resource's HTTP addressable endpoint relative to the

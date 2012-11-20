@@ -207,9 +207,13 @@ public class GroupsDerivedAttribute extends DerivedAttribute
         // that satisfies the search param. This should give us all static
         // groups (including virtual static groups) that the entry is a member
         // of as well as all dynamic groups that satisfy the search params.
-        findGroupsForMember(entry, ldapInterface, groupResolver.getBaseDN(),
-            groupsFilter(entry.getDN(), true), values, new LinkedList<DN>(),
-            false);
+        final List<DN> visitedGroups = new LinkedList<DN>();
+        for (DN baseDN : groupResolver.getBaseDNs())
+        {
+          findGroupsForMember(entry, ldapInterface, baseDN.toString(),
+              groupsFilter(entry.getDN(), true), values, visitedGroups,
+              false);
+        }
       }
     }
     catch (LDAPException e)

@@ -21,6 +21,7 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -80,7 +81,8 @@ public class SCIMQueryAttributes
         {
           for (final String a : paths)
           {
-            final AttributePath path = AttributePath.parse(a);
+            final AttributePath path = AttributePath.parse(a,
+                                          resourceDescriptor.getSchema());
             final AttributeDescriptor attributeDescriptor =
                 resourceDescriptor.getAttribute(path.getAttributeSchema(),
                                                 path.getAttributeName());
@@ -182,6 +184,18 @@ public class SCIMQueryAttributes
   {
     return allAttributesRequested() ||
            descriptors.containsKey(attributeDescriptor);
+  }
+
+
+
+  /**
+   * Returns the map of requested attributes and sub-attributes.
+   *
+   * @return an unmodifiable map of the requested attributes.
+   */
+  public Map<AttributeDescriptor, Set<AttributeDescriptor>> getDescriptors()
+  {
+    return Collections.unmodifiableMap(descriptors);
   }
 
 

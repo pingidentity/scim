@@ -216,6 +216,9 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    *
    * @param requestContext   The request context.
    * @param filterString     The filter query parameter, or {@code null}.
+   * @param baseID           The SCIM resource ID of the search base entry,
+   *                         or {@code null}.
+   * @param searchScope      The LDAP search scope to use, or {@code null}.
    * @param sortBy           The sortBy query parameter, or {@code null}.
    * @param sortOrder        The sortOrder query parameter, or {@code null}.
    * @param pageStartIndex   The startIndex query parameter, or {@code null}.
@@ -225,6 +228,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    */
   protected Response getUsers(final RequestContext requestContext,
                               final String filterString,
+                              final String baseID,
+                              final String searchScope,
                               final String sortBy,
                               final String sortOrder,
                               final String pageStartIndex,
@@ -247,7 +252,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       final SCIMFilter filter;
       if (filterString != null && !filterString.isEmpty())
       {
-        filter = SCIMFilter.parse(filterString);
+        filter = SCIMFilter.parse(filterString, resourceDescriptor.getSchema());
       }
       else
       {
@@ -259,7 +264,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       if (sortBy != null && !sortBy.isEmpty())
       {
         sortParameters =
-            new SortParameters(AttributePath.parse(sortBy), sortOrder);
+            new SortParameters(AttributePath.parse(sortBy,
+                                resourceDescriptor.getSchema()), sortOrder);
       }
       else
       {
@@ -333,8 +339,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Process the request.
       GetResourcesRequest getResourcesRequest =
           new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
-              authID, resourceDescriptor, filter, sortParameters,
-              pageParameters, queryAttributes);
+              authID, resourceDescriptor, filter, baseID, searchScope,
+              sortParameters, pageParameters, queryAttributes);
 
       if (authID == null)
       {
@@ -351,8 +357,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           authID = authIDRef.get();
           getResourcesRequest =
               new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
-                          authID, resourceDescriptor, filter, sortParameters,
-                          pageParameters, queryAttributes);
+                      authID, resourceDescriptor, filter, baseID, searchScope,
+                      sortParameters, pageParameters, queryAttributes);
         }
       }
 

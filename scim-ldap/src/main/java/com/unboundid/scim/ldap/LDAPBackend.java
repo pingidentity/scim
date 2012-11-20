@@ -83,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -301,110 +302,187 @@ public abstract class LDAPBackend
         }
       }
 
-      if (searchRequest == null)
+      Set<DN> searchBaseDNs;
+      if (request.getBaseID() != null)
       {
-        final Filter filter;
-        try
+        Entry baseEntry = resourceMapper.getEntry(
+                ldapInterface, request.getBaseID(), "1.1");
+
+        //Make sure the requested base ID maps to an entry that is within the
+        //configured base DN(s) for this resource type.
+        boolean isAllowed = false;
+        if (baseEntry != null)
         {
-          // Map the SCIM filter to an LDAP filter.
-          filter = resourceMapper.toLDAPFilter(scimFilter);
-        }
-        catch(InvalidResourceException ire)
-        {
-          throw new InvalidResourceException("Invalid filter: " +
-              ire.getLocalizedMessage(), ire);
-        }
-
-        if(filter == null)
-        {
-          // Match nothing... Just return an empty resources set.
-          List<BaseResource> emptyList = Collections.emptyList();
-          return new Resources<BaseResource>(emptyList);
-        }
-
-        // The LDAP filter results will still need to be filtered using the
-        // SCIM filter, so we need to request all the filter attributes.
-        addFilterAttributes(requestAttributeSet, filter);
-
-        final String[] requestAttributes =
-            new String[requestAttributeSet.size()];
-        requestAttributeSet.toArray(requestAttributes);
-
-        searchRequest =
-            new SearchRequest(resultListener, resourceMapper.getSearchBaseDN(),
-                SearchScope.SUB, filter, requestAttributes);
-      }
-
-      final SortParameters sortParameters = request.getSortParameters();
-      if (sortParameters != null)
-      {
-        try
-        {
-          Control control = resourceMapper.toLDAPSortControl(sortParameters);
-          if(control != null)
+          for (DN baseDN : resourceMapper.getSearchBaseDNs())
           {
-            searchRequest.addControl(control);
+            if (baseDN.isAncestorOf(baseEntry.getParsedDN(), true))
+            {
+              isAllowed = true;
+              break;
+            }
           }
         }
-        catch(InvalidResourceException ire)
-        {
-          throw new InvalidResourceException("Invalid sort parameters: " +
-              ire.getLocalizedMessage(), ire);
-        }
-      }
 
-      // Use the VLV control to perform pagination.
-      final PageParameters pageParameters = request.getPageParameters();
-      if (pageParameters != null)
-      {
-        final int count;
-        if (pageParameters.getCount() <= 0)
+        if (!isAllowed)
         {
-          count = getConfig().getMaxResults();
+          throw new InvalidResourceException("The specified base-id does not " +
+                      "exist under any of the configured branches of the DIT.");
         }
         else
         {
-          count = Math.min(pageParameters.getCount(),
-                           getConfig().getMaxResults());
+          searchBaseDNs = Collections.singleton(baseEntry.getParsedDN());
         }
-        searchRequest.addControl(
-            new VirtualListViewRequestControl(
-                (int) pageParameters.getStartIndex(),
-                0, count-1, 0, null, true));
-
-        // VLV requires a sort control.
-        if (!searchRequest.hasControl(
-            ServerSideSortRequestControl.SERVER_SIDE_SORT_REQUEST_OID))
-        {
-          searchRequest.addControl(
-              new ServerSideSortRequestControl(new SortKey("uid"))); // TODO
-        }
-      }
-
-      // Invoke a search operation.
-      final SearchResult searchResult = ldapInterface.search(searchRequest);
-
-      // Prepare the response.
-      final List<BaseResource> scimObjects = resultListener.getResources();
-      final Resources<BaseResource> resources;
-      final VirtualListViewResponseControl vlvResponseControl =
-          getVLVResponseControl(searchResult);
-      if (vlvResponseControl != null)
-      {
-        int startIndex = 1;
-        if (pageParameters != null)
-        {
-          startIndex = (int)pageParameters.getStartIndex();
-        }
-        resources = new Resources<BaseResource>(scimObjects,
-            vlvResponseControl.getContentCount(), startIndex);
       }
       else
       {
-        resources = new Resources<BaseResource>(scimObjects);
+        searchBaseDNs = resourceMapper.getSearchBaseDNs();
       }
 
-      return resources;
+      SearchScope searchScope;
+      if (request.getSearchScope() != null)
+      {
+        if (SearchScope.BASE.getName().equalsIgnoreCase(
+                    request.getSearchScope()))
+        {
+          searchScope = SearchScope.BASE;
+        }
+        else if (SearchScope.ONE.getName().equalsIgnoreCase(
+                    request.getSearchScope()))
+        {
+          searchScope = SearchScope.ONE;
+        }
+        else if (SearchScope.SUB.getName().equalsIgnoreCase(
+                    request.getSearchScope()))
+        {
+          searchScope = SearchScope.SUB;
+        }
+        else if ("subordinate".equalsIgnoreCase(request.getSearchScope()))
+        {
+          searchScope = SearchScope.SUBORDINATE_SUBTREE;
+        }
+        else
+        {
+          throw new InvalidResourceException("Search scope '" +
+                  request.getSearchScope() + "' is not supported.");
+        }
+      }
+      else
+      {
+        searchScope = SearchScope.SUB;
+      }
+
+      final List<BaseResource> scimObjects = new LinkedList<BaseResource>();
+      SearchResult searchResult = null;
+      int startIndex = 1;
+
+      for (DN baseDN : searchBaseDNs)
+      {
+        if (searchRequest == null)
+        {
+          final Filter filter;
+          try
+          {
+            // Map the SCIM filter to an LDAP filter.
+            filter = resourceMapper.toLDAPFilter(scimFilter);
+          }
+          catch(InvalidResourceException ire)
+          {
+            throw new InvalidResourceException("Invalid filter: " +
+                    ire.getLocalizedMessage(), ire);
+          }
+
+          if(filter == null)
+          {
+            // Match nothing... Just return an empty resources set.
+            List<BaseResource> emptyList = Collections.emptyList();
+            return new Resources<BaseResource>(emptyList);
+          }
+
+          // The LDAP filter results will still need to be filtered using the
+          // SCIM filter, so we need to request all the filter attributes.
+          addFilterAttributes(requestAttributeSet, filter);
+
+          final String[] requestAttributes =
+                  new String[requestAttributeSet.size()];
+          requestAttributeSet.toArray(requestAttributes);
+
+          searchRequest =
+                  new SearchRequest(resultListener, baseDN.toString(),
+                          searchScope, filter, requestAttributes);
+        }
+
+        final SortParameters sortParameters = request.getSortParameters();
+        if (sortParameters != null)
+        {
+          try
+          {
+            Control control = resourceMapper.toLDAPSortControl(sortParameters);
+            if(control != null)
+            {
+              searchRequest.addControl(control);
+            }
+          }
+          catch(InvalidResourceException ire)
+          {
+            throw new InvalidResourceException("Invalid sort parameters: " +
+                    ire.getLocalizedMessage(), ire);
+          }
+        }
+
+        // Use the VLV control to perform pagination.
+        final PageParameters pageParameters = request.getPageParameters();
+        int count = maxResults - scimObjects.size();
+        if (pageParameters != null)
+        {
+          if (pageParameters.getCount() > 0)
+          {
+            count = Math.min(pageParameters.getCount(), maxResults) -
+                      scimObjects.size();
+          }
+
+          startIndex = (int) pageParameters.getStartIndex();
+          searchRequest.addControl(
+                  new VirtualListViewRequestControl(
+                          startIndex, 0, count-1, 0, null, true));
+
+          // VLV requires a sort control.
+          if (!searchRequest.hasControl(
+                  ServerSideSortRequestControl.SERVER_SIDE_SORT_REQUEST_OID))
+          {
+            searchRequest.addControl(
+                  new ServerSideSortRequestControl(new SortKey("uid"))); // TODO
+          }
+        }
+
+        // Invoke a search operation.
+        searchResult = ldapInterface.search(searchRequest);
+
+        // Prepare the response.
+        scimObjects.addAll(resultListener.getResources());
+
+        if (searchRequest.getScope() == SearchScope.BASE ||
+                scimObjects.size() >= count)
+        {
+          break;
+        }
+        else
+        {
+          searchRequest = null;
+        }
+      }
+
+      final VirtualListViewResponseControl vlvResponseControl =
+                  getVLVResponseControl(searchResult);
+
+      if (vlvResponseControl != null)
+      {
+        return new Resources<BaseResource>(scimObjects,
+                      vlvResponseControl.getContentCount(), startIndex);
+      }
+      else
+      {
+        return new Resources<BaseResource>(scimObjects);
+      }
     }
     catch (LDAPException e)
     {
@@ -1087,6 +1165,11 @@ public abstract class LDAPBackend
   private static VirtualListViewResponseControl getVLVResponseControl(
       final SearchResult result) throws LDAPException
   {
+    if (result == null)
+    {
+      return null;
+    }
+
     final Control c = result.getResponseControl(
         VirtualListViewResponseControl.VIRTUAL_LIST_VIEW_RESPONSE_OID);
     if (c == null)
@@ -1253,11 +1336,13 @@ public abstract class LDAPBackend
           {
             attributePath = AttributePath.parse(
                 val.getSubAttributeValue("value",
-                    AttributeValueResolver.STRING_RESOLVER));
+                    AttributeValueResolver.STRING_RESOLVER),
+                    mapper.getDefaultSchemaURI());
           }
           else
           {
-            attributePath = AttributePath.parse(val.getStringValue());
+            attributePath = AttributePath.parse(val.getStringValue(),
+                                                mapper.getDefaultSchemaURI());
           }
 
           AttributeDescriptor attributeToRemove =

@@ -448,13 +448,9 @@ public class XmlStreamMarshaller implements StreamMarshaller
 
     // Write the resource attributes in the order defined by the
     // resource descriptor.
-    for (final AttributeDescriptor attributeDescriptor :
-        resource.getResourceDescriptor().getAttributes())
+    for (String schema : resource.getScimObject().getSchemas())
     {
-      final SCIMAttribute a =
-          resource.getScimObject().getAttribute(
-              attributeDescriptor.getSchema(), attributeDescriptor.getName());
-      if (a != null)
+      for (SCIMAttribute a : resource.getScimObject().getAttributes(schema))
       {
         if (a.getAttributeDescriptor().isMultiValued())
         {

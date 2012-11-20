@@ -54,7 +54,27 @@ public final class SortParameters
    */
   public SortParameters(final String sortBy, final String sortOrder)
   {
-    this(AttributePath.parse(sortBy), sortOrder);
+    this(sortBy, sortOrder, SCIMConstants.SCHEMA_URI_CORE);
+  }
+
+
+
+  /**
+   * Create a new instance of sort parameters.
+   *
+   * @param sortBy    The attribute or sub-attribute whose value is used to
+   *                  order the returned resources.
+   * @param sortOrder The order in which the sortBy parameter is applied. e.g.
+   *                  ascending or descending, or {@code null} if no sort order
+   *                  was specified.
+   * @param defaultSchema The default schema that should be assumed when parsing
+   *                      attributes without the schema explicitly defined in
+   *                      the URN.
+   */
+  public SortParameters(final String sortBy, final String sortOrder,
+                        final String defaultSchema)
+  {
+    this(AttributePath.parse(sortBy, defaultSchema), sortOrder);
   }
 
 

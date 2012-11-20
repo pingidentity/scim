@@ -33,6 +33,8 @@ import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.util.StaticUtils;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -46,23 +48,31 @@ public class LDAPSearchResolver
 {
   private final LDAPSearchParameters ldapSearchParameters;
   private final Filter filter;
-  private final DN baseDN;
-
+  private final Set<DN> baseDNs;
+  private final Set<DN> excludeBaseDNs;
 
   /**
    * Create a new instance of LDAPSearchResolver.
    *
    * @param ldapSearchParameters  The LDAP search parameters.
+   * @param excludeBaseDNs The base DNs that should be excluded.
    *
    * @throws LDAPException  If the filter property is not a valid filter, or
    *                        the base DN is not a valid DN.
    */
-  public LDAPSearchResolver(final LDAPSearchParameters ldapSearchParameters)
+  public LDAPSearchResolver(final LDAPSearchParameters ldapSearchParameters,
+                            final Set<DN> excludeBaseDNs)
       throws LDAPException
   {
     this.ldapSearchParameters = ldapSearchParameters;
     this.filter = Filter.create(ldapSearchParameters.getFilter());
-    this.baseDN = new DN(ldapSearchParameters.getBaseDN().trim());
+    Set<DN> dnSet = new HashSet<DN>();
+    for (String dn : ldapSearchParameters.getBaseDN())
+    {
+      dnSet.add(new DN(dn));
+    }
+    this.baseDNs = Collections.unmodifiableSet(dnSet);
+    this.excludeBaseDNs = Collections.unmodifiableSet(excludeBaseDNs);
   }
 
 
@@ -72,9 +82,9 @@ public class LDAPSearchResolver
    *
    * @return  The value of the baseDN property.
    */
-  public String getBaseDN()
+  public Set<DN> getBaseDNs()
   {
-    return baseDN.toString();
+    return baseDNs;
   }
 
 
@@ -253,7 +263,21 @@ public class LDAPSearchResolver
   {
     try
     {
-      return baseDN.isAncestorOf(dn, true);
+      for (DN baseDN : baseDNs)
+      {
+        if (baseDN.isAncestorOf(dn, true))
+        {
+          for (DN excludeBaseDN : excludeBaseDNs)
+          {
+            if (excludeBaseDN.isAncestorOf(dn, true))
+            {
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+      return false;
     }
     catch (LDAPException e)
     {
@@ -359,32 +383,49 @@ public class LDAPSearchResolver
     }
     else
     {
-      try
+      final Filter compoundFilter = Filter.createANDFilter(
+               Filter.createEqualityFilter(getIdAttribute(), resourceID),
+                 getFilter());
+
+      for (DN baseDN : baseDNs)
       {
-        final Filter compoundFilter =
-            Filter.createANDFilter(
-                Filter.createEqualityFilter(getIdAttribute(), resourceID),
-                getFilter());
-        final SearchRequest searchRequest =
-            new SearchRequest(getBaseDN(), SearchScope.SUB, compoundFilter,
-                attributes);
-        searchRequest.setSizeLimit(1);
-        entry = ldapInterface.searchForEntry(searchRequest);
-      }
-      catch (LDAPSearchException e)
-      {
-        Debug.debugException(e);
-        if(e.getResultCode() != ResultCode.INVALID_ATTRIBUTE_SYNTAX)
+        try
         {
-          throw ResourceMapper.toSCIMException(
-              "Error searching for resource '" + resourceID + "': " +
-                  StaticUtils.getExceptionMessage(e), e);
+          final SearchRequest searchRequest =
+              new SearchRequest(baseDN.toString(), SearchScope.SUB,
+                      compoundFilter, attributes);
+          searchRequest.setSizeLimit(1);
+          entry = ldapInterface.searchForEntry(searchRequest);
+
+          for (DN excludeBaseDN : excludeBaseDNs)
+          {
+            if (excludeBaseDN.isAncestorOf(entry.getParsedDN(), true))
+            {
+              entry = null;
+              break;
+            }
+          }
+
+          if (entry != null)
+          {
+            break;
+          }
         }
-        // This is likely if the provided resource ID value violates
-        // the mapped LDAP attribute's syntax. This should map to 404
-        // instead of 400 since SCIM treats the resource ID as an opaque
-        // value and shouldn't enforce any syntax on it.
-        entry = null;
+        catch (LDAPException e)
+        {
+          Debug.debugException(e);
+          if(e.getResultCode() != ResultCode.INVALID_ATTRIBUTE_SYNTAX)
+          {
+            throw ResourceMapper.toSCIMException(
+                "Error searching for resource '" + resourceID + "': " +
+                    StaticUtils.getExceptionMessage(e), e);
+          }
+          // This is likely if the provided resource ID value violates
+          // the mapped LDAP attribute's syntax. This should map to 404
+          // instead of 400 since SCIM treats the resource ID as an opaque
+          // value and shouldn't enforce any syntax on it.
+          entry = null;
+        }
       }
     }
 
@@ -424,38 +465,39 @@ public class LDAPSearchResolver
     }
     else
     {
-      Entry entry;
-      try
+      final Filter compoundFilter = Filter.createANDFilter(
+              Filter.createEqualityFilter(getIdAttribute(), resourceID),
+              getFilter());
+
+      for (DN baseDN : baseDNs)
       {
-        final Filter compoundFilter =
-            Filter.createANDFilter(
-                Filter.createEqualityFilter(getIdAttribute(),
-                    resourceID),
-                getFilter());
-        final SearchRequest searchRequest =
-            new SearchRequest(getBaseDN(), SearchScope.SUB,
-                compoundFilter, getIdAttribute());
-        searchRequest.setSizeLimit(1);
-        entry = ldapInterface.searchForEntry(searchRequest);
-      }
-      catch(LDAPSearchException e)
-      {
-        Debug.debugException(e);
-        if(e.getResultCode() != ResultCode.INVALID_ATTRIBUTE_SYNTAX)
+        try
         {
-          throw ResourceMapper.toSCIMException(
-              "Error searching for resource '" + resourceID + "': " +
-                  StaticUtils.getExceptionMessage(e), e);
+          final SearchRequest searchRequest =
+             new SearchRequest(baseDN.toString(), SearchScope.SUB,
+                  compoundFilter, getIdAttribute());
+          searchRequest.setSizeLimit(1);
+          Entry entry = ldapInterface.searchForEntry(searchRequest);
+          if (entry != null)
+          {
+            dn = entry.getDN();
+            break;
+          }
         }
-        // This is likely if the provided resource ID value violates
-        // the mapped LDAP attribute's syntax. This should map to 404
-        // instead of 400 since SCIM treats the resource ID as an opaque
-        // value and shouldn't enforce any syntax on it.
-        entry = null;
-      }
-      if (entry != null)
-      {
-        dn = entry.getDN();
+        catch(LDAPSearchException e)
+        {
+          Debug.debugException(e);
+          if(e.getResultCode() != ResultCode.INVALID_ATTRIBUTE_SYNTAX)
+          {
+            throw ResourceMapper.toSCIMException(
+                "Error searching for resource '" + resourceID + "': " +
+                   StaticUtils.getExceptionMessage(e), e);
+          }
+          // This is likely if the provided resource ID value violates
+          // the mapped LDAP attribute's syntax. This should map to 404
+          // instead of 400 since SCIM treats the resource ID as an opaque
+          // value and shouldn't enforce any syntax on it.
+        }
       }
     }
 

@@ -111,6 +111,18 @@ public final class SCIMConstants
   public static final String QUERY_PARAMETER_FILTER = "filter";
 
   /**
+   * The HTTP query parameter used in a URI to identify the search base entry
+   * when performing an LDAP search.
+   */
+  public static final String QUERY_PARAMETER_BASE_ID = "base-id";
+
+  /**
+   * The HTTP query parameter used in a URI to set the search scope when
+   * performing an LDAP search.
+   */
+  public static final String QUERY_PARAMETER_SCOPE = "scope";
+
+  /**
    * The HTTP query parameter used in a URI to sort by a SCIM attribute.
    */
   public static final String QUERY_PARAMETER_SORT_BY = "sortBy";

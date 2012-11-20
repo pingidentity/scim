@@ -38,6 +38,12 @@ public class FilterParser
   private final String filterString;
 
   /**
+   * The default schema that should be assumed when parsing attributes with
+   * no schema explicitly defined in the URN.
+   */
+  private final String defaultSchema;
+
+  /**
    * The position one higher than the last character.
    */
   private int endPos;
@@ -224,13 +230,17 @@ public class FilterParser
    * Create a new instance of a filter parser.
    *
    * @param filterString  The filter to be parsed.
+   * @param defaultSchema The default schema that should be assumed when parsing
+   *                      attributes without the schema explicitly defined in
+   *                      the URN.
    */
-  public FilterParser(final String filterString)
+  public FilterParser(final String filterString, final String defaultSchema)
   {
     this.filterString = filterString;
     this.endPos = filterString.length();
     this.currentPos = 0;
     this.markPos = 0;
+    this.defaultSchema = defaultSchema;
   }
 
 
@@ -284,7 +294,7 @@ public class FilterParser
     final AttributePath filterAttribute;
     try
     {
-      filterAttribute = AttributePath.parse(word);
+      filterAttribute = AttributePath.parse(word, defaultSchema);
     }
     catch (final Exception e)
     {

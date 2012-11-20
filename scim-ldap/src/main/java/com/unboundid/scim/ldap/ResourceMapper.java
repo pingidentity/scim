@@ -19,6 +19,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Control;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -56,6 +57,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -109,38 +111,41 @@ public class ResourceMapper
    * The ResourceDescriptor of the SCIM resource handled by this resource
    * mapper.
    */
-  private ResourceDescriptor resourceDescriptor;
+  protected ResourceDescriptor resourceDescriptor;
 
   /**
    * The LDAPSearchResolver to resolve resources handled by this resource
    * manager.
    */
-  private LDAPSearchResolver searchResolver;
+  protected LDAPSearchResolver searchResolver;
 
   /**
    * The LDAP Add parameters.
    */
-  private LDAPAddParameters addParameters;
+  protected LDAPAddParameters addParameters;
+
   /**
    * A DN constructed value for the DN template.
    */
-  private ConstructedValue dnConstructor;
+  protected ConstructedValue dnConstructor;
+
   /**
    * The attribute mappers for this resource mapper.
    */
-  private Map<AttributeDescriptor, AttributeMapper> attributeMappers;
+  protected Map<AttributeDescriptor, AttributeMapper> attributeMappers;
 
   /**
    * The derived attributes for this resource mapper.
    */
-  private Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
+  protected Map<AttributeDescriptor,DerivedAttribute> derivedAttributes;
+
   /**
    * The internal AttributeMapper for the Meta object. This allows the
    * toLDAPFilter() code to generate LDAP filters which are based on the meta
    * information, even though there are no explicit mappings for Meta set up in
    * resources.xml.
    */
-  private AttributeMapper metaAttributeMapper;
+  protected AttributeMapper metaAttributeMapper;
 
   /**
    * The internal AttributeMapper for the id attribute. This allows the
@@ -148,13 +153,14 @@ public class ResourceMapper
    * information, even though there are no explicit mappings for id set up in
    * resources.xml.
    */
-  private AttributeMapper idAttributeMapper;
+  protected AttributeMapper idAttributeMapper;
+
   /**
    * The internal AttributeMapper for the password attribute. This allows a
    * caller to determine which LDAP attribute is mapped to the SCIM password
    * attribute, if any.
    */
-  private AttributeMapper passwordAttributeMapper;
+  protected AttributeMapper passwordAttributeMapper;
 
   /**
    * Create a new instance of this resource mapper. All resource mappers must
@@ -248,7 +254,7 @@ public class ResourceMapper
       try
       {
         ldapSearchResolvers.put(StaticUtils.toLowerCase(p.getId()),
-                                new LDAPSearchResolver(p));
+                    new LDAPSearchResolver(p, Collections.<DN>emptySet()));
       }
       catch (LDAPException e)
       {
@@ -612,6 +618,19 @@ public class ResourceMapper
   public ResourceDescriptor getResourceDescriptor()
   {
     return resourceDescriptor;
+  }
+
+
+  /**
+   * Gets the default schema URI that is assumed by this ResourceMapper.
+   * Typically this should be the SCIM Core Schema, but subclasses may choose
+   * to override this.
+   *
+   * @return a SCIM schema URN.
+   */
+  public String getDefaultSchemaURI()
+  {
+    return SCIMConstants.SCHEMA_URI_CORE;
   }
 
 
@@ -1128,13 +1147,13 @@ public class ResourceMapper
 
 
   /**
-   * Get the search base DN to be used for querying.
+   * Get the search base DNs to be used for querying.
    *
    * @return  The search base DN to be used for querying.
    */
-  public String getSearchBaseDN()
+  public Set<DN> getSearchBaseDNs()
   {
-    return searchResolver.getBaseDN();
+    return searchResolver.getBaseDNs();
   }
 
 
