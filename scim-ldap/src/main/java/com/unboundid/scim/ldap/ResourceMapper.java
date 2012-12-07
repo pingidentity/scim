@@ -24,6 +24,7 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
+import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
@@ -708,7 +709,7 @@ public class ResourceMapper
    * @return  The set of LDAP attribute types that are derived from the given
    *          SCIM attributes.
    */
-  private Set<String> toLDAPAttributeTypes(final Set<String> scimAttributes)
+  protected Set<String> toLDAPAttributeTypes(final Set<String> scimAttributes)
   {
     final Set<String> ldapAttributes = new HashSet<String>();
     for (final AttributeMapper m : attributeMappers.values())
@@ -1104,6 +1105,14 @@ public class ResourceMapper
             Entry.diff(currentEntry, modifiedEntry, false, false,
                     attrsToDiff.toArray(new String[attrsToDiff.size()]));
 
+    for (String attr : attrsToDiff)
+    {
+      if (!currentEntry.hasAttribute(attr) && !modifiedEntry.hasAttribute(attr))
+      {
+        mods.add(new Modification(ModificationType.REPLACE, attr));
+      }
+    }
+
     return mods;
   }
 
@@ -1373,7 +1382,7 @@ public class ResourceMapper
    *          component could not be mapped and will not match anything.
    * @throws SCIMException  If an error occurs during the mapping.
    */
-  private Filter toLDAPFilterComponent(final SCIMFilter filter)
+  protected Filter toLDAPFilterComponent(final SCIMFilter filter)
       throws SCIMException {
     final SCIMFilterType filterType = filter.getFilterType();
 

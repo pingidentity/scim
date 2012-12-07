@@ -189,7 +189,17 @@ public class SCIMService
           "The service provider returned multiple resource descriptors " +
               "with resource name '" + resourceName);
     }
-    return resources.iterator().next();
+
+    ResourceDescriptor descriptor = resources.iterator().next();
+    if (schema.equalsIgnoreCase("urn:unboundid:schemas:scim:ldap:1.0"))
+    {
+      //This is a convenience for when we're talking to the UnboundID Directory
+      //REST API; clients could set this themselves, but we'll do it for them
+      //in this case.
+      descriptor.setStrictMode(false);
+    }
+
+    return descriptor;
   }
 
 

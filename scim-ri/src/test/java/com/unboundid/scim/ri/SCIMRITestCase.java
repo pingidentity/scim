@@ -295,7 +295,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   protected static void assertLocation(final URI uri, final String endpoint,
                                        final String id)
   {
-    final UriBuilder builder = UriBuilder.fromPath(endpoint);
+    final UriBuilder builder = UriBuilder.fromPath("v1/" + endpoint);
     builder.scheme("http");
     builder.host("localhost");
     builder.port(getSSTestPort());

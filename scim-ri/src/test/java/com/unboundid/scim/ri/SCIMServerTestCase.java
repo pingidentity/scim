@@ -1864,6 +1864,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
   @Test
   public void testBulk() throws Exception
   {
+    getTestDS(true, true); //initialize the test DS
+
     final String mediaSubType = service.getContentType().getSubtype() + "-" +
         service.getAcceptType().getSubtype();
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -2040,6 +2042,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
   public void testInvalidBulk()
       throws Exception
   {
+    getTestDS(true, true); //initialize the test DS
+
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
     final UserResource testUser = userEndpoint.newResource();
@@ -2152,6 +2156,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
   public void testDuplicateBulkId()
       throws Exception
   {
+    getTestDS(true, true); //initialize the test DS
+
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
     final UserResource testUser1 = userEndpoint.newResource();

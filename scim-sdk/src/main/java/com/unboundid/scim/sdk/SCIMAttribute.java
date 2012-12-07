@@ -237,6 +237,22 @@ public final class SCIMAttribute
             }
           }
         }
+        else
+        {
+          AttributeDescriptor singularDescriptor =
+                  AttributeDescriptor.createAttribute(getName(),
+                          attributeDescriptor.getDataType(),
+                          attributeDescriptor.getDescription(), getSchema(),
+                          attributeDescriptor.isReadOnly(),
+                          attributeDescriptor.isRequired(),
+                          attributeDescriptor.isCaseExact());
+
+          final SCIMAttribute singularAttr = create(singularDescriptor, v);
+          if (singularAttr.matchesFilter(filter))
+          {
+            return true;
+          }
+        }
       }
     }
     else

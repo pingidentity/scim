@@ -165,7 +165,6 @@ public final class SCIMConstants
   /**
    * The character that separates the schema URI from the basic attribute name
    * in a fully qualified attribute name. e.g. urn:scim:schemas:core:1.0:name
-   * TODO: Should it be ':' or '.'?
    */
   public static final char SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE = ':';
 }

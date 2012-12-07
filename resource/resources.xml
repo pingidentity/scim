@@ -451,8 +451,7 @@
    ! SCIM Group with a mapping to the groupOfUniqueNames static group for
    ! writes and any static or dynamic group for reads.
    !-->
-  <resource name="Group"
-            schema="urn:scim:schemas:core:1.0">
+  <resource name="Group" schema="urn:scim:schemas:core:1.0">
 
     <description>SCIM core resource for representing groups</description>
 
@@ -506,10 +505,10 @@
     <baseDN>ou=people,dc=example,dc=com</baseDN>
     <filter>(objectClass=inetOrgPerson)</filter>
     <!--
-     ! Uncomment the following line to map the user resource ID to entryUUID
-     ! rather than DN.
+     ! Comment out the following line to map the SCIM Resource ID to DN rather
+     ! than entryUUID.
      !-->
-    <!--<resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
   </LDAPSearch>
 
   <!--
@@ -521,10 +520,10 @@
     <baseDN>dc=example,dc=com</baseDN>
     <filter>(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
     <!--
-     ! Uncomment the following line to map the group resource ID to entryUUID
-     ! rather than DN.
+     ! Comment out the following line to map the SCIM Resource ID to DN rather
+     ! than entryUUID.
      !-->
-    <!--<resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
   </LDAPSearch>
 
 </scim-ldap:resources>

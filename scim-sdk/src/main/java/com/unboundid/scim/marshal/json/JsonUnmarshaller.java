@@ -43,6 +43,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.unboundid.scim.marshal.json.JsonParser.makeCaseInsensitive;
+
 
 
 /**
@@ -62,7 +64,7 @@ public class JsonUnmarshaller implements Unmarshaller
     try
     {
       final JSONObject jsonObject =
-          new JSONObject(new JSONTokener(inputStream));
+            makeCaseInsensitive(new JSONObject(new JSONTokener(inputStream)));
 
       final JsonParser parser = new JsonParser();
       return parser.unmarshal(jsonObject, resourceDescriptor, resourceFactory,
@@ -87,34 +89,36 @@ public class JsonUnmarshaller implements Unmarshaller
     {
       final JsonParser parser = new JsonParser();
       final JSONObject jsonObject =
-          new JSONObject(new JSONTokener(inputStream));
+              makeCaseInsensitive(new JSONObject(new JSONTokener(inputStream)));
 
       int totalResults = 0;
-      if(jsonObject.has("totalResults"))
+      if(jsonObject.has("totalresults"))
       {
-        totalResults = jsonObject.getInt("totalResults");
+        totalResults = jsonObject.getInt("totalresults");
       }
 
       int startIndex = 1;
-      if(jsonObject.has("startIndex"))
+      if(jsonObject.has("startindex"))
       {
-        startIndex = jsonObject.getInt("startIndex");
+        startIndex = jsonObject.getInt("startindex");
       }
 
       final JSONArray schemas = jsonObject.optJSONArray("schemas");
 
       List<R> resources = Collections.emptyList();
-      if(jsonObject.has("Resources"))
+      if(jsonObject.has("resources"))
       {
-        JSONArray resourcesArray = jsonObject.getJSONArray("Resources");
+        JSONArray resourcesArray = jsonObject.getJSONArray("resources");
         resources = new ArrayList<R>(resourcesArray.length());
         for(int i = 0; i < resourcesArray.length(); i++)
         {
-          R resource =
-              parser.unmarshal(resourcesArray.getJSONObject(i),
-                               resourceDescriptor,
-                               resourceFactory,
-                               schemas);
+          JSONObject subObject = makeCaseInsensitive(
+                  resourcesArray.getJSONObject(i));
+
+          R resource = parser.unmarshal(subObject,
+                                        resourceDescriptor,
+                                        resourceFactory,
+                                        schemas);
           resources.add(resource);
         }
       }
@@ -137,11 +141,11 @@ public class JsonUnmarshaller implements Unmarshaller
     try
     {
       final JSONObject jsonObject =
-          new JSONObject(new JSONTokener(inputStream));
+          makeCaseInsensitive(new JSONObject(new JSONTokener(inputStream)));
 
-      if(jsonObject.has("Errors"))
+      if(jsonObject.has("errors"))
       {
-        JSONArray errors = jsonObject.getJSONArray("Errors");
+        JSONArray errors = jsonObject.getJSONArray("errors");
         if(errors.length() >= 1)
         {
           JSONObject error = errors.getJSONObject(0);

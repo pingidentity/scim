@@ -218,8 +218,8 @@ public class JsonBulkParser extends JsonParser
           }
           else
           {
-            final BulkOperation bulkOperation =
-                parseBulkOperation((JSONObject)tokener.nextValue());
+            JSONObject o = makeCaseInsensitive((JSONObject)tokener.nextValue());
+            final BulkOperation bulkOperation = parseBulkOperation(o);
             handler.handleOperation(operationIndex, bulkOperation);
           }
           operationIndex++;
@@ -263,18 +263,18 @@ public class JsonBulkParser extends JsonParser
   throws JSONException, SCIMException
   {
     final String httpMethod = o.getString("method");
-    final String bulkId = o.optString("bulkId", null);
+    final String bulkId = o.optString("bulkid", null);
     final String version = o.optString("version", null);
     final String path = o.optString("path", null);
     final String location = o.optString("location", null);
-    final JSONObject data = o.optJSONObject("data");
-    final JSONObject statusObject = o.optJSONObject("status");
+    final JSONObject data = makeCaseInsensitive(o.optJSONObject("data"));
+    final JSONObject statusObj = makeCaseInsensitive(o.optJSONObject("status"));
 
     final Status status;
-    if (statusObject != null)
+    if (statusObj != null)
     {
-      final String code = statusObject.getString("code");
-      final String description = statusObject.optString("description", null);
+      final String code = statusObj.getString("code");
+      final String description = statusObj.optString("description", null);
       status = new Status(code, description);
     }
     else

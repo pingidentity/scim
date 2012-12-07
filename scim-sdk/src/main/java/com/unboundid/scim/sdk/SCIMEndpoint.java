@@ -57,6 +57,7 @@ import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -271,6 +272,33 @@ public class SCIMEndpoint<R extends BaseResource>
                             final String... requestedAttributes)
       throws SCIMException
   {
+    return query(filter, sortParameters, pageParameters,
+                    null, requestedAttributes);
+  }
+
+  /**
+   * Retrieves all resource instances that match the provided filter.
+   * Matching resources are returned sorted according to the provided
+   * SortParameters. PageParameters maybe used to specify the range of
+   * resource instances that are returned. Additional query parameters may
+   * be specified using a Map of parameter names to their values.
+   *
+   * @param filter The filter that should be used.
+   * @param sortParameters The sort parameters that should be used.
+   * @param pageParameters The page parameters that should be used.
+   * @param additionalQueryParams A map of additional query parameters that
+   *                              should be included.
+   * @param requestedAttributes The attributes of the resource to retrieve.
+   * @return The resource instances that match the provided filter.
+   * @throws SCIMException If an error occurs.
+   */
+  public Resources<R> query(final String filter,
+                            final SortParameters sortParameters,
+                            final PageParameters pageParameters,
+                            final Map<String,String> additionalQueryParams,
+                            final String... requestedAttributes)
+      throws SCIMException
+  {
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).build();
@@ -303,6 +331,13 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         clientResource.queryParam("count",
                                   String.valueOf(pageParameters.getCount()));
+      }
+    }
+    if(additionalQueryParams != null)
+    {
+      for (String key : additionalQueryParams.keySet())
+      {
+        clientResource.queryParam(key, additionalQueryParams.get(key));
       }
     }
 

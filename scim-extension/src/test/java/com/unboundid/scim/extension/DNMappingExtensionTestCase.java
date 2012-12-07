@@ -13,8 +13,8 @@ import java.io.File;
 
 
 /**
- * Tests the extension with the resource ID mapped to the LDAP entryUUID
- * attribute.
+ * Tests the extension with the resource ID mapped to the LDAP DN (instead of
+ * the entryUUID attribute).
  *
  * NOTE: The SCIM-Extension module is being deprecated and moved into the core
  *       build so please do not add new test cases in this class. Instead, add
@@ -23,7 +23,7 @@ import java.io.File;
  *       the SCIMHTTPServletExtensionTest class in the core build.
  */
 @Test(enabled = false)
-public class EntryUUIDMappingExtensionTestCase extends SCIMExtensionTestCase
+public class DNMappingExtensionTestCase extends SCIMExtensionTestCase
 {
   /**
    * Obtain a reference to a file anywhere under the scim root directory.
@@ -51,7 +51,7 @@ public class EntryUUIDMappingExtensionTestCase extends SCIMExtensionTestCase
         "--extension-name", "SCIM",
         "--set", "extension-argument:" +
                  "resourceMappingFile=" +
-                 getFile("resource/resources-entryUUID.xml"),
+                 getFile("resource/resources-entryDN.xml"),
         "--set", "extension-argument:contextPath=/",
         "--set", "extension-argument:debugEnabled"
     );

@@ -20,8 +20,8 @@
   <!--
    ! This SCIM configuration file defines a mapping almost identical to
    ! the one shipped with the SCIM servlet extension. The difference is that
-   ! the SCIM resource ID is mapped to the LDAP entryUUID attribute instead
-   ! of the LDAP entry DN.
+   ! the SCIM resource ID is mapped to the LDAP DN instead of the entryUUID
+   ! attribute.
    !-->
 
   <!-- SCIM User with a mapping to inetOrgPerson -->
@@ -481,10 +481,6 @@
   <LDAPSearch id="userSearchParams">
     <baseDN>ou=people,dc=example,dc=com</baseDN>
     <filter>(objectClass=inetOrgPerson)</filter>
-    <!--
-     ! Map the user resource ID to entryUUID rather than DN.
-     !-->
-    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
   </LDAPSearch>
 
   <!--
@@ -495,10 +491,6 @@
   <LDAPSearch id="groupSearchParams">
     <baseDN>dc=example,dc=com</baseDN>
     <filter>(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
-    <!--
-     ! Map the group resource ID to entryUUID rather than DN.
-     !-->
-    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
   </LDAPSearch>
 
 </scim-ldap:resources>

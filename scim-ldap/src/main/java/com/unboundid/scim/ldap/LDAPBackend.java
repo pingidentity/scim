@@ -220,7 +220,7 @@ public abstract class LDAPBackend
     requestAttributeSet.addAll(
         mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.addAll(getLastModAttributes());
-    requestAttributeSet.add("objectClass");
+    requestAttributeSet.add("objectclass");
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -269,7 +269,7 @@ public abstract class LDAPBackend
       final Set<String> requestAttributeSet =
           resourceMapper.toLDAPAttributeTypes(request.getAttributes());
       requestAttributeSet.addAll(getLastModAttributes());
-      requestAttributeSet.add("objectClass");
+      requestAttributeSet.add("objectclass");
 
       final int maxResults = getConfig().getMaxResults();
       final LDAPRequestInterface ldapInterface =
@@ -514,7 +514,7 @@ public abstract class LDAPBackend
     requestAttributeSet.addAll(
         mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.addAll(getLastModAttributes());
-    requestAttributeSet.add("objectClass");
+    requestAttributeSet.add("objectclass");
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -551,7 +551,7 @@ public abstract class LDAPBackend
           final SearchRequest r =
               new SearchRequest(entry.getDN(),
                                 SearchScope.BASE,
-                                Filter.createPresenceFilter("objectClass"),
+                                Filter.createPresenceFilter("objectclass"),
                                 requestAttributes);
           r.setSizeLimit(1);
           final Entry actualEntry = ldapInterface.searchForEntry(r);
@@ -666,7 +666,7 @@ public abstract class LDAPBackend
       requestAttributeSet.addAll(
           mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.addAll(getLastModAttributes());
-      requestAttributeSet.add("objectClass");
+      requestAttributeSet.add("objectclass");
 
       final String[] requestAttributes =
           new String[requestAttributeSet.size()];
@@ -678,6 +678,9 @@ public abstract class LDAPBackend
         // and split them up.
         modifiedEntry = currentEntry.duplicate();
         ListIterator<Modification> iterator = mods.listIterator();
+        List<String> rdnAttrNames = new ArrayList<String>(1);
+        List<String> rdnAttrValues = new ArrayList<String>(1);
+
         while(iterator.hasNext())
         {
           Modification mod = iterator.next();
@@ -685,39 +688,34 @@ public abstract class LDAPBackend
               mod.getModificationType() == ModificationType.REPLACE) &&
               currentEntry.getRDN().hasAttribute(mod.getAttributeName()))
           {
+            if (mod.getValues().length != 1)
+            {
+              throw new InvalidResourceException(
+                         "The '" + mod.getAttributeName() +
+                         "' attribute must contain exactly one value because " +
+                         "it is an RDN attribute.");
+            }
+
             iterator.remove();
+
+            rdnAttrNames.add(mod.getAttributeName());
+            rdnAttrValues.add(mod.getValues()[0]);
 
             // The modification will affect the RDN so we need to first apply
             // the mods in memory and reconstruct the DN. We will set the DN to
             // null first so Entry.applyModifications wouldn't throw any
             // exceptions about affecting the RDN.
+            DN parentDN = modifiedEntry.getParentDN();
             modifiedEntry.setDN("");
             modifiedEntry =
                 Entry.applyModifications(modifiedEntry, true, mod);
-            modifiedEntry.setDN(mapper.constructEntryDN(modifiedEntry));
 
-            // We might have to split the mod values into those that affects
-            // the RDN and those that do not and add them after the mod DN.
-            if(mod.getModificationType() == ModificationType.REPLACE &&
-                mod.getValues().length > 1)
-            {
-              List<String> newValues =
-                  new ArrayList<String>(mod.getValues().length - 1);
-              RDN newRDN = modifiedEntry.getRDN();
-              for(String value : mod.getValues())
-              {
-                if(!newRDN.hasAttributeValue(mod.getAttributeName(), value))
-                {
-                  newValues.add(value);
-                }
-              }
+            DN newDN = new DN(new RDN(
+                     rdnAttrNames.toArray(new String[rdnAttrNames.size()]),
+                     rdnAttrValues.toArray(new String[rdnAttrValues.size()])),
+                       parentDN);
 
-              Modification newMod =
-                  new Modification(ModificationType.ADD,
-                      mod.getAttributeName(),
-                      newValues.toArray(new String[newValues.size()]));
-              iterator.add(newMod);
-            }
+            modifiedEntry.setDN(newDN);
           }
         }
 
@@ -764,7 +762,7 @@ public abstract class LDAPBackend
             final SearchRequest r =
                 new SearchRequest(modifiedEntry.getDN(),
                                   SearchScope.BASE,
-                                  Filter.createPresenceFilter("objectClass"),
+                                  Filter.createPresenceFilter("objectclass"),
                                   requestAttributes);
             r.setSizeLimit(1);
             final Entry actualEntry = ldapInterface.searchForEntry(r);
@@ -773,6 +771,11 @@ public abstract class LDAPBackend
               modifiedEntry = actualEntry;
             }
           }
+        }
+        else
+        {
+          modifiedEntry =
+              mapper.getEntry(ldapInterface, resourceID, requestAttributes);
         }
       }
       else
@@ -841,7 +844,7 @@ public abstract class LDAPBackend
       requestAttributeSet.addAll(
             mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.addAll(getLastModAttributes());
-      requestAttributeSet.add("objectClass");
+      requestAttributeSet.add("objectclass");
 
       String[] requestAttributes = new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
@@ -858,6 +861,9 @@ public abstract class LDAPBackend
         // and split them up.
         modifiedEntry = currentEntry.duplicate();
         ListIterator<Modification> iterator = mods.listIterator();
+        List<String> rdnAttrNames = new ArrayList<String>(1);
+        List<String> rdnAttrValues = new ArrayList<String>(1);
+
         while(iterator.hasNext())
         {
           Modification mod = iterator.next();
@@ -865,39 +871,34 @@ public abstract class LDAPBackend
                   mod.getModificationType() == ModificationType.REPLACE) &&
                   currentEntry.getRDN().hasAttribute(mod.getAttributeName()))
           {
+            if (mod.getValues().length != 1)
+            {
+              throw new InvalidResourceException(
+                         "The '" + mod.getAttributeName() +
+                         "' attribute must contain exactly one value because " +
+                         "it is an RDN attribute.");
+            }
+
             iterator.remove();
+
+            rdnAttrNames.add(mod.getAttributeName());
+            rdnAttrValues.add(mod.getValues()[0]);
 
             // The modification will affect the RDN so we need to first apply
             // the mods in memory and reconstruct the DN. We will set the DN to
             // null first so Entry.applyModifications wouldn't throw any
             // exceptions about affecting the RDN.
+            DN parentDN = modifiedEntry.getParentDN();
             modifiedEntry.setDN("");
             modifiedEntry =
                     Entry.applyModifications(modifiedEntry, true, mod);
-            modifiedEntry.setDN(mapper.constructEntryDN(modifiedEntry));
 
-            // We might have to split the mod values into those that affects
-            // the RDN and those that do not and add them after the mod DN.
-            if(mod.getModificationType() == ModificationType.REPLACE &&
-                    mod.getValues().length > 1)
-            {
-              List<String> newValues =
-                      new ArrayList<String>(mod.getValues().length - 1);
-              RDN newRDN = modifiedEntry.getRDN();
-              for(String value : mod.getValues())
-              {
-                if(!newRDN.hasAttributeValue(mod.getAttributeName(), value))
-                {
-                  newValues.add(value);
-                }
-              }
+            DN newDN = new DN(new RDN(
+                    rdnAttrNames.toArray(new String[rdnAttrNames.size()]),
+                    rdnAttrValues.toArray(new String[rdnAttrValues.size()])),
+                    parentDN);
 
-              Modification newMod =
-                      new Modification(ModificationType.ADD,
-                              mod.getAttributeName(),
-                              newValues.toArray(new String[newValues.size()]));
-              iterator.add(newMod);
-            }
+            modifiedEntry.setDN(newDN);
           }
         }
 
@@ -950,7 +951,7 @@ public abstract class LDAPBackend
             final SearchRequest r =
                     new SearchRequest(modifiedEntry.getDN(),
                             SearchScope.BASE,
-                            Filter.createPresenceFilter("objectClass"),
+                            Filter.createPresenceFilter("objectclass"),
                             requestAttributes);
             r.setSizeLimit(1);
             final Entry actualEntry = ldapInterface.searchForEntry(r);
@@ -959,6 +960,11 @@ public abstract class LDAPBackend
               modifiedEntry = actualEntry;
             }
           }
+        }
+        else
+        {
+          modifiedEntry =
+              mapper.getEntry(ldapInterface, resourceID, requestAttributes);
         }
       }
       else
@@ -1095,6 +1101,7 @@ public abstract class LDAPBackend
     }
 
     final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
+    uriBuilder.path("v1");
     uriBuilder.path(resource.getResourceDescriptor().getEndpoint());
     uriBuilder.path(resourceID);
 

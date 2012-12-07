@@ -31,8 +31,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
 
 
 
@@ -77,35 +81,55 @@ public class JsonParser
       {
         schemas = jsonObject.getJSONArray("schemas");
       }
-      else
+      else if (defaultSchemas != null)
       {
         schemas = defaultSchemas;
       }
-
-      // Read the core attributes.
-      for (AttributeDescriptor attributeDescriptor : resourceDescriptor
-          .getAttributes())
+      else
       {
-        final String externalAttributeName = attributeDescriptor.getName();
-        final Object jsonAttribute = jsonObject.opt(externalAttributeName);
-        if (jsonAttribute != null)
-        {
-          scimObject.addAttribute(
-              create(attributeDescriptor, jsonAttribute));
-        }
+        String[] schemaArray = new String[1];
+        schemaArray[0] = resourceDescriptor.getSchema();
+        schemas = new JSONArray(schemaArray);
       }
 
-      // Read the extension attributes.
-      if (schemas != null)
+      //If there is a only single schema specified, then all attributes are
+      //assumed to be under that schema.
+      boolean singleSchema = (schemas.length() == 1);
+
+      for (int i = 0; i < schemas.length(); i++)
       {
-        for (int i = 0; i < schemas.length(); i++)
+        final String schema = toLowerCase(schemas.getString(i));
+
+        if (singleSchema)
         {
-          final String schema = schemas.getString(i);
-          if (schema.equalsIgnoreCase(SCIMConstants.SCHEMA_URI_CORE))
+          //Even if there is a single schema, it is still possible that the
+          //attributes are all wrapped in a JSON object (with the schema URN
+          //as the key). This handles that case.
+          final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
+          if (schemaAttrs != null)
           {
+            --i;
+            singleSchema = false;
             continue;
           }
 
+          final Iterator keys = jsonObject.keys();
+          while (keys.hasNext())
+          {
+            final String attributeName = (String) keys.next();
+            if (SCIMConstants.SCHEMAS_ATTRIBUTE_NAME.equals(attributeName))
+            {
+              continue;
+            }
+            final AttributeDescriptor attributeDescriptor =
+                    resourceDescriptor.getAttribute(schema, attributeName);
+            final Object jsonAttribute = jsonObject.get(attributeName);
+            scimObject.addAttribute(
+                    create(attributeDescriptor, jsonAttribute));
+          }
+        }
+        else
+        {
           final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
           if (schemaAttrs != null)
           {
@@ -116,10 +140,24 @@ public class JsonParser
               {
                 final String attributeName = (String) keys.next();
                 final AttributeDescriptor attributeDescriptor =
-                    resourceDescriptor.getAttribute(schema, attributeName);
+                        resourceDescriptor.getAttribute(schema, attributeName);
                 final Object jsonAttribute = schemaAttrs.get(attributeName);
                 scimObject.addAttribute(
-                    create(attributeDescriptor, jsonAttribute));
+                        create(attributeDescriptor, jsonAttribute));
+              }
+            }
+          }
+          else if (SCIMConstants.SCHEMA_URI_CORE.equals(schema))
+          {
+            for (AttributeDescriptor attributeDescriptor :
+                    resourceDescriptor.getAttributes(schema))
+            {
+              final Object jsonAttribute =
+                     jsonObject.opt(toLowerCase(attributeDescriptor.getName()));
+              if (jsonAttribute != null)
+              {
+                scimObject.addAttribute(
+                        create(attributeDescriptor, jsonAttribute));
               }
             }
           }
@@ -266,13 +304,19 @@ public class JsonParser
   {
     if (descriptor.isMultiValued())
     {
-      if (!(jsonAttribute instanceof JSONArray))
+      JSONArray jsonArray;
+      if (jsonAttribute instanceof JSONArray)
       {
-        throw new InvalidResourceException(
-            "JSON array expected for multi-valued attribute '" +
-            descriptor.getName() + "'");
+        jsonArray = (JSONArray) jsonAttribute;
       }
-      return createMutiValuedAttribute((JSONArray) jsonAttribute, descriptor);
+      else
+      {
+        String[] s = new String[1];
+        s[0] = jsonAttribute.toString();
+        jsonArray = new JSONArray(s);
+      }
+
+      return createMutiValuedAttribute(jsonArray, descriptor);
     }
     else if (descriptor.getDataType() == AttributeDescriptor.DataType.COMPLEX)
     {
@@ -290,5 +334,36 @@ public class JsonParser
     {
       return this.createSimpleAttribute(jsonAttribute, descriptor);
     }
+  }
+
+
+
+  /**
+   * Returns a copy of the specified JSONObject with all the keys lower-cased.
+   * This makes it much easier to use methods like JSONObject.opt() to find a
+   * key when you don't know what the case is.
+   *
+   * @param jsonObject the original JSON object.
+   * @return a new JSONObject with the keys all lower-cased.
+   * @throws JSONException if there is an error creating the new JSONObject.
+   */
+  static final JSONObject makeCaseInsensitive(final JSONObject jsonObject)
+          throws JSONException
+  {
+    if (jsonObject == null)
+    {
+      return null;
+    }
+
+    Iterator keys = jsonObject.keys();
+    Map lowerCaseMap = new HashMap(jsonObject.length());
+    while (keys.hasNext())
+    {
+      String key = keys.next().toString();
+      String lowerCaseKey = toLowerCase(key);
+      lowerCaseMap.put(lowerCaseKey, jsonObject.get(key));
+    }
+
+    return new JSONObject(lowerCaseMap);
   }
 }

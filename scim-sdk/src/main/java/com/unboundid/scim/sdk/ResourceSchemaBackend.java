@@ -199,7 +199,7 @@ public class ResourceSchemaBackend extends SCIMBackend
         SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + resource.getName();
     copy.setId(id);
 
-    URI location = UriBuilder.fromUri(request.getBaseURL()).path(
+    URI location = UriBuilder.fromUri(request.getBaseURL()).path("v1").path(
         resource.getResourceDescriptor().getEndpoint()).path(id).build();
     copy.setMeta(new Meta(null, null,location, null));
 

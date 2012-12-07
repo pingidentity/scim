@@ -21,9 +21,10 @@ package com.unboundid.scim.ri;
 import org.testng.annotations.BeforeClass;
 
 /**
- * Tests the server with the resource ID mapped to the LDAP entryUUID attribute.
+ * Tests the server with the resource ID mapped to the LDAP DN (instead of
+ * entryUUID).
  */
-public class EntryUUIDMappingRITestCase extends SCIMServerTestCase
+public class DNMappingRITestCase extends SCIMServerTestCase
 {
   /**
    * Set up the test class to use an alternative resource mapping.
@@ -34,7 +35,7 @@ public class EntryUUIDMappingRITestCase extends SCIMServerTestCase
   public void setUp() throws Exception
   {
     SCIMServerConfig config = new SCIMServerConfig();
-    config.setResourcesFile(getFile("resource/resources-entryUUID.xml"));
+    config.setResourcesFile(getFile("resource/resources-entryDN.xml"));
     reconfigureTestSuite(config);
   }
 }
