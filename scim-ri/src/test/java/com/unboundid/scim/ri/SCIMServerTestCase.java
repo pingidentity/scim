@@ -1751,7 +1751,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Try to fetch more users than can be returned.
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     final Resources<UserResource> resources = userEndpoint.query(null);
-    assertEquals(resources.getTotalResults(), maxResults);
+    assertEquals(resources.getItemsPerPage(), maxResults);
+    assertEquals(resources.getTotalResults(), 10);
 
     //Clean up
     config.setMaxResults(Integer.MAX_VALUE);

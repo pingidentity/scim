@@ -32,7 +32,7 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -71,6 +71,14 @@ public class ResourceSearchResultListener implements SearchResultListener
   private final int maxResults;
 
   /**
+   * The total number of resources that were actually returned from the
+   * LDAP search (this may be more than we are allowed to return to the
+   * SCIM client).
+   */
+  private final AtomicInteger totalResults;
+
+
+  /**
    * The requested attributes plus the filter attributes.
    */
   private final SCIMQueryAttributes attributes;
@@ -100,6 +108,7 @@ public class ResourceSearchResultListener implements SearchResultListener
     this.resources      = new ArrayList<BaseResource>();
     this.ldapInterface  = ldapInterface;
     this.maxResults     = maxResults;
+    this.totalResults   = new AtomicInteger();
     this.attributes     = getFilterAttributes().merge(request.getAttributes());
   }
 
@@ -181,6 +190,8 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   public void searchEntryReturned(final SearchResultEntry searchEntry)
   {
+    totalResults.incrementAndGet();
+
     if (resources.size() >= maxResults)
     {
       return;
@@ -248,5 +259,17 @@ public class ResourceSearchResultListener implements SearchResultListener
   public List<BaseResource> getResources()
   {
     return resources;
+  }
+
+
+  /**
+   * Retrieve the total number of LDAP entries that were returned from the
+   * search.
+   *
+   * @return  Th number of LDAP entries returned.
+   */
+  public int getTotalResults()
+  {
+    return totalResults.get();
   }
 }

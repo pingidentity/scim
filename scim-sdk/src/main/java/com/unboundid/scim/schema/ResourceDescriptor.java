@@ -52,7 +52,18 @@ public class ResourceDescriptor extends BaseResource
     public ResourceDescriptor createResource(
         final ResourceDescriptor resourceDescriptor,
         final SCIMObject scimObject) {
-      return new ResourceDescriptor(resourceDescriptor, scimObject);
+      ResourceDescriptor rd =
+              new ResourceDescriptor(resourceDescriptor, scimObject);
+
+      if (scimObject.getSchemas().contains(
+              "urn:unboundid:schemas:scim:ldap:1.0"))
+      {
+        //This is a convenience for when we're talking to the UnboundID
+        //Directory REST API; clients could set this themselves, but we'll do
+        //it for them in this case.
+        rd.setStrictMode(false);
+      }
+      return rd;
     }
   };
 
@@ -188,6 +199,21 @@ public class ResourceDescriptor extends BaseResource
   public void setStrictMode(final boolean strictMode)
   {
     this.strictMode = strictMode;
+  }
+
+  /**
+   * Gets the "strict mode" setting for this ResourceDescriptor. If strict mode
+   * is off, then a call to {@link #getAttribute(String, String)} where the
+   * requested attribute does not exist in the attributesCache will result in
+   * the method generating an AttributeDescriptor on the fly. If strict mode
+   * were on in this case, it would throw an exception because that attribute
+   * was not defined.
+   *
+   * @return boolean indicating whether strict mode is enabled.
+   */
+  public boolean isStrictMode()
+  {
+    return this.strictMode;
   }
 
   /**

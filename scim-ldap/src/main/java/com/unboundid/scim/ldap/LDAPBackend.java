@@ -481,7 +481,8 @@ public abstract class LDAPBackend
       }
       else
       {
-        return new Resources<BaseResource>(scimObjects);
+        return new Resources<BaseResource>(scimObjects,
+                resultListener.getTotalResults(), 1);
       }
     }
     catch (LDAPException e)
@@ -1101,7 +1102,10 @@ public abstract class LDAPBackend
     }
 
     final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
-    uriBuilder.path("v1");
+    if (!request.getBaseURL().getPath().endsWith("v1/"))
+    {
+      uriBuilder.path("v1");
+    }
     uriBuilder.path(resource.getResourceDescriptor().getEndpoint());
     uriBuilder.path(resourceID);
 

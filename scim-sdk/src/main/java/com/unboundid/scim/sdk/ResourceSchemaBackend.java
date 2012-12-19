@@ -22,7 +22,6 @@ import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -199,9 +198,15 @@ public class ResourceSchemaBackend extends SCIMBackend
         SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + resource.getName();
     copy.setId(id);
 
-    URI location = UriBuilder.fromUri(request.getBaseURL()).path("v1").path(
-        resource.getResourceDescriptor().getEndpoint()).path(id).build();
-    copy.setMeta(new Meta(null, null,location, null));
+    final UriBuilder uriBuilder = UriBuilder.fromUri(request.getBaseURL());
+    if (!request.getBaseURL().getPath().endsWith("v1/"))
+    {
+      uriBuilder.path("v1");
+    }
+    uriBuilder.path(resource.getResourceDescriptor().getEndpoint());
+    uriBuilder.path(id);
+
+    copy.setMeta(new Meta(null, null, uriBuilder.build(), null));
 
     // Pare down the attributes to those requested.
     return ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY.createResource(
