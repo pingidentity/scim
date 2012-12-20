@@ -52,8 +52,27 @@
                 <artifactId>maven-resources-plugin</artifactId>
 				        <version>2.3</version>
 				        <executions>
+                  <execution>
+                    <id>copy-resources-xsd</id>
+                    <phase>process-resources</phase>
+                    <goals>
+                      <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                      <overwrite>true</overwrite>
+                      <outputDirectory>${project.build.outputDirectory}/com/unboundid/scim/ldap</outputDirectory>
+                      <resources>
+                        <resource>
+                          <directory>${main.basedir}/resource</directory>
+                          <includes>
+                            <include>*.xsd</include>
+                          </includes>
+                        </resource>
+                      </resources>
+                    </configuration>
+                  </execution>
 				          <execution>
-                      <id>copy-resources</id>
+                      <id>copy-resources-xml</id>
                       <phase>process-resources</phase>
                       <goals>
                          <goal>copy-resources</goal>
@@ -65,7 +84,6 @@
                           <resource>
                             <directory>${main.basedir}/resource</directory>
                             <includes>
-                              <include>*.xsd</include>
                               <include>resources.xml</include>
                             </includes>
                           </resource>
