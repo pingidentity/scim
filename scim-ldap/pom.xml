@@ -125,19 +125,19 @@
                   <configuration>
                     <target if="gpg.sign">
                       <mkdir dir="${project.build.directory}/gpg" />
-                      <!-- Private GPG key is on x2200-05 (Cent_OS Slave) -->
-                      <!-- GPG_PASSPHRASE is an environment variable in Hudson. -->
+                      <!-- Private GPG key is on ci-centos6-04 (Release slave) -->
+                      <!-- GPG_PASSPHRASE is an environment variable in Jenkins. -->
                       <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/pom.xml.asc ${project.basedir}/src/main/assemblies/pom.xml" />
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/pom.xml.asc ${project.basedir}/src/main/assemblies/pom.xml" />
                       </exec>
                       <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/${project.build.finalName}.jar.asc ${project.build.finalName}.jar" />
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/${project.build.finalName}.jar.asc ${project.build.finalName}.jar" />
                       </exec>
                       <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/${project.build.finalName}-sources.jar.asc ${project.build.finalName}-sources.jar" />
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/${project.build.finalName}-sources.jar.asc ${project.build.finalName}-sources.jar" />
                       </exec>
                       <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
-                        <arg line="-ab --no-tty --passphrase-fd 0 --output gpg/${project.build.finalName}-javadoc.jar.asc ${project.build.finalName}-javadoc.jar" />
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/${project.build.finalName}-javadoc.jar.asc ${project.build.finalName}-javadoc.jar" />
                       </exec>
                     </target>
                   </configuration>
