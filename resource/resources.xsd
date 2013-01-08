@@ -48,7 +48,7 @@
   <xs:complexType name="ResourcesDefinition">
     <xs:sequence>
       <xs:element name="resource" type="ResourceDefinition"
-                  minOccurs="1" maxOccurs="unbounded"/>
+                  minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="LDAPSearch" type="LDAPSearchParameters"
                   minOccurs="0" maxOccurs="unbounded" />
     </xs:sequence>
