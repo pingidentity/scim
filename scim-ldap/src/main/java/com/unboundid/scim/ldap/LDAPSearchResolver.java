@@ -397,18 +397,20 @@ public class LDAPSearchResolver
           searchRequest.setSizeLimit(1);
           entry = ldapInterface.searchForEntry(searchRequest);
 
-          for (DN excludeBaseDN : excludeBaseDNs)
-          {
-            if (excludeBaseDN.isAncestorOf(entry.getParsedDN(), true))
-            {
-              entry = null;
-              break;
-            }
-          }
-
           if (entry != null)
           {
-            break;
+            for (DN excludeBaseDN : excludeBaseDNs)
+            {
+              if (excludeBaseDN.isAncestorOf(entry.getParsedDN(), true))
+              {
+                entry = null;
+                break;
+              }
+            }
+            if(entry != null)
+            {
+              break;
+            }
           }
         }
         catch (LDAPException e)
