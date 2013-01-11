@@ -1,7 +1,73 @@
 UnboundID SCIM SDK, Server Extension, and Reference Implementation Release Notes
 
 For full information, visit the project homepage:
-http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim
+http://www.unboundid.com/labs/projects/system-for-cross-domain-identity-management
+
+---------- SCIM 1.2.1 ----------
+
+  * Release Date: January 21, 2013
+
+  * This is a maintenance release that improves quality, reliability, and
+    performance and adds some minimal enhancements. All users of previous
+    1.x releases should upgrade to this release.
+
+  * New Features
+
+     - Update the SCIM Reference Implementation and SDK to use the 'entryUUID'
+       as the SCIM ID by default, instead of the DN. This is still configurable
+       via the resources.xml file. Issue:DS-7267
+
+     - Add support for specifying arbitrary URL query parameters when performing
+       a search via SCIM. Issue:DS-7267
+
+     - Improve JSON parsing to be more lenient and handle data from multiple
+       schemas more efficiently. Issue:DS-7267
+
+     - Add support for a "non-strict mode" and a "default schema" in the
+       ResourceDescriptor and Attribute-related classes so that callers can
+       request and use attributes that are not explicitly defined in the schema.
+       Issue:DS-7267
+
+     - Add support for multiple base DNs per resource to the SCIM Reference
+       Implementation and SDK. This way a particular resource type, such as
+       "User", can live under multiple base DNs.
+       Issue:DS-7267
+
+     - Add support for a new "base-id" query parameter which can be used to
+       specify the SCIM resource ID of the search base entry to use.
+       Issue:DS-7267
+
+     - Add support for a new "scope" query parameter which can be used to
+       specify the LDAP search scope to use when performing a search. Valid
+       values are "base", "one", "sub", or "subordinate". The default is "sub".
+       Issue:DS-7267
+
+     - Add basic schema checking at the scim-ldap layer for POST, PUT, and PATCH
+       operations. It currently makes sure that all required attributes are
+       present and the PATCH operation will not cause schema violations.
+       Issue:DS-7290
+
+  * Resolved Issues
+
+     - Make LDAP-to-HTTP status code mapping more consistent. Map most LDAP
+       errors to HTTP status code 500 instead of 400 since it is unlikely that
+       these errors are caused by the client. Issue:DS-7231
+
+     - Fix a problem where the "Location" header did not contain the API
+       version. Issue:DS-7267
+
+     - Update the SCIM Reference Implementation and SDK to treat schema URNs and
+       JSON attribute names as case-insensitive, per the SCIM specification.
+       Issue:DS-7267
+
+     - Fix a problem where the "TotalResults" counter could be incorrect when
+       doing a search.
+       Issue:DS-7267
+
+     - Fix a potential NPE when searching for an entry that doesn't exist or is
+       not exposed via SCIM.
+       Issue:DS-7267
+
 
 ---------- SCIM 1.2.0 ----------
 
@@ -149,4 +215,4 @@ http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim
 
 ---------------------------------
 
-Copyright 2011-2012 UnboundID Corp. All Rights Reserved.
+Copyright 2011-2013 UnboundID Corp. All Rights Reserved.

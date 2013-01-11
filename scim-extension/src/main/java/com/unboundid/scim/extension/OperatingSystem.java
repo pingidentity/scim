@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2012 UnboundID Corp.
+ * Copyright 2011-2013 UnboundID Corp.
  * All Rights Reserved.
  */
 
@@ -27,7 +27,7 @@
  * CDDL HEADER END
  *
  *
- *      Portions Copyright 2007-2012 UnboundID Corp.
+ *      Portions Copyright 2007-2013 UnboundID Corp.
  *      Portions Copyright 2006-2008 Sun Microsystems, Inc.
  */
 

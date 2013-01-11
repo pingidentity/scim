@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 UnboundID Corp.
+ * Copyright 2012-2013 UnboundID Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License (GPLv2 only)
@@ -16,7 +16,7 @@
  */
 
 /*
- * Copyright 2011-2012 UnboundID Corp.
+ * Copyright 2011-2013 UnboundID Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License (GPLv2 only)

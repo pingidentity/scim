@@ -52,7 +52,7 @@
                 write information about all messages with a WARNING level or higher to a
                 file named "/tmp/scim.log":
               </p>
-              
+
 <pre>
 Debug.setEnabled(true);
 Logger logger = Debug.getLogger();
@@ -60,7 +60,7 @@ FileHandler fileHandler = new FileHandler("/tmp/scim.log");
 fileHandler.setLevel(Level.WARNING);
 logger.addHandler(fileHandler);
 </pre>
-              
+
               <p>
                 You can use that same <tt>Debug</tt> class to do any logging from within
                 your application code. There is a generic <tt>debug()</tt> method which can be used
@@ -68,14 +68,14 @@ logger.addHandler(fileHandler);
                 as the last parameter. Using this in your exception handlers will make it
                 much easier to track down problems.
               </p>
-              
+
             </td>
           </tr>
         </table>
       </div>
 
       <div id="footer">
-        Copyright &copy; 2011&#x2011;2012 &ndash; UnboundID Corp. &ndash; All rights reserved.
+        Copyright &copy; 2011&#x2011;2013 &ndash; UnboundID Corp. &ndash; All rights reserved.
       </div>
     </div>
   </body>

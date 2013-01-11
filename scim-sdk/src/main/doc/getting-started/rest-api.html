@@ -90,10 +90,10 @@ DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
 
 Credentials credentials = new UsernamePasswordCredentials(
   "uid=bjensen,dc=example,dc=com", "pAssw0rd");
-  
+
 httpClient.getCredentialsProvider().setCredentials(
   new AuthScope("localhost", -1), credentials);
-  
+
 httpClient.addRequestInterceptor(
   new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
 
@@ -143,7 +143,7 @@ if(phoneNumbers != null)
       </div>
 
       <div id="footer">
-        Copyright &copy; 2011&#x2011;2012 &ndash; UnboundID Corp. &ndash; All rights reserved.
+        Copyright &copy; 2011&#x2011;2013 &ndash; UnboundID Corp. &ndash; All rights reserved.
       </div>
     </div>
   </body>
