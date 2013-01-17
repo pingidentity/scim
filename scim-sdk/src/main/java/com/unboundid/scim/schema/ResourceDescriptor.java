@@ -132,9 +132,9 @@ public class ResourceDescriptor extends BaseResource
       }
       else
       {
-        attributeDescriptor = AttributeDescriptor.createAttribute(name,
-                AttributeDescriptor.DataType.STRING, null, schema,
-                true, false, false);
+        attributeDescriptor = AttributeDescriptor.createMultiValuedAttribute(
+                name, "value", AttributeDescriptor.DataType.STRING, null,
+                schema, true, false, false, null);
       }
     }
     return attributeDescriptor;

@@ -1661,6 +1661,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Fetch the users one page at a time with page size equal to 1.
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     int pageSize = 1;
+    final Set<String> userIDs = new HashSet<String>();
     for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
     {
       final Resources<UserResource> resources =
@@ -1669,8 +1670,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
       assertEquals(resources.getTotalResults(), NUM_USERS);
       assertEquals(resources.getStartIndex(), startIndex);
       assertEquals(resources.getItemsPerPage(), pageSize);
+      assertTrue(userIDs.add(resources.iterator().next().getId()));
     }
-    assertEquals(userDNs.size(), NUM_USERS);
+    assertEquals(userIDs.size(), NUM_USERS);
 
     // Create some groups.
     final long NUM_GROUPS = 10;
@@ -1695,12 +1697,13 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
       assertEquals(resources.getTotalResults(), NUM_GROUPS);
       assertEquals(resources.getStartIndex(), startIndex);
+      assertEquals(resources.getItemsPerPage(), startIndex < 10 ? pageSize : 1);
 
       int numResources = 0;
       for (final GroupResource resource : resources)
       {
         numResources++;
-        groupIDs.add(resource.getId());
+        assertTrue(groupIDs.add(resource.getId()));
       }
       assertEquals(resources.getItemsPerPage(), numResources);
     }
@@ -1752,7 +1755,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     final Resources<UserResource> resources = userEndpoint.query(null);
     assertEquals(resources.getItemsPerPage(), maxResults);
-    assertEquals(resources.getTotalResults(), 10);
+    assertEquals(resources.getTotalResults(), maxResults);
 
     //Clean up
     config.setMaxResults(Integer.MAX_VALUE);

@@ -26,6 +26,7 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.ldap.sdk.ModifyDNRequest;
@@ -406,9 +407,8 @@ public abstract class LDAPBackend
                   new String[requestAttributeSet.size()];
           requestAttributeSet.toArray(requestAttributes);
 
-          searchRequest =
-                  new SearchRequest(resultListener, baseDN.toString(),
-                          searchScope, filter, requestAttributes);
+          searchRequest = new SearchRequest(resultListener, baseDN.toString(),
+                                    searchScope, filter, requestAttributes);
         }
 
         final SortParameters sortParameters = request.getSortParameters();
@@ -440,6 +440,10 @@ public abstract class LDAPBackend
                       scimObjects.size();
           }
 
+          //We cannot set a size limit when using the VLV control; it will
+          //handle that internally.
+          searchRequest.setSizeLimit(0);
+
           startIndex = (int) pageParameters.getStartIndex();
           searchRequest.addControl(
                   new VirtualListViewRequestControl(
@@ -453,9 +457,27 @@ public abstract class LDAPBackend
                   new ServerSideSortRequestControl(new SortKey("uid"))); // TODO
           }
         }
+        else
+        {
+          searchRequest.setSizeLimit(maxResults);
+        }
 
-        // Invoke a search operation.
-        searchResult = ldapInterface.search(searchRequest);
+        // Invoke the search operation.
+        try
+        {
+          searchResult = ldapInterface.search(searchRequest);
+        }
+        catch (LDAPSearchException e)
+        {
+          if(e.getResultCode().equals(ResultCode.SIZE_LIMIT_EXCEEDED))
+          {
+            searchResult = e.getSearchResult();
+          }
+          else
+          {
+            throw e;
+          }
+        }
 
         // Prepare the response.
         scimObjects.addAll(resultListener.getResources());
