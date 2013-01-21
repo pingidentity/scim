@@ -1168,6 +1168,22 @@ public class ResourceMapper
 
 
   /**
+   * Determine whether the provided DN could be a resource entry that
+   * satisfies the criteria for this ResourceMapper.
+   *
+   * @param dn  The DN for which to make the determination.
+   *
+   * @return  {@code true} if the LDAP entry satisfies the criteria for this
+   *          resolver.
+   */
+  final boolean isDnInScope(final String dn)
+  {
+    return searchResolver.isDnInScope(dn);
+  }
+
+
+
+  /**
    * Map the provided SCIM sort parameters to an LDAP sort control.
    *
    * @param sortParameters  The SCIM sort parameters to be mapped.
@@ -1630,6 +1646,12 @@ public class ResourceMapper
     {
       case ResultCode.NO_SUCH_ATTRIBUTE_INT_VALUE:
       case ResultCode.INVALID_ATTRIBUTE_SYNTAX_INT_VALUE:
+      case ResultCode.INVALID_DN_SYNTAX_INT_VALUE:
+      case ResultCode.UNWILLING_TO_PERFORM_INT_VALUE:
+      case ResultCode.OBJECT_CLASS_VIOLATION_INT_VALUE:
+      case ResultCode.NOT_ALLOWED_ON_NONLEAF_INT_VALUE:
+      case ResultCode.NOT_ALLOWED_ON_RDN_INT_VALUE:
+      case ResultCode.OBJECT_CLASS_MODS_PROHIBITED_INT_VALUE:
         return SCIMException.createException(400, errorMessage);
 
       case ResultCode.INVALID_CREDENTIALS_INT_VALUE:

@@ -197,6 +197,48 @@ public final class StaticUtils
 
 
   /**
+   * Retrieves a UTF-8 byte representation of the provided string.
+   *
+   * @param  s  The string for which to retrieve the UTF-8 byte representation.
+   *
+   * @return  The UTF-8 byte representation for the provided string.
+   */
+  public static byte[] getUTF8Bytes(final String s)
+  {
+    final int length;
+    if((s == null) || ((length = s.length()) == 0))
+    {
+      return new byte[0];
+    }
+
+    final byte[] b = new byte[length];
+    for(int i = 0; i < length; i++)
+    {
+      final char c = s.charAt(i);
+      if(c <= 0x7F)
+      {
+        b[i] = (byte) (c & 0x7F);
+      }
+      else
+      {
+        try
+        {
+          return s.getBytes("UTF-8");
+        }
+        catch(Exception e)
+        {
+          // This should never happen.
+          Debug.debugException(e);
+          return s.getBytes();
+        }
+      }
+    }
+    return b;
+  }
+
+
+
+  /**
    * Retrieves a single-line string representation of the stack trace for the
    * provided {@code Throwable}.  It will include the unqualified name of the
    * {@code Throwable} class, a list of source files and line numbers (if
@@ -308,6 +350,8 @@ public final class StaticUtils
       buffer.append(')');
     }
   }
+
+
 
   /**
    * Inspects the Throwable to obtain the root cause. This method walks through

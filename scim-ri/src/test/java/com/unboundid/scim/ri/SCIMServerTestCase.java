@@ -1439,7 +1439,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
                       "cn: testRetrieve",
                       "givenname: Test",
                       "sn: User",
-                      "title: Chief of R&D",
+                      "title: Chief of Research",
                       "displayName: John Smith",
                       "mail: jsmith@example.com",
                       "employeeType: Engineer");
@@ -1463,7 +1463,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(user.getName().getFormatted(), "testRetrieve");
     assertEquals(user.getName().getGivenName(), "Test");
     assertEquals(user.getName().getFamilyName(), "User");
-    assertEquals(user.getTitle(), "Chief of R&D");
+    assertEquals(user.getTitle(), "Chief of Research");
     assertEquals(user.getDisplayName(), "John Smith");
     assertEquals(user.getEmails().iterator().next().getValue(),
                                                 "jsmith@example.com");

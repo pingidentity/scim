@@ -53,7 +53,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 
@@ -66,12 +68,37 @@ import static com.unboundid.scim.sdk.SCIMConstants.*;
 public class MarshallerTestCase
   extends SCIMTestCase
 {
+
+  //Set up an XML validator that will throw if the XML does not validate.
+  private static final ErrorHandler ERROR_HANDLER = new ErrorHandler()
+  {
+    public void warning(final SAXParseException exception)
+            throws SAXException
+    {
+      throw exception;
+    }
+
+
+    public void error(final SAXParseException exception)
+            throws SAXException
+    {
+      throw exception;
+    }
+
+
+    public void fatalError(final SAXParseException exception)
+            throws SAXException
+    {
+      throw exception;
+    }
+  };
+
   /**
    * Verify that a valid user can be written to XML and then read back.
    *
    * @throws Exception If the test fails.
    */
-  @Test(enabled = true)
+  @Test
   public void testMarshal()
     throws Exception
   {
@@ -163,7 +190,60 @@ public class MarshallerTestCase
     }
   }
 
+  /**
+   * Verify that the XML marshaller correctly handles characters that are
+   * invalid in XML (even though they may be valid in LDAP).
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testInvalidXML() throws Exception
+  {
+    final UserResource user1 = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    user1.setTitle("\"R&D Manager\"");
+    user1.setDisplayName("<Good 'ol boy>");
+    user1.setNickName("NickNamePlusBinary\u0013");
+    Set<Entry<String>> emails = new HashSet<Entry<String>>();
+    emails.add(new Entry<String>("user\u0007@example.com", "work", true));
+    emails.add(new Entry<String>("user@example.com", "home", false));
+    user1.setEmails(emails);
 
+    final ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
+    try
+    {
+      final XmlMarshaller marshaller = new XmlMarshaller();
+      marshaller.marshal(user1, byteArrayStream);
+    }
+    finally
+    {
+      byteArrayStream.close();
+    }
+
+    InputStream inputStream =
+            new ByteArrayInputStream(byteArrayStream.toByteArray());
+
+    //Check that the XML parses.
+    final DocumentBuilderFactory documentBuilderFactory =
+            DocumentBuilderFactory.newInstance();
+    documentBuilderFactory.setNamespaceAware(true);
+    documentBuilderFactory.setIgnoringElementContentWhitespace(true);
+    documentBuilderFactory.setValidating(false);
+
+    final DocumentBuilder documentBuilder =
+            documentBuilderFactory.newDocumentBuilder();
+    documentBuilder.setErrorHandler(ERROR_HANDLER);
+    documentBuilder.parse(inputStream);
+
+    //Check that the Unmarshaller understands the binary elements.
+    inputStream = new ByteArrayInputStream(byteArrayStream.toByteArray());
+    final Unmarshaller unmarshaller = new XmlUnmarshaller();
+    final BaseResource resource = unmarshaller.unmarshal(inputStream,
+            CoreSchema.USER_DESCRIPTOR, BaseResource.BASE_RESOURCE_FACTORY);
+    final SCIMObject user2 = resource.getScimObject();
+    inputStream.close();
+
+    assertEquals(user1.getScimObject(), user2);
+  }
 
   /**
    *
@@ -188,6 +268,7 @@ public class MarshallerTestCase
         "/Users/1", null));
 
     final File xmlFile = File.createTempFile("test-", ".xml");
+    xmlFile.deleteOnExit();
 
     final OutputStream outputStream = new FileOutputStream(xmlFile);
     try
@@ -203,11 +284,10 @@ public class MarshallerTestCase
     // Validate the XML document against the schema.
     final SchemaFactory schemaFactory =
         SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
-    final Schema scimCoreSchema =
-        schemaFactory.newSchema(
+    final Schema scimCoreSchema = schemaFactory.newSchema(
             getResourceFile("/com/unboundid/scim/schema/scim-core.xsd"));
     final DocumentBuilderFactory documentBuilderFactory =
-        DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory.newInstance();
     documentBuilderFactory.setNamespaceAware(true);
     documentBuilderFactory.setIgnoringElementContentWhitespace(true);
     documentBuilderFactory.setValidating(false);
@@ -215,31 +295,7 @@ public class MarshallerTestCase
 
     final DocumentBuilder documentBuilder =
         documentBuilderFactory.newDocumentBuilder();
-    documentBuilder.setErrorHandler(new ErrorHandler()
-    {
-      public void warning(final SAXParseException exception)
-          throws SAXException
-      {
-        throw exception;
-      }
-
-
-
-      public void error(final SAXParseException exception)
-          throws SAXException
-      {
-        throw exception;
-      }
-
-
-
-      public void fatalError(final SAXParseException exception)
-          throws SAXException
-      {
-        throw exception;
-      }
-    });
-
+    documentBuilder.setErrorHandler(ERROR_HANDLER);
     documentBuilder.parse(xmlFile);
   }
 }

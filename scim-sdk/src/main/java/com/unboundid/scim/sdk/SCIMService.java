@@ -191,7 +191,8 @@ public class SCIMService
     }
 
     ResourceDescriptor descriptor = resources.iterator().next();
-    if (schema.equalsIgnoreCase("urn:unboundid:schemas:scim:ldap:1.0"))
+    if ("urn:unboundid:schemas:scim:ldap:1.0".equalsIgnoreCase(
+            descriptor.getSchema()))
     {
       //This is a convenience for when we're talking to the UnboundID Directory
       //REST API; clients could set this themselves, but we'll do it for them

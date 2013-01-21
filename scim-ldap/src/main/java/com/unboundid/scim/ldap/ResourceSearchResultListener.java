@@ -190,11 +190,19 @@ public class ResourceSearchResultListener implements SearchResultListener
    */
   public void searchEntryReturned(final SearchResultEntry searchEntry)
   {
-    totalResults.incrementAndGet();
-
     if (resources.size() >= maxResults)
     {
+      totalResults.incrementAndGet();
       return;
+    }
+    else if (!resourceMapper.isDnInScope(searchEntry.getDN()))
+    {
+      // Don't increment totalResults, since this result is out of scope.
+      return;
+    }
+    else
+    {
+      totalResults.incrementAndGet();
     }
 
     try

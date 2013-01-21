@@ -28,8 +28,10 @@ import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.ServerErrorException;
+import com.unboundid.scim.sdk.StaticUtils;
 
 import javax.xml.XMLConstants;
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -38,7 +40,7 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -178,7 +180,13 @@ public class XmlStreamMarshaller implements StreamMarshaller
       {
         xmlStreamWriter.writeStartElement(
             SCIMConstants.SCHEMA_URI_CORE, "description");
-        xmlStreamWriter.writeCharacters(description);
+        AtomicBoolean base64Encoded = new AtomicBoolean(false);
+        String cleanXML = cleanStringForXML(description, base64Encoded);
+        if (base64Encoded.get())
+        {
+          xmlStreamWriter.writeAttribute("base64Encoded", "true");
+        }
+        xmlStreamWriter.writeCharacters(cleanXML);
         xmlStreamWriter.writeEndElement();
       }
 
@@ -325,13 +333,25 @@ public class XmlStreamMarshaller implements StreamMarshaller
       if (o.getPath() != null)
       {
         xmlStreamWriter.writeStartElement("path");
-        xmlStreamWriter.writeCharacters(o.getPath());
+        AtomicBoolean base64Encoded = new AtomicBoolean(false);
+        String cleanXML = cleanStringForXML(o.getPath(), base64Encoded);
+        if(base64Encoded.get())
+        {
+          xmlStreamWriter.writeAttribute("base64Encoded", "true");
+        }
+        xmlStreamWriter.writeCharacters(cleanXML);
         xmlStreamWriter.writeEndElement();
       }
       if (o.getLocation() != null)
       {
         xmlStreamWriter.writeStartElement("location");
-        xmlStreamWriter.writeCharacters(o.getLocation());
+        AtomicBoolean base64Encoded = new AtomicBoolean(false);
+        String cleanXML = cleanStringForXML(o.getLocation(), base64Encoded);
+        if(base64Encoded.get())
+        {
+          xmlStreamWriter.writeAttribute("base64Encoded", "true");
+        }
+        xmlStreamWriter.writeCharacters(cleanXML);
         xmlStreamWriter.writeEndElement();
       }
       if (o.getData() != null)
@@ -349,7 +369,15 @@ public class XmlStreamMarshaller implements StreamMarshaller
         if (o.getStatus().getDescription() != null)
         {
           xmlStreamWriter.writeStartElement("description");
-          xmlStreamWriter.writeCharacters(o.getStatus().getDescription());
+
+          AtomicBoolean base64Encoded = new AtomicBoolean(false);
+          String cleanXML =
+               cleanStringForXML(o.getStatus().getDescription(), base64Encoded);
+          if(base64Encoded.get())
+          {
+            xmlStreamWriter.writeAttribute("base64Encoded", "true");
+          }
+          xmlStreamWriter.writeCharacters(cleanXML);
           xmlStreamWriter.writeEndElement();
         }
         xmlStreamWriter.writeEndElement();
@@ -508,8 +536,14 @@ public class XmlStreamMarshaller implements StreamMarshaller
       }
       else
       {
-        final String stringValue = value.getStringValue();
-        xmlStreamWriter.writeCharacters(stringValue);
+        String stringValue = value.getStringValue();
+        AtomicBoolean base64Encoded = new AtomicBoolean(false);
+        String cleanXML = cleanStringForXML(stringValue, base64Encoded);
+        if(base64Encoded.get())
+        {
+          xmlStreamWriter.writeAttribute("base64Encoded", "true");
+        }
+        xmlStreamWriter.writeCharacters(cleanXML);
       }
       xmlStreamWriter.writeEndElement();
     }
@@ -560,9 +594,14 @@ public class XmlStreamMarshaller implements StreamMarshaller
     }
     else
     {
-      final String stringValue =
-          scimAttribute.getValue().getStringValue();
-      xmlStreamWriter.writeCharacters(stringValue);
+      String stringValue = scimAttribute.getValue().getStringValue();
+      AtomicBoolean base64Encoded = new AtomicBoolean(false);
+      String cleanXML = cleanStringForXML(stringValue, base64Encoded);
+      if(base64Encoded.get())
+      {
+        xmlStreamWriter.writeAttribute("base64Encoded", "true");
+      }
+      xmlStreamWriter.writeCharacters(cleanXML);
     }
 
     xmlStreamWriter.writeEndElement();
@@ -594,8 +633,6 @@ public class XmlStreamMarshaller implements StreamMarshaller
 
 
 
-
-
   /**
    * Helper that writes namespace when needed.
    * @param scimAttribute Attribute tag to write.
@@ -617,5 +654,82 @@ public class XmlStreamMarshaller implements StreamMarshaller
       xmlStreamWriter.writeStartElement(scimAttribute.getSchema(),
         scimAttribute.getAttributeDescriptor().getMultiValuedChildName());
     }
+  }
+
+
+
+  /**
+   * This method determines whether the input string contains invalid XML
+   * unicode characters as specified by the XML 1.0 standard, and thus needs
+   * to be base-64 encoded. It also replaces any unicode characters greater
+   * than 0x7F with their decimal equivalent of their unicode code point
+   * (for example the Copyright sign (0xC2A9) becomes &#49833;)
+   *
+   * The returned string is either:
+   *
+   * 1) The base-64 encoding of the UTF-8 bytes of the original input string,
+   *    iff the original input string contained any invalid XML characters,
+   *
+   *  or
+   *
+   * 2) The original input string with any characters greater than 0x7f
+   *    replaced with the corresponding unicode code point.
+   *
+   * @param input The input string value to clean
+   * @param base64Encoded An output parameter indicating whether the returned
+   *                      string is base64-encoded.
+   * @return an XML-safe version of the input string, possibly base64-encoded
+   *         if the input contained invalid XML characters.
+   */
+  private static String cleanStringForXML(final String input,
+                                          final AtomicBoolean base64Encoded)
+  {
+    if (input == null || input.isEmpty())
+    {
+      return "";
+    }
+
+    //Buffer to hold the escaped output.
+    StringBuilder output = new StringBuilder(input.length());
+
+    char c;
+    for(int i = 0; i < input.length(); i++)
+    {
+      c = input.charAt(i);
+      if((c == 0x9) ||
+         (c == 0xA) ||
+         (c == 0xD) ||
+         ((c >= 0x20) && (c <= 0xD7FF)) ||
+         ((c >= 0xE000) && (c <= 0xFFFD)) ||
+         ((c >= 0x10000) && (c <= 0x10FFFF)))
+      {
+        //It's a valid XML character, now check if it needs escaping.
+        if (c > 0x7F)
+        {
+          output.append("&#").append(Integer.toString(c, 10)).append(";");
+        }
+        else
+        {
+          output.append(c);
+        }
+        continue;
+      }
+      else
+      {
+        //It's an invalid XML character, so base64-encode the whole thing.
+        if (base64Encoded != null)
+        {
+          base64Encoded.set(true);
+        }
+        return DatatypeConverter.printBase64Binary(
+                 StaticUtils.getUTF8Bytes(input));
+      }
+    }
+
+    if(base64Encoded != null)
+    {
+      base64Encoded.set(false);
+    }
+    return output.toString();
   }
 }

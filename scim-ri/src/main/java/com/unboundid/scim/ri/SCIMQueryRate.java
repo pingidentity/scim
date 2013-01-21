@@ -81,6 +81,7 @@ import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.ConsoleHandler;
 
 import static com.unboundid.scim.sdk.Debug.debugException;
 import static com.unboundid.util.StaticUtils.NO_STRINGS;
@@ -565,6 +566,11 @@ public class SCIMQueryRate
   @Override()
   public ResultCode doToolProcessing()
   {
+    //Initalize the Debugger
+    Debug.setEnabled(true);
+    Debug.getLogger().addHandler(new ConsoleHandler());
+    Debug.getLogger().setUseParentHandlers(false);
+
     // Determine the random seed to use.
     final Long seed;
     if (randomSeed.isPresent())

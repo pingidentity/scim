@@ -37,6 +37,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
@@ -44,6 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -377,9 +379,24 @@ public class XmlUnmarshaller implements Unmarshaller
       final Node node,
       final AttributeDescriptor attributeDescriptor)
   {
+    Node b64Node = node.getAttributes().getNamedItem("base64Encoded");
+    String textContent = node.getTextContent();
+    if(b64Node != null && Boolean.parseBoolean(b64Node.getTextContent()))
+    {
+      byte[] bytes = DatatypeConverter.parseBase64Binary(node.getTextContent());
+      try
+      {
+        textContent = new String(bytes, "UTF-8");
+      }
+      catch (UnsupportedEncodingException e)
+      {
+        //This should never happen with UTF-8.
+        Debug.debugException(e);
+      }
+    }
     return SCIMAttribute.create(attributeDescriptor,
-        SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
-                                       node.getTextContent()));
+            SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
+                    textContent));
   }
 
 
@@ -417,15 +434,31 @@ public class XmlUnmarshaller implements Unmarshaller
       }
       else
       {
+        Node b64Node = attribute.getAttributes().getNamedItem("base64Encoded");
+        String textContent = attribute.getTextContent();
+        if(b64Node != null && Boolean.parseBoolean(b64Node.getTextContent()))
+        {
+          byte[] bytes = DatatypeConverter.parseBase64Binary(
+                            attribute.getTextContent());
+          try
+          {
+            textContent = new String(bytes, "UTF-8");
+          }
+          catch(UnsupportedEncodingException e)
+          {
+            //This should never happen with UTF-8.
+            Debug.debugException(e);
+          }
+        }
+
         SCIMAttribute subAttr = SCIMAttribute.create(
             attributeDescriptor.getSubAttribute("value"),
-            SCIMAttributeValue.createValue(attributeDescriptor.getDataType(),
-                attribute.getTextContent()));
+                SCIMAttributeValue.createValue(
+                        attributeDescriptor.getDataType(), textContent));
         values.add(SCIMAttributeValue.createComplexValue(subAttr));
       }
     }
-    SCIMAttributeValue[] vals =
-        new SCIMAttributeValue[values.size()];
+    SCIMAttributeValue[] vals = new SCIMAttributeValue[values.size()];
     vals = values.toArray(vals);
     return SCIMAttribute.create(attributeDescriptor, vals);
   }
