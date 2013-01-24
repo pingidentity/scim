@@ -84,7 +84,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -372,9 +371,9 @@ public abstract class LDAPBackend
         searchScope = SearchScope.SUB;
       }
 
-      final List<BaseResource> scimObjects = new LinkedList<BaseResource>();
       SearchResult searchResult = null;
       int startIndex = 1;
+      int totalToReturn = maxResults;
 
       for (DN baseDN : searchBaseDNs)
       {
@@ -431,13 +430,14 @@ public abstract class LDAPBackend
 
         // Use the VLV control to perform pagination.
         final PageParameters pageParameters = request.getPageParameters();
-        int count = maxResults - scimObjects.size();
+        int numLeftToReturn = totalToReturn - resultListener.getTotalResults();
         if (pageParameters != null)
         {
           if (pageParameters.getCount() > 0)
           {
-            count = Math.min(pageParameters.getCount(), maxResults) -
-                      scimObjects.size();
+            totalToReturn = pageParameters.getCount();
+            numLeftToReturn = Math.min(totalToReturn, maxResults) -
+                      resultListener.getTotalResults();
           }
 
           //We cannot set a size limit when using the VLV control; it will
@@ -447,7 +447,7 @@ public abstract class LDAPBackend
           startIndex = (int) pageParameters.getStartIndex();
           searchRequest.addControl(
                   new VirtualListViewRequestControl(
-                          startIndex, 0, count-1, 0, null, true));
+                          startIndex, 0, numLeftToReturn-1, 0, null, true));
 
           // VLV requires a sort control.
           if (!searchRequest.hasControl(
@@ -479,11 +479,8 @@ public abstract class LDAPBackend
           }
         }
 
-        // Prepare the response.
-        scimObjects.addAll(resultListener.getResources());
-
         if (searchRequest.getScope() == SearchScope.BASE ||
-                scimObjects.size() >= count)
+                resultListener.getTotalResults() >= totalToReturn)
         {
           break;
         }
@@ -492,6 +489,11 @@ public abstract class LDAPBackend
           searchRequest = null;
         }
       }
+
+      // Prepare the response.
+      List<BaseResource> scimObjects = resultListener.getResources();
+      int toIdx = Math.min(scimObjects.size(), totalToReturn);
+      scimObjects = scimObjects.subList(0, toIdx);
 
       final VirtualListViewResponseControl vlvResponseControl =
                   getVLVResponseControl(searchResult);
@@ -504,7 +506,7 @@ public abstract class LDAPBackend
       else
       {
         return new Resources<BaseResource>(scimObjects,
-                resultListener.getTotalResults(), 1);
+                      resultListener.getTotalResults(), 1);
       }
     }
     catch (LDAPException e)
