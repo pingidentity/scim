@@ -1,6 +1,6 @@
 <!--
   Copyright 2011-2013 UnboundID Corp.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License (GPLv2 only)
   or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
@@ -9,7 +9,7 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this program; if not, see <http://www.gnu.org/licenses>.
 -->
@@ -28,6 +28,7 @@
             <includes>
                 <include>3RD_PARTY_LICENSES.txt</include>
             </includes>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>.</outputDirectory>
@@ -38,14 +39,19 @@
             <excludes>
                 <exclude>licenseTable.xml</exclude>
             </excludes>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>docs/javadoc</outputDirectory>
             <directory>${project.build.directory}/javadoc</directory>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>docs/getting-started</outputDirectory>
             <directory>${project.basedir}/src/main/doc/getting-started</directory>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>docs/getting-started/resources</outputDirectory>
@@ -54,6 +60,8 @@
               <include>unboundid.css</include>
               <include>**/images/*</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
     </fileSets>
     <files>
@@ -61,16 +69,20 @@
             <outputDirectory>.</outputDirectory>
             <source>${project.build.directory}/${project.build.finalName}-sources.jar</source>
             <destName>sources.jar</destName>
+            <fileMode>644</fileMode>
         </file>
         <file>
             <outputDirectory>.</outputDirectory>
             <source>${main.basedir}/resource/Release-Notes.txt</source>
+            <fileMode>644</fileMode>
         </file>
     </files>
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </dependencySet>
     </dependencySets>
 </assembly>
