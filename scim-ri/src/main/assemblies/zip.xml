@@ -1,6 +1,6 @@
 <!--
   Copyright 2011-2013 UnboundID Corp.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License (GPLv2 only)
   or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
@@ -9,7 +9,7 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with this program; if not, see <http://www.gnu.org/licenses>.
 -->
@@ -29,6 +29,7 @@
             <includes>
                 <include>README.txt</include>
             </includes>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>.</outputDirectory>
@@ -36,6 +37,7 @@
             <includes>
                 <include>3RD_PARTY_LICENSES.txt</include>
             </includes>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>.</outputDirectory>
@@ -46,10 +48,13 @@
             <excludes>
                 <exclude>licenseTable.xml</exclude>
             </excludes>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>javadoc</outputDirectory>
             <directory>${project.build.directory}/javadoc</directory>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>server</outputDirectory>
@@ -57,6 +62,8 @@
             <includes>
                 <include>ldif/*</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>server/tools</outputDirectory>
@@ -65,6 +72,8 @@
                 <include>*.bat</include>
             </includes>
             <lineEnding>crlf</lineEnding>
+            <directoryMode>755</directoryMode>
+            <fileMode>755</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>server/tools</outputDirectory>
@@ -73,6 +82,7 @@
                 <exclude>*.bat</exclude>
             </excludes>
             <lineEnding>lf</lineEnding>
+            <directoryMode>755</directoryMode>
             <fileMode>755</fileMode>
         </fileSet>
         <fileSet>
@@ -82,6 +92,8 @@
                 <include>resources.xsd</include>
                 <include>resources.xml</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>client</outputDirectory>
@@ -89,6 +101,8 @@
             <includes>
                 <include>**</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
             <outputDirectory>client/src/main/java</outputDirectory>
@@ -96,18 +110,23 @@
             <includes>
                 <include>com/unboundid/scim/ri/client/*.java</include>
             </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </fileSet>
     </fileSets>
     <files>
         <file>
             <outputDirectory>.</outputDirectory>
             <source>${main.basedir}/resource/Release-Notes.txt</source>
+            <fileMode>644</fileMode>
         </file>
     </files>
     <dependencySets>
         <dependencySet>
             <outputDirectory>server/lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
         </dependencySet>
     </dependencySets>
 </assembly>
