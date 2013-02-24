@@ -17,6 +17,7 @@ import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -31,6 +32,8 @@ import static org.testng.Assert.assertTrue;
 import javax.net.ssl.SSLContext;
 
 import java.io.File;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -177,8 +180,25 @@ public class ServerExtensionTestCase extends BaseTestCase
       final String host, final String userName, final String password,
       final SSLContext sslContext)
   {
-    final SSLSocketFactory sslSocketFactory =
-        new SSLSocketFactory(sslContext);
+    SSLSocketFactory sslSocketFactory;
+    try
+    {
+      sslSocketFactory = new SSLSocketFactory(
+        new TrustStrategy()
+        {
+          public boolean isTrusted(final X509Certificate[] chain,
+                                   final String authType)
+            throws CertificateException
+          {
+            return true;
+          }
+        },
+        SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+    }
+    catch (final Exception e)
+    {
+      sslSocketFactory = new SSLSocketFactory(sslContext);
+    }
     final Scheme httpsScheme = new Scheme("https", 443, sslSocketFactory);
     final Scheme httpScheme =
         new Scheme("http", 80, PlainSocketFactory.getSocketFactory());
