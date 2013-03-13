@@ -747,7 +747,7 @@ public final class AttributeDescriptor {
     return newAttribute(name, multiValuedChildName, dataType,
         description, schema, readOnly, required, caseExact,
         CoreSchema.addCommonMultiValuedSubAttributes(
-            dataType, canonicalValues, subAttributes));
+            schema, dataType, canonicalValues, subAttributes));
   }
 
   /**

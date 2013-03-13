@@ -57,6 +57,7 @@ public class CoreSchema
    * Adds the default sub-attributes for multi-valued attributes. This
    * will include the type, primary, display and operation attributes.
    *
+   * @param schema          The schema of the multi-valued attribute.
    * @param dataType        The data type of the value sub-attribute.
    * @param canonicalValues The list of canonical values for the type attribute.
    * @param subAttributes  A list specifying the sub attributes of the complex
@@ -64,6 +65,7 @@ public class CoreSchema
    * @return The default sub-attributes for multi-valued attributes.
    */
   static AttributeDescriptor[] addCommonMultiValuedSubAttributes(
+      final String schema,
       final AttributeDescriptor.DataType dataType,
       final String[] canonicalValues,
       final AttributeDescriptor... subAttributes)
@@ -71,7 +73,7 @@ public class CoreSchema
     final AttributeDescriptor type = AttributeDescriptor.createSubAttribute(
         "type", AttributeDescriptor.DataType.STRING, "A label indicating the " +
         "attribute's function; e.g., \"work\" or " + "\"home\"",
-        SCIMConstants.SCHEMA_URI_CORE, false, false, false, canonicalValues);
+        schema, false, false, false, canonicalValues);
 
     int numSubAttributes = 0;
     if (subAttributes != null)
@@ -90,7 +92,7 @@ public class CoreSchema
       allSubAttributes = new AttributeDescriptor[numSubAttributes + 5];
       allSubAttributes[i++] = AttributeDescriptor.createSubAttribute(
         "value", dataType, "The attribute's significant value",
-          SCIMConstants.SCHEMA_URI_CORE, false, true, false);
+        schema, false, true, false);
     }
 
     allSubAttributes[i++] = MULTIVALUED_DISPLAY;
