@@ -105,6 +105,9 @@ public class XmlBulkParser
     final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
     try
     {
+      // Increase protection against XML bombs (DS-8081).
+      xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+
       xmlStreamReader =
           xmlInputFactory.createXMLStreamReader(bulkInputStream, "UTF-8");
       try

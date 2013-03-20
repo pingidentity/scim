@@ -59,6 +59,35 @@ import java.util.List;
 public class XmlUnmarshaller implements Unmarshaller
 {
   /**
+   * Create a document builder that is better protected against attacks from
+   * XML bombs.
+   *
+   * @return  A document builder.
+   *
+   * @throws javax.xml.parsers.ParserConfigurationException
+   *         If the document builder could not be created.
+   */
+  private DocumentBuilder createDocumentBuilder()
+      throws javax.xml.parsers.ParserConfigurationException
+  {
+    final DocumentBuilderFactory dbFactory =
+        DocumentBuilderFactory.newInstance();
+
+    // Increase protection against XML bombs (DS-8081).
+    dbFactory.setFeature(
+        "http://apache.org/xml/features/disallow-doctype-decl",
+        true);
+
+    dbFactory.setNamespaceAware(true);
+    dbFactory.setIgnoringElementContentWhitespace(true);
+    dbFactory.setValidating(false);
+
+    return dbFactory.newDocumentBuilder();
+  }
+
+
+
+  /**
    * {@inheritDoc}
    */
   public <R extends BaseResource> R unmarshal(
@@ -70,13 +99,7 @@ public class XmlUnmarshaller implements Unmarshaller
     final Document doc;
     try
     {
-      final DocumentBuilderFactory dbFactory =
-          DocumentBuilderFactory.newInstance();
-      dbFactory.setNamespaceAware(true);
-      dbFactory.setIgnoringElementContentWhitespace(true);
-      dbFactory.setValidating(false);
-      final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-      doc = dBuilder.parse(inputStream);
+      doc = createDocumentBuilder().parse(inputStream);
       doc.getDocumentElement().normalize();
     }
     catch (Exception e)
@@ -169,13 +192,7 @@ public class XmlUnmarshaller implements Unmarshaller
     final Document doc;
     try
     {
-      final DocumentBuilderFactory dbFactory =
-          DocumentBuilderFactory.newInstance();
-      dbFactory.setNamespaceAware(true);
-      dbFactory.setIgnoringElementContentWhitespace(true);
-      dbFactory.setValidating(false);
-      final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-      doc = dBuilder.parse(inputStream);
+      doc = createDocumentBuilder().parse(inputStream);
       doc.getDocumentElement().normalize();
     }
     catch (Exception e)
@@ -231,13 +248,7 @@ public class XmlUnmarshaller implements Unmarshaller
     final Document doc;
     try
     {
-      final DocumentBuilderFactory dbFactory =
-          DocumentBuilderFactory.newInstance();
-      dbFactory.setNamespaceAware(true);
-      dbFactory.setIgnoringElementContentWhitespace(true);
-      dbFactory.setValidating(false);
-      final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-      doc = dBuilder.parse(inputStream);
+      doc = createDocumentBuilder().parse(inputStream);
       doc.getDocumentElement().normalize();
     }
     catch (Exception e)

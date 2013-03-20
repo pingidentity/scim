@@ -21,6 +21,7 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -111,5 +112,34 @@ public class UnmarshallerTestCase
         "C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1" +
         "+GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=");
     binaryAttributeValue.getBinaryValue();  // Should not throw.
+  }
+
+
+
+  /**
+   * Test whether the unmarshaller is vulnerable to XML bombs.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testBombProof()
+    throws Exception
+  {
+    final InputStream testXML =
+        getResource("/com/unboundid/scim/marshal/bomb.xml");
+
+    final ResourceDescriptor userResourceDescriptor =
+        CoreSchema.USER_DESCRIPTOR;
+    final Unmarshaller unmarshaller = new XmlUnmarshaller();
+    try
+    {
+      unmarshaller.unmarshal(testXML,
+                             userResourceDescriptor,
+                             BaseResource.BASE_RESOURCE_FACTORY);
+    }
+    catch (InvalidResourceException e)
+    {
+      // Expected.
+    }
   }
 }
