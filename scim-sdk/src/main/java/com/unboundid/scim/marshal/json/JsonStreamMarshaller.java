@@ -356,7 +356,7 @@ public class JsonStreamMarshaller implements StreamMarshaller
       if (o.getMethod() != null)
       {
         jsonWriter.key("method");
-        jsonWriter.value(o.getMethod().toString());
+        jsonWriter.value(o.getMethod());
       }
       if (o.getBulkId() != null)
       {

@@ -24,6 +24,7 @@ import com.unboundid.scim.marshal.BulkInputStreamWrapper;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
+import com.unboundid.scim.sdk.BulkException;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -38,7 +39,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
@@ -243,9 +243,16 @@ public class XmlBulkParser
             }
             else
             {
-              if (!parseOperation())
+              try
               {
-                return false;
+                handler.handleOperation(operationIndex, parseOperation());
+              }
+              catch (BulkException e)
+              {
+                if(!handler.handleException(operationIndex, e))
+                {
+                  return false;
+                }
               }
             }
             operationIndex++;
@@ -270,16 +277,14 @@ public class XmlBulkParser
    * Parse an Operation element, and leave the reader positioned on the
    * END_ELEMENT.
    *
-   * @return  {@code true} if operations should continue to be provided,
-   *          or {@code false} if the remaining operations are of no interest.
+   * @return  The parsed bulk operation.
    *
-   * @throws XMLStreamException  If the XML could not be parsed.
-   * @throws SCIMException       If some other error occurred.
+   * @throws BulkException  If the operation cannot be parsed for some reason.
    */
-  private boolean parseOperation()
-      throws XMLStreamException, SCIMException
+  private BulkOperation parseOperation()
+      throws BulkException
   {
-    BulkOperation.Method method = null;
+    String httpMethod = null;
     String bulkId = null;
     String version = null;
     String path = null;
@@ -290,96 +295,108 @@ public class XmlBulkParser
     String endpoint = null;
 
     loop:
-    while (xmlStreamReader.hasNext())
+    try
     {
-      switch (xmlStreamReader.next())
+      while (xmlStreamReader.hasNext())
       {
-        case START_ELEMENT:
-          if (xmlStreamReader.getLocalName().equals("method"))
-          {
-            final String httpMethod = xmlStreamReader.getElementText();
-            try
+        switch (xmlStreamReader.next())
+        {
+          case START_ELEMENT:
+            if (xmlStreamReader.getLocalName().equals("method"))
             {
-              method = BulkOperation.Method.valueOf(httpMethod);
+              httpMethod = xmlStreamReader.getElementText();
             }
-            catch (IllegalArgumentException e)
+            else if (xmlStreamReader.getLocalName().equals("bulkId"))
             {
-              throw SCIMException.createException(
-                  405, "Bulk operation " + operationIndex + " specifies an " +
-                       "invalid HTTP method '" + httpMethod + "'. " +
-                       "Allowed methods are " +
-                       Arrays.asList(BulkOperation.Method.values()));
+              bulkId = xmlStreamReader.getElementText();
             }
-          }
-          else if (xmlStreamReader.getLocalName().equals("bulkId"))
-          {
-            bulkId = xmlStreamReader.getElementText();
-          }
-          else if (xmlStreamReader.getLocalName().equals("version"))
-          {
-            version = xmlStreamReader.getElementText();
-          }
-          else if (xmlStreamReader.getLocalName().equals("path"))
-          {
-            path = xmlStreamReader.getElementText();
-            int startPos = 0;
-            if (path.charAt(startPos) == '/')
+            else if (xmlStreamReader.getLocalName().equals("version"))
             {
-              startPos++;
+              version = xmlStreamReader.getElementText();
             }
+            else if (xmlStreamReader.getLocalName().equals("path"))
+            {
+              path = xmlStreamReader.getElementText();
+              int startPos = 0;
+              if (path.charAt(startPos) == '/')
+              {
+                startPos++;
+              }
 
-            int endPos = path.indexOf('/', startPos);
-            if (endPos == -1)
-            {
-              endPos = path.length();
+              int endPos = path.indexOf('/', startPos);
+              if (endPos == -1)
+              {
+                endPos = path.length();
+              }
+
+              endpoint = path.substring(startPos, endPos);
             }
-
-            endpoint = path.substring(startPos, endPos);
-          }
-          else if (xmlStreamReader.getLocalName().equals("location"))
-          {
-            location = xmlStreamReader.getElementText();
-          }
-          else if (xmlStreamReader.getLocalName().equals("data"))
-          {
-            if (path == null)
+            else if (xmlStreamReader.getLocalName().equals("location"))
             {
-              throw new InvalidResourceException(
-                  "Bulk operation " + operationIndex + " has data but no " +
-                  "path");
+              location = xmlStreamReader.getElementText();
             }
-
-            final ResourceDescriptor descriptor =
-                handler.getResourceDescriptor(endpoint);
-            if (descriptor == null)
+            else if (xmlStreamReader.getLocalName().equals("data"))
             {
-              throw new InvalidResourceException(
-                  "Bulk operation " + operationIndex + " specifies an " +
-                  "unknown resource endpoint '" + endpoint + "'");
+              if (path == null)
+              {
+                throw new BulkException(new InvalidResourceException(
+                    "Bulk operation " + operationIndex + " has data but no " +
+                        "path"),
+                    httpMethod, bulkId, location);
+              }
+
+              final ResourceDescriptor descriptor =
+                  handler.getResourceDescriptor(endpoint);
+              if (descriptor == null)
+              {
+                throw new BulkException(new InvalidResourceException(
+                    "Bulk operation " + operationIndex + " specifies an " +
+                        "unknown resource endpoint '" + endpoint + "'"),
+                    httpMethod, bulkId, location);
+              }
+
+              try
+              {
+                resource = parseData(descriptor,
+                    BaseResource.BASE_RESOURCE_FACTORY);
+              }
+              catch (SCIMException e)
+              {
+                throw new BulkException(e, httpMethod, bulkId, location);
+              }
             }
+            else if (xmlStreamReader.getLocalName().equals("status"))
+            {
+              try
+              {
+                status = parseStatus();
+              }
+              catch (SCIMException e)
+              {
+                throw new BulkException(e, httpMethod, bulkId, location);
+              }
+            }
+            else
+            {
+              skipElement();
+            }
+            break;
 
-            resource = parseData(descriptor,
-                                 BaseResource.BASE_RESOURCE_FACTORY);
-          }
-          else if (xmlStreamReader.getLocalName().equals("status"))
-          {
-            status = parseStatus();
-          }
-          else
-          {
-            skipElement();
-          }
-          break;
-
-        case END_ELEMENT:
-          break loop;
+          case END_ELEMENT:
+            break loop;
+        }
       }
     }
+    catch (XMLStreamException e)
+    {
+      throw new BulkException(new InvalidResourceException(
+          "Bulk operation " + operationIndex + " is malformed: " +
+              e.getMessage()),
+          httpMethod, bulkId, location);
+    }
 
-    return handler.handleOperation(
-        operationIndex,
-        new BulkOperation(method, bulkId, version, path, location,
-                          resource, status));
+    return new BulkOperation(httpMethod, bulkId, version, path, location,
+                             resource, status);
   }
 
 

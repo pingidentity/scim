@@ -103,7 +103,7 @@ public class BulkOperation
    * The HTTP method of the operation. Possible values are POST, PUT, PATCH or
    * DELETE.
    */
-  private final Method method;
+  private final String method;
 
   /**
    * The bulk operation identifier, required when the method is POST.
@@ -158,7 +158,7 @@ public class BulkOperation
    * @param status      Information about the success or failure of the
    *                    operation, or {@code null} if this is a request.
    */
-  public BulkOperation(final Method method,
+  public BulkOperation(final String method,
                        final String bulkId,
                        final String version,
                        final String path,
@@ -199,8 +199,33 @@ public class BulkOperation
                                             final String path,
                                             final BaseResource data)
   {
-    return new BulkOperation(method, bulkId, version, path,
-                             null, data, null);
+    return new BulkOperation(method == null ? null : method.name(), bulkId,
+                             version, path, null, data, null);
+  }
+
+
+
+  /**
+   * Create a new operation for a bulk response.
+   *
+   * @param method      The HTTP method of the operation. Possible values are
+   *                    POST, PUT, PATCH or DELETE.
+   * @param bulkId      The bulk operation identifier, required when the method
+   *                    is POST.
+   * @param location    The resource endpoint URL, or {code null} if this is
+   *                    the response to a failed POST operation.
+   * @param status      Information about the success or failure of the
+   *                    operation.
+   *
+   * @return  The new bulk request operation.
+   */
+  public static BulkOperation createResponse(final String method,
+                                             final String bulkId,
+                                             final String location,
+                                             final Status status)
+  {
+    return new BulkOperation(method, bulkId, null, null, location, null,
+                             status);
   }
 
 
@@ -211,7 +236,7 @@ public class BulkOperation
    * @return  The HTTP method of the operation. Possible values are POST, PUT,
    *          PATCH or DELETE.
    */
-  public Method getMethod()
+  public String getMethod()
   {
     return method;
   }

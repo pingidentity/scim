@@ -315,7 +315,7 @@ public class XmlStreamMarshaller implements StreamMarshaller
       if (o.getMethod() != null)
       {
         xmlStreamWriter.writeStartElement("method");
-        xmlStreamWriter.writeCharacters(o.getMethod().toString());
+        xmlStreamWriter.writeCharacters(o.getMethod());
         xmlStreamWriter.writeEndElement();
       }
       if (o.getBulkId() != null)

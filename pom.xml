@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.3.1-SNAPSHOT</version>
+    <version>1.3.2-SNAPSHOT</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
@@ -96,7 +96,6 @@
                 <executions>
                     <execution>
                         <id>check-main</id>
-                        <phase>process-sources</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -107,7 +106,6 @@
                     </execution>
                     <execution>
                         <id>check-test</id>
-                        <phase>process-test-sources</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>

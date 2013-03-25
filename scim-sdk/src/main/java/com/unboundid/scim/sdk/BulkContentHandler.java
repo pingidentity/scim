@@ -48,18 +48,38 @@ public abstract class BulkContentHandler
    * @param opIndex        The index of the operation.
    * @param bulkOperation  The individual operation within the bulk operation.
    *
+   * @throws SCIMException  If an error occurs that prevents processing of the
+   *                        entire bulk content.
+   * @throws BulkException  If an error occurs while processing the individual
+   *                        operation within the bulk operation.
+   */
+  public void handleOperation(final int opIndex,
+                              final BulkOperation bulkOperation)
+      throws BulkException, SCIMException
+  {
+    // No implementation by default.
+  }
+
+
+
+  /**
+   * Handle an exception encountered when processing an individual operation.
+   *
+   * @param opIndex        The index of the operation.
+   * @param bulkException  The exception encountered when processing an
+   *                       individual operation within the bulk operation.
+   *
    * @return  {@code true} if operations should continue to be provided,
    *          or {@code false} if the remaining operations are of no interest.
    *
    * @throws SCIMException  If an error occurs that prevents processing of the
    *                        entire bulk content.
    */
-  public boolean handleOperation(final int opIndex,
-                                 final BulkOperation bulkOperation)
+  public boolean handleException(final int opIndex,
+                                 final BulkException bulkException)
       throws SCIMException
   {
-    // No implementation by default.
-    return true;
+    throw bulkException.getCause();
   }
 
 

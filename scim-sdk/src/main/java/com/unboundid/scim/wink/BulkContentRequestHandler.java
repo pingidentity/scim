@@ -20,6 +20,7 @@ package com.unboundid.scim.wink;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
+import com.unboundid.scim.sdk.BulkException;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkStreamResponse;
 import com.unboundid.scim.sdk.Debug;
@@ -45,6 +46,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -210,27 +212,42 @@ public class BulkContentRequestHandler extends BulkContentHandler
   /**
    * {@inheritDoc}
    */
-  public boolean handleOperation(final int opIndex,
-                                 final BulkOperation bulkOperation)
-      throws SCIMException
+  public void handleOperation(final int opIndex,
+                              final BulkOperation bulkOperation)
+      throws BulkException, SCIMException
   {
     if (errorCount < failOnErrors)
     {
-      final BulkOperation response = processOperation(opIndex, bulkOperation);
+      final BulkOperation response = processOperation(bulkOperation);
       unresolvedBulkIdRefs.clear();
       bulkStreamResponse.writeBulkOperation(response);
-      if (response.getStatus().getDescription() != null &&
-          !response.getStatus().getCode().equals("200") &&
-          !response.getStatus().getCode().equals("201"))
-      {
-        errorCount++;
-        if (errorCount == failOnErrors)
-        {
-          return false;
-        }
-      }
+    }
+  }
 
-      return true;
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public boolean handleException(final int opIndex,
+                                 final BulkException bulkException)
+      throws SCIMException
+  {
+    Debug.debugException(bulkException);
+    if (errorCount < failOnErrors)
+    {
+      int statusCode = bulkException.getCause().getStatusCode();
+      String statusMessage = bulkException.getCause().getMessage();
+
+      final Status status =
+          new Status(String.valueOf(statusCode), statusMessage);
+
+      BulkOperation response = BulkOperation.createResponse(
+          bulkException.getMethod(), bulkException.getBulkId(),
+          bulkException.getLocation(), status);
+      bulkStreamResponse.writeBulkOperation(response);
+      errorCount++;
+      return errorCount != failOnErrors;
     }
     else
     {
@@ -243,33 +260,47 @@ public class BulkContentRequestHandler extends BulkContentHandler
   /**
    * Process an operation from a bulk request.
    *
-   * @param opIndex         The index of the operation.
    * @param operation       The operation to be processed from the bulk request.
    *
    * @return  The operation response.
+   * @throws  BulkException  If an error occurs while processing the individual
+   *                         operation within the bulk operation.
    */
-  private BulkOperation processOperation(final int opIndex,
-                                         final BulkOperation operation)
+  private BulkOperation processOperation(final BulkOperation operation)
+      throws BulkException
   {
-    final BulkOperation.Method method = operation.getMethod();
+    final String httpMethod = operation.getMethod();
     final String bulkId = operation.getBulkId();
     final String path = operation.getPath();
     BaseResource resource = operation.getData();
 
     int statusCode = 200;
-    String statusMessage = null;
     String location = null;
     String endpoint = null;
     String resourceID = null;
 
     final ResourceDescriptor descriptor;
     final ResourceStats resourceStats;
+    final BulkOperation.Method method;
     try
     {
-      if (method == null)
+      if (httpMethod == null || httpMethod.isEmpty())
       {
         throw new InvalidResourceException(
             "The bulk operation does not specify a HTTP method");
+      }
+
+      try
+      {
+        method = BulkOperation.Method.valueOf(httpMethod);
+      }
+      catch (IllegalArgumentException e)
+      {
+        throw new BulkException(SCIMException.createException(
+            405, "The bulk operation specifies an invalid " +
+            "HTTP method '" + httpMethod + "'. Allowed methods are " +
+            Arrays.asList(BulkOperation.Method.values())),
+            httpMethod, bulkId, location);
       }
 
       if (path == null)
@@ -349,15 +380,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
     }
     catch (SCIMException e)
     {
-      Debug.debugException(e);
-      statusCode = e.getStatusCode();
-      statusMessage = e.getMessage();
-
-      final Status status =
-          new Status(String.valueOf(statusCode), statusMessage);
-
-      return new BulkOperation(method, bulkId, null, null, location,
-                               null, status);
+      throw new BulkException(e, httpMethod, bulkId, location);
     }
 
     try
@@ -573,9 +596,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
     }
     catch (SCIMException e)
     {
-      Debug.debugException(e);
-      statusCode = e.getStatusCode();
-      statusMessage = e.getMessage();
       switch (method)
       {
         case POST:
@@ -591,6 +611,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
           resourceStats.incrementStat("delete-" + e.getStatusCode());
           break;
       }
+      throw new BulkException(e, httpMethod, bulkId, location);
     }
 
     if (requestContext.getProduceMediaType() ==
@@ -626,10 +647,10 @@ public class BulkContentRequestHandler extends BulkContentHandler
     }
 
     final Status status =
-        new Status(String.valueOf(statusCode), statusMessage);
+        new Status(String.valueOf(statusCode), null);
 
-    return new BulkOperation(method, bulkId, null, null, location,
-                             null, status);
+    return BulkOperation.createResponse(method.name(), bulkId, location,
+                                        status);
   }
 
 

@@ -2082,15 +2082,15 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       assertEquals(o.getMethod(), r.getMethod());
       assertEquals(o.getBulkId(), r.getBulkId());
 
-      if (o.getMethod() == BulkOperation.Method.POST
-              || o.getMethod() == BulkOperation.Method.PUT)
+      if (o.getMethod().equalsIgnoreCase(BulkOperation.Method.POST.name())
+             || o.getMethod().equalsIgnoreCase(BulkOperation.Method.PUT.name()))
       {
         assertNotNull(r.getLocation());
       }
 
       assertNotNull(r.getStatus());
 
-      if (o.getMethod() == BulkOperation.Method.POST)
+      if (o.getMethod().equalsIgnoreCase(BulkOperation.Method.POST.name()))
       {
         assertEquals(r.getStatus().getCode(), "201");
       }
@@ -2526,7 +2526,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
       final BulkOperation o = operations.get(i);
       final BulkOperation r = responses.get(i);
 
-      if (o.getMethod() == BulkOperation.Method.POST)
+      if (o.getMethod().equalsIgnoreCase(BulkOperation.Method.POST.name()))
       {
         assertEquals(r.getStatus().getCode(), "201");
       }

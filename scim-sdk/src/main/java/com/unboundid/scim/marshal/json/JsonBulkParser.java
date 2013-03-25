@@ -23,6 +23,7 @@ import com.unboundid.scim.marshal.BulkInputStreamWrapper;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
+import com.unboundid.scim.sdk.BulkException;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -35,7 +36,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.InputStream;
-import java.util.Arrays;
 
 
 
@@ -219,8 +219,14 @@ public class JsonBulkParser extends JsonParser
           else
           {
             JSONObject o = makeCaseInsensitive((JSONObject)tokener.nextValue());
-            final BulkOperation bulkOperation = parseBulkOperation(o);
-            handler.handleOperation(operationIndex, bulkOperation);
+            try
+            {
+              handler.handleOperation(operationIndex, parseBulkOperation(o));
+            }
+            catch (BulkException e)
+            {
+              handler.handleException(operationIndex, e);
+            }
           }
           operationIndex++;
         }
@@ -253,90 +259,91 @@ public class JsonBulkParser extends JsonParser
    *
    * @return  The parsed bulk operation.
    *
-   * @throws JSONException  If the operation cannot be parsed due to a JSON
-   *                        error.
-   * @throws SCIMException  If the operation cannot be parsed for some other
+   * @throws BulkException  If the operation cannot be parsed for some other
    *                        reason.
    */
-  private BulkOperation parseBulkOperation(
-      final JSONObject o)
-  throws JSONException, SCIMException
+  private BulkOperation parseBulkOperation(final JSONObject o)
+      throws BulkException
   {
-    final String httpMethod = o.getString("method");
+    final String httpMethod = o.optString("method");
     final String bulkId = o.optString("bulkid", null);
     final String version = o.optString("version", null);
     final String path = o.optString("path", null);
     final String location = o.optString("location", null);
-    final JSONObject data = makeCaseInsensitive(o.optJSONObject("data"));
-    final JSONObject statusObj = makeCaseInsensitive(o.optJSONObject("status"));
 
-    final Status status;
-    if (statusObj != null)
-    {
-      final String code = statusObj.getString("code");
-      final String description = statusObj.optString("description", null);
-      status = new Status(code, description);
-    }
-    else
-    {
-      status = null;
-    }
-
-    final BulkOperation.Method method;
     try
     {
-      method = BulkOperation.Method.valueOf(httpMethod);
+      final JSONObject data = makeCaseInsensitive(o.optJSONObject("data"));
+      final JSONObject statusObj =
+          makeCaseInsensitive(o.optJSONObject("status"));
+
+      final Status status;
+      if (statusObj != null)
+      {
+        final String code = statusObj.getString("code");
+        final String description = statusObj.optString("description", null);
+        status = new Status(code, description);
+      }
+      else
+      {
+        status = null;
+      }
+
+      BaseResource resource = null;
+      if (data != null)
+      {
+        if (path == null)
+        {
+          throw new BulkException(new InvalidResourceException(
+              "Bulk operation " + operationIndex + " has data but no path"),
+              httpMethod, bulkId, location);
+        }
+
+        int startPos = 0;
+        if (path.charAt(startPos) == '/')
+        {
+          startPos++;
+        }
+
+        int endPos = path.indexOf('/', startPos);
+        if (endPos == -1)
+        {
+          endPos = path.length();
+        }
+
+        String endpoint = path.substring(startPos, endPos);
+
+        final ResourceDescriptor descriptor =
+            handler.getResourceDescriptor(endpoint);
+        if (descriptor == null)
+        {
+          throw new BulkException(new InvalidResourceException(
+              "Bulk operation " + operationIndex + " specifies an unknown " +
+                  "resource endpoint '" + endpoint + "'"),
+              httpMethod, bulkId, location);
+        }
+
+        try
+        {
+          resource = unmarshal(data, descriptor,
+              BaseResource.BASE_RESOURCE_FACTORY, null);
+        }
+        catch (InvalidResourceException e)
+        {
+          throw new BulkException(e, httpMethod, bulkId, location);
+        }
+      }
+
+      return new BulkOperation(httpMethod, bulkId, version, path, location,
+                               resource, status);
     }
-    catch (IllegalArgumentException e)
+    catch (JSONException e)
     {
-      throw SCIMException.createException(
-          405, "Bulk operation " + operationIndex + " specifies an invalid " +
-               "HTTP method '" + httpMethod + "'. Allowed methods are " +
-               Arrays.asList(BulkOperation.Method.values()));
+      throw new BulkException(new InvalidResourceException(
+          "Bulk operation " + operationIndex + " is malformed: " +
+              e.getMessage()),
+          httpMethod, bulkId, location);
     }
-
-    String endpoint = null;
-    if (path != null)
-    {
-      int startPos = 0;
-      if (path.charAt(startPos) == '/')
-      {
-        startPos++;
-      }
-
-      int endPos = path.indexOf('/', startPos);
-      if (endPos == -1)
-      {
-        endPos = path.length();
-      }
-
-      endpoint = path.substring(startPos, endPos);
-    }
-
-    BaseResource resource = null;
-    if (data != null)
-    {
-      if (path == null)
-      {
-        throw new InvalidResourceException(
-            "Bulk operation " + operationIndex + " has data but no path");
-      }
-
-      final ResourceDescriptor descriptor =
-          handler.getResourceDescriptor(endpoint);
-      if (descriptor == null)
-      {
-        throw new InvalidResourceException(
-            "Bulk operation " + operationIndex + " specifies an unknown " +
-            "resource endpoint '" + endpoint + "'");
-      }
-
-      resource = unmarshal(data, descriptor,
-                           BaseResource.BASE_RESOURCE_FACTORY, null);
-    }
-
-    return new BulkOperation(method, bulkId, version, path, location, resource,
-                             status);
   }
 
 
