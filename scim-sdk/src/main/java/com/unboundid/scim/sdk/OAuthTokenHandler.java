@@ -33,8 +33,8 @@ import java.security.GeneralSecurityException;
  * grant for an access token. The access token represents the grant's
  * scope, duration, and other attributes specified by the authorization
  * grant. The client accesses the protected resource by presenting the
- * access token to the resource server (i.e. the Directory or Proxy Server with
- * the SCIM HTTP Servlet enabled).
+ * access token to the resource server (i.e. the Identity Data Store or Identity
+ * Proxy with the SCIM HTTP Servlet enabled).
  * <BR><BR>
  * The access token provides an abstraction, replacing different
  * authorization constructs (e.g., username and password, assertion) for
@@ -84,11 +84,13 @@ public interface OAuthTokenHandler
    * can be helpful because the returned {@link OAuthToken} is passed to all of
    * the other methods in this class.
    *
-   * @param base64TokenValue the base64-encoded bearer token value
+   * @param rawTokenValue the b64token token value. Note that b64token is just
+   *                      an ABNF syntax definition and does not imply any
+   *                      base64-encoding of the token value.
    * @return a {@link OAuthToken} instance. This must not be {@code null}.
    * @throws GeneralSecurityException if there is an error decoding the token
    */
-  OAuthToken decodeOAuthToken(final String base64TokenValue)
+  OAuthToken decodeOAuthToken(final String rawTokenValue)
               throws GeneralSecurityException;
 
 

@@ -53,7 +53,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -779,9 +778,9 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * @param mediaType     The media type to be returned.
    * @param scimResponse  The SCIM response to be returned.
    */
-  private void setResponseEntity(final Response.ResponseBuilder builder,
-                                 final MediaType mediaType,
-                                 final SCIMResponse scimResponse)
+  private static void setResponseEntity(final Response.ResponseBuilder builder,
+                                        final MediaType mediaType,
+                                        final SCIMResponse scimResponse)
   {
     final Marshaller marshaller;
     builder.type(mediaType);
@@ -851,13 +850,14 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     {
       //If the client lacks any authentication information, just return 401
       Response.ResponseBuilder builder = Response.status(401);
-      builder.header("WWW-Authenticate", "Bearer realm=SCIM");
+      builder.header("WWW-Authenticate", "Bearer realm=\"SCIM\"");
       return builder.build();
 
     }
     else if (headerList.size() > 1)
     {
-      return invalidRequest("The Authorization header has too many values");
+      return invalidRequest("The Authorization header has too many values",
+              context.getProduceMediaType());
     }
 
     String header = headerList.get(0);
@@ -868,40 +868,31 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     {
       try
       {
-        byte[] rawToken = DatatypeConverter.parseBase64Binary(authorization[1]);
-        if (rawToken == null)
-        {
-          throw new IllegalArgumentException();
-        }
-      }
-      catch (IllegalArgumentException e)
-      {
-        return invalidRequest("The access token cannot be base64-decoded");
-      }
-
-      try
-      {
         OAuthToken token = tokenHandlerImpl.decodeOAuthToken(authorization[1]);
 
         if (token == null)
         {
-          return invalidRequest("Could not decode the access token");
+          return invalidRequest("Could not decode the access token",
+                  context.getProduceMediaType());
         }
 
         if (!tokenHandlerImpl.isTokenAuthentic(token))
         {
-          return invalidToken("The access token is not authentic");
+          return invalidToken("The access token is not authentic",
+                  context.getProduceMediaType());
         }
 
         if (!tokenHandlerImpl.isTokenForThisServer(token))
         {
           return invalidToken(
-                  "The access token is not intended for this server");
+                  "The access token is not intended for this server",
+                  context.getProduceMediaType());
         }
 
         if (tokenHandlerImpl.isTokenExpired(token))
         {
-          return invalidToken("The access token is expired");
+          return invalidToken("The access token is expired",
+                  context.getProduceMediaType());
         }
 
         OAuthTokenStatus status =
@@ -911,21 +902,23 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                 OAuthTokenStatus.ErrorCode.INVALID_TOKEN))
         {
           String errorDescription = status.getErrorDescription();
-          return invalidToken(errorDescription);
+          return invalidToken(errorDescription, context.getProduceMediaType());
         }
         else if (status.getErrorCode().equals(
                 OAuthTokenStatus.ErrorCode.INSUFFICIENT_SCOPE))
         {
           String errorDescription = status.getErrorDescription();
           String scope = status.getScope();
-          return insufficientScope(scope, errorDescription);
+          return insufficientScope(scope, errorDescription,
+                  context.getProduceMediaType());
         }
 
         String authID = tokenHandlerImpl.getAuthzDN(token);
         if (authID == null)
         {
           return invalidToken(
-                  "The access token did not contain an authorization DN");
+                  "The access token did not contain an authorization DN",
+                  context.getProduceMediaType());
         }
         else
         {
@@ -936,7 +929,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       catch(Throwable t)
       {
         Debug.debugException(t);
-        return invalidRequest(t.getMessage());
+        return invalidRequest(t.getMessage(), context.getProduceMediaType());
       }
     }
     else if(authorization.length == 2 &&
@@ -946,12 +939,15 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       //The client tried to do Basic Authentication, and since we made it here,
       //it failed.
       Response.ResponseBuilder builder = Response.status(401);
-      builder.header("WWW-Authenticate", "Basic realm=SCIM");
+      builder.header("WWW-Authenticate", "Basic realm=\"SCIM\"");
+      SCIMException exception = new UnauthorizedException(null);
+      setResponseEntity(builder, context.getProduceMediaType(), exception);
       return builder.build();
     }
     else
     {
-      return invalidRequest("The Authorization header was malformed");
+      return invalidRequest("The Authorization header was malformed",
+              context.getProduceMediaType());
     }
   }
 
@@ -959,18 +955,24 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Creates an invalid_request Response with the specified error description.
    *
    * @param errorDescription The description of the validation error.
+   * @param mediaType The accept-type for SCIMRequest.
    * @return a Response instance.
    */
-  private static Response invalidRequest(final String errorDescription)
+  private static Response invalidRequest(final String errorDescription,
+                                         final MediaType mediaType)
   {
     Response.ResponseBuilder builder = Response.status(400);
-    builder.header("WWW-Authenticate", "Bearer realm=SCIM");
-    builder.header("WWW-Authenticate", "error=\"invalid_request\"");
+    String authHeaderValue = "Bearer realm=\"SCIM\", error=\"invalid_request\"";
     if (errorDescription != null && !errorDescription.isEmpty())
     {
-      builder.header("WWW-Authenticate", "error_description=\"" +
-              errorDescription + "\"");
+      authHeaderValue += ", error_description=\"" + errorDescription + "\"";
     }
+    builder.header("WWW-Authenticate", authHeaderValue);
+
+    SCIMException exception =
+            SCIMException.createException(400, errorDescription);
+    setResponseEntity(builder, mediaType, exception);
+
     return builder.build();
   }
 
@@ -978,18 +980,24 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Creates an invalid_token Response with the specified error description.
    *
    * @param errorDescription The description of the validation error.
+   * @param mediaType The accept-type for SCIMRequest.
    * @return a Response instance.
    */
-  private static Response invalidToken(final String errorDescription)
+  private static Response invalidToken(final String errorDescription,
+                                       final MediaType mediaType)
   {
     Response.ResponseBuilder builder = Response.status(401);
-    builder.header("WWW-Authenticate", "Bearer realm=SCIM");
-    builder.header("WWW-Authenticate", "error=\"invalid_token\"");
+    String authHeaderValue = "Bearer realm=\"SCIM\", error=\"invalid_token\"";
     if (errorDescription != null && !errorDescription.isEmpty())
     {
-      builder.header("WWW-Authenticate", "error_description=\"" +
-              errorDescription + "\"");
+      authHeaderValue += ", error_description=\"" + errorDescription + "\"";
     }
+    builder.header("WWW-Authenticate", authHeaderValue);
+
+    SCIMException exception =
+            SCIMException.createException(401, errorDescription);
+    setResponseEntity(builder, mediaType, exception);
+
     return builder.build();
   }
 
@@ -999,23 +1007,30 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    *
    * @param errorDescription The description of the validation error.
    * @param scope The OAuth scope required to access the target resource.
+   * @param mediaType The accept-type for SCIMRequest.
    * @return a Response instance.
    */
   private static Response insufficientScope(final String scope,
-                                            final String errorDescription)
+                                            final String errorDescription,
+                                            final MediaType mediaType)
   {
     Response.ResponseBuilder builder = Response.status(403);
-    builder.header("WWW-Authenticate", "Bearer realm=SCIM");
-    builder.header("WWW-Authenticate", "error=\"insufficient_scope\"");
+    String authHeaderValue =
+            "Bearer realm=\"SCIM\", error=\"insufficient_scope\"";
     if (errorDescription != null && !errorDescription.isEmpty())
     {
-      builder.header("WWW-Authenticate", "error_description=\"" +
-              errorDescription + "\"");
+      authHeaderValue += ", error_description=\"" + errorDescription + "\"";
     }
     if (scope != null && !scope.isEmpty())
     {
-      builder.header("WWW-Authenticate", "scope=\"" + scope + "\"");
+      authHeaderValue += ", scope=\"" + scope + "\"";
     }
+    builder.header("WWW-Authenticate", authHeaderValue);
+
+    SCIMException exception =
+            SCIMException.createException(403, errorDescription);
+    setResponseEntity(builder, mediaType, exception);
+
     return builder.build();
   }
 }

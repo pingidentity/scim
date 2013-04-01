@@ -16,8 +16,6 @@
  */
 package com.unboundid.scim.sdk;
 
-import javax.xml.bind.DatatypeConverter;
-
 
 /**
  * This class represents an OAuth token, described by
@@ -52,14 +50,11 @@ public class OAuthToken {
   private final String tokenValue;
 
   /**
-   * The base64-decoded bytes of the OAuth token value.
-   */
-  private final byte[] rawTokenBytes;
-
-  /**
-   * Constructs an OAuth 2.0 bearer token with the given base64-encoded value.
+   * Constructs an OAuth 2.0 bearer token with the given b64token value. Note
+   * that b64token is just an ABNF syntax definition and does not imply any
+   * base64-encoding of the token value.
    *
-   * @param tokenValue The base64-encoded bearer token value.
+   * @param tokenValue The bearer token value.
    */
   public OAuthToken(final String tokenValue)
   {
@@ -70,13 +65,12 @@ public class OAuthToken {
    * Constructs an OAuthToken with the specified {@link Type} and token value.
    *
    * @param type The token Type.
-   * @param tokenValue The base64-encoded token value.
+   * @param tokenValue The token value.
    */
   public OAuthToken(final Type type, final String tokenValue)
   {
     this.type = type;
     this.tokenValue = tokenValue;
-    this.rawTokenBytes = DatatypeConverter.parseBase64Binary(tokenValue);
   }
 
   /**
@@ -90,23 +84,13 @@ public class OAuthToken {
   }
 
   /**
-   * Returns the original base64-encoded token value.
+   * Returns the token value.
    *
    * @return the token value.
    */
   public String getTokenValue()
   {
     return tokenValue;
-  }
-
-  /**
-   * Returns the raw, base64-decoded bytes of the token value.
-   *
-   * @return a byte array containing the raw token bytes.
-   */
-  public byte[] getRawTokenBytes()
-  {
-    return rawTokenBytes;
   }
 
   /**
