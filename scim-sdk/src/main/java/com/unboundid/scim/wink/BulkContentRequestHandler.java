@@ -383,12 +383,12 @@ public class BulkContentRequestHandler extends BulkContentHandler
       throw new BulkException(e, httpMethod, bulkId, location);
     }
 
+    final UriBuilder locationBuilder =
+        UriBuilder.fromUri(requestContext.getUriInfo().getBaseUri());
+    locationBuilder.path(path);
+
     try
     {
-      final UriBuilder locationBuilder =
-          UriBuilder.fromUri(requestContext.getUriInfo().getBaseUri());
-      locationBuilder.path(path);
-
       if (method == BulkOperation.Method.POST && bulkId == null)
       {
         throw new InvalidResourceException(
@@ -489,7 +489,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
 
           resourceID = postedResource.getId();
           locationBuilder.path(resourceID);
-          location = locationBuilder.build().toString();
           statusCode = 201;
           resourceStats.incrementStat(ResourceStats.POST_OK);
           break;
@@ -523,7 +522,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
           }
 
           backend.putResource(putResourceRequest);
-          location = locationBuilder.build().toString();
           resourceStats.incrementStat(ResourceStats.PUT_OK);
           break;
 
@@ -644,6 +642,12 @@ public class BulkContentRequestHandler extends BulkContentHandler
       case PATCH:
         resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_XML);
       }
+    }
+
+    // Set the location for all operations except an unsuccessful POST.
+    if (method != BulkOperation.Method.POST || statusCode == 201)
+    {
+      location = locationBuilder.build().toString();
     }
 
     final Status status =
