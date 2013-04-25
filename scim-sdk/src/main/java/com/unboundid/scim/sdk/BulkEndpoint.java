@@ -162,10 +162,13 @@ public class BulkEndpoint
       }
     };
 
-    ClientResponse response = clientResource.post(output);
-    InputStream entity = response.getEntity(InputStream.class);
+    ClientResponse response = null;
+    InputStream entity = null;
     try
     {
+      response = clientResource.post(output);
+      entity = response.getEntity(InputStream.class);
+
       if(response.getStatusType() == Response.Status.OK)
       {
         final BulkConfig bulkConfig =
@@ -177,6 +180,15 @@ public class BulkEndpoint
         throw createErrorResponseException(response, entity);
       }
     }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(SCIMEndpoint.getStatusCode(e),
+                               SCIMEndpoint.getExceptionMessage(e), e);
+    }
     finally
     {
       try
@@ -185,7 +197,8 @@ public class BulkEndpoint
         {
           entity.close();
         }
-      } catch (IOException e)
+      }
+      catch (IOException e)
       {
         // Let's just log this and ignore.
         Debug.debugException(e);

@@ -978,7 +978,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @param t the Exception instance to analyze
    * @return the most appropriate HTTP status code
    */
-  private static int getStatusCode(final Throwable t)
+  static int getStatusCode(final Throwable t)
   {
     Throwable rootCause = t;
     if(rootCause instanceof ClientRuntimeException)
@@ -1059,7 +1059,7 @@ public class SCIMEndpoint<R extends BaseResource>
    *         null if the specified Throwable is null or the message cannot be
    *         determined.
    */
-  private static String getExceptionMessage(final Throwable t)
+  static String getExceptionMessage(final Throwable t)
   {
     if(t == null)
     {
