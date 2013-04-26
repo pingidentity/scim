@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.3.3-SNAPSHOT</version>
+    <version>1.3.2-SNAPSHOT</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
@@ -253,7 +253,7 @@
 		        <version>2.2.2</version>
 		        <configuration>
 		          <tagNameFormat>scim-@{project.version}</tagNameFormat>
-		          <goals>deploy scm:export -Doriginal.target.dir=${project.build.directory}</goals>
+		          <goals>deploy scm:export -Doriginal.target.dir=${project.build.directory} -Dgpg.sign</goals>
 		          <useReleaseProfile>false</useReleaseProfile>
 		          <checkModificationExcludeList>pom.xml</checkModificationExcludeList>
 		          <waitBeforeTagging>3</waitBeforeTagging>
