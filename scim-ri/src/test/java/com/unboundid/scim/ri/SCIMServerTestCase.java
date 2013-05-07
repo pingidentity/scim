@@ -67,9 +67,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -2287,7 +2286,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
       // Ensure no delete operations were attempted.
       final long afterDelete404Count =
           getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
-      assertEquals(afterDelete404Count, beforeDelete404Count);
+      assertEquals(afterDelete404Count, beforeDelete404Count,
+              getStatsForResource("User").toString());
     }
     finally
     {
@@ -2456,26 +2456,17 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     };
 
     // Execute a bunch of requests in parallel.
-    final ThreadPoolExecutor executor =
-        new ThreadPoolExecutor(numThreads,           // min # threads
-                               numThreads,           // max # threads
-                               5, TimeUnit.MINUTES,  // kill after idle
-                               new LinkedBlockingQueue<Runnable>());
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
-    List<Future<?>> futures = new ArrayList<Future<?>>(numRequests);
-    for (int i = 0; i < numRequests; i++)
+    for(int i = 0; i < numRequests; i++)
     {
-      futures.add(executor.submit(runnable));
+      executorService.submit(runnable);
     }
-
 
     // Make sure all the requests were completed.
-    for (int i = 0; i < numRequests; i++)
-    {
-      Future<?> f = futures.get(i);
-      f.get();
-    }
+    executorService.shutdown();
 
+    assertTrue(executorService.awaitTermination(5, TimeUnit.MINUTES));
     assertEquals(numSuccessfulRequests.get() + numFailedRequests.get(),
             numRequests, "numSuccessfulRequests=" + numSuccessfulRequests +
                " numFailedRequests=" + numFailedRequests);
@@ -2527,7 +2518,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     final AtomicInteger numFailedRequests = new AtomicInteger(0);
 
     final int numRequests = 20;
-    final int numThreads = 2;
+    final int numThreads = 5;
 
     // Set the bulkMaxConcurrentRequests setting to 1.
     int bulkMaxConcurrentRequests = 1;
@@ -2543,8 +2534,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
       assertTrue(numSuccessfulRequests.get() > 0);
       assertTrue(numFailedRequests.get() > 0);
 
-      // Set the bulkMaxConcurrentRequests setting to 2.
-      bulkMaxConcurrentRequests = 2;
+      // Set the bulkMaxConcurrentRequests setting to 5.
+      bulkMaxConcurrentRequests = 5;
       config.setBulkMaxConcurrentRequests(bulkMaxConcurrentRequests);
       reconfigureTestSuite(config);
 

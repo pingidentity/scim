@@ -53,21 +53,22 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.socket.PlainSocketFactory;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.CoreProtocolPNames;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
-import org.apache.wink.client.ApacheHttpClientConfig;
+import org.apache.wink.client.httpclient.ApacheHttpClientConfig;
+import org.apache.wink.client.ClientConfig;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -735,14 +736,25 @@ public class SCIMQueryRate
 
 
     // We will use Apache's HttpClient library for this tool.
-    final HttpParams params = new BasicHttpParams();
-    DefaultHttpClient.setDefaultHttpParams(params);
-    params.setBooleanParameter(CoreConnectionPNames.SO_REUSEADDR, true);
-    params.setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, true);
-    params.setBooleanParameter(
-            CoreConnectionPNames.STALE_CONNECTION_CHECK, false);
-    params.setParameter(
-            ClientPNames.COOKIE_POLICY, CookiePolicy.IGNORE_COOKIES);
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+    httpClientBuilder.setRetryHandler(new StandardHttpRequestRetryHandler());
+    httpClientBuilder.setServiceUnavailableRetryStrategy(
+            new DefaultServiceUnavailableRetryStrategy());
+
+    SocketConfig.Builder socketConfig = SocketConfig.custom();
+    socketConfig.setSoKeepAlive(true);
+    socketConfig.setSoReuseAddress(true);
+    socketConfig.setTcpNoDelay(true);
+    socketConfig.setSoTimeout(10000);
+    httpClientBuilder.setDefaultSocketConfig(socketConfig.build());
+
+    RequestConfig.Builder requestConfig = RequestConfig.custom();
+    requestConfig.setAuthenticationEnabled(true);
+    requestConfig.setStaleConnectionCheckEnabled(false);
+    requestConfig.setConnectTimeout(10000);
+    requestConfig.setConnectionRequestTimeout(30000);
+    requestConfig.setExpectContinueEnabled(true);
+    httpClientBuilder.setDefaultRequestConfig(requestConfig.build());
 
     SSLUtil sslUtil;
     try
@@ -756,14 +768,17 @@ public class SCIMQueryRate
       return e.getResultCode();
     }
 
-    final SchemeRegistry schemeRegistry = new SchemeRegistry();
-    final String schemeName;
+    // Create a registry of custom connection socket factories for
+    // supported protocol schemes.
+    RegistryBuilder<ConnectionSocketFactory> socketFactoryRegistry =
+       RegistryBuilder.create();
+    String schemeName;
     if (sslUtil != null)
     {
       final SSLSocketFactory socketFactory;
       try
       {
-        socketFactory = new SSLSocketFactory(sslUtil.createSSLContext(),
+        socketFactory = new SSLSocketFactory(sslUtil.createSSLContext("TLS"),
             SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
       }
       catch (GeneralSecurityException e)
@@ -774,27 +789,21 @@ public class SCIMQueryRate
         return ResultCode.LOCAL_ERROR;
       }
       schemeName = "https";
-      final Scheme scheme = new Scheme(schemeName, 443, socketFactory);
-      schemeRegistry.register(scheme);
+      socketFactoryRegistry.register(schemeName, socketFactory);
     }
     else
     {
       schemeName = "http";
-      final Scheme scheme =
-          new Scheme(schemeName, 80, PlainSocketFactory.getSocketFactory());
-      schemeRegistry.register(scheme);
+      socketFactoryRegistry.register(schemeName, PlainSocketFactory.INSTANCE);
     }
 
-    final ThreadSafeClientConnManager mgr =
-        new ThreadSafeClientConnManager(schemeRegistry);
+    final PoolingHttpClientConnectionManager mgr =
+          new PoolingHttpClientConnectionManager(socketFactoryRegistry.build());
+    mgr.setDefaultSocketConfig(socketConfig.build());
     mgr.setMaxTotal(numThreads.getValue());
     mgr.setDefaultMaxPerRoute(numThreads.getValue());
+    httpClientBuilder.setConnectionManager(mgr);
 
-    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
-
-    final ApacheHttpClientConfig clientConfig =
-        new ApacheHttpClientConfig(httpClient);
-    clientConfig.setBypassHostnameVerification(true);
     if (authID.isPresent())
     {
       try
@@ -813,15 +822,14 @@ public class SCIMQueryRate
           password = null;
         }
 
+        final CredentialsProvider credentialsProvider =
+                new BasicCredentialsProvider();
         Credentials credentials = new UsernamePasswordCredentials(
-                                        authID.getValue(), password);
-        //Set credentials
-        httpClient.getCredentialsProvider().setCredentials(
-            new AuthScope(host.getValue(), port.getValue()), credentials);
-
-        //Preemptive auth to increase performance
-        httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(
-                                          new BasicScheme(), credentials), 0);
+                authID.getValue(), password);
+        credentialsProvider.setCredentials(
+                new AuthScope(host.getValue(), port.getValue()), credentials);
+        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+        httpClientBuilder.addInterceptorFirst(new PreemptiveAuthInterceptor());
       }
       catch (IOException e)
       {
@@ -832,7 +840,7 @@ public class SCIMQueryRate
     }
     else if (bearerToken.isPresent())
     {
-      httpClient.addRequestInterceptor(new HttpRequestInterceptor()
+      httpClientBuilder.addInterceptorFirst(new HttpRequestInterceptor()
       {
         @Override
         public void process(final HttpRequest httpRequest,
@@ -844,6 +852,10 @@ public class SCIMQueryRate
         }
       });
     }
+
+    final CloseableHttpClient httpClient = httpClientBuilder.build();
+    final ClientConfig clientConfig = new ApacheHttpClientConfig(httpClient);
+    clientConfig.setBypassHostnameVerification(true);
 
     // Create the SCIM client to use for the queries.
     final URI uri;

@@ -49,15 +49,16 @@ import com.unboundid.util.ssl.TrustAllTrustManager;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.wink.client.ApacheHttpClientConfig;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.wink.client.httpclient.ApacheHttpClientConfig;
 import org.apache.wink.client.ClientConfig;
 import org.testng.Assert;
 import org.testng.annotations.AfterSuite;
@@ -76,9 +77,6 @@ import java.net.URI;
 import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.List;
-
-import static org.apache.http.params.CoreConnectionPNames.SO_REUSEADDR;
-
 
 /**
  * This class provides the superclass for all SCIM RI test cases.
@@ -258,25 +256,41 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   protected SCIMService createSCIMService(final String userName,
                                           final String password)
   {
-    final Scheme httpScheme =
-        new Scheme("http", 80, PlainSocketFactory.getSocketFactory());
-    SchemeRegistry schemeRegistry = new SchemeRegistry();
-    schemeRegistry.register(httpScheme);
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+    httpClientBuilder.setRetryHandler(new StandardHttpRequestRetryHandler());
+    httpClientBuilder.setServiceUnavailableRetryStrategy(
+            new DefaultServiceUnavailableRetryStrategy());
 
-    final HttpParams params = new BasicHttpParams();
-    params.setBooleanParameter(SO_REUSEADDR, true);
-    DefaultHttpClient.setDefaultHttpParams(params);
-    final ThreadSafeClientConnManager mgr =
-        new ThreadSafeClientConnManager(schemeRegistry);
-    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+    SocketConfig.Builder socketConfig = SocketConfig.custom();
+    socketConfig.setSoKeepAlive(true);
+    socketConfig.setSoReuseAddress(true);
+    socketConfig.setTcpNoDelay(true);
+    socketConfig.setSoTimeout(10000);
+    httpClientBuilder.setDefaultSocketConfig(socketConfig.build());
 
+    RequestConfig.Builder requestConfig = RequestConfig.custom();
+    requestConfig.setAuthenticationEnabled(true);
+    requestConfig.setStaleConnectionCheckEnabled(true);
+    requestConfig.setConnectTimeout(10000);
+    requestConfig.setConnectionRequestTimeout(30000);
+    httpClientBuilder.setDefaultRequestConfig(requestConfig.build());
+
+    final PoolingHttpClientConnectionManager mgr =
+            new PoolingHttpClientConnectionManager();
+    mgr.setDefaultSocketConfig(socketConfig.build());
+    mgr.setDefaultMaxPerRoute(20);
+    mgr.setMaxTotal(200);
+    httpClientBuilder.setConnectionManager(mgr);
+
+    final CredentialsProvider credentialsProvider =
+            new BasicCredentialsProvider();
     final Credentials credentials =
-        new UsernamePasswordCredentials(userName, password);
-    httpClient.getCredentialsProvider().setCredentials(
-        new AuthScope("localhost", -1), credentials);
-    httpClient.addRequestInterceptor(
-        new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
+            new UsernamePasswordCredentials(userName, password);
+    credentialsProvider.setCredentials(AuthScope.ANY, credentials);
+    httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+    httpClientBuilder.addInterceptorFirst(new PreemptiveAuthInterceptor());
 
+    final CloseableHttpClient httpClient = httpClientBuilder.build();
     final ClientConfig clientConfig = new ApacheHttpClientConfig(httpClient);
 
     return new SCIMService(URI.create("http://localhost:" + getSSTestPort()),

@@ -20,12 +20,21 @@ package com.unboundid.scim.sdk;
 import java.io.IOException;
 
 import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.auth.AuthProtocolState;
 import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
-import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.AuthCache;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.routing.RouteInfo;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.protocol.HttpContext;
 
 
@@ -50,54 +59,98 @@ import org.apache.http.protocol.HttpContext;
  */
 public class PreemptiveAuthInterceptor implements HttpRequestInterceptor
 {
-  private final AuthScheme authScheme;
-  private final Credentials credentials;
-
-  /**
-   * Constructs a new PreemptiveAuthInterceptor. It is important that this is
-   * added as the <b>first</b> request interceptor in the chain. You can do this
-   * by making sure the second parameter is zero when adding the interceptor:
-   * <p>
-   * <code>
-   * httpClient.addRequestInterceptor(
-   *   new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
-   * </code>
-   *
-   * @param authScheme The AuthScheme to use. This may not be null.
-   * @param credentials The Credentials to use. This may not be null.
-   */
-  public PreemptiveAuthInterceptor(final AuthScheme authScheme,
-                                   final Credentials credentials)
-  {
-    if(authScheme == null)
-    {
-      throw new NullPointerException(
-              "The 'authScheme' parameter cannot be null");
-    }
-
-    if(credentials == null)
-    {
-      throw new NullPointerException(
-              "The 'credentials' parameter cannot be null");
-    }
-
-    this.authScheme = authScheme;
-    this.credentials = credentials;
-  }
-
   /**
    * {@inheritDoc}
    */
   @Override
   public void process(final HttpRequest request, final HttpContext context)
-      throws HttpException, IOException
+          throws HttpException, IOException
   {
-    AuthState authState = (AuthState) context.getAttribute(
-                                        ClientContext.TARGET_AUTH_STATE);
-    if(authState != null)
+    final HttpClientContext clientContext = HttpClientContext.adapt(context);
+    final RouteInfo route = clientContext.getHttpRoute();
+    HttpHost target = clientContext.getTargetHost();
+    if(target.getPort() < 0)
     {
-      authState.setAuthScheme(authScheme);
-      authState.setCredentials(credentials);
+      target = new HttpHost(
+              target.getHostName(),
+              route.getTargetHost().getPort(),
+              target.getSchemeName());
+    }
+
+    AuthCache authCache = clientContext.getAuthCache();
+    if(authCache == null)
+    {
+      authCache = new BasicAuthCache();
+      BasicScheme basicAuth = new BasicScheme();
+      authCache.put(target, basicAuth);
+      clientContext.setAuthCache(authCache);
+      return;
+    }
+
+    final CredentialsProvider credsProvider =
+            clientContext.getCredentialsProvider();
+    if(credsProvider == null)
+    {
+      return;
+    }
+
+    final AuthState targetState = clientContext.getTargetAuthState();
+    if(targetState != null &&
+            targetState.getState() == AuthProtocolState.UNCHALLENGED)
+    {
+      final AuthScheme authScheme = authCache.get(target);
+      if(authScheme != null)
+      {
+        doPreemptiveAuth(target, authScheme, targetState, credsProvider);
+      }
+    }
+
+    final HttpHost proxy = route.getProxyHost();
+    final AuthState proxyState = clientContext.getProxyAuthState();
+    if(proxy != null && proxyState != null &&
+            proxyState.getState() == AuthProtocolState.UNCHALLENGED)
+    {
+      final AuthScheme authScheme = authCache.get(proxy);
+      if(authScheme != null)
+      {
+        doPreemptiveAuth(proxy, authScheme, proxyState, credsProvider);
+      }
+    }
+  }
+
+  /**
+   * Method to update the AuthState in order to preemptively supply the
+   * credentials to the server.
+   *
+   * @param host the HttpHost which we're authenticating to
+   * @param authScheme the AuthScheme in use
+   * @param authState the AuthState object from the HttpContext
+   * @param credsProvider the CredentialsProvider which has the username and
+   *                      password
+   */
+  private void doPreemptiveAuth(
+          final HttpHost host,
+          final AuthScheme authScheme,
+          final AuthState authState,
+          final CredentialsProvider credsProvider)
+  {
+    final String schemeName = authScheme.getSchemeName();
+
+    final AuthScope authScope =
+            new AuthScope(host, AuthScope.ANY_REALM, schemeName);
+    final Credentials creds = credsProvider.getCredentials(authScope);
+
+    if(creds != null)
+    {
+      if(AuthSchemes.BASIC.equalsIgnoreCase(schemeName))
+      {
+        authState.setState(AuthProtocolState.CHALLENGED);
+      }
+      else
+      {
+        authState.setState(AuthProtocolState.SUCCESS);
+      }
+      authState.update(authScheme, creds);
     }
   }
 }
