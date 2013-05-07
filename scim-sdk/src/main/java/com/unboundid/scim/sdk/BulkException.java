@@ -22,24 +22,27 @@ package com.unboundid.scim.sdk;
  */
 public class BulkException extends Exception
 {
+  private static final long serialVersionUID = -734244253288139013L;
+
   private final String method;
   private final String bulkId;
-  private final String location;
+  private final String path;
 
   /**
    *
    * @param throwable The SCIMException that caused the bulk operation to fail.
    * @param method The original HTTP method of the operation.
    * @param bulkId The bulk operation identifier.
-   * @param location The resource endpoint URL.
+   * @param path   The relative path of the resource from the bulk operation
+   *               request.
    */
   public BulkException(final SCIMException throwable, final String method,
-                       final String bulkId, final String location)
+                       final String bulkId, final String path)
   {
     super(throwable);
     this.method = method;
     this.bulkId = bulkId;
-    this.location = location;
+    this.path   = path;
   }
 
 
@@ -69,15 +72,18 @@ public class BulkException extends Exception
 
 
   /**
-   * Retrieve the resource endpoint URL, or {@code null} if this is a request,
-   * or if this is the response to a failed POST operation.
-   * @return  The resource endpoint URL, or {@code null} if this is a request,
-   *          or if this is the response to a failed POST operation.
+   * Retrieve the relative path of the resource from the bulk operation request.
+   * Could be {@code null} if no path was specified.
+   *
+   * @return  The relative path of the resource from the bulk operation request,
+   *          or {@code null} if no path was specified.
    */
-  public String getLocation()
+  public String getPath()
   {
-    return location;
+    return path;
   }
+
+
 
   /**
    * {@inheritDoc}

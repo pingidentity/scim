@@ -242,9 +242,36 @@ public class BulkContentRequestHandler extends BulkContentHandler
       final Status status =
           new Status(String.valueOf(statusCode), statusMessage);
 
+      BulkOperation.Method method = null;
+      if (bulkException.getMethod() != null)
+      {
+        try
+        {
+          method = BulkOperation.Method.valueOf(bulkException.getMethod());
+        }
+        catch (IllegalArgumentException e)
+        {
+          // This is OK - it could be the reason we are in this method.
+        }
+      }
+
+      // The bulk exception contains the path from the request. We just
+      // need to prepend the URL base.
+      String location = null;
+      if (method != BulkOperation.Method.POST)
+      {
+        final UriBuilder locationBuilder =
+            UriBuilder.fromUri(requestContext.getUriInfo().getBaseUri());
+        if (bulkException.getPath() != null)
+        {
+          locationBuilder.path(bulkException.getPath());
+        }
+        location = locationBuilder.build().toString();
+      }
+
       BulkOperation response = BulkOperation.createResponse(
           bulkException.getMethod(), bulkException.getBulkId(),
-          bulkException.getLocation(), status);
+          location, status);
       bulkStreamResponse.writeBulkOperation(response);
       errorCount++;
       return errorCount != failOnErrors;
@@ -300,7 +327,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
             405, "The bulk operation specifies an invalid " +
             "HTTP method '" + httpMethod + "'. Allowed methods are " +
             Arrays.asList(BulkOperation.Method.values())),
-            httpMethod, bulkId, location);
+            httpMethod, bulkId, path);
       }
 
       if (path == null)
@@ -380,7 +407,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
     }
     catch (SCIMException e)
     {
-      throw new BulkException(e, httpMethod, bulkId, location);
+      throw new BulkException(e, httpMethod, bulkId, path);
     }
 
     final UriBuilder locationBuilder =
@@ -609,7 +636,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
           resourceStats.incrementStat("delete-" + e.getStatusCode());
           break;
       }
-      throw new BulkException(e, httpMethod, bulkId, location);
+      throw new BulkException(e, httpMethod, bulkId, path);
     }
 
     if (requestContext.getProduceMediaType() ==

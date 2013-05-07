@@ -342,7 +342,7 @@ public class XmlBulkParser
                 throw new BulkException(new InvalidResourceException(
                     "Bulk operation " + operationIndex + " has data but no " +
                         "path"),
-                    httpMethod, bulkId, location);
+                    httpMethod, bulkId, path);
               }
 
               final ResourceDescriptor descriptor =
@@ -352,7 +352,7 @@ public class XmlBulkParser
                 throw new BulkException(new InvalidResourceException(
                     "Bulk operation " + operationIndex + " specifies an " +
                         "unknown resource endpoint '" + endpoint + "'"),
-                    httpMethod, bulkId, location);
+                    httpMethod, bulkId, path);
               }
 
               try
@@ -362,7 +362,7 @@ public class XmlBulkParser
               }
               catch (SCIMException e)
               {
-                throw new BulkException(e, httpMethod, bulkId, location);
+                throw new BulkException(e, httpMethod, bulkId, path);
               }
             }
             else if (xmlStreamReader.getLocalName().equals("status"))
@@ -373,7 +373,7 @@ public class XmlBulkParser
               }
               catch (SCIMException e)
               {
-                throw new BulkException(e, httpMethod, bulkId, location);
+                throw new BulkException(e, httpMethod, bulkId, path);
               }
             }
             else
@@ -392,7 +392,7 @@ public class XmlBulkParser
       throw new BulkException(new InvalidResourceException(
           "Bulk operation " + operationIndex + " is malformed: " +
               e.getMessage()),
-          httpMethod, bulkId, location);
+          httpMethod, bulkId, path);
     }
 
     return new BulkOperation(httpMethod, bulkId, version, path, location,

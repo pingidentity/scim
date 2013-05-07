@@ -296,7 +296,7 @@ public class JsonBulkParser extends JsonParser
         {
           throw new BulkException(new InvalidResourceException(
               "Bulk operation " + operationIndex + " has data but no path"),
-              httpMethod, bulkId, location);
+              httpMethod, bulkId, path);
         }
 
         int startPos = 0;
@@ -320,7 +320,7 @@ public class JsonBulkParser extends JsonParser
           throw new BulkException(new InvalidResourceException(
               "Bulk operation " + operationIndex + " specifies an unknown " +
                   "resource endpoint '" + endpoint + "'"),
-              httpMethod, bulkId, location);
+              httpMethod, bulkId, path);
         }
 
         try
@@ -330,7 +330,7 @@ public class JsonBulkParser extends JsonParser
         }
         catch (InvalidResourceException e)
         {
-          throw new BulkException(e, httpMethod, bulkId, location);
+          throw new BulkException(e, httpMethod, bulkId, path);
         }
       }
 
@@ -342,7 +342,7 @@ public class JsonBulkParser extends JsonParser
       throw new BulkException(new InvalidResourceException(
           "Bulk operation " + operationIndex + " is malformed: " +
               e.getMessage()),
-          httpMethod, bulkId, location);
+          httpMethod, bulkId, path);
     }
   }
 
