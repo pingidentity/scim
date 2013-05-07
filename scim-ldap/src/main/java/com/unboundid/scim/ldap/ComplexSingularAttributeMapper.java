@@ -155,10 +155,18 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
         return Filter.createSubstringFilter(ldapAttributeType, ldapFilterValue,
                                               null, null);
       case GREATER_THAN:
+        return Filter.createANDFilter(
+          Filter.createGreaterOrEqualFilter(ldapAttributeType, ldapFilterValue),
+          Filter.createNOTFilter(
+              Filter.createEqualityFilter(ldapAttributeType, ldapFilterValue)));
       case GREATER_OR_EQUAL:
         return Filter.createGreaterOrEqualFilter(ldapAttributeType,
                 ldapFilterValue);
       case LESS_THAN:
+        return Filter.createANDFilter(
+          Filter.createLessOrEqualFilter(ldapAttributeType, ldapFilterValue),
+          Filter.createNOTFilter(
+              Filter.createEqualityFilter(ldapAttributeType, ldapFilterValue)));
       case LESS_OR_EQUAL:
         return Filter.createLessOrEqualFilter(ldapAttributeType,
                 ldapFilterValue);

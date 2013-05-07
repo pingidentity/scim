@@ -126,6 +126,13 @@ public class SimpleAttributeMapper extends AttributeMapper
       }
 
       case GREATER_THAN:
+      {
+        return Filter.createANDFilter(
+            Filter.createGreaterOrEqualFilter(ldapAttributeType, filterValue),
+            Filter.createNOTFilter(
+                Filter.createEqualityFilter(ldapAttributeType, filterValue)));
+      }
+
       case GREATER_OR_EQUAL:
       {
         return Filter.createGreaterOrEqualFilter(ldapAttributeType,
@@ -133,6 +140,13 @@ public class SimpleAttributeMapper extends AttributeMapper
       }
 
       case LESS_THAN:
+      {
+        return Filter.createANDFilter(
+            Filter.createLessOrEqualFilter(ldapAttributeType, filterValue),
+            Filter.createNOTFilter(
+                Filter.createEqualityFilter(ldapAttributeType, filterValue)));
+      }
+
       case LESS_OR_EQUAL:
       {
         return Filter.createLessOrEqualFilter(ldapAttributeType,

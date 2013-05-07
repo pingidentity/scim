@@ -220,6 +220,13 @@ public class MultiValuedAttributeMapper extends AttributeMapper
         break;
 
         case GREATER_THAN:
+        {
+          return Filter.createANDFilter(
+          Filter.createGreaterOrEqualFilter(ldapAttributeType, ldapFilterValue),
+          Filter.createNOTFilter(
+              Filter.createEqualityFilter(ldapAttributeType, ldapFilterValue)));
+        }
+
         case GREATER_OR_EQUAL:
         {
           return Filter.createGreaterOrEqualFilter(ldapAttributeType,
@@ -227,6 +234,13 @@ public class MultiValuedAttributeMapper extends AttributeMapper
         }
 
         case LESS_THAN:
+        {
+          return Filter.createANDFilter(
+          Filter.createLessOrEqualFilter(ldapAttributeType, ldapFilterValue),
+          Filter.createNOTFilter(
+              Filter.createEqualityFilter(ldapAttributeType, ldapFilterValue)));
+        }
+
         case LESS_OR_EQUAL:
         {
           return Filter.createLessOrEqualFilter(ldapAttributeType,

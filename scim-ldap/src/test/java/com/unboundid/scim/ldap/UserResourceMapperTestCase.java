@@ -271,8 +271,16 @@ public class UserResourceMapperTestCase
     filter = mapper.toLDAPFilter(
         SCIMFilter.parse("name.formatted lt \"test\""));
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
-    filter = filter.getComponents()[0];
+    Filter andFilter = filter.getComponents()[0];
+    assertEquals(andFilter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = andFilter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_LESS_OR_EQUAL);
+    assertEquals(filter.getAttributeName(), "cn");
+    assertEquals(filter.getAssertionValue(), "test");
+    Filter notFilter = andFilter.getComponents()[1];
+    assertEquals(notFilter.getFilterType(), Filter.FILTER_TYPE_NOT);
+    filter = notFilter.getNOTComponent();
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_EQUALITY);
     assertEquals(filter.getAttributeName(), "cn");
     assertEquals(filter.getAssertionValue(), "test");
 
