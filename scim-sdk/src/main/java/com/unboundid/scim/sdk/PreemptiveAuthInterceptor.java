@@ -30,11 +30,12 @@ import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.config.AuthSchemes;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.conn.routing.RouteInfo;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 
 
@@ -66,35 +67,37 @@ public class PreemptiveAuthInterceptor implements HttpRequestInterceptor
   public void process(final HttpRequest request, final HttpContext context)
           throws HttpException, IOException
   {
-    final HttpClientContext clientContext = HttpClientContext.adapt(context);
-    final RouteInfo route = clientContext.getHttpRoute();
-    HttpHost target = clientContext.getTargetHost();
+    HttpHost target = (HttpHost) context.getAttribute(
+            ExecutionContext.HTTP_TARGET_HOST);
     if(target.getPort() < 0)
     {
-      target = new HttpHost(
-              target.getHostName(),
-              route.getTargetHost().getPort(),
-              target.getSchemeName());
+      SchemeRegistry schemeRegistry = (SchemeRegistry) context.getAttribute(
+              ClientContext.SCHEME_REGISTRY);
+      Scheme scheme = schemeRegistry.getScheme(target);
+      target = new HttpHost(target.getHostName(),
+              scheme.resolvePort(target.getPort()), target.getSchemeName());
     }
 
-    AuthCache authCache = clientContext.getAuthCache();
+    AuthCache authCache = (AuthCache) context.getAttribute(
+            ClientContext.AUTH_CACHE);
     if(authCache == null)
     {
       authCache = new BasicAuthCache();
       BasicScheme basicAuth = new BasicScheme();
       authCache.put(target, basicAuth);
-      clientContext.setAuthCache(authCache);
+      context.setAttribute(ClientContext.AUTH_CACHE, authCache);
       return;
     }
 
-    final CredentialsProvider credsProvider =
-            clientContext.getCredentialsProvider();
+    CredentialsProvider credsProvider =
+       (CredentialsProvider) context.getAttribute(ClientContext.CREDS_PROVIDER);
     if(credsProvider == null)
     {
       return;
     }
 
-    final AuthState targetState = clientContext.getTargetAuthState();
+    final AuthState targetState = (AuthState) context.getAttribute(
+            ClientContext.TARGET_AUTH_STATE);
     if(targetState != null &&
             targetState.getState() == AuthProtocolState.UNCHALLENGED)
     {
@@ -105,8 +108,10 @@ public class PreemptiveAuthInterceptor implements HttpRequestInterceptor
       }
     }
 
-    final HttpHost proxy = route.getProxyHost();
-    final AuthState proxyState = clientContext.getProxyAuthState();
+    final HttpHost proxy = (HttpHost) context.getAttribute(
+            ExecutionContext.HTTP_PROXY_HOST);
+    final AuthState proxyState = (AuthState) context.getAttribute(
+            ClientContext.PROXY_AUTH_STATE);
     if(proxy != null && proxyState != null &&
             proxyState.getState() == AuthProtocolState.UNCHALLENGED)
     {
@@ -136,13 +141,13 @@ public class PreemptiveAuthInterceptor implements HttpRequestInterceptor
   {
     final String schemeName = authScheme.getSchemeName();
 
-    final AuthScope authScope =
-            new AuthScope(host, AuthScope.ANY_REALM, schemeName);
+    final AuthScope authScope = new AuthScope(
+            host, AuthScope.ANY_REALM, schemeName);
     final Credentials creds = credsProvider.getCredentials(authScope);
 
     if(creds != null)
     {
-      if(AuthSchemes.BASIC.equalsIgnoreCase(schemeName))
+      if("BASIC".equalsIgnoreCase(schemeName))
       {
         authState.setState(AuthProtocolState.CHALLENGED);
       }
