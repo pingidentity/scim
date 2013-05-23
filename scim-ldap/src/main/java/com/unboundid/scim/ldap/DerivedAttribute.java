@@ -18,7 +18,9 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -167,6 +169,21 @@ public abstract class DerivedAttribute
   public abstract Set<String> getLDAPAttributeTypes();
 
 
+
+  /**
+   * Add any search controls that are needed by this derived attribute when
+   * the LDAP entry is fetched.
+   *
+   * @param controls  The list of controls that will be used to fetch the
+   *                  LDAP entry.
+   */
+  public void addSearchControls(final List<Control> controls)
+  {
+    // No search controls by default.
+  }
+
+
+
   /**
    * Derive a SCIM attribute value from the provided information.
    *
@@ -182,7 +199,32 @@ public abstract class DerivedAttribute
   public abstract SCIMAttribute toSCIMAttribute(
       final Entry entry,
       final LDAPRequestInterface ldapInterface,
-      final LDAPSearchResolver searchResolver) throws SCIMException;
+      final LDAPSearchResolver searchResolver)
+      throws SCIMException;
+
+
+
+  /**
+   * Derive a SCIM attribute value from the provided information.
+   *
+   * @param entry          An LDAP search result entry representing the SCIM
+   *                       resource for which a SCIM attribute value is to be
+   *                       derived.
+   * @param ldapInterface  An LDAP interface that may be used to search the DIT.
+   * @param searchResolver The LDAPSearchResolver for resources containing this
+   *                       derived attribute.
+   *
+   * @return  A SCIM attribute, or {@code null} if no attribute was created.
+   * @throws SCIMException if an error occurs.
+   */
+  public SCIMAttribute searchEntryToSCIMAttribute(
+      final SearchResultEntry entry,
+      final LDAPRequestInterface ldapInterface,
+      final LDAPSearchResolver searchResolver) throws SCIMException
+  {
+    return toSCIMAttribute(entry, ldapInterface, searchResolver);
+  }
+
 
 
   /**

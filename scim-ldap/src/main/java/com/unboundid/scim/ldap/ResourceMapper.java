@@ -26,6 +26,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
@@ -1231,6 +1232,31 @@ public class ResourceMapper
       final SCIMQueryAttributes queryAttributes,
       final LDAPRequestInterface ldapInterface) throws SCIMException
   {
+    return toSCIMAttributes(new SearchResultEntry(entry), queryAttributes,
+                            ldapInterface);
+  }
+
+
+
+  /**
+   * Map the attributes in an LDAP search result entry to SCIM attributes.
+   *
+   * @param entry            The LDAP entry containing attributes to be
+   *                         mapped.
+   * @param queryAttributes  The set of SCIM attributes that are requested
+   *                         to be returned.
+   * @param ldapInterface    An optional LDAP interface that can be used to
+   *                         derive attributes from other entries.
+   *
+   * @return  A list of SCIM attributes mapped from the LDAP entry. This should
+   *          never be {@code null} but may be empty.
+   * @throws SCIMException   If the attributes could not be mapped.
+   */
+  public List<SCIMAttribute> toSCIMAttributes(
+      final SearchResultEntry entry,
+      final SCIMQueryAttributes queryAttributes,
+      final LDAPRequestInterface ldapInterface) throws SCIMException
+  {
     final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>();
 
     //Keep a list of the derived attributes that we add to the result set
@@ -1247,8 +1273,8 @@ public class ResourceMapper
           derivedAttrs.add(e.getKey());
           final DerivedAttribute derivedAttribute = e.getValue();
           final SCIMAttribute attribute =
-              derivedAttribute.toSCIMAttribute(entry, ldapInterface,
-                                               searchResolver);
+              derivedAttribute.searchEntryToSCIMAttribute(
+                  entry, ldapInterface, searchResolver);
           if (attribute != null)
           {
             final SCIMAttribute paredAttribute =
@@ -1308,6 +1334,33 @@ public class ResourceMapper
   public SCIMObject toSCIMObject(final Entry entry,
                                  final SCIMQueryAttributes queryAttributes,
                                  final LDAPRequestInterface ldapInterface)
+      throws SCIMException
+  {
+    return toSCIMObject(new SearchResultEntry(entry),
+                        queryAttributes, ldapInterface);
+  }
+
+
+
+  /**
+   * Map an LDAP search result entry to a SCIM resource.
+   *
+   * @param entry            The LDAP entry containing attributes to be
+   *                         mapped, and optional controls as input to the
+   *                         mapping.
+   * @param queryAttributes  The set of SCIM attributes that are requested
+   *                         to be returned.
+   * @param ldapInterface    An optional LDAP interface that can be used to
+   *                         derive attributes from other entries.
+   *
+   * @return  A SCIM object mapped from the LDAP entry, or {@code null} if this
+   *          entry cannot be mapped to a SCIM object.
+   * @throws SCIMException   If the entry could not be mapped.
+   */
+  public SCIMObject toSCIMObject(
+      final SearchResultEntry entry,
+      final SCIMQueryAttributes queryAttributes,
+      final LDAPRequestInterface ldapInterface)
       throws SCIMException
   {
     if (searchResolver.getFilter() != null)
@@ -1573,6 +1626,27 @@ public class ResourceMapper
 
 
   /**
+   * Read the LDAP entry identified by the given resource ID. No attributes
+   * are returned from the entry.
+   *
+   * @param ldapInterface  The LDAP interface to use to read the entry.
+   * @param resourceID     The requested SCIM resource ID.
+   *
+   * @return  The LDAP entry for the given resource ID.
+   *
+   * @throws SCIMException  If the entry could not be read.
+   */
+  public SearchResultEntry getEntryWithoutAttrs(
+      final LDAPRequestInterface ldapInterface,
+      final String resourceID)
+      throws SCIMException
+  {
+    return getEntry(ldapInterface, resourceID, "1.1");
+  }
+
+
+
+  /**
    * Read the LDAP entry identified by the given resource ID.
    *
    * @param ldapInterface  The LDAP interface to use to read the entry.
@@ -1583,12 +1657,70 @@ public class ResourceMapper
    *
    * @throws SCIMException  If the entry could not be read.
    */
-  public Entry getEntry(final LDAPRequestInterface ldapInterface,
-                        final String resourceID,
-                        final String... attributes)
+  public SearchResultEntry getEntry(final LDAPRequestInterface ldapInterface,
+                                    final String resourceID,
+                                    final String... attributes)
       throws SCIMException
   {
-    return searchResolver.getEntry(ldapInterface, resourceID, attributes);
+    final List<Control> controls = new ArrayList<Control>();
+
+    return searchResolver.getEntry(ldapInterface, resourceID, controls,
+                                   attributes);
+  }
+
+
+
+  /**
+   * Read the LDAP entry identified by the given resource ID. The LDAP entry
+   * should be in a form suitable for mapping to a SCIM entry that will be
+   * returned to the client.
+   *
+   * @param ldapInterface    The LDAP interface to use to read the entry.
+   * @param resourceID       The requested SCIM resource ID.
+   * @param queryAttributes  The set of requested SCIM attributes.
+   * @param attributes       The requested LDAP attributes.
+   *
+   * @return  The LDAP entry for the given resource ID.
+   *
+   * @throws SCIMException  If the entry could not be read.
+   */
+  public SearchResultEntry getReturnEntry(
+      final LDAPRequestInterface ldapInterface,
+      final String resourceID,
+      final SCIMQueryAttributes queryAttributes,
+      final String... attributes)
+      throws SCIMException
+  {
+    // Include any controls that are needed by derived attributes.
+    final List<Control> controls = new ArrayList<Control>();
+    addSearchControls(controls, queryAttributes);
+
+    return searchResolver.getEntry(ldapInterface, resourceID, controls,
+                                   attributes);
+  }
+
+
+
+  /**
+   * Add any search controls that are needed by derived attributes when the
+   * LDAP entry is fetched.
+   *
+   * @param controls         The list of controls that will be used to fetch
+   *                         the LDAP entry.
+   * @param queryAttributes  The set of requested SCIM attributes.
+   */
+  public void addSearchControls(final List<Control> controls,
+                                final SCIMQueryAttributes queryAttributes)
+  {
+    for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
+        derivedAttributes.entrySet())
+    {
+      if (queryAttributes.isAttributeRequested(e.getKey()))
+      {
+        final DerivedAttribute derivedAttribute = e.getValue();
+        derivedAttribute.addSearchControls(controls);
+      }
+    }
   }
 
 

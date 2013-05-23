@@ -35,6 +35,7 @@ import com.unboundid.ldap.sdk.RDN;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
@@ -228,9 +229,10 @@ public abstract class LDAPBackend
     final LDAPRequestInterface ldapInterface =
         getLDAPRequestInterface(request.getAuthenticatedUserID());
 
-    final Entry entry =
-        mapper.getEntry(ldapInterface, request.getResourceID(),
-                        requestAttributes);
+    final SearchResultEntry entry =
+        mapper.getReturnEntry(ldapInterface, request.getResourceID(),
+                              request.getAttributes(),
+                              requestAttributes);
     final BaseResource resource =
         new BaseResource(request.getResourceDescriptor());
 
@@ -305,8 +307,8 @@ public abstract class LDAPBackend
       Set<DN> searchBaseDNs;
       if (request.getBaseID() != null)
       {
-        Entry baseEntry = resourceMapper.getEntry(
-                ldapInterface, request.getBaseID(), "1.1");
+        Entry baseEntry = resourceMapper.getEntryWithoutAttrs(
+            ldapInterface, request.getBaseID());
 
         //Make sure the requested base ID maps to an entry that is within the
         //configured base DN(s) for this resource type.
@@ -462,6 +464,12 @@ public abstract class LDAPBackend
           searchRequest.setSizeLimit(maxResults);
         }
 
+        // Include any controls that are needed by derived attributes.
+        final List<Control> controls = new ArrayList<Control>();
+        resourceMapper.addSearchControls(controls, request.getAttributes());
+        searchRequest.addControls(
+            controls.toArray(new Control[controls.size()]));
+
         // Invoke the search operation.
         try
         {
@@ -594,7 +602,8 @@ public abstract class LDAPBackend
                              request.getAttributes());
 
       final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
-          addedEntry, request.getAttributes(), ldapInterface);
+          new SearchResultEntry(addedEntry), request.getAttributes(),
+          ldapInterface);
       for (final SCIMAttribute a : scimAttributes)
       {
         Validator.ensureTrue(resource.getScimObject().addAttribute(a));
@@ -627,7 +636,7 @@ public abstract class LDAPBackend
           getLDAPRequestInterface(request.getAuthenticatedUserID());
 
       final Entry entry =
-          mapper.getEntry(ldapInterface, request.getResourceID());
+          mapper.getEntryWithoutAttrs(ldapInterface, request.getResourceID());
       final DeleteRequest deleteRequest = new DeleteRequest(entry.getDN());
       final LDAPResult result = ldapInterface.delete(deleteRequest);
 
@@ -676,12 +685,13 @@ public abstract class LDAPBackend
 
     final String resourceID = request.getResourceID();
     final List<Modification> mods = new ArrayList<Modification>();
-    Entry modifiedEntry = null;
+    Entry modifiedEntry;
+    SearchResultEntry returnEntry;
     try
     {
       final LDAPRequestInterface ldapInterface =
           getLDAPRequestInterface(request.getAuthenticatedUserID());
-      final Entry currentEntry =
+      final SearchResultEntry currentEntry =
           mapper.getEntry(ldapInterface, resourceID, mappedAttributes);
 
       mods.addAll(mapper.toLDAPModificationsForPut(currentEntry,
@@ -779,45 +789,44 @@ public abstract class LDAPBackend
 
         if (c != null)
         {
-          modifiedEntry = c.getEntry();
-
           // Work around issue DS-5918.
-          if (modifiedEntry.hasAttribute("entryUUID"))
+          if (c.getEntry().hasAttribute("entryUUID"))
           {
-            final SearchRequest r =
-                new SearchRequest(modifiedEntry.getDN(),
-                                  SearchScope.BASE,
-                                  Filter.createPresenceFilter("objectclass"),
-                                  requestAttributes);
-            r.setSizeLimit(1);
-            final Entry actualEntry = ldapInterface.searchForEntry(r);
-            if (actualEntry != null)
-            {
-              modifiedEntry = actualEntry;
-            }
+            returnEntry =
+                mapper.getReturnEntry(ldapInterface, resourceID,
+                                      request.getAttributes(),
+                                      requestAttributes);
+          }
+          else
+          {
+            returnEntry = new SearchResultEntry(c.getEntry());
           }
         }
         else
         {
-          modifiedEntry =
-              mapper.getEntry(ldapInterface, resourceID, requestAttributes);
+          returnEntry =
+              mapper.getReturnEntry(ldapInterface, resourceID,
+                                    request.getAttributes(),
+                                    requestAttributes);
         }
       }
       else
       {
         // No modifications necessary (the mod set is empty).
         // Fetch the entry again, this time with the required return attributes.
-        modifiedEntry =
-            mapper.getEntry(ldapInterface, resourceID, requestAttributes);
+        returnEntry =
+            mapper.getReturnEntry(ldapInterface, resourceID,
+                                  request.getAttributes(),
+                                  requestAttributes);
       }
 
       final BaseResource resource =
                   new BaseResource(request.getResourceDescriptor());
-      setIdAndMetaAttributes(mapper, resource, request, modifiedEntry,
+      setIdAndMetaAttributes(mapper, resource, request, returnEntry,
                              request.getAttributes());
 
       final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
-        modifiedEntry, request.getAttributes(), ldapInterface);
+        returnEntry, request.getAttributes(), ldapInterface);
 
       for (final SCIMAttribute a : scimAttributes)
       {
@@ -854,12 +863,13 @@ public abstract class LDAPBackend
 
     final String resourceID = request.getResourceID();
     final List<Modification> mods = new ArrayList<Modification>();
-    Entry modifiedEntry = null;
+    Entry modifiedEntry;
+    SearchResultEntry returnEntry;
     try
     {
       final LDAPRequestInterface ldapInterface =
               getLDAPRequestInterface(request.getAuthenticatedUserID());
-      final Entry currentEntry =
+      final SearchResultEntry currentEntry =
               mapper.getEntry(ldapInterface, resourceID, mappedAttributes);
 
       mods.addAll(mapper.toLDAPModificationsForPatch(currentEntry,
@@ -968,41 +978,40 @@ public abstract class LDAPBackend
 
         if (c != null)
         {
-          modifiedEntry = c.getEntry();
-
           // Work around issue DS-5918.
-          if (modifiedEntry.hasAttribute("entryUUID"))
+          if (c.getEntry().hasAttribute("entryUUID"))
           {
-            final SearchRequest r =
-                    new SearchRequest(modifiedEntry.getDN(),
-                            SearchScope.BASE,
-                            Filter.createPresenceFilter("objectclass"),
-                            requestAttributes);
-            r.setSizeLimit(1);
-            final Entry actualEntry = ldapInterface.searchForEntry(r);
-            if (actualEntry != null)
-            {
-              modifiedEntry = actualEntry;
-            }
+            returnEntry =
+                mapper.getReturnEntry(ldapInterface, resourceID,
+                                      request.getAttributes(),
+                                      requestAttributes);
+          }
+          else
+          {
+            returnEntry = new SearchResultEntry(c.getEntry());
           }
         }
         else
         {
-          modifiedEntry =
-              mapper.getEntry(ldapInterface, resourceID, requestAttributes);
+          returnEntry =
+              mapper.getReturnEntry(ldapInterface, resourceID,
+                                    request.getAttributes(),
+                                    requestAttributes);
         }
       }
       else
       {
         // No modifications were necessary (the mod set was empty).
         // Fetch the entry again, this time with the required return attributes.
-        modifiedEntry =
-                mapper.getEntry(ldapInterface, resourceID, requestAttributes);
+        returnEntry =
+            mapper.getReturnEntry(ldapInterface, resourceID,
+                                  request.getAttributes(),
+                                  requestAttributes);
       }
 
       final BaseResource resource =
               new BaseResource(request.getResourceDescriptor());
-      setIdAndMetaAttributes(mapper, resource, request, modifiedEntry,
+      setIdAndMetaAttributes(mapper, resource, request, returnEntry,
               request.getAttributes());
 
       //Only if the 'attributes' query parameter was specified do we need to
@@ -1010,7 +1019,7 @@ public abstract class LDAPBackend
       if (!request.getAttributes().allAttributesRequested())
       {
         final List<SCIMAttribute> scimAttributes = mapper.toSCIMAttributes(
-              modifiedEntry, request.getAttributes(), ldapInterface);
+              returnEntry, request.getAttributes(), ldapInterface);
 
         for (final SCIMAttribute a : scimAttributes)
         {
@@ -1348,7 +1357,7 @@ public abstract class LDAPBackend
    *                       there was an error during the determination.
    */
   public static void checkSchemaForPatch(
-      final PatchResourceRequest request, final Entry currentEntry,
+      final PatchResourceRequest request, final SearchResultEntry currentEntry,
       final ResourceMapper mapper, final LDAPRequestInterface ldapInterface)
       throws SCIMException
   {

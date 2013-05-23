@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
@@ -24,6 +25,7 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.sdk.Debug;
@@ -35,6 +37,7 @@ import com.unboundid.util.StaticUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -347,18 +350,20 @@ public class LDAPSearchResolver
    *
    * @param ldapInterface  The LDAP interface to use to read the entry.
    * @param resourceID     The requested SCIM resource ID.
+   * @param controls       A set of search controls, which may be empty.
    * @param attributes     The requested LDAP attributes.
    *
    * @return  The LDAP entry for the given resource ID.
    *
    * @throws SCIMException  If there was an error retrieving the resource entry.
    */
-  public Entry getEntry(final LDAPRequestInterface ldapInterface,
-                        final String resourceID,
-                        final String... attributes)
+  public SearchResultEntry getEntry(final LDAPRequestInterface ldapInterface,
+                                    final String resourceID,
+                                    final List<Control> controls,
+                                    final String... attributes)
       throws SCIMException
   {
-    Entry entry = null;
+    SearchResultEntry entry = null;
 
     if (idMapsToDn())
     {
@@ -370,6 +375,8 @@ public class LDAPSearchResolver
               new SearchRequest(resourceID, SearchScope.BASE,
                   getFilter(), attributes);
           searchRequest.setSizeLimit(1);
+          searchRequest.addControls(
+              controls.toArray(new Control[controls.size()]));
           entry = ldapInterface.searchForEntry(searchRequest);
         }
         catch (LDAPSearchException e)
@@ -395,6 +402,8 @@ public class LDAPSearchResolver
               new SearchRequest(baseDN.toString(), SearchScope.SUB,
                       compoundFilter, attributes);
           searchRequest.setSizeLimit(1);
+          searchRequest.addControls(
+              controls.toArray(new Control[controls.size()]));
           entry = ldapInterface.searchForEntry(searchRequest);
 
           if (entry != null)

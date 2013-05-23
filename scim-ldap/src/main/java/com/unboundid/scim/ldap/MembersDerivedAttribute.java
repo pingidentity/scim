@@ -61,53 +61,53 @@ public class MembersDerivedAttribute extends DerivedAttribute
   /**
    * The name of the LDAP member attribute.
    */
-  private static final String ATTR_MEMBER = "member";
+  public static final String ATTR_MEMBER = "member";
 
   /**
    * The name of the LDAP uniqueMember attribute.
    */
-  private static final String ATTR_UNIQUE_MEMBER = "uniqueMember";
+  public static final String ATTR_UNIQUE_MEMBER = "uniqueMember";
 
   /**
    * The name of the LDAP memberUrl attribute.
    */
-  private static final String ATTR_MEMBER_URL = "memberURL";
+  public static final String ATTR_MEMBER_URL = "memberURL";
 
   /**
    * The name of the LDAP groupOfNames object class.
    */
-  private static final String OC_GROUP_OF_NAMES = "groupOfNames";
+  public static final String OC_GROUP_OF_NAMES = "groupOfNames";
 
   /**
    * The name of the LDAP groupOfUniqueNames object class.
    */
-  private static final String OC_GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
+  public static final String OC_GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
 
   /**
    * The name of the LDAP groupOfEntries object class.
    */
-  private static final String OC_GROUP_OF_ENTRIES = "groupOfEntries";
+  public static final String OC_GROUP_OF_ENTRIES = "groupOfEntries";
 
   /**
    * The name of the groupOfURLs object class.
    */
-  private static final String OC_GROUP_OF_URLS = "groupOfURLs";
+  public static final String OC_GROUP_OF_URLS = "groupOfURLs";
 
   /**
    * The attribute descriptor for the derived attribute.
    */
-  private AttributeDescriptor descriptor;
+  protected AttributeDescriptor descriptor;
 
   /**
    * The LDAPSearchResolver to use for user resource when looking for
    * members which are part of this attribute.
    */
-  private LDAPSearchResolver userResolver;
+  protected LDAPSearchResolver userResolver;
 
   /**
    * The set of LDAP attribute types needed in the group entry.
    */
-  private static Set<String> ldapAttributeTypes = new HashSet<String>();
+  protected static Set<String> ldapAttributeTypes = new HashSet<String>();
   static
   {
     ldapAttributeTypes.add(ATTR_MEMBER);
@@ -268,7 +268,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
    * @throws  SCIMException  If the attribute descriptor for the derived
    *                         attribute is missing a sub-attribute.
    */
-  private SCIMAttributeValue createMemberValue(
+  protected SCIMAttributeValue createMemberValue(
       final LDAPSearchResolver groupResolver,
       final Entry entry)
       throws SCIMException
