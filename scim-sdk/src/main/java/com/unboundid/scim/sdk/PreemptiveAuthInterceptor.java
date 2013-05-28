@@ -60,6 +60,44 @@ import org.apache.http.protocol.HttpContext;
  */
 public class PreemptiveAuthInterceptor implements HttpRequestInterceptor
 {
+
+  /**
+   * Constructs a new PreemptiveAuthInterceptor. It is important that this is
+   * added as the <b>first</b> request interceptor in the chain. You can do this
+   * by making sure the second parameter is zero when adding the interceptor:
+   * <p>
+   * <code>
+   * httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
+   * </code>
+   */
+  public PreemptiveAuthInterceptor()
+  {
+    //No implementation necessary.
+  }
+
+  /**
+   * Constructs a new PreemptiveAuthInterceptor. It is important that this is
+   * added as the <b>first</b> request interceptor in the chain. You can do this
+   * by making sure the second parameter is zero when adding the interceptor:
+   * <p>
+   * <code>
+   * httpClient.addRequestInterceptor(
+   *   new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
+   * </code>
+   *
+   * <b>NOTE: This constructor is deprecated and may be removed in a future
+   * release.</b>
+   *
+   * @param authScheme The AuthScheme to use. This may not be null.
+   * @param credentials The Credentials to use. This may not be null.
+   */
+  @Deprecated
+  public PreemptiveAuthInterceptor(final AuthScheme authScheme,
+                                   final Credentials credentials)
+  {
+    //No implementation necessary.
+  }
+
   /**
    * {@inheritDoc}
    */

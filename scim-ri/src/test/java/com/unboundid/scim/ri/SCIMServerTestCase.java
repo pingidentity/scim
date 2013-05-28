@@ -1982,15 +1982,15 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
       assertEquals(o.getMethod(), r.getMethod());
       assertEquals(o.getBulkId(), r.getBulkId());
-      if (o.getMethod().equalsIgnoreCase(BulkOperation.Method.POST.name()) ||
-              o.getMethod().equalsIgnoreCase(BulkOperation.Method.PUT.name()))
+      if (o.getMethod().equals(BulkOperation.Method.POST) ||
+              o.getMethod().equals(BulkOperation.Method.PUT))
       {
         assertNotNull(r.getLocation());
       }
 
       assertNotNull(r.getStatus());
 
-      if (o.getMethod().equalsIgnoreCase(BulkOperation.Method.POST.name()))
+      if (o.getMethod().equals(BulkOperation.Method.POST))
       {
         assertEquals(r.getStatus().getCode(), "201");
       }
@@ -2398,7 +2398,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
       final BulkOperation o = operations.get(i);
       final BulkOperation r = responses.get(i);
 
-      if (o.getMethod().equalsIgnoreCase(BulkOperation.Method.POST.name()))
+      if (o.getMethod().equals(BulkOperation.Method.POST))
       {
         assertEquals(r.getStatus().getCode(), "201");
       }

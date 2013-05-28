@@ -26,6 +26,7 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.BulkException;
 import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.BulkOperation.Method;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -284,7 +285,7 @@ public class XmlBulkParser
   private BulkOperation parseOperation()
       throws BulkException
   {
-    String httpMethod = null;
+    Method httpMethod = null;
     String bulkId = null;
     String version = null;
     String path = null;
@@ -304,7 +305,16 @@ public class XmlBulkParser
           case START_ELEMENT:
             if (xmlStreamReader.getLocalName().equals("method"))
             {
-              httpMethod = xmlStreamReader.getElementText();
+              String method = xmlStreamReader.getElementText();
+              try
+              {
+                httpMethod = Method.valueOf(method.toUpperCase());
+              }
+              catch (IllegalArgumentException e)
+              {
+                //This will be handled later on in
+                //BulkContentHandler.handleOperation().
+              }
             }
             else if (xmlStreamReader.getLocalName().equals("bulkId"))
             {

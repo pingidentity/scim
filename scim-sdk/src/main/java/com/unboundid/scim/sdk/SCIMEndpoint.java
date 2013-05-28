@@ -1029,6 +1029,10 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         return 503;
       }
+      else
+      {
+        return -1;
+      }
     }
 
     if(t instanceof ClientWebException)

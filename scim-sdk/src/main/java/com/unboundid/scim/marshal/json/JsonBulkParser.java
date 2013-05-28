@@ -25,6 +25,7 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.BulkException;
 import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.BulkOperation.Method;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -265,14 +266,26 @@ public class JsonBulkParser extends JsonParser
   private BulkOperation parseBulkOperation(final JSONObject o)
       throws BulkException
   {
-    final String httpMethod = o.optString("method");
+    final String method = o.optString("method");
     final String bulkId = o.optString("bulkid", null);
     final String version = o.optString("version", null);
     final String path = o.optString("path", null);
     final String location = o.optString("location", null);
 
+    Method httpMethod = null;
     try
     {
+
+      try
+      {
+        httpMethod = Method.valueOf(method.toUpperCase());
+      }
+      catch (IllegalArgumentException e)
+      {
+        //This will be handled later on in
+        //BulkContentHandler.handleOperation().
+      }
+
       final JSONObject data = makeCaseInsensitive(o.optJSONObject("data"));
       final JSONObject statusObj =
           makeCaseInsensitive(o.optJSONObject("status"));

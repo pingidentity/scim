@@ -22,6 +22,7 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.BulkException;
 import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.BulkOperation.Method;
 import com.unboundid.scim.sdk.BulkStreamResponse;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
@@ -242,18 +243,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
       final Status status =
           new Status(String.valueOf(statusCode), statusMessage);
 
-      BulkOperation.Method method = null;
-      if (bulkException.getMethod() != null)
-      {
-        try
-        {
-          method = BulkOperation.Method.valueOf(bulkException.getMethod());
-        }
-        catch (IllegalArgumentException e)
-        {
-          // This is OK - it could be the reason we are in this method.
-        }
-      }
+      final Method method = bulkException.getMethod();
 
       // The bulk exception contains the path from the request. We just
       // need to prepend the URL base.
@@ -270,7 +260,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
       }
 
       BulkOperation response = BulkOperation.createResponse(
-          bulkException.getMethod(), bulkException.getBulkId(),
+          method, bulkException.getBulkId(),
           location, status);
       bulkStreamResponse.writeBulkOperation(response);
       errorCount++;
@@ -296,7 +286,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
   private BulkOperation processOperation(final BulkOperation operation)
       throws BulkException
   {
-    final String httpMethod = operation.getMethod();
+    final Method method = operation.getMethod();
     final String bulkId = operation.getBulkId();
     final String path = operation.getPath();
     BaseResource resource = operation.getData();
@@ -308,10 +298,9 @@ public class BulkContentRequestHandler extends BulkContentHandler
 
     final ResourceDescriptor descriptor;
     final ResourceStats resourceStats;
-    final BulkOperation.Method method;
     try
     {
-      if (httpMethod == null || httpMethod.isEmpty())
+      if (method == null)
       {
         throw new InvalidResourceException(
             "The bulk operation does not specify a HTTP method");
@@ -319,15 +308,15 @@ public class BulkContentRequestHandler extends BulkContentHandler
 
       try
       {
-        method = BulkOperation.Method.valueOf(httpMethod);
+        Method.valueOf(method.name());
       }
       catch (IllegalArgumentException e)
       {
         throw new BulkException(SCIMException.createException(
             405, "The bulk operation specifies an invalid " +
-            "HTTP method '" + httpMethod + "'. Allowed methods are " +
+            "HTTP method '" + method + "'. Allowed methods are " +
             Arrays.asList(BulkOperation.Method.values())),
-            httpMethod, bulkId, path);
+            method, bulkId, path);
       }
 
       if (path == null)
@@ -407,7 +396,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
     }
     catch (SCIMException e)
     {
-      throw new BulkException(e, httpMethod, bulkId, path);
+      throw new BulkException(e, method, bulkId, path);
     }
 
     final UriBuilder locationBuilder =
@@ -636,7 +625,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
           resourceStats.incrementStat("delete-" + e.getStatusCode());
           break;
       }
-      throw new BulkException(e, httpMethod, bulkId, path);
+      throw new BulkException(e, method, bulkId, path);
     }
 
     if (requestContext.getProduceMediaType() ==
@@ -680,8 +669,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
     final Status status =
         new Status(String.valueOf(statusCode), null);
 
-    return BulkOperation.createResponse(method.name(), bulkId, location,
-                                        status);
+    return BulkOperation.createResponse(method, bulkId, location, status);
   }
 
 

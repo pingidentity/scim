@@ -17,6 +17,8 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.sdk.BulkOperation.Method;
+
 /**
  * A wrapper exception for SCIMException for individual bulk operations.
  */
@@ -24,7 +26,7 @@ public class BulkException extends Exception
 {
   private static final long serialVersionUID = -734244253288139013L;
 
-  private final String method;
+  private final Method method;
   private final String bulkId;
   private final String path;
 
@@ -36,7 +38,7 @@ public class BulkException extends Exception
    * @param path   The relative path of the resource from the bulk operation
    *               request.
    */
-  public BulkException(final SCIMException throwable, final String method,
+  public BulkException(final SCIMException throwable, final Method method,
                        final String bulkId, final String path)
   {
     super(throwable);
@@ -53,7 +55,7 @@ public class BulkException extends Exception
    * @return  The HTTP method of the operation. Possible values are POST, PUT,
    *          PATCH or DELETE.
    */
-  public String getMethod()
+  public Method getMethod()
   {
     return method;
   }
