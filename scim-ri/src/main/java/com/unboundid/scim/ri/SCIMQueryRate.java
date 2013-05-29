@@ -116,7 +116,7 @@ import static com.unboundid.util.StaticUtils.getExceptionMessage;
  *   <LI>"-w {password}" or "--authPassword {password}" -- Specifies the
  *       password to use when authenticating using basic auth or a
  *       password-based SASL mechanism.</LI>
- *   <LI>"--bearerToken {base64 token}" -- Specifies the OAuth2 bearer
+ *   <LI>"--bearerToken {b64token}" -- Specifies the OAuth2 bearer
  *       token to use when authenticating using OAuth</LI>
  *   <LI>"--resourceName {resource-name}" -- specifies the name of resources to
  *       be queried.  If this isn't specified, then a default of "User" will

@@ -19,7 +19,7 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>1.3.3</version>
+    <version>1.4.0</version>
     <packaging>jar</packaging>
 
     <name>UnboundID SCIM SDK</name>
@@ -31,7 +31,7 @@
       See http://www.simplecloud.info for more information.
     </description>
 
-    <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
+    <url>https://scimsdk.googlecode.com</url>
 
     <inceptionYear>2011</inceptionYear>
 
@@ -88,7 +88,7 @@
         <dependency>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
-          <version>4.3-beta1</version>
+          <version>4.2.5</version>
         </dependency>
         <dependency>
           <groupId>org.apache.wink</groupId>

@@ -142,7 +142,7 @@
             <plugin>
                 <groupId>com.google.code.maven-svn-revision-number-plugin</groupId>
                 <artifactId>svn-revision-number-maven-plugin</artifactId>
-                <version>1.10-SVN7</version>
+                <version>1.13</version>
                 <executions>
                     <execution>
                         <phase>generate-resources</phase>

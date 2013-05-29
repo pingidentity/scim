@@ -19,7 +19,7 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-ldap</artifactId>
-    <version>1.3.3</version>
+    <version>1.4.0</version>
     <packaging>jar</packaging>
 
     <name>UnboundID SCIM-LDAP</name>
@@ -34,7 +34,7 @@
       effort required for implementation.
     </description>
 
-    <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
+    <url>https://scimsdk.googlecode.com</url>
 
     <inceptionYear>2011</inceptionYear>
 
@@ -81,7 +81,7 @@
         <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
-            <version>2.3.2</version>
+            <version>2.3.3</version>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
