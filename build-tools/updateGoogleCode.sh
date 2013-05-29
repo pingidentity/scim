@@ -35,6 +35,9 @@ do
 
     echo "Merging files for revision $IDX..."
 
+    #Turn on command checking to catch any errors with the SVN merge commands
+    set -e
+
     #Handle Build Tools
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/build-tools/src build-tools/src
 
@@ -55,6 +58,9 @@ do
 
     #Handle SCIM-RI
     svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-ri/src scim-ri/src
+
+    #Turn off command checking
+    set +e
 
     STATUS=`svn status | grep -v -E '^(\?)'`
     if [[ -z "$STATUS" ]]
