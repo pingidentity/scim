@@ -18,7 +18,7 @@ svn checkout $COMMON_GOOGLE_OPTS --trust-server-cert https://scimsdk.googlecode.
 cd scimsdk
 
 CURRENT_REVISION=`cat .ubid-revision`
-LATEST_REVISION=`svn info $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
+LATEST_REVISION=`svn info $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
 echo "Google Code revision is $CURRENT_REVISION."
 echo "Latest CVSDude revision is $LATEST_REVISION."
 echo
@@ -39,25 +39,25 @@ do
     set -e
 
     #Handle Build Tools
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/build-tools/src build-tools/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/build-tools/src build-tools/src
 
     #Handle Config
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/config config
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/config config
 
     #Handle Resources
     if [[ -z "$SKIP_RESOURCE_FOLDER" ]]
     then
-      svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/resource resource
+      svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/resource resource
     fi
 
     #Handle SCIM-SDK
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-sdk/src scim-sdk/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-sdk/src scim-sdk/src
 
     #Handle SCIM-LDAP
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-ldap/src scim-ldap/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ldap/src scim-ldap/src
 
     #Handle SCIM-RI
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk/scim-ri/src scim-ri/src
+    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
 
     #Turn off command checking
     set +e
@@ -92,7 +92,7 @@ do
     fi
 
     #If the tests pass, get the commit message for this revision, and use it when committing the changes to Google Code
-    LOG_MESSAGE=`svn log -c $IDX $COMMON_CVSDUDE_OPTS https://unboundid.svn.cvsdude.com/components/scim/trunk`
+    LOG_MESSAGE=`svn log -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk`
 
     #Update state file (.ubid-revision)
     echo -n $IDX > .ubid-revision
