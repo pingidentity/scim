@@ -1,7 +1,9 @@
 #!/bin/bash
 
-COMMON_CVSDUDE_OPTS="--username $CVSDUDE_USER --password $CVSDUDE_PASSWORD --non-interactive --no-auth-cache"
-COMMON_GOOGLE_OPTS="--username $GOOGLE_USER --password $GOOGLE_PASSWORD --non-interactive --no-auth-cache"
+# Note: CVSDUDE_USER and CVSDUDE_PASSWORD come from environment variables set by Jenkins.
+
+COMMON_UNBOUNDID_OPTS="--username $CVSDUDE_USER --password $CVSDUDE_PASSWORD --non-interactive --no-auth-cache --trust-server-cert"
+COMMON_GOOGLE_OPTS="--username $GOOGLE_USER --password $GOOGLE_PASSWORD --non-interactive --no-auth-cache --trust-server-cert"
 
 #Validate the command-line options
 if [[ -n "$1" ]]
@@ -14,11 +16,11 @@ then
 fi
 
 rm -rf scimsdk
-svn checkout $COMMON_GOOGLE_OPTS --trust-server-cert https://scimsdk.googlecode.com/svn/trunk/ scimsdk
+svn checkout $COMMON_GOOGLE_OPTS https://scimsdk.googlecode.com/svn/trunk/ scimsdk
 cd scimsdk
 
 CURRENT_REVISION=`cat .ubid-revision`
-LATEST_REVISION=`svn info $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
+LATEST_REVISION=`svn info $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
 echo "Google Code revision is $CURRENT_REVISION."
 echo "Latest CVSDude revision is $LATEST_REVISION."
 echo
@@ -39,25 +41,25 @@ do
     set -e
 
     #Handle Build Tools
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/build-tools/src build-tools/src
+    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/build-tools/src build-tools/src
 
     #Handle Config
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/config config
+    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/config config
 
     #Handle Resources
     if [[ -z "$SKIP_RESOURCE_FOLDER" ]]
     then
-      svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/resource resource
+      svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/resource resource
     fi
 
     #Handle SCIM-SDK
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-sdk/src scim-sdk/src
+    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-sdk/src scim-sdk/src
 
     #Handle SCIM-LDAP
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ldap/src scim-ldap/src
+    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ldap/src scim-ldap/src
 
     #Handle SCIM-RI
-    svn merge -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
+    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
 
     #Turn off command checking
     set +e
@@ -92,7 +94,7 @@ do
     fi
 
     #If the tests pass, get the commit message for this revision, and use it when committing the changes to Google Code
-    LOG_MESSAGE=`svn log -c $IDX $COMMON_CVSDUDE_OPTS https://svn.unboundid.lab/components/scim/trunk`
+    LOG_MESSAGE=`svn log -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk`
 
     #Update state file (.ubid-revision)
     echo -n $IDX > .ubid-revision
@@ -102,7 +104,7 @@ do
     if [[ "$1" != "--dry-run" ]]
     then
       #Commit the changes back to Google Code
-      svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS --trust-server-cert
+      svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS
     fi
 done
 
@@ -112,7 +114,7 @@ then
    echo "Updating .ubid-revision file..."
    echo -n $LATEST_REVISION > .ubid-revision
    svn commit -m "Updating .ubid-revision state file with the latest revision from the UnboundID repository." \
-     $COMMON_GOOGLE_OPTS --trust-server-cert .ubid-revision
+     $COMMON_GOOGLE_OPTS .ubid-revision
 fi
 
 echo "Finished."
