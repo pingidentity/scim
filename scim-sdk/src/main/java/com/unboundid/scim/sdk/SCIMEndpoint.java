@@ -26,8 +26,6 @@ import com.unboundid.scim.marshal.json.JsonMarshaller;
 import com.unboundid.scim.marshal.json.JsonUnmarshaller;
 import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
-import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import org.apache.http.ConnectionClosedException;
@@ -635,42 +633,9 @@ public class SCIMEndpoint<R extends BaseResource>
       clientResource.header("If-Match", etag);
     }
 
-    SCIMObject scimObject = new SCIMObject();
-    if(attributesToDelete != null)
-    {
-      SCIMAttributeValue[] values =
-              new SCIMAttributeValue[attributesToDelete.size()];
-      for(int i = 0; i < attributesToDelete.size(); i++)
-      {
-        values[i] = SCIMAttributeValue.createStringValue(
-                            attributesToDelete.get(i));
-      }
-
-      AttributeDescriptor subDescriptor =
-              CoreSchema.META_DESCRIPTOR.getSubAttribute("attributes");
-
-      SCIMAttribute attributes = SCIMAttribute.create(subDescriptor, values);
-
-      SCIMAttribute meta = SCIMAttribute.create(
-              CoreSchema.META_DESCRIPTOR,
-              SCIMAttributeValue.createComplexValue(attributes));
-
-      scimObject.setAttribute(meta);
-    }
-
-    if(attributesToUpdate != null)
-    {
-      for(SCIMAttribute attr : attributesToUpdate)
-      {
-        if(!attr.getAttributeDescriptor().isReadOnly())
-        {
-          scimObject.setAttribute(attr);
-        }
-      }
-    }
-
-    final BaseResource resource = resourceFactory.createResource(
-                                      resourceDescriptor, scimObject);
+    Diff<R> diff = new Diff<R>(resourceDescriptor, attributesToDelete,
+        attributesToUpdate);
+    final BaseResource resource = diff.getPartialResource(resourceFactory);
 
     StreamingOutput output = new StreamingOutput() {
       public void write(final OutputStream outputStream)

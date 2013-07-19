@@ -36,6 +36,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkResponse;
+import com.unboundid.scim.sdk.Diff;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
@@ -1109,6 +1110,97 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     afterCount =
         getStatsForResource("User").getStat(ResourceStats.PUT_NOT_FOUND);
     assertEquals(beforeCount, afterCount - 1);
+  }
+
+
+
+  /**
+   * Tests a basic modify operation against a user resource by generating a
+   * diff and using a PATCH request.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testPatchUserWithDiff() throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    //Add an entry to the Directory
+    testDS.add("dn: uid=testModifyWithPut," + userBaseDN,
+                      "objectclass: top",
+                      "objectclass: person",
+                      "objectclass: organizationalPerson",
+                      "objectclass: inetOrgPerson",
+                      "uid: testModifyWithPut",
+                      "userPassword: oldPassword",
+                      "cn: testModifyWithPut",
+                      "givenname: Test",
+                      "sn: User");
+
+    //Update the entry via SCIM
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+    UserResource sourceUser = getUser("testModifyWithPut");
+    UserResource targetUser = getUser("testModifyWithPut");
+    assertNotNull(sourceUser);
+    //This will change the 'cn' to 'Test User'
+    targetUser.setName(new Name("Test User", "User", null, "Test", null, null));
+    targetUser.setUserType("Employee");
+    targetUser.setPassword("anotherPassword");
+    targetUser.setTitle("Chief of Operations");
+    targetUser.setDisplayName("Test Modify with PUT");
+    targetUser.setSingularAttributeValue(
+        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+        AttributeValueResolver.STRING_RESOLVER, "456");
+
+    //Generate the diff
+    Diff<UserResource> diff = Diff.generate(sourceUser, targetUser);
+
+    //Mark the start and end time with a 500ms buffer on either side, because
+    //the Directory Server will record the actual modifyTimestamp using the
+    //TimeThread, which only updates once every 100ms.
+    Date startTime = new Date(System.currentTimeMillis() - 500);
+    userEndpoint.update(sourceUser.getId(), diff.getAttributesToUpdate(),
+        diff.getAttributesToDelete());
+    UserResource returnedUser = getUser("testModifyWithPut");
+    Date lastModified = returnedUser.getMeta().getLastModified();
+    Date endTime = new Date(System.currentTimeMillis() + 500);
+
+    //Verify what is returned from the SDK
+    assertEquals(returnedUser.getId(), targetUser.getId());
+    assertTrue(targetUser.getMeta().getLocation().toString().endsWith(
+        targetUser.getId()));
+    assertEquals(returnedUser.getUserName(), "testModifyWithPut");
+    assertEquals(returnedUser.getName().getFormatted(), "Test User");
+    assertEquals(returnedUser.getName().getGivenName(), "Test");
+    assertEquals(returnedUser.getName().getFamilyName(), "User");
+    assertNull(returnedUser.getPassword());
+    assertEquals(returnedUser.getTitle(), targetUser.getTitle());
+    assertEquals(returnedUser.getDisplayName(), targetUser.getDisplayName());
+    assertTrue(lastModified.after(startTime));
+    assertTrue(lastModified.before(endTime));
+    assertEquals(returnedUser.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
+              AttributeValueResolver.STRING_RESOLVER), "456");
+
+    //Verify the contents of the entry in the Directory
+    SearchResultEntry entry =
+      testDS.getEntry(
+          "uid=testModifyWithPut," + userBaseDN);
+    assertNotNull(entry);
+    assertTrue(entry.hasObjectClass("inetOrgPerson"));
+    assertEquals(entry.getAttributeValue("uid"), "testModifyWithPut");
+    assertEquals(entry.getAttributeValue("cn"), "Test User");
+    assertEquals(entry.getAttributeValue("givenname"), "Test");
+    assertEquals(entry.getAttributeValue("sn"), "User");
+    assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
+    assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("displayName"),
+                                                   "Test Modify with PUT");
+    assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
+        ResultCode.SUCCESS);
   }
 
 
