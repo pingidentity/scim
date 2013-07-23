@@ -69,5 +69,5 @@ target/scim-ri-client-1.3.2 and run the example tests:
 The bundled examples are simple. Enhance them by modifying the client source
 found under client/src/main/java and then rebuild.
 
-For further information visit UnboundID labs at
-http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim.
+For further information visit https://www.unboundid.com/resources/scim and
+http://scimsdk.googlecode.com.

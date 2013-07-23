@@ -19,7 +19,7 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-ldap</artifactId>
-    <version>1.4.0</version>
+    <version>1.4.1</version>
     <packaging>jar</packaging>
 
     <name>UnboundID SCIM-LDAP</name>
@@ -72,8 +72,8 @@
       </license>
       <license>
         <name>UnboundID SCIM SDK Free Use License</name>
-        <url>http://www.unboundid.com/labs/projects/simple-cloud-identity-management-scim</url>
-        <comments>This license is available from the UnboundID website.</comments>
+        <url>https://www.unboundid.com/resources/scim</url>
+        <comments>This license is available in the SCIM-SDK zip package from the UnboundID website.</comments>
       </license>
     </licenses>
 

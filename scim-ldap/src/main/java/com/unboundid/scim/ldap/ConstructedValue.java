@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  * <p/>
  * This class is based on the UnboundID Sync Server implementation.
  */
-class ConstructedValue
+public final class ConstructedValue
 {
 
   // The provided template is broken up into chunks.  Each chunk is either
@@ -64,7 +64,7 @@ class ConstructedValue
    *
    * @param template  The template for the constructed value.
    */
-  ConstructedValue(final String template)
+  public ConstructedValue(final String template)
   {
     List<Chunk> chunkList = new ArrayList<Chunk>();
 

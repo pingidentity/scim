@@ -705,17 +705,17 @@ public class ResourceMapper
    * Retrieve the set of LDAP attribute types that are mapped from the given
    * set of SCIM attributes.
    *
-   * @param scimAttributes  The SCIM attribute names to map.
+   * @param scimAttributes  The SCIM attribute descriptors to map.
    *
    * @return  The set of LDAP attribute types that are derived from the given
    *          SCIM attributes.
    */
-  protected Set<String> toLDAPAttributeTypes(final Set<String> scimAttributes)
+  protected Set<String> toLDAPAttributeTypes(final Set<AttributeDescriptor> scimAttributes)
   {
     final Set<String> ldapAttributes = new HashSet<String>();
     for (final AttributeMapper m : attributeMappers.values())
     {
-      if (scimAttributes.contains(m.getAttributeDescriptor().getName()))
+      if (scimAttributes.contains(m.getAttributeDescriptor()))
       {
         ldapAttributes.addAll(m.getLDAPAttributeTypes());
       }
@@ -724,7 +724,7 @@ public class ResourceMapper
     for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
             derivedAttributes.entrySet())
     {
-      if (scimAttributes.contains(e.getKey().getName()))
+      if (scimAttributes.contains(e.getKey()))
       {
         final DerivedAttribute derivedAttribute = e.getValue();
         ldapAttributes.addAll(derivedAttribute.getLDAPAttributeTypes());
@@ -906,21 +906,37 @@ public class ResourceMapper
       //values when performing a PATCH operation.
       if(meta.getValue().hasAttribute("attributes"))
       {
-        Set<String> scimAttributes =
-                new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<AttributeDescriptor> scimAttributes = new HashSet<AttributeDescriptor>();
         SCIMAttribute attrToDelete = meta.getValue().getAttribute("attributes");
         for(SCIMAttributeValue attr : attrToDelete.getValues())
         {
+          String rawAttributeName;
           if(attr.isComplex())
           {
-            scimAttributes.add(attr.getSubAttributeValue("value",
-                    AttributeValueResolver.STRING_RESOLVER));
+            rawAttributeName = attr.getSubAttributeValue("value",
+                    AttributeValueResolver.STRING_RESOLVER);
           }
           else
           {
-            scimAttributes.add(attr.getStringValue());
+            rawAttributeName = attr.getStringValue();
           }
+
+          AttributePath path = AttributePath.parse(rawAttributeName);
+          String attrName = path.getAttributeName();
+          if (path.getSubAttributeName() != null)
+          {
+            attrName = path.getSubAttributeName();
+          }
+
+          //Create a dummy AttributeDescriptor with the correct attribute name
+          //and schema URN. This is all we need to be able to convert to LDAP
+          //attribute types.
+          AttributeDescriptor descriptor = AttributeDescriptor.createAttribute(
+                  attrName, AttributeDescriptor.DataType.STRING,
+                  null, path.getAttributeSchema(), false, false, false);
+          scimAttributes.add(descriptor);
         }
+
         ldapAttributeTypes.addAll(toLDAPAttributeTypes(scimAttributes));
       }
     }
@@ -994,19 +1010,35 @@ public class ResourceMapper
       SCIMAttribute attributesAttr = value.getAttribute("attributes");
       if (attributesAttr != null)
       {
-        final Set<String> scimAttributes =
-                new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        final Set<AttributeDescriptor> scimAttributes =
+                new HashSet<AttributeDescriptor>();
         for (SCIMAttributeValue val : attributesAttr.getValues())
         {
+          String rawAttributeName;
           if (val.isComplex())
           {
-            scimAttributes.add(val.getSubAttributeValue("value",
-                    AttributeValueResolver.STRING_RESOLVER));
+            rawAttributeName = val.getSubAttributeValue("value",
+                    AttributeValueResolver.STRING_RESOLVER);
           }
           else
           {
-            scimAttributes.add(val.getStringValue());
+            rawAttributeName = val.getStringValue();
           }
+
+          AttributePath path = AttributePath.parse(rawAttributeName);
+          String attrName = path.getAttributeName();
+          if(path.getSubAttributeName() != null)
+          {
+            attrName = path.getSubAttributeName();
+          }
+
+          //Create a dummy AttributeDescriptor with the correct attribute name
+          //and schema URN. This is all we need to be able to convert to LDAP
+          //attribute types.
+          AttributeDescriptor descriptor = AttributeDescriptor.createAttribute(
+                  attrName, AttributeDescriptor.DataType.STRING,
+                  null, path.getAttributeSchema(), false, false, false);
+          scimAttributes.add(descriptor);
         }
 
         Set<String> ldapAttributes = toLDAPAttributeTypes(scimAttributes);
