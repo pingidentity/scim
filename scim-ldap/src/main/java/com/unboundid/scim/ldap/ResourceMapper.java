@@ -710,7 +710,8 @@ public class ResourceMapper
    * @return  The set of LDAP attribute types that are derived from the given
    *          SCIM attributes.
    */
-  protected Set<String> toLDAPAttributeTypes(final Set<AttributeDescriptor> scimAttributes)
+  protected Set<String> toLDAPAttributeTypes(
+          final Set<AttributeDescriptor> scimAttributes)
   {
     final Set<String> ldapAttributes = new HashSet<String>();
     for (final AttributeMapper m : attributeMappers.values())
@@ -906,7 +907,8 @@ public class ResourceMapper
       //values when performing a PATCH operation.
       if(meta.getValue().hasAttribute("attributes"))
       {
-        Set<AttributeDescriptor> scimAttributes = new HashSet<AttributeDescriptor>();
+        Set<AttributeDescriptor> scimAttributes =
+                new HashSet<AttributeDescriptor>();
         SCIMAttribute attrToDelete = meta.getValue().getAttribute("attributes");
         for(SCIMAttributeValue attr : attrToDelete.getValues())
         {
