@@ -532,7 +532,7 @@ public class DiffTestCase
 
   /**
    * Test comparison against 1st null object.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -563,7 +563,7 @@ public class DiffTestCase
 
   /**
    * Test comparison against 2nd null object.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -594,7 +594,7 @@ public class DiffTestCase
 
   /**
    * Test comparison of null objects.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -630,7 +630,7 @@ public class DiffTestCase
 
   /**
    * Test comparison of objects passing null String attribute argument.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -665,7 +665,7 @@ public class DiffTestCase
 
   /**
    * Test comparison of same object with itself.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -698,7 +698,7 @@ public class DiffTestCase
 
   /**
    * Test comparison of empty objects.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -728,7 +728,7 @@ public class DiffTestCase
 
   /**
    * Test comparison of objects with equal attributes.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -765,9 +765,9 @@ public class DiffTestCase
 
   /**
    * Test comparison of objects using
-   * {@link Diff#generate(com.unboundid.scim.data.BaseResource, com.unboundid.scim.data.BaseResource, String...)}
+   * Diff#generate(BaseResource, BaseResource, String...)
    * where final argument is an attribute that does not exist in either entry.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -796,7 +796,7 @@ public class DiffTestCase
 
   /**
    * Test comparison of objects removing all attributes.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
@@ -872,7 +872,7 @@ public class DiffTestCase
 
   /**
    * Test GroupResource instances.
-   * 
+   *
    * @throws Exception
    *           if an error occurs.
    */
