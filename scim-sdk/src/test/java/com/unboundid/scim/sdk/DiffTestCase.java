@@ -20,6 +20,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.Entry;
+import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.UserResource;
@@ -34,6 +35,7 @@ import java.util.Date;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * Test the SCIM resource diff utility.
@@ -526,5 +528,384 @@ public class DiffTestCase
     assertTrue(address3AddFound);
     assertTrue(address3DeleteFound);
     assertTrue(address4DeleteFound);
+  }
+
+  /**
+   * Test comparison against 1st null object.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffNullObject1() throws Exception
+  {
+    // *** singular ***
+    UserResource source = null;
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - unchanged
+    target.setUserName("bjensen");
+    target.setNickName("bjj3");
+    target.setTitle("hot shot");
+    target.setUserType("employee");
+
+    try
+    {
+      Diff.generate(source, target)
+          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .getScimObject();
+      fail("Expected NullPointerException");
+    } catch (NullPointerException e)
+    {
+      // pass
+    }
+  }
+
+  /**
+   * Test comparison against 2nd null object.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffNullObject2() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = null;
+
+    // - unchanged
+    source.setUserName("bjensen");
+    source.setNickName("bjj3");
+    source.setTitle("hot shot");
+    source.setUserType("employee");
+
+    try
+    {
+      Diff.generate(source, target)
+          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .getScimObject();
+      fail("Expected NullPointerException");
+    } catch (NullPointerException e)
+    {
+      // pass
+    }
+  }
+
+  /**
+   * Test comparison of null objects.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffNullObjects() throws Exception
+  {
+    // *** singular ***
+    UserResource source = null;
+    UserResource target = null;
+
+    try
+    {
+      Diff.generate(source, target)
+          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .getScimObject();
+      fail("Expected NullPointerException");
+    } catch (NullPointerException e)
+    {
+      // pass
+    }
+
+    try
+    {
+      Diff.generate(source, target, "title")
+          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .getScimObject();
+      fail("Expected NullPointerException");
+    } catch (NullPointerException e)
+    {
+      // pass
+    }
+  }
+
+  /**
+   * Test comparison of objects passing null String attribute argument.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffNullAttributeArgument() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - unchanged
+    source.setUserName("bjensen");
+    target.setUserName("bjensen");
+    source.setNickName("bjj3");
+    target.setNickName("bjj3");
+    source.setTitle("hot shot");
+    target.setTitle("hot shot");
+    source.setUserType("employee");
+    target.setUserType("employee");
+
+    try
+    {
+      Diff.generate(source, target, (String) null)
+          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .getScimObject();
+      fail("Expected NullPointerException");
+    } catch (NullPointerException e)
+    {
+      // pass
+    }
+  }
+
+  /**
+   * Test comparison of same object with itself.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffSameObject() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = source;
+
+    // - unchanged
+    source.setUserName("bjensen");
+    source.setNickName("bjj3");
+    source.setTitle("hot shot");
+    source.setUserType("employee");
+
+    SCIMObject patch = Diff.generate(source, target)
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+
+    patch = Diff.generate(source, target, "title")
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+  }
+
+  /**
+   * Test comparison of empty objects.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffEmptyObjects() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - no attributes
+    //
+
+    SCIMObject patch = Diff.generate(source, target)
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+
+    patch = Diff.generate(source, target, "title")
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+  }
+
+  /**
+   * Test comparison of objects with equal attributes.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffNoChanges() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - unchanged
+    source.setUserName("bjensen");
+    target.setUserName("bjensen");
+    source.setNickName("bjj3");
+    target.setNickName("bjj3");
+    source.setTitle("hot shot");
+    target.setTitle("hot shot");
+    source.setUserType("employee");
+    target.setUserType("employee");
+
+    SCIMObject patch = Diff.generate(source, target)
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+
+    patch = Diff.generate(source, target, "title")
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+  }
+
+  /**
+   * Test comparison of objects using
+   * {@link Diff#generate(com.unboundid.scim.data.BaseResource, com.unboundid.scim.data.BaseResource, String...)}
+   * where final argument is an attribute that does not exist in either entry.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffMissingAttribute() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - unchanged
+    source.setUserName("bjensen");
+    target.setUserName("bjensen");
+    source.setNickName("bjj3");
+    target.setNickName("bjj3");
+    source.setUserType("employee");
+    target.setUserType("employee");
+
+    SCIMObject patch = Diff.generate(source, target, "title")
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
+    assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
+  }
+
+  /**
+   * Test comparison of objects removing all attributes.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testRemoveAll() throws Exception
+  {
+    // *** singular ***
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - all to be removed
+    source.setUserName("bjensen");
+    source.setNickName("bjj3");
+    source.setTitle("hot shot");
+    source.setUserType("employee");
+
+    SCIMObject patch = Diff.generate(source, target)
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertTrue(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("userName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "nickName"));
+    assertTrue(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("nickName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "title"));
+    assertTrue(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("title"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userType"));
+    assertTrue(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("userType"));
+
+    patch = Diff.generate(source, target, "title")
+        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
+    assertFalse(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("userName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "nickName"));
+    assertFalse(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("nickName"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "title"));
+    assertTrue(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("title"));
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userType"));
+    assertFalse(patch
+        .getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta")
+        .getValue()
+        .getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).contains("userType"));
+  }
+
+  /**
+   * Test GroupResource instances.
+   * 
+   * @throws Exception
+   *           if an error occurs.
+   */
+  @Test
+  public void testDiffGroupResources() throws Exception
+  {
+    // *** singular ***
+    GroupResource source = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
+    GroupResource target = new GroupResource(CoreSchema.GROUP_DESCRIPTOR);
+
+    // - unchanged
+    source.setDisplayName("mygroup");
+    target.setDisplayName("mygroup");
+
+    // - added
+    target.setExternalId("mygroupid");
+
+    SCIMObject patch = Diff.generate(source, target)
+        .getPartialResource(GroupResource.GROUP_RESOURCE_FACTORY)
+        .getScimObject();
+
+    assertFalse(patch
+        .hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "displayName"));
+    assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "externalId")
+        .getValue().getStringValue().equals("mygroupid"));
+
+    patch = Diff.generate(source, target, "externalId")
+        .getPartialResource(GroupResource.GROUP_RESOURCE_FACTORY)
+        .getScimObject();
+
+    assertFalse(patch
+        .hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "displayName"));
+    assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "externalId")
+        .getValue().getStringValue().equals("mygroupid"));
   }
 }
