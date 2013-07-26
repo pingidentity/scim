@@ -800,8 +800,31 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     catch (InvalidResourceException e)
     {
       // expected (error code is 400)
+      // Add missing Attr
+      manager.setUserName("myManager");
     }
-    manager.setUserName("myManager");
+
+    // Try to create the user with a read only CORE attribute (groups)
+    Collection<com.unboundid.scim.data.Entry<String>> groups =
+            new HashSet<com.unboundid.scim.data.Entry<String>>(1);
+    groups.add(
+            new com.unboundid.scim.data.Entry<String>("managers", "work", true)
+    );
+    manager.setGroups(groups);
+    try
+    {
+      userEndpoint.create(manager);
+      fail("Expected a 400 response when trying to create user with " +
+          "read only attr from core schema");
+    }
+    catch (InvalidResourceException e)
+    {
+      // Expect failure due to read only
+      assertTrue(e.getMessage().contains("read only"));
+      // Remove read only attr
+      manager.setGroups(null);
+    }
+
     manager = userEndpoint.create(manager);
 
     UserResource user = userEndpoint.newResource();
@@ -1074,6 +1097,27 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     // Again, an update with the previously returned content should not fail.
     userEndpoint.update(returnedUser);
+
+    // Try to put the user a read only attribute included
+    Collection<com.unboundid.scim.data.Entry<String>> oldGroups =
+                returnedUser.getGroups();
+    Collection<com.unboundid.scim.data.Entry<String>> groups =
+            new HashSet<com.unboundid.scim.data.Entry<String>>(1);
+    groups.add(
+            new com.unboundid.scim.data.Entry<String>("users", "work", true)
+    );
+    returnedUser.setGroups(groups);
+    try
+    {
+      userEndpoint.update(returnedUser);
+    }
+    catch (InvalidResourceException e)
+    {
+      e.printStackTrace();
+      fail("Expected success when doing PUT with read only attribute but " +
+                   "got exception: " + e.toString());
+    }
+    returnedUser.setGroups(oldGroups);
 
     // Try to put the user with a missing required attribute
     beforeCount =
@@ -1447,6 +1491,29 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     catch (InvalidResourceException e)
     {
       // expected (error code is 400)
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
+
+    // Test PATCH with read only attr
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_BAD_REQUEST);
+    SCIMAttribute groupAttr = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+             "groups"), SCIMAttributeValue.createStringValue("users"));
+    attrsToUpdate.clear();
+    attrsToUpdate.add(groupAttr);
+    try
+    {
+      userEndpoint.update(user.getId(), null, attrsToUpdate, null, null);
+      fail("Expected a 400 response when trying to patch user with " +
+          "read only attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // Expect failure due to read only
+      assertTrue(e.getMessage().contains("read only"));
     }
     afterCount =
         getStatsForResource("User").getStat(ResourceStats.PATCH_BAD_REQUEST);
