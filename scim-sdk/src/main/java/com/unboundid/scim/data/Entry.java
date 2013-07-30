@@ -53,9 +53,11 @@ public final class Entry<T>
               value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
               value.getSubAttributeValue("display", STRING_RESOLVER);
+          String o =
+              value.getSubAttributeValue("operation", STRING_RESOLVER);
 
 
-          return new Entry<String>(v, t, p == null ? false : p, d);
+          return new Entry<String>(v, t, p == null ? false : p, d, o);
         }
 
         /**
@@ -66,7 +68,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<String> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(4);
+              new ArrayList<SCIMAttribute>(5);
 
           if (value.value != null)
           {
@@ -100,6 +102,14 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.display)));
           }
 
+          if(value.operation != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.create(
+                    attributeDescriptor.getSubAttribute("operation"),
+                    SCIMAttributeValue.createStringValue(value.operation)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
@@ -124,9 +134,11 @@ public final class Entry<T>
               value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
               value.getSubAttributeValue("display", STRING_RESOLVER);
+          String o =
+              value.getSubAttributeValue("operation", STRING_RESOLVER);
 
 
-          return new Entry<Boolean>(v, t, p == null ? false : p, d);
+          return new Entry<Boolean>(v, t, p == null ? false : p, d, o);
         }
 
         /**
@@ -137,7 +149,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<Boolean> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(4);
+              new ArrayList<SCIMAttribute>(5);
 
           if (value.value != null)
           {
@@ -171,6 +183,14 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.display)));
           }
 
+          if(value.operation != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.create(
+                    attributeDescriptor.getSubAttribute("operation"),
+                    SCIMAttributeValue.createStringValue(value.operation)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
@@ -195,9 +215,11 @@ public final class Entry<T>
               value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
               value.getSubAttributeValue("display", STRING_RESOLVER);
+          String o =
+              value.getSubAttributeValue("operation", STRING_RESOLVER);
 
 
-          return new Entry<byte[]>(v, t, p == null ? false : p, d);
+          return new Entry<byte[]>(v, t, p == null ? false : p, d, o);
         }
 
         /**
@@ -208,7 +230,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<byte[]> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(4);
+              new ArrayList<SCIMAttribute>(5);
 
           if (value.value != null)
           {
@@ -242,6 +264,14 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.display)));
           }
 
+          if(value.operation != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.create(
+                    attributeDescriptor.getSubAttribute("operation"),
+                    SCIMAttributeValue.createStringValue(value.operation)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
@@ -266,9 +296,11 @@ public final class Entry<T>
               value.getSubAttributeValue("primary", BOOLEAN_RESOLVER);
           String d =
               value.getSubAttributeValue("display", STRING_RESOLVER);
+          String o =
+              value.getSubAttributeValue("operation", STRING_RESOLVER);
 
 
-          return new Entry<Date>(v, t, p == null ? false : p, d);
+          return new Entry<Date>(v, t, p == null ? false : p, d, o);
         }
 
         /**
@@ -279,7 +311,7 @@ public final class Entry<T>
             final AttributeDescriptor attributeDescriptor,
             final Entry<Date> value) throws InvalidResourceException {
           final List<SCIMAttribute> subAttributes =
-              new ArrayList<SCIMAttribute>(4);
+              new ArrayList<SCIMAttribute>(5);
 
           if (value.value != null)
           {
@@ -313,6 +345,14 @@ public final class Entry<T>
                     SCIMAttributeValue.createStringValue(value.display)));
           }
 
+          if(value.operation != null)
+          {
+            subAttributes.add(
+                SCIMAttribute.create(
+                    attributeDescriptor.getSubAttribute("operation"),
+                    SCIMAttributeValue.createStringValue(value.operation)));
+          }
+
           return SCIMAttributeValue.createComplexValue(subAttributes);
         }
       };
@@ -322,6 +362,7 @@ public final class Entry<T>
   private boolean primary;
   private String type;
   private String display;
+  private String operation;
 
   /**
    * Constructs an entry instance with the specified information.
@@ -331,7 +372,7 @@ public final class Entry<T>
    *             label the preferred function of the given resource.
    */
   public Entry(final T value, final String type) {
-    this(value, type, false);
+    this(value, type, false, null, null);
   }
 
   /**
@@ -345,9 +386,7 @@ public final class Entry<T>
    *                for this attribute.
    */
   public Entry(final T value, final String type, final boolean primary) {
-    this.value = value;
-    this.type = type;
-    this.primary = primary;
+    this(value, type, primary, null, null);
   }
 
   /**
@@ -364,10 +403,30 @@ public final class Entry<T>
    */
   public Entry(final T value, final String type, final boolean primary,
                final String display) {
+    this(value, type, primary, display, null);
+  }
+
+  /**
+   * Constructs an entry instance with the specified information.
+   *
+   * @param value The primary value of this attribute.
+   * @param type The type of attribute for this instance, usually used to
+   *             label the preferred function of the given resource.
+   * @param primary A Boolean value indicating whether this instance of the
+   *                multi-valued Attribute is the primary or preferred value of
+   *                for this attribute.
+   * @param display A human readable name, primarily used for display purposes
+   *                where the value is an opaque or complex type such as an id.
+   * @param operation The operation to perform on the multi-valued attribute
+   *                  during a PATCH request.
+   */
+  public Entry(final T value, final String type, final boolean primary,
+               final String display, final String operation) {
     this.value = value;
     this.type = type;
     this.primary = primary;
     this.display = display;
+    this.operation = operation;
   }
 
   /**
@@ -454,6 +513,38 @@ public final class Entry<T>
     this.display = display;
   }
 
+
+
+  /**
+   * Retrieves the operation to perform on the multi-valued attribute during
+   * a PATCH request. A value of "delete" signifies that this instance should be
+   * removed from the Resource.
+   *
+   * @return  The operation to perform on the multi-valued attribute during
+   *          a PATCH request.
+   */
+  public String getOperation()
+  {
+    return operation;
+  }
+
+
+
+  /**
+   * Sets the operation to perform on the multi-valued attribute during a
+   * PATCH request. A value of "delete" signifies that this instance should be
+   * removed from the Resource.
+   *
+   * @param operation  The operation to perform on the multi-valued attribute
+   *                   during a PATCH request.
+   */
+  public void setOperation(final String operation)
+  {
+    this.operation = operation;
+  }
+
+
+
   /**
    * {@inheritDoc}
    */
@@ -481,6 +572,10 @@ public final class Entry<T>
         entry.display != null) {
       return false;
     }
+    if (operation != null ? !operation.equals(entry.operation) :
+        entry.operation != null) {
+      return false;
+    }
 
     return true;
   }
@@ -494,6 +589,7 @@ public final class Entry<T>
     result = 31 * result + (primary ? 1 : 0);
     result = 31 * result + (type != null ? type.hashCode() : 0);
     result = 31 * result + (display != null ? display.hashCode() : 0);
+    result = 31 * result + (operation != null ? operation.hashCode() : 0);
     return result;
   }
 
@@ -507,6 +603,7 @@ public final class Entry<T>
         ", type='" + type + '\'' +
         ", primary=" + primary +
         ", display=" + display +
+        ", operation=" + operation +
         '}';
   }
 }

@@ -283,7 +283,7 @@ public class DataTestCase extends SCIMTestCase
   public void testEntry() throws Exception
   {
     final Entry<String> entry1 = new Entry<String>("test@test.com",
-        "work", true, "display");
+        "work", true, "display", "delete");
 
     final AttributeDescriptor emailsDescriptor =
         CoreSchema.USER_DESCRIPTOR.getAttribute(
@@ -302,7 +302,10 @@ public class DataTestCase extends SCIMTestCase
                     SCIMAttributeValue.createBooleanValue(true)),
                 SCIMAttribute.create(
                     emailsDescriptor.getSubAttribute("display"),
-                    SCIMAttributeValue.createStringValue("display")));
+                    SCIMAttributeValue.createStringValue("display")),
+                SCIMAttribute.create(
+                    emailsDescriptor.getSubAttribute("operation"),
+                    SCIMAttributeValue.createStringValue("delete")));
 
     SCIMAttributeValue entry2Attr =
         Entry.STRINGS_RESOLVER.fromInstance(emailsDescriptor, entry1);
