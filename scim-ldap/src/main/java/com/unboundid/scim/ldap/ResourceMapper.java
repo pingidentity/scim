@@ -1090,18 +1090,17 @@ public class ResourceMapper
                 tempObject.setAttribute(attrToDelete);
                 ldapAttrsToDelete.addAll(
                         toLDAPAttributes(tempObject, ldapInterface));
-              }
-              else
-              {
-                //add this value to the set of values for this attribute
-                SCIMObject tempObject = new SCIMObject();
-                SCIMAttribute attrToAdd =
-                     SCIMAttribute.create(attr.getAttributeDescriptor(), value);
-                tempObject.setAttribute(attrToAdd);
-                ldapAttrsToAdd.addAll(
-                        toLDAPAttributes(tempObject, ldapInterface));
+                continue;
               }
             }
+
+            //add this value to the set of values for this attribute
+            SCIMObject tempObject = new SCIMObject();
+            SCIMAttribute attrToAdd =
+                    SCIMAttribute.create(attr.getAttributeDescriptor(), value);
+            tempObject.setAttribute(attrToAdd);
+            ldapAttrsToAdd.addAll(
+                    toLDAPAttributes(tempObject, ldapInterface));
           }
         }
         else
