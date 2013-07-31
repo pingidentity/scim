@@ -923,7 +923,8 @@ public class ResourceMapper
             rawAttributeName = attr.getStringValue();
           }
 
-          AttributePath path = AttributePath.parse(rawAttributeName);
+          AttributePath path = AttributePath.parse(rawAttributeName,
+                  getDefaultSchemaURI());
           String attrName = path.getAttributeName();
           if (path.getSubAttributeName() != null)
           {
@@ -1027,7 +1028,8 @@ public class ResourceMapper
             rawAttributeName = val.getStringValue();
           }
 
-          AttributePath path = AttributePath.parse(rawAttributeName);
+          AttributePath path = AttributePath.parse(rawAttributeName,
+                  getDefaultSchemaURI());
           String attrName = path.getAttributeName();
           if(path.getSubAttributeName() != null)
           {
