@@ -134,7 +134,7 @@ public class ResourceDescriptor extends BaseResource
       {
         attributeDescriptor = AttributeDescriptor.createMultiValuedAttribute(
                 name, "value", AttributeDescriptor.DataType.STRING, null,
-                schema, true, false, false, null);
+                schema, false, false, false, null);
       }
     }
     return attributeDescriptor;
