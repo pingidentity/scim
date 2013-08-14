@@ -84,7 +84,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -736,8 +735,8 @@ public abstract class LDAPBackend
                       !CoreSchema.ID_DESCRIPTOR.equals(
                            attr.getAttributeDescriptor()))
             {
-              // Create a temporary SCIM Object based on just this read only attr
-              // so we can get the corresponding LDAP attributes.
+              // Create a temporary SCIM Object based on just this read only
+              // attr so we can get the corresponding LDAP attributes.
               SCIMObject tempObject = new SCIMObject();
               SCIMAttribute attrToAdd =
                       SCIMAttribute.create(attr.getAttributeDescriptor(),
@@ -746,8 +745,8 @@ public abstract class LDAPBackend
               List<Attribute> ldapAttrs =
                       mapper.toLDAPAttributes(tempObject, ldapInterface);
 
-              // Compare all the LDAP attributes, that correspond to the read only
-              // SCIM attribute, against the attributes being modified.
+              // Compare all the LDAP attributes, that correspond to the read
+              // only SCIM attribute, against the attributes being modified.
               for (Attribute ldapAttr : ldapAttrs)
               {
                 Iterator<Modification> iterator = mods.iterator();
