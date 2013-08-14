@@ -86,6 +86,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -687,30 +688,6 @@ public abstract class LDAPBackend
           request.getResourceDescriptor(), false);
     }
 
-    // Remove all "read only" attributes before processing differences
-    // We need to create a new map to avoid Concurrent Modifications
-    SCIMObject requestObject = request.getResourceObject();
-    Map<String, List<String>> attrsToRemoveMap =
-            new HashMap<String, List<String>>();
-    for (String schema : requestObject.getSchemas())
-    {
-      List<String> attrsToRemoveList = new ArrayList<String>();
-      for (SCIMAttribute attr : requestObject.getAttributes(schema))
-      {
-        if (attr.getAttributeDescriptor().isReadOnly())
-        {
-          attrsToRemoveList.add(attr.getName());
-        }
-      }
-      attrsToRemoveMap.put(schema, attrsToRemoveList);
-    }
-    for (String schema : attrsToRemoveMap.keySet())
-    {
-      for (String attrName : attrsToRemoveMap.get(schema))
-      {
-        requestObject.removeAttribute(schema, attrName);
-      }
-    }
 
     final ResourceMapper mapper =
         getResourceMapper(request.getResourceDescriptor());
@@ -746,6 +723,50 @@ public abstract class LDAPBackend
           new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
 
+      if(!mods.isEmpty())
+      {
+        // Remove all mods that come from "read only" attributes before
+        // processing differences.
+        SCIMObject requestObject = request.getResourceObject();
+        for (String schema : requestObject.getSchemas())
+        {
+          for (SCIMAttribute attr : requestObject.getAttributes(schema))
+          {
+            if (attr.getAttributeDescriptor().isReadOnly() &&
+                      !CoreSchema.ID_DESCRIPTOR.equals(
+                           attr.getAttributeDescriptor()))
+            {
+              // Create a temporary SCIM Object based on just this read only attr
+              // so we can get the corresponding LDAP attributes.
+              SCIMObject tempObject = new SCIMObject();
+              SCIMAttribute attrToAdd =
+                      SCIMAttribute.create(attr.getAttributeDescriptor(),
+                                           attr.getValues());
+              tempObject.setAttribute(attrToAdd);
+              List<Attribute> ldapAttrs =
+                      mapper.toLDAPAttributes(tempObject, ldapInterface);
+
+              // Compare all the LDAP attributes, that correspond to the read only
+              // SCIM attribute, against the attributes being modified.
+              for (Attribute ldapAttr : ldapAttrs)
+              {
+                Iterator<Modification> iterator = mods.iterator();
+                while (iterator.hasNext())
+                {
+                  Modification mod = iterator.next();
+                  if (mod.getAttribute().getName().equalsIgnoreCase(
+                          ldapAttr.getName()))
+                  {
+                    // This attribute is being modified through a read only
+                    // SCIM attribute, so we should remove it.
+                    iterator.remove();
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       if(!mods.isEmpty())
       {
         // Look for any modifications that will affect the mapped entry's RDN
@@ -896,12 +917,46 @@ public abstract class LDAPBackend
     {
       for (SCIMAttribute attr : requestObject.getAttributes(schema))
       {
-        if (attr.getAttributeDescriptor().isReadOnly())
+        if (attr.getAttributeDescriptor().isReadOnly() &&
+                  !CoreSchema.ID_DESCRIPTOR.equals(
+                       attr.getAttributeDescriptor()))
         {
           // This attribute is being modified through a read only attr
           throw new InvalidResourceException("Attribute '" +
                     attr.getName() + "' may not be " +
                     "provided in PATCH because it is read only");
+        }
+        if (attr.getAttributeDescriptor().isMultiValued())
+        {
+          for (SCIMAttributeValue value : attr.getValues())
+          {
+            if (value.isComplex())
+            {
+              for (SCIMAttribute subAttr : value.getAttributes().values())
+              {
+                if (subAttr.getAttributeDescriptor().isReadOnly())
+                {
+                  // This attribute is being modified through a read only attr
+                  throw new InvalidResourceException("Attribute '" +
+                      attr.getName() + "." + subAttr.getName() +
+                      "' may not be provided in PATCH because it is read only");
+                }
+              }
+            }
+          }
+        }
+        else if(attr.getValue().isComplex())
+        {
+          for (SCIMAttribute subAttr : attr.getValue().getAttributes().values())
+          {
+            if(subAttr.getAttributeDescriptor().isReadOnly())
+            {
+              // This attribute is being modified through a read only attr
+              throw new InvalidResourceException("Attribute '" +
+                      attr.getName() + "." + subAttr.getName() +
+                      "' may not be provided in PATCH because it is read only");
+            }
+          }
         }
       }
     }

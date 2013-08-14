@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Copyright 2011-2013 UnboundID Corp.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License (GPLv2 only)
+  or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+  as published by the Free Software Foundation.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, see <http://www.gnu.org/licenses>.
+-->
+
+<scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
+
+  <!--
+   ! CUSTOM RESOURCES.XML FILE FOR TESTS
+   ! This file contains minor customizations needed for specific unit tests.
+   ! Please include a comment near the modifications you might add to this file
+   ! that points to the associated test.
+   !-->
+
+  <!--
+   ! This configuration file serves two purposes.
+   !
+   ! 1. It defines the SCIM Resource Schema. The Resource Schema is
+   !    generated from this configuration file in the forms specified in
+   !    the SCIM protocol.
+   !
+   ! 2. It may also specify a mapping between SCIM and LDAP for the resources.
+   !
+   !-->
+
+  <!-- SCIM User with a mapping to inetOrgPerson -->
+  <resource name="User" schema="urn:scim:schemas:core:1.0">
+
+    <description>SCIM core resource for representing users</description>
+
+    <endpoint>Users</endpoint>
+
+    <!--
+     ! The following element provides information that is needed to search
+     ! LDAP for User entries. This references the 'userSearchParams' element,
+     ! which is also used in the MembersDerivedAttribute, so that the Group
+     ! resource knows to use these search parameters for its members.
+     !-->
+    <LDAPSearchRef idref="userSearchParams"/>
+
+    <!--
+     ! The following element provides information that is needed to create
+     ! new User resources in LDAP.
+     !-->
+    <LDAPAdd>
+      <!-- The template for the DN of new entries. -->
+      <!-- SCIM or LDAP attributes may be referenced. -->
+      <DNTemplate>uid={uid},ou=people,dc=example,dc=com</DNTemplate>
+
+      <!-- Fixed Values to be inserted after the mapping is done. -->
+      <fixedAttribute ldapAttribute="objectClass" onConflict="merge">
+        <fixedValue>top</fixedValue>
+        <fixedValue>person</fixedValue>
+        <fixedValue>organizationalPerson</fixedValue>
+        <fixedValue>inetOrgPerson</fixedValue>
+      </fixedAttribute>
+    </LDAPAdd>
+
+    <!-- These elements define the SCIM attributes and their LDAP mappings. -->
+    <attribute name="userName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="true">
+      <description>Unique identifier for the User, typically used by the user
+          to directly authenticate to the Service Provider</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="uid"/>
+      </simple>
+    </attribute>
+
+    <attribute name="externalId" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>Unique identifier for the Resource as defined by the
+          Service Consumer</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="name" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The components of the User's real name</description>
+      <complex>
+        <subAttribute name="formatted" dataType="string" required="true">
+          <description>The full name, including all middle names, titles,
+              and suffixes as appropriate, formatted for display (e.g. Ms.
+              Barbara Jane Jensen, III.)</description>
+          <mapping ldapAttribute="cn"/>
+        </subAttribute>
+        <subAttribute name="familyName" dataType="string" required="true">
+          <description>The family name of the User, or "Last Name" in most
+              Western languages (e.g. Jensen given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+          <mapping ldapAttribute="sn"/>
+        </subAttribute>
+        <subAttribute name="middleName" dataType="string">
+          <description>The middle name(s) of the User (e.g. Jane given the full
+              name Ms. Barbara Jane Jensen, III.)</description>
+        </subAttribute>
+        <subAttribute name="givenName" dataType="string">
+          <description>The given name of the User, or "First Name" in most
+              Western languages (e.g. Barbara given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+          <mapping ldapAttribute="givenName"/>
+        </subAttribute>
+        <subAttribute name="honorificPrefix" dataType="string">
+          <description>The honorific prefix(es) of the User, or "Title" in most
+              Western languages (e.g. Ms. given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+        </subAttribute>
+        <subAttribute name="honorificSuffix" dataType="string">
+          <description>The honorific suffix(es) of the User, or "Suffix" in most
+              Western languages (e.g. III. given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+        </subAttribute>
+      </complex>
+    </attribute>
+
+    <attribute name="displayName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The name of the User, suitable for display to
+          end-users</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="displayName"/>
+      </simple>
+    </attribute>
+
+    <attribute name="nickName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The casual way to address the user in real life, e.g. "Bob"
+          or "Bobby" instead of "Robert"</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="profileUrl" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>URL to a page representing the User's online
+          profile</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="title" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The User's title, such as "Vice President"</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="title"/>
+      </simple>
+    </attribute>
+
+    <attribute name="userType" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The organization-to-user relationship</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="employeeType"/>
+      </simple>
+    </attribute>
+
+    <attribute name="preferredLanguage" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The User's preferred written or spoken language. Generally
+          used for selecting a localized User interface.  Valid values are
+          concatenation of the ISO 639-1 two-letter language code, an
+          underscore, and the ISO 3166-1 two-letter country code; e.g., 'en_US'
+          specifies the language English and country US</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="preferredLanguage"/>
+      </simple>
+    </attribute>
+
+    <attribute name="locale" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>Used to indicate the User's default location for purposes of
+          localizing items such as currency, date time format, numerical
+          representations, etc. A locale value is a concatenation of the
+          ISO 639-1 two letter language code an underscore, and the ISO 3166-1
+          2 letter country code; e.g., 'en_US' specifies the language English
+          and country US</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="timezone" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The User's time zone in the "Olson" timezone database format;
+          e.g.,'America/Los_Angeles'</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="active" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>A Boolean value indicating the User's administrative
+          status</description>
+      <simple dataType="boolean"/>
+    </attribute>
+
+    <attribute name="password" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The User's clear text password. This attribute is intended
+          to be used as a means to specify an initial password when creating
+          a new User or to reset an existing User's password. This value will
+          never be returned by a Service Provider in any form</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="userPassword"/>
+      </simple>
+    </attribute>
+
+    <attribute name="emails" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>E-mail addresses for the User</description>
+      <simpleMultiValued childName="email" dataType="string">
+        <canonicalValue name="work">
+          <subMapping name="value" ldapAttribute="mail"/>
+        </canonicalValue>
+        <canonicalValue name="home"/>
+        <canonicalValue name="other"/>
+      </simpleMultiValued>
+    </attribute>
+
+    <attribute name="phoneNumbers" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>Phone numbers for the User</description>
+      <simpleMultiValued childName="phoneNumber" dataType="string">
+        <canonicalValue name="work">
+          <subMapping name="value" ldapAttribute="telephoneNumber"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <!--
+             ! The ISO 3166-1 two-letter region code that denotes the expected
+             ! region of the phone numbers. This is only used if the number
+             ! being canonicalized is not written in international format.
+             !-->
+            <defaultCountry>US</defaultCountry>
+            <!--
+             ! The format to use when transforming phone numbers between RFC3966
+             ! and LDAP formats. The allowable values are: {INTERNATIONAL,
+             ! NATIONAL, E164, RFC3966}. The INTERNATIONAL and NATIONAL formats
+             ! are consistent with the definition in ITU-T Recommendation
+             ! E. 123. For example, the following number will be written as
+             ! "+1 512-345-6789" in INTERNATIONAL format, and as
+             ! "(512) 345-6789" in NATIONAL format. E164 format is as per
+             ! INTERNATIONAL format but with no formatting applied,
+             ! e.g. "+15123456789". RFC3966 is as per INTERNATIONAL format, but
+             ! with all spaces and other separating symbols replaced with a
+             ! hyphen, and with any phone number extension appended with
+             ! ";ext=".
+             !-->
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
+        <canonicalValue name="home">
+          <subMapping name="value" ldapAttribute="homePhone"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
+        <canonicalValue name="mobile">
+          <subMapping name="value" ldapAttribute="mobile"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
+        <canonicalValue name="fax">
+          <subMapping name="value" ldapAttribute="facsimileTelephoneNumber"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
+        <canonicalValue name="pager">
+          <subMapping name="value" ldapAttribute="pager"
+                      transform="com.unboundid.scim.ldap.TelephoneNumberTransformation">
+            <defaultCountry>US</defaultCountry>
+            <ldapFormat>INTERNATIONAL</ldapFormat>
+          </subMapping>
+        </canonicalValue>
+        <canonicalValue name="other"/>
+      </simpleMultiValued>
+    </attribute>
+
+    <attribute name="ims" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>Instant messaging address for the User</description>
+      <simpleMultiValued childName="im" dataType="string">
+        <canonicalValue name="aim"/>
+        <canonicalValue name="gtalk"/>
+        <canonicalValue name="icq"/>
+        <canonicalValue name="xmpp"/>
+        <canonicalValue name="msn"/>
+        <canonicalValue name="skype"/>
+        <canonicalValue name="qq"/>
+        <canonicalValue name="yahoo"/>
+      </simpleMultiValued>
+    </attribute>
+
+    <attribute name="photos" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>URL of photos of the User</description>
+      <simpleMultiValued childName="photo" dataType="string">
+        <canonicalValue name="photo"/>
+        <canonicalValue name="thumbnail"/>
+      </simpleMultiValued>
+    </attribute>
+
+    <attribute name="addresses" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>The full mailing address, formatted for display or use with
+          a mailing label</description>
+      <complexMultiValued childName="address">
+        <subAttribute name="formatted" dataType="string">
+          <description>The full street address component, which may include
+              house number, street name, P.O. box, and multi-line extended
+              street address information</description>
+        </subAttribute>
+        <subAttribute name="streetAddress" dataType="string">
+          <description>The full street address component, which may include
+              house number, street name, P.O. box, and multi-line extended
+              street address information</description>
+        </subAttribute>
+        <subAttribute name="locality" dataType="string">
+          <description>The city or locality component</description>
+        </subAttribute>
+        <subAttribute name="region" dataType="string">
+          <description>The state or region component</description>
+        </subAttribute>
+        <subAttribute name="postalCode" dataType="string">
+          <description>The zipcode or postal code component</description>
+        </subAttribute>
+        <subAttribute name="country" dataType="string">
+          <description>The country name component</description>
+        </subAttribute>
+
+        <canonicalValue name="work">
+          <!--
+           ! An attribute mapping can optionally reference a transformation
+           ! to transform the SCIM values to and from LDAP values.
+           ! Transformations may be needed for LDAP attributes with syntax
+           ! Postal Address, Generalized Time and Boolean.
+           !-->
+          <subMapping name="formatted" ldapAttribute="postalAddress"
+                      transform="com.unboundid.scim.ldap.PostalAddressTransformation"/>
+          <subMapping name="streetAddress" ldapAttribute="street"/>
+          <subMapping name="locality" ldapAttribute="l"/>
+          <subMapping name="region" ldapAttribute="st"/>
+          <subMapping name="postalCode" ldapAttribute="postalCode"/>
+        </canonicalValue>
+        <canonicalValue name="home">
+          <subMapping name="formatted" ldapAttribute="homePostalAddress"
+                      transform="com.unboundid.scim.ldap.PostalAddressTransformation"/>
+        </canonicalValue>
+        <canonicalValue name="other"/>
+      </complexMultiValued>
+    </attribute>
+
+    <attribute name="groups" schema="urn:scim:schemas:core:1.0"
+               readOnly="true" required="false">
+      <description>A list of groups that the user belongs to</description>
+      <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute">
+        <LDAPSearchRef idref="groupSearchParams"/>
+      </derivation>
+      <simpleMultiValued childName="group" dataType="string">
+        <canonicalValue name="direct"/>
+        <canonicalValue name="indirect"/>
+      </simpleMultiValued>
+    </attribute>
+
+    <attribute name="entitlements" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>A list of entitlements for the User that represent a thing
+          the User has. That is, an entitlement is an additional right to a
+          thing, object or service</description>
+      <simpleMultiValued childName="entitlement" dataType="string"/>
+    </attribute>
+
+    <attribute name="roles" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>A list of roles for the User that collectively represent who
+          the User is</description>
+      <simpleMultiValued childName="role" dataType="string"/>
+    </attribute>
+
+    <!-- SCIM enterprise extension attribute mappings. -->
+
+    <attribute name="employeeNumber"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
+      <description>Numeric or alphanumeric identifier assigned to a person,
+          typically based on order of hire or association with an
+          organization</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="employeeNumber"/>
+      </simple>
+    </attribute>
+
+    <attribute name="costCenter"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
+      <description>Identifies the name of a cost center</description>
+      <simple dataType="string" caseExact="false"/>
+    </attribute>
+
+    <attribute name="organization"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
+      <description>Identifies the name of an organization</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="o"/>
+      </simple>
+    </attribute>
+
+    <attribute name="division"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
+      <description>Identifies the name of a division</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="ou"/>
+      </simple>
+    </attribute>
+
+    <!-- CUSTOMIZATION:
+         Make department readOnly for SCIMServerTestCase#testPutUser
+    -->
+    <attribute name="department"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="true" required="false">
+      <description>Identifies the name of a department</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="departmentNumber"/>
+      </simple>
+    </attribute>
+
+    <attribute name="manager"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
+      <description>The User's manager</description>
+      <derivation javaClass="com.unboundid.scim.ldap.ManagerDerivedAttribute">
+        <LDAPSearchRef idref="userSearchParams"/>
+      </derivation>
+      <complex>
+        <subAttribute name="managerId" dataType="string" required="true" >
+          <description>The id of the SCIM resource representing the User's
+              manager</description>
+        </subAttribute>
+        <subAttribute name="displayName" dataType="string" readOnly="true" >
+          <description>The displayName of the User's manager</description>
+        </subAttribute>
+      </complex>
+    </attribute>
+
+  </resource>
+
+
+  <!--
+   ! SCIM Group with a mapping to the groupOfUniqueNames static group for
+   ! writes and any static or dynamic group for reads.
+   !-->
+  <resource name="Group" schema="urn:scim:schemas:core:1.0">
+
+    <description>SCIM core resource for representing groups</description>
+
+    <endpoint>Groups</endpoint>
+
+    <!--
+     ! The following element provides information that is needed to search
+     ! LDAP for Group entries. This references the 'groupSearchParams' element,
+     ! which is also used in the GroupsDerivedAttribute, so that the User
+     ! resource knows to use these search parameters for its groups.
+     !-->
+    <LDAPSearchRef idref="groupSearchParams"/>
+
+    <LDAPAdd>
+      <DNTemplate>cn={cn},dc=example,dc=com</DNTemplate>
+
+      <fixedAttribute ldapAttribute="objectClass" onConflict="merge">
+        <fixedValue>top</fixedValue>
+        <fixedValue>groupOfUniqueNames</fixedValue>
+      </fixedAttribute>
+    </LDAPAdd>
+
+    <attribute name="displayName" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="true">
+      <description>A human readable name for the Group</description>
+      <simple dataType="string">
+        <mapping ldapAttribute="cn"/>
+      </simple>
+    </attribute>
+
+    <attribute name="members" schema="urn:scim:schemas:core:1.0"
+               readOnly="false" required="false">
+      <description>A list of members of the Group</description>
+      <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute">
+        <LDAPSearchRef idref="userSearchParams"/>
+      </derivation>
+      <simpleMultiValued childName="member" dataType="string">
+        <canonicalValue name="User"/>
+        <canonicalValue name="Group"/>
+      </simpleMultiValued>
+    </attribute>
+
+  </resource>
+
+  <!--
+   ! The following element provides information that is needed to search
+   ! LDAP for User entries. This is separated out from the User resource so that
+   ! the Group resource can also reference it, in the MembersDerivedAttribute.
+   !-->
+  <LDAPSearch id="userSearchParams">
+    <baseDN>ou=people,dc=example,dc=com</baseDN>
+    <filter>(objectClass=inetOrgPerson)</filter>
+    <!--
+     ! Comment out the following line to map the SCIM Resource ID to DN rather
+     ! than entryUUID.
+     !-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
+  </LDAPSearch>
+
+  <!--
+   ! The following element provides information that is needed to search
+   ! LDAP for Group entries. This is separated out from the Group resource so
+   ! that the User resource can also reference it, in the GroupsDerivedAttribute.
+   !-->
+  <LDAPSearch id="groupSearchParams">
+    <baseDN>dc=example,dc=com</baseDN>
+    <filter>(|(objectClass=groupOfEntries)(objectClass=groupOfNames)(objectClass=groupOfUniqueNames)(objectClass=groupOfURLs))</filter>
+    <!--
+     ! Comment out the following line to map the SCIM Resource ID to DN rather
+     ! than entryUUID.
+     !-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
+  </LDAPSearch>
+
+</scim-ldap:resources>

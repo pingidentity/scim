@@ -55,6 +55,7 @@ import com.unboundid.scim.sdk.UnauthorizedException;
 import com.unboundid.scim.wink.ResourceStats;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1013,6 +1014,14 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
   @Test
   public void testPutUser() throws Exception
   {
+    // Use custom resource mapping with read only department for this test
+    File f = getFile(
+       "scim-ri/src/test/resources/resources-custom-tests.xml");
+    assertTrue(f.exists());
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setResourcesFile(f);
+    reconfigureTestSuite(config);
+
      // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
@@ -1028,7 +1037,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
                       "userPassword: oldPassword",
                       "cn: testModifyWithPut",
                       "givenname: Test",
-                      "sn: User");
+                      "sn: User",
+                      "departmentNumber: 42");
 
     //Update the entry via SCIM
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
@@ -1067,6 +1077,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(returnedUser.getSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
               AttributeValueResolver.STRING_RESOLVER), "456");
+    assertEquals(returnedUser.getSingularAttributeValue(
+                SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "department",
+                  AttributeValueResolver.STRING_RESOLVER), "42");
 
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry =
@@ -1098,15 +1111,13 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Again, an update with the previously returned content should not fail.
     userEndpoint.update(returnedUser);
 
-    // Try to put the user a read only attribute included
-    Collection<com.unboundid.scim.data.Entry<String>> oldGroups =
-                returnedUser.getGroups();
-    Collection<com.unboundid.scim.data.Entry<String>> groups =
-            new HashSet<com.unboundid.scim.data.Entry<String>>(1);
-    groups.add(
-            new com.unboundid.scim.data.Entry<String>("users", "work", true)
-    );
-    returnedUser.setGroups(groups);
+    // Try to put the user with a read only attribute included
+    String origDeptValue = returnedUser.getSingularAttributeValue(
+                        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
+                        "department", AttributeValueResolver.STRING_RESOLVER);
+    returnedUser.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
+            "department", AttributeValueResolver.STRING_RESOLVER, "69");
     try
     {
       userEndpoint.update(returnedUser);
@@ -1117,7 +1128,14 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
       fail("Expected success when doing PUT with read only attribute but " +
                    "got exception: " + e.toString());
     }
-    returnedUser.setGroups(oldGroups);
+    // Verify value did not change
+    UserResource currentUser = getUser("testModifyWithPut");
+    assertEquals(currentUser.getSingularAttributeValue(
+                    SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "department",
+                    AttributeValueResolver.STRING_RESOLVER), origDeptValue);
+    returnedUser.setSingularAttributeValue(
+          SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
+          "department", AttributeValueResolver.STRING_RESOLVER, origDeptValue);
 
     // Try to put the user with a missing required attribute
     beforeCount =
@@ -1154,6 +1172,10 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     afterCount =
         getStatsForResource("User").getStat(ResourceStats.PUT_NOT_FOUND);
     assertEquals(beforeCount, afterCount - 1);
+
+    // Clean Up
+    config.setResourcesFile(getFile("resource/resources.xml"));
+    reconfigureTestSuite(config);
   }
 
 
