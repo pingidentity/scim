@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 UnboundID Corp.
+ * Copyright 2013 UnboundID Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License (GPLv2 only)
@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.schema.AttributeDescriptor;
@@ -42,6 +43,7 @@ import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
  * especially useful for performing a PATCH request to modify a resource so it
  * matches a target resource. For example:
  *
+ * <pre>
  * UserResource target = ...
  * UserResource source = userEndpoint.getUser("someUser");
  *
@@ -50,10 +52,20 @@ import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
  * userEndpoint.update(source.getId(),
  *                     diff.getAttributesToUpdate(),
  *                     diff.getAttributesToDelete());
+ * </pre>
+ *
+ * You can also create a Diff instance from a SCIM partial resource which
+ * contains PATCH modifications. This can then be applied to a source resource
+ * to produce the target resource. For example:
+ *
+ * <pre>
+ * Diff diff = Diff.fromPartialResource(partialResource);
+ * BaseResource targetResource = diff.apply(sourceResource);
+ * </pre>
  *
  * @param <R> The type of resource instances the diff was generated from.
  */
-public class Diff<R extends BaseResource>
+public final class Diff<R extends BaseResource>
 
 {
   private final List<SCIMAttribute> attributesToUpdate;
@@ -80,7 +92,10 @@ public class Diff<R extends BaseResource>
   }
 
   /**
-   * Retrieves the list of attributes deleted from the source resource.
+   * Retrieves the list of attributes deleted from the source resource. The
+   * values here are SCIM attribute names which may or may not contain the
+   * schema URN. These can be easily parsed using the {@link AttributePath#parse}
+   * method.
    *
    * @return The list of attributes deleted from source resource.
    */
@@ -91,10 +106,13 @@ public class Diff<R extends BaseResource>
 
   /**
    * Retrieves the list of updated attributes (and their new values) to
-   * update on the source resource.
+   * update on the source resource. These attributes will conform to
+   * Section 3.2.2 of the SCIM 1.1 specification (<i>draft-scim-api-01</i>),
+   * "Modifying Resources with PATCH".
    *
    * @return The list of attributes (and their new values) to update on the
-   *         source resource.
+   *         source resource. Note that the attributes are in PATCH form (i.e.
+   *         they contain the values to merge into the resource).
    */
   public List<SCIMAttribute> getAttributesToUpdate()
   {
@@ -102,16 +120,182 @@ public class Diff<R extends BaseResource>
   }
 
   /**
+   * Applies the modifications from this {@link Diff} to the specified source
+   * resource, and returns the resulting SCIM resource.
+   *
+   * @param sourceResource the source resource to which the modifications should
+   *                       be applied.
+   * @param resourceFactory The ResourceFactory that should be used to create
+   *                        the new resource instance.
+   * @return the target resource with the modifications applied
+   */
+  public R apply(final R sourceResource,
+                 final ResourceFactory<R> resourceFactory)
+  {
+    final SCIMObject scimObject =
+            new SCIMObject(sourceResource.getScimObject());
+
+    if(attributesToDelete != null)
+    {
+      for(String attrPath : attributesToDelete)
+      {
+        AttributePath path = AttributePath.parse(attrPath);
+        String schema = path.getAttributeSchema();
+        String attrName = path.getAttributeName();
+        String subAttrName = path.getSubAttributeName();
+
+        if (subAttrName != null)
+        {
+          attrName = attrName + "." + subAttrName;
+        }
+
+        scimObject.removeAttribute(schema, attrName);
+      }
+    }
+
+    if (attributesToUpdate != null)
+    {
+      for(SCIMAttribute attr : attributesToUpdate)
+      {
+        if(attr.getAttributeDescriptor().isMultiValued())
+        {
+          for(SCIMAttributeValue value : attr.getValues())
+          {
+            SCIMAttribute currentAttribute =
+                    scimObject.getAttribute(attr.getSchema(), attr.getName());
+
+            Set<SCIMAttributeValue> newValues =
+                    new HashSet<SCIMAttributeValue>();
+
+            if(value.isComplex())
+            {
+              String operation = value.getSubAttributeValue("operation",
+                      AttributeValueResolver.STRING_RESOLVER);
+
+              if("delete".equalsIgnoreCase(operation))
+              {
+                //We are deleting a specific value from this
+                //multi-valued attribute
+                List<SCIMAttribute> subAttrs = new ArrayList<SCIMAttribute>();
+                Map<String, SCIMAttribute> subAttrMap = value.getAttributes();
+
+                for(String subAttrName : subAttrMap.keySet())
+                {
+                  if(!"operation".equalsIgnoreCase(subAttrName))
+                  {
+                    subAttrs.add(subAttrMap.get(subAttrName));
+                  }
+                }
+
+                SCIMAttributeValue valueToDelete =
+                        SCIMAttributeValue.createComplexValue(subAttrs);
+
+                if(currentAttribute != null)
+                {
+                  for(SCIMAttributeValue currentValue :
+                          currentAttribute.getValues())
+                  {
+                    if(!currentValue.equals(valueToDelete))
+                    {
+                      newValues.add(currentValue);
+                    }
+                  }
+
+                  SCIMAttribute finalAttribute = SCIMAttribute.create(
+                          attr.getAttributeDescriptor(), newValues.toArray(
+                                  new SCIMAttributeValue[newValues.size()]));
+
+                  scimObject.setAttribute(finalAttribute);
+                }
+
+                continue;
+              }
+            }
+
+            //Merge this value into the existing value (if any) for the
+            //attribute
+            if(currentAttribute != null)
+            {
+              for(SCIMAttributeValue currentValue :
+                      currentAttribute.getValues())
+              {
+                newValues.add(currentValue);
+              }
+            }
+            newValues.add(value);
+
+            SCIMAttribute finalAttribute = SCIMAttribute.create(
+                    attr.getAttributeDescriptor(), newValues.toArray(
+                    new SCIMAttributeValue[newValues.size()]));
+
+            scimObject.setAttribute(finalAttribute);
+          }
+        }
+        else //It's a single-valued attribute
+        {
+          if (scimObject.hasAttribute(attr.getSchema(), attr.getName()))
+          {
+            SCIMAttributeValue value = attr.getValue();
+            if (value.isComplex())
+            {
+              SCIMAttribute existingAttr =
+                      scimObject.getAttribute(attr.getSchema(), attr.getName());
+              SCIMAttributeValue existingValue = existingAttr.getValue();
+
+              Map<String,SCIMAttribute> subAttrMap = value.getAttributes();
+              Map<String,SCIMAttribute> existingSubAttrMap =
+                      existingValue.getAttributes();
+              Map<String,SCIMAttribute> finalSubAttrs =
+                      new HashMap<String,SCIMAttribute>();
+
+              for (String subAttrName : existingSubAttrMap.keySet())
+              {
+                if (subAttrMap.containsKey(subAttrName))
+                {
+                  finalSubAttrs.put(subAttrName,
+                          subAttrMap.get(subAttrName));
+                }
+                else
+                {
+                  finalSubAttrs.put(subAttrName,
+                          existingSubAttrMap.get(subAttrName));
+                }
+              }
+
+              //Add in any new sub-attributes that weren't in the existing set
+              for (String subAttrName : subAttrMap.keySet())
+              {
+                if (!finalSubAttrs.containsKey(subAttrName))
+                {
+                  finalSubAttrs.put(subAttrName, subAttrMap.get(subAttrName));
+                }
+              }
+
+              SCIMAttributeValue finalValue = SCIMAttributeValue
+                      .createComplexValue(finalSubAttrs.values());
+              attr = SCIMAttribute.create(
+                      attr.getAttributeDescriptor(), finalValue);
+            }
+          }
+          scimObject.setAttribute(attr);
+        }
+      }
+    }
+
+    return resourceFactory.createResource(resourceDescriptor, scimObject);
+  }
+
+  /**
    * Retrieves the partial resource with the modifications that maybe sent in
    * a PATCH request.
    *
    * @param resourceFactory The ResourceFactory that should be used to create
-   *                        resource instance.
+   *                        the new resource instance.
    * @return The partial resource with the modifications that maybe sent in
    *         a PATCH request.
    * @throws InvalidResourceException If an error occurs.
    */
-  public R getPartialResource(final ResourceFactory<R> resourceFactory)
+  public R toPartialResource(final ResourceFactory<R> resourceFactory)
       throws InvalidResourceException
   {
     SCIMObject scimObject = new SCIMObject();
@@ -149,6 +333,60 @@ public class Diff<R extends BaseResource>
     }
 
     return resourceFactory.createResource(resourceDescriptor, scimObject);
+  }
+
+  /**
+   * Generates a diff with modifications that can be applied to the source
+   * resource in order to make it match the target resource.
+   *
+   * @param <R> The type of the source and target resource instances.
+   * @param partialResource The partial resource containing the PATCH
+   *                        modifications from which to generate the diff.
+   * @return A diff with modifications that can be applied to the source
+   *         resource in order to make it match the target resource.
+   */
+  public static <R extends BaseResource> Diff<R> fromPartialResource(
+           final R partialResource)
+  {
+    final SCIMObject scimObject =
+            new SCIMObject(partialResource.getScimObject());
+    final Set<String> attributesToDelete = new HashSet<String>();
+    final List<SCIMAttribute> attributesToUpdate =
+            new ArrayList<SCIMAttribute>(10);
+
+    SCIMAttribute metaAttr = scimObject.getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "meta");
+
+    if(metaAttr != null)
+    {
+      SCIMAttribute attributesAttr =
+              metaAttr.getValue().getAttribute("attributes");
+
+      if(attributesAttr != null)
+      {
+        for(SCIMAttributeValue attrPath : attributesAttr.getValues())
+        {
+          attributesToDelete.add(attrPath.getStringValue());
+        }
+      }
+    }
+
+    scimObject.removeAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta");
+
+    for(String schema : scimObject.getSchemas())
+    {
+      for(SCIMAttribute attr : scimObject.getAttributes(schema))
+      {
+        if(!attr.getAttributeDescriptor().isReadOnly())
+        {
+          attributesToUpdate.add(attr);
+        }
+      }
+    }
+
+    return new Diff<R>(partialResource.getResourceDescriptor(),
+        Collections.unmodifiableList(new ArrayList<String>(attributesToDelete)),
+        Collections.unmodifiableList(attributesToUpdate));
   }
 
   /**
@@ -453,8 +691,7 @@ public class Diff<R extends BaseResource>
     }
 
     return new Diff<R>(source.getResourceDescriptor(),
-        Collections.unmodifiableList(
-            new ArrayList<String>(attributesToDelete)),
+        Collections.unmodifiableList(new ArrayList<String>(attributesToDelete)),
         Collections.unmodifiableList(attributesToUpdate));
   }
 

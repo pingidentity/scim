@@ -598,7 +598,10 @@ public class SCIMEndpoint<R extends BaseResource>
    *             etag precondition and a value of "*" will perform an
    *             unconditional update.
    * @param attributesToUpdate The list of attributes (and their new values) to
-   *                           update on the resource.
+   *                           update on the resource. These attributes should
+   *                           conform to Section 3.2.2 of the SCIM 1.1
+   *                           specification (<i>draft-scim-api-01</i>),
+   *                           "Modifying Resources with PATCH".
    * @param attributesToDelete The list of attributes to delete on the resource.
    * @param requestedAttributes The attributes of updated resource to return.
    * @return The updated resource returned by the service provider, or
@@ -634,8 +637,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
     Diff<R> diff = new Diff<R>(resourceDescriptor, attributesToDelete,
-        attributesToUpdate);
-    final BaseResource resource = diff.getPartialResource(resourceFactory);
+                               attributesToUpdate);
+    final BaseResource resource = diff.toPartialResource(resourceFactory);
 
     StreamingOutput output = new StreamingOutput() {
       public void write(final OutputStream outputStream)

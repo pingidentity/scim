@@ -21,6 +21,7 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -114,6 +115,10 @@ public class SCIMObject
 
   /**
    * Retrieves the attribute with the specified name.
+   * <p>
+   * Note that this method does not support retrieving sub-attributes directly;
+   * you can retrieve a SCIMAttribute and then iterate over its values to get
+   * the sub-attributes, if the values are complex.
    *
    * @param schema  The URI of the schema containing the attribute to retrieve.
    *
@@ -167,11 +172,14 @@ public class SCIMObject
 
 
   /**
-   * Determines whether this object contains the specified attribute.
+   * Determines whether this object contains the specified attribute or
+   * sub-attribute.
    *
    * @param schema  The URI of the schema containing the attribute.
-   * @param name    The name of the attribute for which to make the
-   *                determination. It must not be {@code null}.
+   * @param name    The name of the attribute or sub-attribute.
+   *                Sub-attributes can be referenced with the standard
+   *                attribute notation (i.e. "attribute.subattribute".
+   *                This parameter must not be {@code null}.
    *
    * @return  {@code true} if this object contains the specified attribute, or
    *          {@code false} if not.
@@ -181,7 +189,30 @@ public class SCIMObject
     final LinkedHashMap<String, SCIMAttribute> attrs =
         attributes.get(toLowerCase(schema));
 
-    return attrs != null && attrs.containsKey(toLowerCase(name));
+    AttributePath path = AttributePath.parse(name, schema);
+    String attrName = toLowerCase(path.getAttributeName());
+    String subAttrName = path.getSubAttributeName();
+
+    if (attrs != null && attrs.containsKey(attrName))
+    {
+      if (subAttrName != null)
+      {
+        SCIMAttribute attr = attrs.get(attrName);
+        for (SCIMAttributeValue value : attr.getValues())
+        {
+          if (value.isComplex() && value.hasAttribute(subAttrName))
+          {
+            return true;
+          }
+        }
+      }
+      else
+      {
+        return true;
+      }
+    }
+
+    return false;
   }
 
 
@@ -252,11 +283,13 @@ public class SCIMObject
 
 
   /**
-   * Removes the specified attribute from this object.
+   * Removes the specified attribute or sub-attribute from this object.
    *
    * @param schema  The URI of the schema to which the attribute belongs.
-   * @param name    The name of the attribute to remove. It must not be
-   *                {@code null}.
+   * @param name    The name of the attribute or sub-attribute to remove.
+   *                Sub-attributes can be referenced with the standard
+   *                attribute notation (i.e. "attribute.subattribute".
+   *                This parameter must not be {@code null}.
    *
    * @return  {@code true} if the attribute was removed from the object, or
    *          {@code false} if it was not present.
@@ -271,11 +304,89 @@ public class SCIMObject
     }
     else
     {
-      final boolean removed = attrs.remove(toLowerCase(name)) != null;
-      if (removed && attrs.isEmpty())
+      AttributePath path = AttributePath.parse(name, schema);
+      String attrName = toLowerCase(path.getAttributeName());
+      String subAttrName = path.getSubAttributeName();
+
+      boolean removed = false;
+
+      if (subAttrName != null)
+      {
+        //We are removing a sub-attribute
+        if (attrs.containsKey(attrName))
+        {
+          SCIMAttribute attr = attrs.get(attrName);
+          List<SCIMAttributeValue> finalComplexValues =
+                  new ArrayList<SCIMAttributeValue>(4);
+
+          for(SCIMAttributeValue value : attr.getValues())
+          {
+            if(value.isComplex())
+            {
+              Map<String, SCIMAttribute> subAttrMap = value.getAttributes();
+              List<SCIMAttribute> attrList = new ArrayList<SCIMAttribute>(10);
+
+              //We need to keep track if only normative sub-attributes are left
+              //after the sub-attribute removal; if that is the case, then the
+              //entire attribute value should be removed since it no longer has
+              //a value.
+              boolean nonNormativeSubAttributeExists = false;
+
+              for(String n : subAttrMap.keySet())
+              {
+                if(!n.equalsIgnoreCase(subAttrName))
+                {
+                  attrList.add(subAttrMap.get(n));
+
+                  if (!n.equals("type") && !n.equals("primary") &&
+                      !n.equals("operation") && !n.equals("display"))
+                  {
+                    nonNormativeSubAttributeExists = true;
+                  }
+                }
+                else
+                {
+                  removed = true;
+                }
+              }
+
+              if(!attrList.isEmpty() && nonNormativeSubAttributeExists)
+              {
+                SCIMAttributeValue newComplexValue =
+                        SCIMAttributeValue.createComplexValue(attrList);
+                finalComplexValues.add(newComplexValue);
+              }
+            }
+          }
+
+          if (removed)
+          {
+            if(!finalComplexValues.isEmpty())
+            {
+              SCIMAttribute finalAttr = SCIMAttribute.create(
+                      attr.getAttributeDescriptor(), finalComplexValues.toArray(
+                      new SCIMAttributeValue[finalComplexValues.size()]));
+              attrs.put(attrName, finalAttr);
+            }
+            else
+            {
+              //After removing the specified sub-attribute, there are no values
+              //left, so the entire attribute should be removed.
+              attrs.remove(attrName);
+            }
+          }
+        }
+      }
+      else
+      {
+        removed = (attrs.remove(attrName) != null);
+      }
+
+      if(removed && attrs.isEmpty())
       {
         attributes.remove(lowerCaseSchema);
       }
+
       return removed;
     }
   }

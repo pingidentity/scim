@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.SCIMTestCase;
 import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.Entry;
@@ -40,7 +41,7 @@ import static org.testng.Assert.fail;
 /**
  * Test the SCIM resource diff utility.
  */
-public class DiffTestCase
+public class DiffTestCase extends SCIMTestCase
 {
 
   /**
@@ -66,9 +67,9 @@ public class DiffTestCase
     source.setUserType("employee");
     target.setUserType("manager");
 
-    SCIMObject patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    Diff<UserResource> d = Diff.generate(source, target);
+    SCIMObject patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "nickName").
@@ -79,9 +80,11 @@ public class DiffTestCase
     assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "userType").
         getValue().getStringValue().equals("manager"));
 
-    patch =
-        Diff.generate(source, target, "title").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = Diff.generate(source, target, "title").toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "nickName"));
@@ -108,10 +111,13 @@ public class DiffTestCase
         "Jensen", "J", "Barbara", "Ms.", "III"));
     target.setName(new Name("Ms. Barbara J Jensen III",
         "Jensen", "J", "Barbara", "Ms.", "III"));
-    SCIMObject patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
+    Diff<UserResource> d = Diff.generate(source, target);
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    SCIMObject patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "name"));
 
     // - added
@@ -120,18 +126,19 @@ public class DiffTestCase
 
     target.setName(new Name("Ms. Barbara J Jensen III",
          "Jensen", "J", "Barbara", "Ms.", "III"));
-    patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "name").
         getValue().getAttributes().size(), 6);
 
     target.setMeta(new Meta(new Date(), new Date(), null, null));
-    patch =
-        Diff.generate(source, target,
-            "name.formatted").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    patch = Diff.generate(source, target, "name.formatted").toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "name").
         getValue().getAttributes().size(), 1);
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
@@ -141,20 +148,40 @@ public class DiffTestCase
     target = new UserResource(CoreSchema.USER_DESCRIPTOR);
     source.setName(new Name("Ms. Barbara J Jensen III",
         "Jensen", "J", "Barbara", "Ms.", "III"));
-    patch =
-        Diff.generate(source, target, null).getPartialResource(
+
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
             UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
         AttributeValueResolver.STRING_RESOLVER).size(), 6);
 
-    patch =
-        Diff.generate(source, target,
-            "name.familyName", "name.givenName").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    patch = Diff.generate(source, target, "name.familyName", "name.givenName")
+         .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
         AttributeValueResolver.STRING_RESOLVER).size(), 2);
+
+    // - removed a sub-attribute
+    source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    source.setName(new Name("Ms. Barbara J Jensen III",
+            "Jensen", "J", "Barbara", "Ms.", "III"));
+    target.setName(new Name("Ms. Barbara J Jensen III",
+            "Jensen", "J", "Barbara", "Ms.", null));
+
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
+            getValue().getSubAttributeValues("attributes",
+            AttributeValueResolver.STRING_RESOLVER).size(), 1);
 
     // - updated
     source = new UserResource(CoreSchema.USER_DESCRIPTOR);
@@ -164,17 +191,20 @@ public class DiffTestCase
         "Jensen", "J", "Barbara", "Ms.", "III"));
     target.setName(new Name("Ms. Barbara J Johnson III",
         "Johnson", "J", "Barbara", "Ms.", "III"));
-    patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "name").
         getValue().getAttributes().size(), 2);
 
     source.setMeta(new Meta(null, new Date(), null, null));
     target.setMeta(new Meta(new Date(), null, null, null));
-    patch =
-        Diff.generate(source, target, "name.formatted").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    patch = Diff.generate(source, target, "name.formatted").toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "name").
         getValue().getAttributes().size(), 1);
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
@@ -258,9 +288,12 @@ public class DiffTestCase
     source.setEntitlements(sourceEntitlements);
     target.setEntitlements(targetEntitlements);
 
-    SCIMObject patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    Diff<UserResource> d = Diff.generate(source, target);
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    SCIMObject patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "emails"));
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
@@ -325,10 +358,9 @@ public class DiffTestCase
     assertTrue(photo1DeleteFound);
     assertTrue(thumbnail1DeleteFound);
 
-    patch =
-        Diff.generate(source, target,
-            "phoneNumbers", "entitlements").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    patch = Diff.generate(source, target,
+            "phoneNumbers", "entitlements").toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "emails"));
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
@@ -410,9 +442,8 @@ public class DiffTestCase
     UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
     source.setAddresses(Arrays.asList(address1, address2));
     target.setAddresses(Arrays.asList(address1, address2));
-    SCIMObject patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    SCIMObject patch = Diff.generate(source, target).toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "addresses"));
 
@@ -420,17 +451,20 @@ public class DiffTestCase
     source = new UserResource(CoreSchema.USER_DESCRIPTOR);
     target = new UserResource(CoreSchema.USER_DESCRIPTOR);
     target.setAddresses(Arrays.asList(address1));
-    patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    Diff<UserResource> d = Diff.generate(source, target);
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "addresses").
         getValue().getAttributes().size(), 7);
 
-    patch =
-        Diff.generate(source, target, "addresses.formatted",
-            "addresses.streetAddress").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    patch = Diff.generate(source, target, "addresses.formatted",
+              "addresses.streetAddress").toPartialResource(
+                  UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "addresses").
         getValue().getAttributes().size(), 2);
@@ -439,18 +473,21 @@ public class DiffTestCase
     source = new UserResource(CoreSchema.USER_DESCRIPTOR);
     target = new UserResource(CoreSchema.USER_DESCRIPTOR);
     source.setAddresses(Arrays.asList(address1));
-    patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
         AttributeValueResolver.STRING_RESOLVER).size(), 6);
 
-    patch =
-        Diff.generate(source, target, "addresses.formatted",
-            "addresses.streetAddress").getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    patch = Diff.generate(source, target, "addresses.formatted",
+              "addresses.streetAddress").toPartialResource(
+                  UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertEquals(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
@@ -475,9 +512,12 @@ public class DiffTestCase
     source.setAddresses(sourceAddresses);
     target.setAddresses(targetAddresses);
 
-    patch =
-        Diff.generate(source, target, null).getPartialResource(
-            UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+                UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     SCIMAttributeValue[] values =
         patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
@@ -552,7 +592,7 @@ public class DiffTestCase
     try
     {
       Diff.generate(source, target)
-          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .toPartialResource(UserResource.USER_RESOURCE_FACTORY)
           .getScimObject();
       fail("Expected NullPointerException");
     } catch (NullPointerException e)
@@ -583,7 +623,7 @@ public class DiffTestCase
     try
     {
       Diff.generate(source, target)
-          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .toPartialResource(UserResource.USER_RESOURCE_FACTORY)
           .getScimObject();
       fail("Expected NullPointerException");
     } catch (NullPointerException e)
@@ -608,7 +648,7 @@ public class DiffTestCase
     try
     {
       Diff.generate(source, target)
-          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .toPartialResource(UserResource.USER_RESOURCE_FACTORY)
           .getScimObject();
       fail("Expected NullPointerException");
     } catch (NullPointerException e)
@@ -619,7 +659,7 @@ public class DiffTestCase
     try
     {
       Diff.generate(source, target, "title")
-          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .toPartialResource(UserResource.USER_RESOURCE_FACTORY)
           .getScimObject();
       fail("Expected NullPointerException");
     } catch (NullPointerException e)
@@ -654,7 +694,7 @@ public class DiffTestCase
     try
     {
       Diff.generate(source, target, (String) null)
-          .getPartialResource(UserResource.USER_RESOURCE_FACTORY)
+          .toPartialResource(UserResource.USER_RESOURCE_FACTORY)
           .getScimObject();
       fail("Expected NullPointerException");
     } catch (NullPointerException e)
@@ -682,14 +722,18 @@ public class DiffTestCase
     source.setTitle("hot shot");
     source.setUserType("employee");
 
-    SCIMObject patch = Diff.generate(source, target)
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    Diff<UserResource> d = Diff.generate(source, target);
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    SCIMObject patch = d.toPartialResource(
+            UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
 
     patch = Diff.generate(source, target, "title")
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
@@ -713,13 +757,13 @@ public class DiffTestCase
     //
 
     SCIMObject patch = Diff.generate(source, target)
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
 
     patch = Diff.generate(source, target, "title")
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
@@ -750,13 +794,13 @@ public class DiffTestCase
     target.setUserType("employee");
 
     SCIMObject patch = Diff.generate(source, target)
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertEquals(patch.getAttributes(SCIMConstants.SCHEMA_URI_CORE).size(), 0);
 
     patch = Diff.generate(source, target, "title")
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
@@ -787,7 +831,7 @@ public class DiffTestCase
     target.setUserType("employee");
 
     SCIMObject patch = Diff.generate(source, target, "title")
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta"));
@@ -813,8 +857,12 @@ public class DiffTestCase
     source.setTitle("hot shot");
     source.setUserType("employee");
 
-    SCIMObject patch = Diff.generate(source, target)
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+    Diff<UserResource> d = Diff.generate(source, target);
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    SCIMObject patch = d.toPartialResource(
+            UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertTrue(patch
@@ -842,7 +890,7 @@ public class DiffTestCase
             AttributeValueResolver.STRING_RESOLVER).contains("userType"));
 
     patch = Diff.generate(source, target, "title")
-        .getPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
+        .toPartialResource(UserResource.USER_RESOURCE_FACTORY).getScimObject();
 
     assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName"));
     assertFalse(patch
@@ -891,7 +939,7 @@ public class DiffTestCase
     target.setExternalId("mygroupid");
 
     SCIMObject patch = Diff.generate(source, target)
-        .getPartialResource(GroupResource.GROUP_RESOURCE_FACTORY)
+        .toPartialResource(GroupResource.GROUP_RESOURCE_FACTORY)
         .getScimObject();
 
     assertFalse(patch
@@ -900,12 +948,102 @@ public class DiffTestCase
         .getValue().getStringValue().equals("mygroupid"));
 
     patch = Diff.generate(source, target, "externalId")
-        .getPartialResource(GroupResource.GROUP_RESOURCE_FACTORY)
+        .toPartialResource(GroupResource.GROUP_RESOURCE_FACTORY)
         .getScimObject();
 
     assertFalse(patch
         .hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "displayName"));
     assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "externalId")
         .getValue().getStringValue().equals("mygroupid"));
+  }
+
+  /**
+   * Test the fromPartialResource() and toPartialResource() methods to make
+   * sure they behave consistently.
+   *
+   * @throws Exception if an error occurs.
+   */
+  @Test
+  public void testToFromPartialResource() throws Exception
+  {
+    //Use a multi-valued complex attribute ('address') for this test
+
+    Address address1 =
+            new Address("100 Universal City Plaza\nHollywood, CA 91608 USA",
+                    "100 Universal City Plaza",
+                    "Hollywood",
+                    "CA",
+                    "91608",
+                    "USA",
+                    "work",
+                    false);
+
+    Address address2 =
+            new Address("456 Hollywood Blvd\nHollywood, CA 91608",
+                    "456 Hollywood Blvd",
+                    "Hollywood",
+                    "CA",
+                    "91608",
+                    null,
+                    "home",
+                    false);
+
+    Address address3 =
+            new Address("1234 Main St\nNew York, NY 10000 USA",
+                    "1234 Main St",
+                    "New York",
+                    "NY",
+                    "10000",
+                    "USA",
+                    "work",
+                    false);
+
+    Address address3Updated =
+            new Address("1234 Main St\nNew York, NY 10000 USA",
+                    "1234 Main St",
+                    "New York",
+                    "NY",
+                    "10000",
+                    "USA",
+                    "work",
+                    true);
+
+    Address address4 =
+            new Address("1234 Wall St\nNew York, NY 10000 USA",
+                    "1234 Wall St",
+                    "New York",
+                    "NY",
+                    "10000",
+                    "USA",
+                    null,
+                    false);
+
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    Collection<Address> sourceAddresses = new ArrayList<Address>(1);
+    Collection<Address> targetAddresses = new ArrayList<Address>(1);
+    // -- unchanged
+    sourceAddresses.add(address1);
+    targetAddresses.add(address1);
+    // -- add a new value
+    targetAddresses.add(address2);
+    // -- update an existing value
+    sourceAddresses.add(address3);
+    targetAddresses.add(address3Updated);
+    // -- remove a value
+    sourceAddresses.add(address4);
+    source.setAddresses(sourceAddresses);
+    target.setAddresses(targetAddresses);
+
+    Diff<UserResource> d1 = Diff.generate(source, target);
+    UserResource partialResource1 =
+            d1.toPartialResource(UserResource.USER_RESOURCE_FACTORY);
+
+    Diff<UserResource> d2 = Diff.fromPartialResource(partialResource1);
+    UserResource partialResource2 =
+            d2.toPartialResource(UserResource.USER_RESOURCE_FACTORY);
+
+    assertEquals(partialResource1, partialResource2);
   }
 }

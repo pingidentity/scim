@@ -22,8 +22,11 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -722,8 +725,15 @@ public final class SCIMAttribute
 
     SCIMAttribute that = (SCIMAttribute) o;
 
+    //Convert the value arrays into Sets so that the order of the attributes
+    //doesn't matter.
+    Set<SCIMAttributeValue> valueSet1 =
+            new HashSet<SCIMAttributeValue>(Arrays.asList(values));
+    Set<SCIMAttributeValue> valueSet2 =
+            new HashSet<SCIMAttributeValue>(Arrays.asList(that.values));
+
     return attributeDescriptor.equals(that.attributeDescriptor) &&
-        Arrays.equals(values, that.values);
+            valueSet1.equals(valueSet2);
   }
 
   @Override
