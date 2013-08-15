@@ -99,6 +99,7 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <configLocation>config/scim-checkstyle.xml</configLocation>
                             <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
@@ -109,6 +110,7 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <configLocation>config/scim-unit-checkstyle.xml</configLocation>
                             <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>

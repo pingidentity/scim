@@ -94,8 +94,8 @@ public final class Diff<R extends BaseResource>
   /**
    * Retrieves the list of attributes deleted from the source resource. The
    * values here are SCIM attribute names which may or may not contain the
-   * schema URN. These can be easily parsed using the {@link AttributePath#parse}
-   * method.
+   * schema URN. These can be easily parsed using the
+   * {@link AttributePath#parse} method.
    *
    * @return The list of attributes deleted from source resource.
    */
