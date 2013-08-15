@@ -1111,10 +1111,11 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Again, an update with the previously returned content should not fail.
     userEndpoint.update(returnedUser);
 
-    // Try to put the user with a read only attribute included
+    // Try to put the user WITH a read only attribute included
     String origDeptValue = returnedUser.getSingularAttributeValue(
                         SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
                         "department", AttributeValueResolver.STRING_RESOLVER);
+    assertEquals(origDeptValue, "42");
     returnedUser.setSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
             "department", AttributeValueResolver.STRING_RESOLVER, "69");
@@ -1129,10 +1130,30 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
                    "got exception: " + e.toString());
     }
     // Verify value did not change
-    UserResource currentUser = getUser("testModifyWithPut");
-    assertEquals(currentUser.getSingularAttributeValue(
+    user = getUser("testModifyWithPut");
+    assertEquals(user.getSingularAttributeValue(
                     SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "department",
                     AttributeValueResolver.STRING_RESOLVER), origDeptValue);
+
+    // Try to put the user WITHOUT a read only attribute included
+    returnedUser.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
+            "department", AttributeValueResolver.STRING_RESOLVER, null);
+    try
+    {
+      userEndpoint.update(returnedUser);
+    }
+    catch (InvalidResourceException e)
+    {
+      e.printStackTrace();
+      fail("Expected success when doing PUT with read only attribute but " +
+                   "got exception: " + e.toString());
+    }
+    // Verify value did not change
+    user = getUser("testModifyWithPut");
+    assertEquals(user.getSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "department",
+            AttributeValueResolver.STRING_RESOLVER), origDeptValue);
     returnedUser.setSingularAttributeValue(
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
           "department", AttributeValueResolver.STRING_RESOLVER, origDeptValue);

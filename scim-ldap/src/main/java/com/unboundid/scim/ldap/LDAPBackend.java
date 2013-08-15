@@ -85,7 +85,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -722,50 +721,6 @@ public abstract class LDAPBackend
           new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
 
-      if(!mods.isEmpty())
-      {
-        // Remove all mods that come from "read only" attributes before
-        // processing differences.
-        SCIMObject requestObject = request.getResourceObject();
-        for (String schema : requestObject.getSchemas())
-        {
-          for (SCIMAttribute attr : requestObject.getAttributes(schema))
-          {
-            if (attr.getAttributeDescriptor().isReadOnly() &&
-                      !CoreSchema.ID_DESCRIPTOR.equals(
-                           attr.getAttributeDescriptor()))
-            {
-              // Create a temporary SCIM Object based on just this read only
-              // attr so we can get the corresponding LDAP attributes.
-              SCIMObject tempObject = new SCIMObject();
-              SCIMAttribute attrToAdd =
-                      SCIMAttribute.create(attr.getAttributeDescriptor(),
-                                           attr.getValues());
-              tempObject.setAttribute(attrToAdd);
-              List<Attribute> ldapAttrs =
-                      mapper.toLDAPAttributes(tempObject, ldapInterface);
-
-              // Compare all the LDAP attributes, that correspond to the read
-              // only SCIM attribute, against the attributes being modified.
-              for (Attribute ldapAttr : ldapAttrs)
-              {
-                Iterator<Modification> iterator = mods.iterator();
-                while (iterator.hasNext())
-                {
-                  Modification mod = iterator.next();
-                  if (mod.getAttribute().getName().equalsIgnoreCase(
-                          ldapAttr.getName()))
-                  {
-                    // This attribute is being modified through a read only
-                    // SCIM attribute, so we should remove it.
-                    iterator.remove();
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
       if(!mods.isEmpty())
       {
         // Look for any modifications that will affect the mapped entry's RDN

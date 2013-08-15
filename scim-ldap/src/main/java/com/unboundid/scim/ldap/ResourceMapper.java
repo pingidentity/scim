@@ -881,9 +881,11 @@ public class ResourceMapper
     // Retrieve all LDAP attributes that are mapped from SCIM attributes.
     for (final AttributeMapper m : attributeMappers.values())
     {
+      // Exclude read only SCIM attributes, and passwords in some cases.
       // The password attribute is a special case as it should not be retrieved
       // unless it is included in the updated SCIM object to be mapped.
-      if(hasPasswordAttribute || !(m instanceof PasswordAttributeMapper))
+      if(!m.getAttributeDescriptor().isReadOnly() &&
+         (hasPasswordAttribute || !(m instanceof PasswordAttributeMapper)))
       {
         ldapAttributeTypes.addAll(m.getLDAPAttributeTypes());
       }
