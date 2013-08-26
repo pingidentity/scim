@@ -62,7 +62,7 @@ using Maven:
 >$ mvn package
 
 After a successful build, go to the assembled project under
-target/scim-ri-client-1.3.2 and run the example tests:
+target/scim-ri-client-1.4.6 and run the example tests:
 
 >$ bin/client-test localhost 8080 "cn=directory manager" password
 

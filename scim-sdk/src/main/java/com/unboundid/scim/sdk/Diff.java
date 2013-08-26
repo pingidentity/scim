@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,13 +160,11 @@ public final class Diff<R extends BaseResource>
       {
         if(attr.getAttributeDescriptor().isMultiValued())
         {
+          //Go through and process all deleted values first
           for(SCIMAttributeValue value : attr.getValues())
           {
             SCIMAttribute currentAttribute =
                     scimObject.getAttribute(attr.getSchema(), attr.getName());
-
-            Set<SCIMAttributeValue> newValues =
-                    new HashSet<SCIMAttributeValue>();
 
             if(value.isComplex())
             {
@@ -192,6 +191,9 @@ public final class Diff<R extends BaseResource>
 
                 if(currentAttribute != null)
                 {
+                  Set<SCIMAttributeValue> newValues =
+                          new HashSet<SCIMAttributeValue>();
+
                   for(SCIMAttributeValue currentValue :
                           currentAttribute.getValues())
                   {
@@ -201,34 +203,146 @@ public final class Diff<R extends BaseResource>
                     }
                   }
 
-                  SCIMAttribute finalAttribute = SCIMAttribute.create(
+                  if (!newValues.isEmpty())
+                  {
+                    SCIMAttribute finalAttribute = SCIMAttribute.create(
                           attr.getAttributeDescriptor(), newValues.toArray(
                                   new SCIMAttributeValue[newValues.size()]));
 
-                  scimObject.setAttribute(finalAttribute);
+                    scimObject.setAttribute(finalAttribute);
+                  }
+                  else
+                  {
+                    scimObject.removeAttribute(
+                            attr.getSchema(), attr.getName());
+                  }
+                }
+              }
+            }
+          }
+
+          //Now go through and merge in any new values
+          for (SCIMAttributeValue value : attr.getValues())
+          {
+            SCIMAttribute currentAttribute =
+                    scimObject.getAttribute(attr.getSchema(), attr.getName());
+
+            Set<SCIMAttributeValue> newValues =
+                    new HashSet<SCIMAttributeValue>();
+
+            if(value.isComplex())
+            {
+              String operation = value.getSubAttributeValue("operation",
+                      AttributeValueResolver.STRING_RESOLVER);
+
+              if("delete".equalsIgnoreCase(operation))
+              {
+                continue; //handled earlier
+              }
+
+              String type = value.getSubAttributeValue("type",
+                      AttributeValueResolver.STRING_RESOLVER);
+
+              //It's a complex multi-valued attribute. If a value with the same
+              //canonical type already exists, merge in the sub-attributes to
+              //that existing value. Otherwise, add a new complex value to the
+              //set of values.
+              if(currentAttribute != null)
+              {
+                SCIMAttributeValue valueToUpdate = null;
+                List<SCIMAttributeValue> finalValues =
+                        new LinkedList<SCIMAttributeValue>();
+                if (type != null)
+                {
+                  for(SCIMAttributeValue currentValue :
+                          currentAttribute.getValues())
+                  {
+                    String currentType = currentValue.getSubAttributeValue(
+                            "type", AttributeValueResolver.STRING_RESOLVER);
+
+                    if (type.equalsIgnoreCase(currentType))
+                    {
+                      valueToUpdate = currentValue;
+                    }
+                    else
+                    {
+                      finalValues.add(currentValue);
+                    }
+                  }
                 }
 
-                continue;
-              }
-            }
+                if (valueToUpdate != null)
+                {
+                  Map<String, SCIMAttribute> subAttrMap = value.getAttributes();
+                  Map<String, SCIMAttribute> existingSubAttrMap =
+                          valueToUpdate.getAttributes();
+                  Map<String, SCIMAttribute> finalSubAttrs =
+                          new HashMap<String, SCIMAttribute>();
 
-            //Merge this value into the existing value (if any) for the
-            //attribute
-            if(currentAttribute != null)
+                  for(String subAttrName : existingSubAttrMap.keySet())
+                  {
+                    if(subAttrMap.containsKey(subAttrName))
+                    {
+                      finalSubAttrs.put(subAttrName,
+                              subAttrMap.get(subAttrName));
+                    }
+                    else
+                    {
+                      finalSubAttrs.put(subAttrName,
+                              existingSubAttrMap.get(subAttrName));
+                    }
+                  }
+
+                  //Add in any new sub-attributes that weren't in the
+                  //existing set
+                  for(String subAttrName : subAttrMap.keySet())
+                  {
+                    if(!finalSubAttrs.containsKey(subAttrName))
+                    {
+                      finalSubAttrs.put(subAttrName,
+                              subAttrMap.get(subAttrName));
+                    }
+                  }
+
+                  SCIMAttributeValue updatedValue = SCIMAttributeValue
+                          .createComplexValue(finalSubAttrs.values());
+                  finalValues.add(updatedValue);
+
+                }
+                else
+                {
+                  SCIMAttributeValue updatedValue = SCIMAttributeValue
+                          .createComplexValue(value.getAttributes().values());
+                  finalValues.add(updatedValue);
+                }
+
+                attr = SCIMAttribute.create(attr.getAttributeDescriptor(),
+                        finalValues.toArray(new SCIMAttributeValue[
+                                finalValues.size()]));
+              }
+
+              scimObject.setAttribute(attr);
+            }
+            else
             {
-              for(SCIMAttributeValue currentValue :
-                      currentAttribute.getValues())
+              //It's a simple multi-valued attribute. Merge this value into the
+              //existing values (if any) for the attribute
+              if(currentAttribute != null)
               {
-                newValues.add(currentValue);
+                for(SCIMAttributeValue currentValue :
+                         currentAttribute.getValues())
+                {
+                  newValues.add(currentValue);
+                }
               }
+              newValues.add(value);
+
+              SCIMAttribute finalAttribute = SCIMAttribute.create(
+                      attr.getAttributeDescriptor(), newValues.toArray(
+                      new SCIMAttributeValue[newValues.size()]));
+
+              scimObject.setAttribute(finalAttribute);
             }
-            newValues.add(value);
-
-            SCIMAttribute finalAttribute = SCIMAttribute.create(
-                    attr.getAttributeDescriptor(), newValues.toArray(
-                    new SCIMAttributeValue[newValues.size()]));
-
-            scimObject.setAttribute(finalAttribute);
           }
         }
         else //It's a single-valued attribute
@@ -291,11 +405,16 @@ public final class Diff<R extends BaseResource>
    *
    * @param resourceFactory The ResourceFactory that should be used to create
    *                        the new resource instance.
+   * @param includeReadOnlyAttributes whether read-only attributes should be
+   *                                  included in the partial resource. If this
+   *                                  is {@code false}, these attributes will be
+   *                                  stripped out.
    * @return The partial resource with the modifications that maybe sent in
    *         a PATCH request.
    * @throws InvalidResourceException If an error occurs.
    */
-  public R toPartialResource(final ResourceFactory<R> resourceFactory)
+  public R toPartialResource(final ResourceFactory<R> resourceFactory,
+                             final boolean includeReadOnlyAttributes)
       throws InvalidResourceException
   {
     SCIMObject scimObject = new SCIMObject();
@@ -325,7 +444,8 @@ public final class Diff<R extends BaseResource>
     {
       for(SCIMAttribute attr : attributesToUpdate)
       {
-        if(!attr.getAttributeDescriptor().isReadOnly())
+        if(!attr.getAttributeDescriptor().isReadOnly() ||
+                includeReadOnlyAttributes)
         {
           scimObject.setAttribute(attr);
         }
@@ -342,11 +462,15 @@ public final class Diff<R extends BaseResource>
    * @param <R> The type of the source and target resource instances.
    * @param partialResource The partial resource containing the PATCH
    *                        modifications from which to generate the diff.
+   * @param includeReadOnlyAttributes whether read-only attributes should be
+   *                                  included in the Diff. If this is
+   *                                  {@code false}, these attributes will be
+   *                                  stripped out.
    * @return A diff with modifications that can be applied to the source
    *         resource in order to make it match the target resource.
    */
   public static <R extends BaseResource> Diff<R> fromPartialResource(
-           final R partialResource)
+           final R partialResource, final boolean includeReadOnlyAttributes)
   {
     final SCIMObject scimObject =
             new SCIMObject(partialResource.getScimObject());
@@ -377,7 +501,8 @@ public final class Diff<R extends BaseResource>
     {
       for(SCIMAttribute attr : scimObject.getAttributes(schema))
       {
-        if(!attr.getAttributeDescriptor().isReadOnly())
+        if(!attr.getAttributeDescriptor().isReadOnly() ||
+                includeReadOnlyAttributes)
         {
           attributesToUpdate.add(attr);
         }
