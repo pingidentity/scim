@@ -81,8 +81,17 @@ public class SCIMQueryAttributes
         {
           for (final String a : paths)
           {
-            final AttributePath path = AttributePath.parse(a,
-                                          resourceDescriptor.getSchema());
+            final AttributePath path;
+            if (resourceDescriptor.getSchema().equalsIgnoreCase(
+                    "urn:unboundid:schemas:scim:ldap:1.0"))
+            {
+              path = AttributePath.parse(a, resourceDescriptor.getSchema());
+            }
+            else
+            {
+              path = AttributePath.parse(a);
+            }
+
             final AttributeDescriptor attributeDescriptor =
                 resourceDescriptor.getAttribute(path.getAttributeSchema(),
                                                 path.getAttributeName());
