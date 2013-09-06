@@ -61,6 +61,12 @@ import java.util.logging.Level;
 public class GroupsDerivedAttribute extends DerivedAttribute
 {
   /**
+   * The name of the argument that indicates whether the backend DS provides
+   * the isMemberOf attribute.
+   */
+  private static final String HAVE_ISMEMBEROF = "haveIsMemberOf";
+
+  /**
    * The name of the LDAP cn attribute.
    */
   private static final String ATTR_CN = "cn";
@@ -122,6 +128,12 @@ public class GroupsDerivedAttribute extends DerivedAttribute
    */
   private LDAPSearchResolver groupResolver;
 
+  /**
+   * Indicates whether the backend DS provides the isMemberOf attribute.
+   */
+  private boolean haveIsMemberOf;
+
+
 
   @Override
   public Set<String> getLDAPAttributeTypes()
@@ -149,19 +161,21 @@ public class GroupsDerivedAttribute extends DerivedAttribute
 
     try
     {
-      if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
+      if (haveIsMemberOf)
       {
-        final List<String> attrList = new ArrayList<String>(3);
-        attrList.add(ATTR_CN);
-        attrList.add(ATTR_OBJECT_CLASS);
-        groupResolver.addIdAttribute(attrList);
-        final String[] attrsToGet =
-            attrList.toArray(new String[attrList.size()]);
-
         // We can use the isMemberOf attribute
-        for (final String dnString :
-            entry.getAttributeValues(ATTR_IS_MEMBER_OF))
+        if (entry.hasAttribute(ATTR_IS_MEMBER_OF))
         {
+          final List<String> attrList = new ArrayList<String>(3);
+          attrList.add(ATTR_CN);
+          attrList.add(ATTR_OBJECT_CLASS);
+          groupResolver.addIdAttribute(attrList);
+          final String[] attrsToGet =
+              attrList.toArray(new String[attrList.size()]);
+
+          for (final String dnString :
+              entry.getAttributeValues(ATTR_IS_MEMBER_OF))
+          {
             // Make sure the group is scoped within the base DN.
             if (groupResolver.isDnInScope(dnString))
             {
@@ -182,23 +196,26 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                 // uniqueMember of this group (i.e. it's not nested).
                 boolean isDirect = false;
                 if(!groupEntry.hasObjectClass(OC_GROUP_OF_URLS) &&
-                    !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
+                   !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
                 {
                   // Make sure the entry DN is listed as a member or
                   // uniqueMember.
                   searchRequest =
                       new SearchRequest(dnString, SearchScope.BASE,
-                      groupsFilter(entry.getDN(), false), "1.1");
+                                        groupsFilter(entry.getDN(), false),
+                                        "1.1");
                   searchRequest.setSizeLimit(1);
                   isDirect =
                       ldapInterface.searchForEntry(searchRequest) != null;
                 }
                 final String resourceID =
                     groupResolver.getIdFromEntry(groupEntry);
-                values.add(createGroupValue(resourceID,
+                values.add(createGroupValue(
+                    resourceID,
                     groupEntry.getAttributeValue(ATTR_CN), isDirect));
               }
             }
+          }
         }
       }
       else
@@ -264,6 +281,13 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       {
         groupResolver = (LDAPSearchResolver) o;
       }
+    }
+
+    haveIsMemberOf = true;
+    Object o = getArguments().get(HAVE_ISMEMBEROF);
+    if (o != null)
+    {
+      haveIsMemberOf = Boolean.valueOf(o.toString());
     }
   }
 

@@ -357,6 +357,7 @@
       <description>A list of groups that the user belongs to</description>
       <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute">
         <LDAPSearchRef idref="groupSearchParams"/>
+        <haveIsMemberOf>false</haveIsMemberOf>
       </derivation>
       <simpleMultiValued childName="group" dataType="string">
         <canonicalValue name="direct"/>
