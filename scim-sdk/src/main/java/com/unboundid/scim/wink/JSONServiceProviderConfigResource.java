@@ -27,7 +27,8 @@ import javax.ws.rs.core.Response;
 
 import static com.unboundid.scim.sdk.SCIMConstants.
     RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG;
-
+import static com.unboundid.scim.sdk.SCIMConstants.
+    RESOURCE_NAME_SERVICE_PROVIDER_CONFIG;
 
 
 /**
@@ -38,19 +39,15 @@ import static com.unboundid.scim.sdk.SCIMConstants.
 public class JSONServiceProviderConfigResource extends AbstractStaticResource
 {
   private final SCIMApplication application;
-  private final ResourceStats resourceStats;
 
   /**
    * Create a new JAX-RS resource.
    *
    * @param application    The SCIM JAX-RS application associated with this
    *                       resource.
-   * @param resourceStats  The ResourceStats instance to use.
    */
-  public JSONServiceProviderConfigResource(final SCIMApplication application,
-                                           final ResourceStats resourceStats) {
+  public JSONServiceProviderConfigResource(final SCIMApplication application) {
     this.application = application;
-    this.resourceStats = resourceStats;
   }
 
   /**
@@ -66,8 +63,10 @@ public class JSONServiceProviderConfigResource extends AbstractStaticResource
     Response.ResponseBuilder builder = Response.ok();
 
     setResponseEntity(builder, MediaType.APPLICATION_JSON_TYPE, config);
-    resourceStats.incrementStat(ResourceStats.GET_RESPONSE_XML);
-    resourceStats.incrementStat(ResourceStats.GET_OK);
+    application.getStatsForResource(RESOURCE_NAME_SERVICE_PROVIDER_CONFIG).
+        incrementStat(ResourceStats.GET_RESPONSE_XML);
+    application.getStatsForResource(RESOURCE_NAME_SERVICE_PROVIDER_CONFIG).
+        incrementStat(ResourceStats.GET_OK);
     return builder.build();
   }
 }

@@ -344,4 +344,52 @@ public class AuthenticationScheme
     sb.append('}');
     return sb.toString();
   }
+
+
+
+  /**
+   * Convenience method that creates a new AuthenticationScheme instances for
+   * HTTP BASIC.
+   *
+   * @param primary Whether this authentication scheme is primary
+   *
+   * @return A new AuthenticationScheme instances for HTTP BASIC.
+   */
+  public static AuthenticationScheme createBasic(final boolean primary)
+  {
+    return new AuthenticationScheme(
+        "Http Basic",
+        "The HTTP Basic Access Authentication scheme. This scheme is not " +
+            "considered to be a secure method of user authentication (unless " +
+            "used in conjunction with some external secure system such as " +
+            "SSL), as the user name and password are passed over the network " +
+            "as cleartext.",
+        "http://www.ietf.org/rfc/rfc2617.txt",
+        "http://en.wikipedia.org/wiki/Basic_access_authentication",
+        "httpbasic", primary);
+  }
+
+
+
+  /**
+   * Convenience method that creates a new AuthenticationScheme instances for
+   * OAuth 2.
+   *
+   * @param primary Whether this authentication scheme is primary
+   *
+   * @return A new AuthenticationScheme instances for OAuth 2.
+   */
+  public static AuthenticationScheme createOAuth2(final boolean primary)
+  {
+    return new AuthenticationScheme(
+        "OAuth 2.0",
+        "The OAuth 2.0 Bearer Token Authentication scheme. OAuth enables " +
+            "clients to access protected resources by obtaining an access " +
+            "token, which is defined in draft-ietf-oauth-v2-31 as \"a string " +
+            "representing an access authorization issued to the client\", " +
+            "rather than using the resource owner's credentials directly.",
+        "http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-23",
+        "http://oauth.net/2/",
+        "oauth2", primary);
+  }
 }

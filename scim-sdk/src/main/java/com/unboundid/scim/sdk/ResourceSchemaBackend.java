@@ -19,11 +19,14 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.Meta;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.wink.SCIMApplication;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,18 +35,17 @@ import java.util.List;
  */
 public class ResourceSchemaBackend extends SCIMBackend
 {
-  private final Collection<ResourceDescriptor> resourceDescriptors;
+  private final SCIMApplication application;
 
   /**
    * Create a new ResourceSchemaBackend that serves up the schema provided
    * from the ResourceDescriptors.
    *
-   * @param resourceDescriptors The ResourceDescriptors to serve.
+   * @param application         The SCIM JAX-RS application associated with this
+   *                            backend.
    */
-  public ResourceSchemaBackend(
-      final Collection<ResourceDescriptor> resourceDescriptors) {
-    this.resourceDescriptors =
-            new ArrayList<ResourceDescriptor>(resourceDescriptors);
+  public ResourceSchemaBackend(final SCIMApplication application) {
+    this.application = application;
   }
 
   /**
@@ -59,7 +61,7 @@ public class ResourceSchemaBackend extends SCIMBackend
    */
   @Override
   public void finalizeBackend() {
-    resourceDescriptors.clear();
+    // Nothing to do.
   }
 
   /**
@@ -69,7 +71,8 @@ public class ResourceSchemaBackend extends SCIMBackend
   public ResourceDescriptor getResource(final GetResourceRequest request)
       throws SCIMException {
     ResourceDescriptor resourceDescriptor = null;
-    for(ResourceDescriptor rd : resourceDescriptors)
+    for(ResourceDescriptor rd :
+        application.getBackend().getResourceDescriptors())
     {
       String id = rd.getSchema() +
           SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + rd.getName();
@@ -83,7 +86,8 @@ public class ResourceSchemaBackend extends SCIMBackend
     // Try to find a match in case the schema name was not provided.
     if (resourceDescriptor == null)
     {
-      for(ResourceDescriptor rd : resourceDescriptors)
+      for(ResourceDescriptor rd :
+          application.getBackend().getResourceDescriptors())
       {
         if(rd.getName().equalsIgnoreCase(request.getResourceID()))
         {
@@ -109,9 +113,11 @@ public class ResourceSchemaBackend extends SCIMBackend
   public Resources getResources(final GetResourcesRequest request)
       throws SCIMException {
     List<BaseResource> rds =
-        new ArrayList<BaseResource>(this.resourceDescriptors.size());
+        new ArrayList<BaseResource>(
+            application.getBackend().getResourceDescriptors().size());
 
-    for(ResourceDescriptor resourceDescriptor : this.resourceDescriptors)
+    for(ResourceDescriptor resourceDescriptor :
+        application.getBackend().getResourceDescriptors())
     {
       ResourceDescriptor copy =
           copyAndSetIdAndMetaAttributes(resourceDescriptor, request);
@@ -174,6 +180,12 @@ public class ResourceSchemaBackend extends SCIMBackend
       throws SCIMException {
     throw new UnsupportedOperationException("PATCH operations are not " +
             "allowed on the Resource Schema");
+  }
+
+  @Override
+  public Collection<ResourceDescriptor> getResourceDescriptors()
+  {
+    return Collections.singleton(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR);
   }
 
   /**

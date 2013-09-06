@@ -17,11 +17,9 @@
 
 package com.unboundid.scim.wink;
 
-import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
-import com.unboundid.scim.sdk.SCIMBackend;
 
-import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -51,29 +49,23 @@ import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
 
 
 /**
- * This class is a Wink dynamic resource implementation for operations
- * on a SCIM resource. The set of supported resources and their endpoints
- * are not known until run-time hence it must be implemented as a dynamic
- * resource.
+ * This class is a Wink resource implementation for operations
+ * on a SCIM resource.
  */
+@Path("{endpoint}")
 public class SCIMResource extends AbstractSCIMResource
 {
   /**
    * Create a new SCIM wink resource for operations on a SCIM endpoint.
    *
-   * @param resourceDescriptor  The resource descriptor to use.
-   * @param resourceStats       The ResourceStats instance to use.
-   * @param backend             The SCIMBackend to use to process requests.
+   * @param application         The SCIMApplication initializing this reosurce.
    * @param tokenHandler        The token handler to use for OAuth
    *                            authentication.
    */
-  public SCIMResource(final ResourceDescriptor resourceDescriptor,
-                      final ResourceStats resourceStats,
-                      final SCIMBackend backend,
+  public SCIMResource(final SCIMApplication application,
                       final OAuthTokenHandler tokenHandler)
   {
-    super(resourceDescriptor.getEndpoint(), resourceDescriptor,
-          resourceStats, backend, tokenHandler);
+    super(application, tokenHandler);
   }
 
 
@@ -81,7 +73,8 @@ public class SCIMResource extends AbstractSCIMResource
   /**
    * Implement the GET query operation producing JSON format.
    *
-   * @param servletContext   The servlet context of the current request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context of the current request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -98,7 +91,8 @@ public class SCIMResource extends AbstractSCIMResource
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  public Response doJsonGet(@Context final ServletContext servletContext,
+  public Response doJsonGet(@PathParam("endpoint") final String endpoint,
+                            @Context final HttpServletRequest request,
                             @Context final SecurityContext securityContext,
                             @Context final HttpHeaders headers,
                             @Context final UriInfo uriInfo,
@@ -118,11 +112,11 @@ public class SCIMResource extends AbstractSCIMResource
                             final String pageSize)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
 
-    return getUsers(requestContext, filterString, baseID, searchScope,
+    return getUsers(requestContext, endpoint, filterString, baseID, searchScope,
                     sortBy, sortOrder, pageStartIndex, pageSize);
   }
 
@@ -131,7 +125,8 @@ public class SCIMResource extends AbstractSCIMResource
   /**
    * Implement the GET query operation producing XML format.
    *
-   * @param servletContext   The servlet context of the current request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context of the current request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -148,7 +143,8 @@ public class SCIMResource extends AbstractSCIMResource
    */
   @GET
   @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlGet(@Context final ServletContext servletContext,
+  public Response doXmlGet(@PathParam("endpoint") final String endpoint,
+                           @Context final HttpServletRequest request,
                            @Context final SecurityContext securityContext,
                            @Context final HttpHeaders headers,
                            @Context final UriInfo uriInfo,
@@ -168,11 +164,11 @@ public class SCIMResource extends AbstractSCIMResource
                            final String pageSize)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
 
-    return getUsers(requestContext, filterString, baseID, searchScope,
+    return getUsers(requestContext, endpoint, filterString, baseID, searchScope,
                     sortBy, sortOrder, pageStartIndex, pageSize);
   }
 
@@ -182,8 +178,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the GET operation on a specified user resource producing
    * JSON format.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The requested user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -193,17 +190,18 @@ public class SCIMResource extends AbstractSCIMResource
   @GET
   @Path("{userID}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response doJsonGet(@PathParam("userID") final String userID,
-                            @Context final ServletContext servletContext,
+  public Response doJsonGet(@PathParam("endpoint") final String endpoint,
+                            @PathParam("userID") final String userID,
+                            @Context final HttpServletRequest request,
                             @Context final SecurityContext securityContext,
                             @Context final HttpHeaders headers,
                             @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return getUser(requestContext, userID);
+    return getUser(requestContext, endpoint, userID);
   }
 
 
@@ -212,8 +210,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the GET operation on a specified user resource producing
    * XML format.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The requested user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -223,17 +222,18 @@ public class SCIMResource extends AbstractSCIMResource
   @GET
   @Path("{userID}")
   @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlGet(@PathParam("userID") final String userID,
-                           @Context final ServletContext servletContext,
+  public Response doXmlGet(@PathParam("endpoint") final String endpoint,
+                           @PathParam("userID") final String userID,
+                           @Context final HttpServletRequest request,
                            @Context final SecurityContext securityContext,
                            @Context final HttpHeaders headers,
                            @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return getUser(requestContext, userID);
+    return getUser(requestContext, endpoint, userID);
   }
 
 
@@ -242,8 +242,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the GET operation on a specified user resource where the URL
    * specifies JSON content type.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The requested user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -253,17 +254,18 @@ public class SCIMResource extends AbstractSCIMResource
   @GET
   @Path("{userID}.json")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response doDotJsonGet(@PathParam("userID") final String userID,
-                               @Context final ServletContext servletContext,
+  public Response doDotJsonGet(@PathParam("endpoint") final String endpoint,
+                               @PathParam("userID") final String userID,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return getUser(requestContext, userID);
+    return getUser(requestContext, endpoint, userID);
   }
 
 
@@ -272,8 +274,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the GET operation on a specified user resource where the URL
    * specifies XML content type.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The requested user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -283,17 +286,18 @@ public class SCIMResource extends AbstractSCIMResource
   @GET
   @Path("{userID}.xml")
   @Produces(MediaType.APPLICATION_XML)
-  public Response doDotXmlGet(@PathParam("userID") final String userID,
-                              @Context final ServletContext servletContext,
+  public Response doDotXmlGet(@PathParam("endpoint") final String endpoint,
+                              @PathParam("userID") final String userID,
+                              @Context final HttpServletRequest request,
                               @Context final SecurityContext securityContext,
                               @Context final HttpHeaders headers,
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return getUser(requestContext, userID);
+    return getUser(requestContext, endpoint, userID);
   }
 
 
@@ -302,7 +306,8 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the POST operation consuming and producing JSON format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -313,16 +318,17 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doJsonJsonPost(final InputStream inputStream,
-                                 @Context final ServletContext servletContext,
+                                 @PathParam("endpoint") final String endpoint,
+                                 @Context final HttpServletRequest request,
                                  @Context final SecurityContext securityContext,
                                  @Context final HttpHeaders headers,
                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return postUser(requestContext, inputStream);
+    return postUser(requestContext, endpoint, inputStream);
   }
 
 
@@ -331,7 +337,8 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the POST operation consuming and producing XML format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -342,16 +349,17 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_XML)
   public Response doXmlXmlPost(final InputStream inputStream,
-                               @Context final ServletContext servletContext,
+                               @PathParam("endpoint") final String endpoint,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return postUser(requestContext, inputStream);
+    return postUser(requestContext, endpoint, inputStream);
   }
 
 
@@ -361,7 +369,8 @@ public class SCIMResource extends AbstractSCIMResource
    * format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -372,16 +381,17 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doXmlJsonPost(final InputStream inputStream,
-                                @Context final ServletContext servletContext,
+                                @PathParam("endpoint") final String endpoint,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return postUser(requestContext, inputStream);
+    return postUser(requestContext, endpoint, inputStream);
   }
 
 
@@ -391,7 +401,8 @@ public class SCIMResource extends AbstractSCIMResource
    * format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -402,16 +413,17 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_XML)
   public Response doJsonXmlPost(final InputStream inputStream,
-                                @Context final ServletContext servletContext,
+                                @PathParam("endpoint") final String endpoint,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return postUser(requestContext, inputStream);
+    return postUser(requestContext, endpoint, inputStream);
   }
 
 
@@ -420,8 +432,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the PUT operation consuming and producing JSON format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -433,17 +446,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doJsonJsonPut(final InputStream inputStream,
+                                @PathParam("endpoint") final String endpoint,
                                 @PathParam("userID") final String userID,
-                                @Context final ServletContext servletContext,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return putUser(requestContext, userID, inputStream);
+    return putUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -452,8 +466,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the PUT operation where the URL specifies JSON format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -465,17 +480,19 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doDotJsonPut(final InputStream inputStream,
+                               @PathParam("endpoint") final String endpoint,
                                @PathParam("userID") final String userID,
-                               @Context final ServletContext servletContext,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
     return putUser(requestContext,
+                   endpoint,
                    userID,
                    inputStream);
   }
@@ -486,8 +503,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the PUT operation where the URL specifies XML format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -499,17 +517,19 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_XML)
   public Response doDotXmlPut(final InputStream inputStream,
+                              @PathParam("endpoint") final String endpoint,
                               @PathParam("userID") final String userID,
-                              @Context final ServletContext servletContext,
+                              @Context final HttpServletRequest request,
                               @Context final SecurityContext securityContext,
                               @Context final HttpHeaders headers,
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
     return putUser(requestContext,
+                   endpoint,
                    userID,
                    inputStream);
   }
@@ -520,8 +540,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the PUT operation consuming and producing XML format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -533,17 +554,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_XML)
   public Response doXmlXmlPut(final InputStream inputStream,
+                              @PathParam("endpoint") final String endpoint,
                               @PathParam("userID") final String userID,
-                              @Context final ServletContext servletContext,
+                              @Context final HttpServletRequest request,
                               @Context final SecurityContext securityContext,
                               @Context final HttpHeaders headers,
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return putUser(requestContext, userID, inputStream);
+    return putUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -553,8 +575,9 @@ public class SCIMResource extends AbstractSCIMResource
    * format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -566,17 +589,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doXmlJsonPut(final InputStream inputStream,
+                               @PathParam("endpoint") final String endpoint,
                                @PathParam("userID") final String userID,
-                               @Context final ServletContext servletContext,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return putUser(requestContext, userID, inputStream);
+    return putUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -586,8 +610,9 @@ public class SCIMResource extends AbstractSCIMResource
    * format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -599,17 +624,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_XML)
   public Response doJsonXmlPut(final InputStream inputStream,
+                               @PathParam("endpoint") final String endpoint,
                                @PathParam("userID") final String userID,
-                               @Context final ServletContext servletContext,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return putUser(requestContext, userID, inputStream);
+    return putUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -618,8 +644,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the PATCH operation consuming and producing JSON format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -631,17 +658,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doJsonJsonPatch(final InputStream inputStream,
+                                 @PathParam("endpoint") final String endpoint,
                                  @PathParam("userID") final String userID,
-                                 @Context final ServletContext servletContext,
+                                 @Context final HttpServletRequest request,
                                  @Context final SecurityContext securityContext,
                                  @Context final HttpHeaders headers,
                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-           new RequestContext(servletContext, securityContext, headers, uriInfo,
+           new RequestContext(request, securityContext, headers, uriInfo,
                     MediaType.APPLICATION_JSON_TYPE,
                     MediaType.APPLICATION_JSON_TYPE);
-    return patchUser(requestContext, userID, inputStream);
+    return patchUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -650,8 +678,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the PATCH operation consuming and producing XML format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -663,17 +692,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_XML)
   public Response doXmlXmlPatch(final InputStream inputStream,
+                               @PathParam("endpoint") final String endpoint,
                                @PathParam("userID") final String userID,
-                               @Context final ServletContext servletContext,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-           new RequestContext(servletContext, securityContext, headers, uriInfo,
+           new RequestContext(request, securityContext, headers, uriInfo,
                     MediaType.APPLICATION_XML_TYPE,
                     MediaType.APPLICATION_XML_TYPE);
-    return patchUser(requestContext, userID, inputStream);
+    return patchUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -683,8 +713,9 @@ public class SCIMResource extends AbstractSCIMResource
    * format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -696,17 +727,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doXmlJsonPatch(final InputStream inputStream,
+                                @PathParam("endpoint") final String endpoint,
                                 @PathParam("userID") final String userID,
-                                @Context final ServletContext servletContext,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-           new RequestContext(servletContext, securityContext, headers, uriInfo,
+           new RequestContext(request, securityContext, headers, uriInfo,
                     MediaType.APPLICATION_XML_TYPE,
                     MediaType.APPLICATION_JSON_TYPE);
-    return patchUser(requestContext, userID, inputStream);
+    return patchUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -716,8 +748,9 @@ public class SCIMResource extends AbstractSCIMResource
    * format.
    *
    * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -729,17 +762,18 @@ public class SCIMResource extends AbstractSCIMResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_XML)
   public Response doJsonXmlPatch(final InputStream inputStream,
+                                @PathParam("endpoint") final String endpoint,
                                 @PathParam("userID") final String userID,
-                                @Context final ServletContext servletContext,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-           new RequestContext(servletContext, securityContext, headers, uriInfo,
+           new RequestContext(request, securityContext, headers, uriInfo,
                     MediaType.APPLICATION_JSON_TYPE,
                     MediaType.APPLICATION_XML_TYPE);
-    return patchUser(requestContext, userID, inputStream);
+    return patchUser(requestContext, endpoint, userID, inputStream);
   }
 
 
@@ -748,8 +782,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the DELETE operation on a specified user resource producing
    * JSON format.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -759,17 +794,19 @@ public class SCIMResource extends AbstractSCIMResource
   @DELETE
   @Path("{userID}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response doJsonDelete(@PathParam("userID") final String userID,
-                               @Context final ServletContext servletContext,
+  public Response doJsonDelete(
+                               @PathParam("endpoint") final String endpoint,
+                               @PathParam("userID") final String userID,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return deleteUser(requestContext, userID);
+    return deleteUser(requestContext,endpoint, userID);
   }
 
 
@@ -778,8 +815,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the DELETE operation on a specified user resource producing
    * XML format.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -789,17 +827,19 @@ public class SCIMResource extends AbstractSCIMResource
   @DELETE
   @Path("{userID}")
   @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlDelete(@PathParam("userID") final String userID,
-                              @Context final ServletContext servletContext,
+  public Response doXmlDelete(
+                              @PathParam("endpoint") final String endpoint,
+                              @PathParam("userID") final String userID,
+                              @Context final HttpServletRequest request,
                               @Context final SecurityContext securityContext,
                               @Context final HttpHeaders headers,
                               @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return deleteUser(requestContext, userID);
+    return deleteUser(requestContext, endpoint, userID);
   }
 
 
@@ -808,8 +848,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the DELETE operation on a specified user resource where the URL
    * specifies JSON content type.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -819,19 +860,19 @@ public class SCIMResource extends AbstractSCIMResource
   @DELETE
   @Path("{userID}.json")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response doDotJsonDelete(@PathParam("userID") final String userID,
-                                  @Context
-                                  final ServletContext servletContext,
+  public Response doDotJsonDelete(@PathParam("endpoint") final String endpoint,
+                                  @PathParam("userID") final String userID,
+                                  @Context final HttpServletRequest request,
                                   @Context
                                   final SecurityContext securityContext,
                                   @Context final HttpHeaders headers,
                                   @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
-    return deleteUser(requestContext, userID);
+    return deleteUser(requestContext, endpoint, userID);
   }
 
 
@@ -840,8 +881,9 @@ public class SCIMResource extends AbstractSCIMResource
    * Implement the DELETE operation on a specified user resource where the URL
    * specifies XML content type.
    *
+   * @param endpoint         The resource endpoint.
    * @param userID           The target user ID.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -851,16 +893,17 @@ public class SCIMResource extends AbstractSCIMResource
   @DELETE
   @Path("{userID}.xml")
   @Produces(MediaType.APPLICATION_XML)
-  public Response doDotXmlDelete(@PathParam("userID") final String userID,
-                                 @Context final ServletContext servletContext,
+  public Response doDotXmlDelete(@PathParam("endpoint") final String endpoint,
+                                 @PathParam("userID") final String userID,
+                                 @Context final HttpServletRequest request,
                                  @Context final SecurityContext securityContext,
                                  @Context final HttpHeaders headers,
                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
-    return deleteUser(requestContext, userID);
+    return deleteUser(requestContext, endpoint, userID);
   }
 }

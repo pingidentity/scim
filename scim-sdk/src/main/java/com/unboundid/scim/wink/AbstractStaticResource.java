@@ -45,9 +45,9 @@ public class AbstractStaticResource
    * @param mediaType     The media type to be returned.
    * @param scimResponse  The SCIM response to be returned.
    */
-  protected void setResponseEntity(final Response.ResponseBuilder builder,
-                                   final MediaType mediaType,
-                                   final SCIMResponse scimResponse)
+  protected static void setResponseEntity(
+      final Response.ResponseBuilder builder, final MediaType mediaType,
+      final SCIMResponse scimResponse)
   {
     final Marshaller marshaller;
     builder.type(mediaType);

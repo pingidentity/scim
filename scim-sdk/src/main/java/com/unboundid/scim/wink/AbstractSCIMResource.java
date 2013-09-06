@@ -18,11 +18,8 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.data.BaseResource;
-import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
-import com.unboundid.scim.marshal.json.JsonMarshaller;
 import com.unboundid.scim.marshal.json.JsonUnmarshaller;
-import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
@@ -30,6 +27,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.OAuthToken;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.OAuthTokenStatus;
@@ -37,25 +35,20 @@ import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
+import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMRequest;
-import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.UnauthorizedException;
-import org.apache.wink.common.AbstractDynamicResource;
 
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -65,58 +58,38 @@ import static com.unboundid.scim.sdk.SCIMConstants.
 import static com.unboundid.scim.sdk.SCIMConstants.
     HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_ATTRIBUTES;
-
+import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_SCHEMAS;
 
 
 /**
- * This class is an abstract Wink dynamic resource implementation for
- * SCIM operations on a SCIM endpoint. The set of supported resources and their
- * endpoints are not known until run-time hence it must be implemented as a
- * dynamic resource.
+ * This class is an abstract Wink resource implementation for
+ * SCIM operations on a SCIM endpoint.
  */
-public abstract class AbstractSCIMResource extends AbstractDynamicResource
+public abstract class AbstractSCIMResource extends AbstractStaticResource
 {
-  /**
-   * The ResourceDescriptor for this resource.
-   */
-  private final ResourceDescriptor resourceDescriptor;
-
-  /**
-   * The ResourceStats used to keep activity statistics.
-   */
-  private final ResourceStats resourceStats;
-
-  /**
-   * The SCIMBackend to use to process requests.
-   */
-  private final SCIMBackend backend;
+  private final SCIMApplication application;
 
   /**
    * The OAuth 2.0 bearer token handler. This may be null.
    */
   private final OAuthTokenHandler tokenHandler;
 
+  private final ResourceSchemaBackend resourceSchemaBackend;
+
   /**
    * Create a new AbstractSCIMResource for CRUD operations.
    *
-   * @param path                The path of this resource.
-   * @param resourceDescriptor  The resource descriptor to use.
-   * @param resourceStats       The ResourceStats instance to use.
-   * @param backend             The SCIMBackend to use to process requests.
+   * @param application         The SCIM JAX-RS application associated with this
+   *                            resource.
    * @param tokenHandler        The token handler to use for OAuth
    *                            authentication.
    */
-  public AbstractSCIMResource(final String path,
-                              final ResourceDescriptor resourceDescriptor,
-                              final ResourceStats resourceStats,
-                              final SCIMBackend backend,
+  public AbstractSCIMResource(final SCIMApplication application,
                               final OAuthTokenHandler tokenHandler)
   {
-    this.resourceDescriptor = resourceDescriptor;
-    this.backend = backend;
+    this.application = application;
     this.tokenHandler = tokenHandler;
-    this.resourceStats = resourceStats;
-    super.setPath(path);
+    this.resourceSchemaBackend = new ResourceSchemaBackend(application);
   }
 
 
@@ -125,14 +98,25 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a GET operation.
    *
    * @param requestContext The request context.
+   * @param endpoint       The endpoint requested.
    * @param userID         The user ID requested.
    *
    * @return  The response to the operation.
    */
-  Response getUser(final RequestContext requestContext, final String userID)
+  Response getUser(final RequestContext requestContext,
+                   final String endpoint, final String userID)
   {
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
     try {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new InvalidResourceException(
+                endpoint + " is not a valid resource endpoint");
+      }
       String authID = requestContext.getAuthID();
       if(authID == null && tokenHandler == null) {
         throw new UnauthorizedException("Invalid credentials");
@@ -146,7 +130,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       // Process the request.
       GetResourceRequest getResourceRequest =
           new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
-              authID, resourceDescriptor, userID, queryAttributes);
+              authID, resourceDescriptor, userID, queryAttributes,
+              requestContext.getRequest());
 
       if (authID == null)
       {
@@ -155,7 +140,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               getResourceRequest, authIDRef, tokenHandler);
         if (response != null)
         {
-          resourceStats.incrementStat("get-" + response.getStatus());
+          application.getStatsForResource(resourceDescriptor.getName()).
+              incrementStat("get-" + response.getStatus());
           return response;
         }
         else
@@ -163,7 +149,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           authID = authIDRef.get();
           getResourceRequest =
                new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                   authID, resourceDescriptor, userID, queryAttributes);
+                   authID, resourceDescriptor, userID, queryAttributes,
+                   requestContext.getRequest());
         }
       }
 
@@ -178,31 +165,39 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       {
         responseBuilder.location(location);
       }
-      resourceStats.incrementStat(ResourceStats.GET_OK);
+
+      if (requestContext.getOrigin() != null)
+      {
+        responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
+            requestContext.getOrigin());
+      }
+      responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
+          Boolean.TRUE.toString());
+
+      application.getStatsForResource(resourceDescriptor.getName()).
+        incrementStat(ResourceStats.GET_OK);
+      if(requestContext.getProduceMediaType() ==
+          MediaType.APPLICATION_JSON_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.GET_RESPONSE_JSON);
+      }
+      else if(requestContext.getProduceMediaType() ==
+              MediaType.APPLICATION_XML_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.GET_RESPONSE_XML);
+      }
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         e);
-      resourceStats.incrementStat("get-" + e.getStatusCode());
-    }
-
-    if (requestContext.getOrigin() != null)
-    {
-      responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
-          requestContext.getOrigin());
-    }
-    responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
-        Boolean.TRUE.toString());
-
-    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.GET_RESPONSE_JSON);
-    }
-    else if(requestContext.getProduceMediaType() ==
-            MediaType.APPLICATION_XML_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.GET_RESPONSE_XML);
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("get-" + e.getStatusCode());
+      }
     }
 
     return responseBuilder.build();
@@ -214,6 +209,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a GET operation.
    *
    * @param requestContext   The request context.
+   * @param endpoint         The endpoint requested.
    * @param filterString     The filter query parameter, or {@code null}.
    * @param baseID           The SCIM resource ID of the search base entry,
    *                         or {@code null}.
@@ -226,6 +222,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * @return  The response to the operation.
    */
   protected Response getUsers(final RequestContext requestContext,
+                              final String endpoint,
                               final String filterString,
                               final String baseID,
                               final String searchScope,
@@ -234,9 +231,18 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               final String pageStartIndex,
                               final String pageSize)
   {
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
     try
     {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new InvalidResourceException(
+                endpoint + " is not a valid resource endpoint");
+      }
       String authID = requestContext.getAuthID();
       if(authID == null && tokenHandler == null) {
         throw new UnauthorizedException("Invalid credentials");
@@ -339,7 +345,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       GetResourcesRequest getResourcesRequest =
           new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
               authID, resourceDescriptor, filter, baseID, searchScope,
-              sortParameters, pageParameters, queryAttributes);
+              sortParameters, pageParameters, queryAttributes,
+              requestContext.getRequest());
 
       if (authID == null)
       {
@@ -348,7 +355,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               getResourcesRequest, authIDRef, tokenHandler);
         if (response != null)
         {
-          resourceStats.incrementStat("query-" + response.getStatus());
+          application.getStatsForResource(resourceDescriptor.getName()).
+              incrementStat("query-" + response.getStatus());
           return response;
         }
         else
@@ -357,7 +365,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           getResourcesRequest =
               new GetResourcesRequest(requestContext.getUriInfo().getBaseUri(),
                       authID, resourceDescriptor, filter, baseID, searchScope,
-                      sortParameters, pageParameters, queryAttributes);
+                      sortParameters, pageParameters, queryAttributes,
+                      requestContext.getRequest());
         }
       }
 
@@ -368,7 +377,29 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           Response.status(Response.Status.OK);
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         resources);
-      resourceStats.incrementStat(ResourceStats.QUERY_OK);
+
+      if (requestContext.getOrigin() != null)
+      {
+        responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
+            requestContext.getOrigin());
+      }
+      responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
+          Boolean.TRUE.toString());
+
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.QUERY_OK);
+      if(requestContext.getProduceMediaType() ==
+          MediaType.APPLICATION_JSON_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.QUERY_RESPONSE_JSON);
+      }
+      else if(requestContext.getProduceMediaType() ==
+              MediaType.APPLICATION_XML_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.QUERY_RESPONSE_XML);
+      }
     }
     catch(SCIMException e)
     {
@@ -376,25 +407,11 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         e);
-      resourceStats.incrementStat("query-" + e.getStatusCode());
-    }
-
-    if (requestContext.getOrigin() != null)
-    {
-      responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
-          requestContext.getOrigin());
-    }
-    responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
-        Boolean.TRUE.toString());
-
-    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.QUERY_RESPONSE_JSON);
-    }
-    else if(requestContext.getProduceMediaType() ==
-            MediaType.APPLICATION_XML_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.QUERY_RESPONSE_XML);
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("query-" + e.getStatusCode());
+      }
     }
 
     return responseBuilder.build();
@@ -406,29 +423,41 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a POST operation.
    *
    * @param requestContext    The request context.
+   * @param endpoint       The endpoint requested.
    * @param inputStream       The content to be consumed.
    *
    * @return  The response to the operation.
    */
   Response postUser(final RequestContext requestContext,
-                            final InputStream inputStream)
+                    final String endpoint,
+                    final InputStream inputStream)
   {
-    final Unmarshaller unmarshaller;
-    if (requestContext.getConsumeMediaType().equals(
-        MediaType.APPLICATION_JSON_TYPE))
-    {
-      unmarshaller = new JsonUnmarshaller();
-      resourceStats.incrementStat(ResourceStats.POST_CONTENT_JSON);
-    }
-    else
-    {
-      unmarshaller = new XmlUnmarshaller();
-      resourceStats.incrementStat(ResourceStats.POST_CONTENT_XML);
-    }
-
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
     try
     {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new InvalidResourceException(
+                endpoint + " is not a valid resource endpoint");
+      }
+      final Unmarshaller unmarshaller;
+      if (requestContext.getConsumeMediaType().equals(
+          MediaType.APPLICATION_JSON_TYPE))
+      {
+        unmarshaller = new JsonUnmarshaller();
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.POST_CONTENT_JSON);
+      }
+      else
+      {
+        unmarshaller = new XmlUnmarshaller();
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.POST_CONTENT_XML);
+      }
       String authID = requestContext.getAuthID();
       if(authID == null && tokenHandler == null)
       {
@@ -449,7 +478,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       PostResourceRequest postResourceRequest =
           new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
               authID, resourceDescriptor, postedResource.getScimObject(),
-              queryAttributes);
+              queryAttributes, requestContext.getRequest());
 
       if (authID == null)
       {
@@ -458,7 +487,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               postResourceRequest, authIDRef, tokenHandler);
         if (response != null)
         {
-          resourceStats.incrementStat("post-" + response.getStatus());
+          application.getStatsForResource(resourceDescriptor.getName()).
+              incrementStat("post-" + response.getStatus());
           return response;
         }
         else
@@ -467,35 +497,41 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           postResourceRequest =
               new PostResourceRequest(requestContext.getUriInfo().getBaseUri(),
                     authID, resourceDescriptor, postedResource.getScimObject(),
-                    queryAttributes);
+                    queryAttributes, requestContext.getRequest());
         }
       }
 
-      final BaseResource resource =
-          backend.postResource(postResourceRequest);
+      final BaseResource resource = backend.postResource(postResourceRequest);
       // Build the response.
       responseBuilder = Response.status(Response.Status.CREATED);
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
           resource);
       responseBuilder.location(resource.getMeta().getLocation());
-      resourceStats.incrementStat(ResourceStats.POST_OK);
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.POST_OK);
+      if(requestContext.getProduceMediaType() ==
+          MediaType.APPLICATION_JSON_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.POST_RESPONSE_JSON);
+      }
+      else if(requestContext.getProduceMediaType() ==
+              MediaType.APPLICATION_XML_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.POST_RESPONSE_XML);
+      }
     } catch (SCIMException e) {
       Debug.debugException(e);
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         e);
-      resourceStats.incrementStat("post-" + e.getStatusCode());
-    }
-
-    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.POST_RESPONSE_JSON);
-    }
-    else if(requestContext.getProduceMediaType() ==
-            MediaType.APPLICATION_XML_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.POST_RESPONSE_XML);
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("post-" + e.getStatusCode());
+      }
     }
 
     return responseBuilder.build();
@@ -507,30 +543,42 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a PUT operation.
    *
    * @param requestContext    The request context.
+   * @param endpoint          The endpoint requested.
    * @param userID            The target user ID.
    * @param inputStream       The content to be consumed.
    *
    * @return  The response to the operation.
    */
   Response putUser(final RequestContext requestContext,
+                   final String endpoint,
                    final String userID,
                    final InputStream inputStream)
   {
-    final Unmarshaller unmarshaller;
-    if (requestContext.getConsumeMediaType().equals(
-        MediaType.APPLICATION_JSON_TYPE))
-    {
-      unmarshaller = new JsonUnmarshaller();
-      resourceStats.incrementStat(ResourceStats.PUT_CONTENT_JSON);
-    }
-    else
-    {
-      unmarshaller = new XmlUnmarshaller();
-      resourceStats.incrementStat(ResourceStats.PUT_CONTENT_XML);
-    }
-
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
     try {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new InvalidResourceException(
+                endpoint + " is not a valid resource endpoint");
+      }
+      final Unmarshaller unmarshaller;
+      if (requestContext.getConsumeMediaType().equals(
+          MediaType.APPLICATION_JSON_TYPE))
+      {
+        unmarshaller = new JsonUnmarshaller();
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PUT_CONTENT_JSON);
+      }
+      else
+      {
+        unmarshaller = new XmlUnmarshaller();
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PUT_CONTENT_XML);
+      }
       String authID = requestContext.getAuthID();
       if(authID == null && tokenHandler == null)
       {
@@ -551,7 +599,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       PutResourceRequest putResourceRequest =
           new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
               authID, resourceDescriptor, userID,
-              puttedResource.getScimObject(), queryAttributes);
+              puttedResource.getScimObject(), queryAttributes,
+              requestContext.getRequest());
 
       if (authID == null)
       {
@@ -560,7 +609,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               putResourceRequest, authIDRef, tokenHandler);
         if (response != null)
         {
-          resourceStats.incrementStat("put-" + response.getStatus());
+          application.getStatsForResource(resourceDescriptor.getName()).
+              incrementStat("put-" + response.getStatus());
           return response;
         }
         else
@@ -569,7 +619,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           putResourceRequest =
              new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
                   authID, resourceDescriptor, userID,
-                  puttedResource.getScimObject(), queryAttributes);
+                  puttedResource.getScimObject(), queryAttributes,
+                  requestContext.getRequest());
         }
       }
 
@@ -579,23 +630,30 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         scimResponse);
       responseBuilder.location(scimResponse.getMeta().getLocation());
-      resourceStats.incrementStat(ResourceStats.PUT_OK);
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.PUT_OK);
+      if(requestContext.getProduceMediaType() ==
+          MediaType.APPLICATION_JSON_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PUT_RESPONSE_JSON);
+      }
+      else if(requestContext.getProduceMediaType() ==
+              MediaType.APPLICATION_XML_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PUT_RESPONSE_XML);
+      }
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         e);
-      resourceStats.incrementStat("put-" + e.getStatusCode());
-    }
-
-    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_JSON);
-    }
-    else if(requestContext.getProduceMediaType() ==
-            MediaType.APPLICATION_XML_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.PUT_RESPONSE_XML);
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("put-" + e.getStatusCode());
+      }
     }
 
     return responseBuilder.build();
@@ -607,36 +665,47 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a PATCH operation.
    *
    * @param requestContext    The request context.
+   * @param endpoint          The endpoint requested.
    * @param userID            The target user ID.
    * @param inputStream       The content to be consumed.
    *
    * @return  The response to the operation.
    */
   Response patchUser(final RequestContext requestContext,
+                     final String endpoint,
                      final String userID,
                      final InputStream inputStream)
   {
-    final Unmarshaller unmarshaller;
-    if (requestContext.getConsumeMediaType().equals(
-            MediaType.APPLICATION_JSON_TYPE))
-    {
-      unmarshaller = new JsonUnmarshaller();
-      resourceStats.incrementStat(ResourceStats.PATCH_CONTENT_JSON);
-    }
-    else
-    {
-      unmarshaller = new XmlUnmarshaller();
-      resourceStats.incrementStat(ResourceStats.PATCH_CONTENT_XML);
-    }
-
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
     try {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new InvalidResourceException(
+                endpoint + " is not a valid resource endpoint");
+      }
       String authID = requestContext.getAuthID();
       if(authID == null && tokenHandler == null)
       {
         throw new UnauthorizedException("Invalid credentials");
       }
-
+      final Unmarshaller unmarshaller;
+      if (requestContext.getConsumeMediaType().equals(
+              MediaType.APPLICATION_JSON_TYPE))
+      {
+        unmarshaller = new JsonUnmarshaller();
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PATCH_CONTENT_JSON);
+      }
+      else
+      {
+        unmarshaller = new XmlUnmarshaller();
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PATCH_CONTENT_XML);
+      }
       // Parse the resource.
       final BaseResource patchedResource = unmarshaller.unmarshal(
            inputStream, resourceDescriptor, BaseResource.BASE_RESOURCE_FACTORY);
@@ -651,7 +720,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       PatchResourceRequest patchResourceRequest =
               new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
                       authID, resourceDescriptor, userID,
-                      patchedResource.getScimObject(), queryAttributes);
+                      patchedResource.getScimObject(), queryAttributes,
+                      requestContext.getRequest());
 
       if (authID == null)
       {
@@ -660,7 +730,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               patchResourceRequest, authIDRef, tokenHandler);
         if (response != null)
         {
-          resourceStats.incrementStat("patch-" + response.getStatus());
+          application.getStatsForResource(resourceDescriptor.getName()).
+              incrementStat("patch-" + response.getStatus());
           return response;
         }
         else
@@ -669,7 +740,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           patchResourceRequest =
              new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
                    authID, resourceDescriptor, userID,
-                   patchedResource.getScimObject(), queryAttributes);
+                   patchedResource.getScimObject(), queryAttributes,
+                   requestContext.getRequest());
         }
       }
 
@@ -688,23 +760,30 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
         responseBuilder = Response.status(Response.Status.NO_CONTENT);
       }
 
-      resourceStats.incrementStat(ResourceStats.PATCH_OK);
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.PATCH_OK);
+      if(requestContext.getProduceMediaType() ==
+          MediaType.APPLICATION_JSON_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PATCH_RESPONSE_JSON);
+      }
+      else if(requestContext.getProduceMediaType() ==
+              MediaType.APPLICATION_XML_TYPE)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat(ResourceStats.PATCH_RESPONSE_XML);
+      }
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
               e);
-      resourceStats.incrementStat("patch-" + e.getStatusCode());
-    }
-
-    if(requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_JSON);
-    }
-    else if(requestContext.getProduceMediaType() ==
-            MediaType.APPLICATION_XML_TYPE)
-    {
-      resourceStats.incrementStat(ResourceStats.PATCH_RESPONSE_XML);
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("patch-" + e.getStatusCode());
+      }
     }
 
     return responseBuilder.build();
@@ -716,16 +795,27 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
    * Process a DELETE operation.
    *
    * @param requestContext    The request context.
-   * @param userID     The target user ID.
+   * @param endpoint          The endpoint requested.
+   * @param userID            The target user ID.
    *
    * @return  The response to the operation.
    */
   Response deleteUser(final RequestContext requestContext,
+                      final String endpoint,
                       final String userID)
   {
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
     // Process the request.
     Response.ResponseBuilder responseBuilder;
     try {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new InvalidResourceException(
+                endpoint + " is not a valid resource endpoint");
+      }
       String authID = requestContext.getAuthID();
       if(authID == null && tokenHandler == null)
       {
@@ -733,7 +823,7 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
       }
       DeleteResourceRequest deleteResourceRequest =
         new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-            authID, resourceDescriptor, userID);
+            authID, resourceDescriptor, userID, requestContext.getRequest());
 
       if (authID == null)
       {
@@ -742,7 +832,8 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
                               deleteResourceRequest, authIDRef, tokenHandler);
         if (response != null)
         {
-          resourceStats.incrementStat("delete-" + response.getStatus());
+          application.getStatsForResource(resourceDescriptor.getName()).
+              incrementStat("delete-" + response.getStatus());
           return response;
         }
         else
@@ -750,69 +841,30 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
           authID = authIDRef.get();
           deleteResourceRequest =
              new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                   authID, resourceDescriptor, userID);
+                   authID, resourceDescriptor, userID,
+                   requestContext.getRequest());
         }
       }
 
       backend.deleteResource(deleteResourceRequest);
       // Build the response.
       responseBuilder = Response.status(Response.Status.OK);
-      resourceStats.incrementStat(ResourceStats.DELETE_OK);
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.DELETE_OK);
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         e);
-      resourceStats.incrementStat("delete-" + e.getStatusCode());
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("delete-" + e.getStatusCode());
+      }
     }
 
     return responseBuilder.build();
   }
-
-
-
-  /**
-   * Sets the response entity (content) for a SCIM response.
-   *
-   * @param builder       A JAX-RS response builder.
-   * @param mediaType     The media type to be returned.
-   * @param scimResponse  The SCIM response to be returned.
-   */
-  private static void setResponseEntity(final Response.ResponseBuilder builder,
-                                        final MediaType mediaType,
-                                        final SCIMResponse scimResponse)
-  {
-    final Marshaller marshaller;
-    builder.type(mediaType);
-    if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE))
-    {
-      marshaller = new JsonMarshaller();
-    }
-    else
-    {
-      marshaller = new XmlMarshaller();
-    }
-
-    final StreamingOutput output = new StreamingOutput()
-    {
-      public void write(final OutputStream outputStream)
-          throws IOException, WebApplicationException
-      {
-        try
-        {
-          scimResponse.marshal(marshaller, outputStream);
-        }
-        catch (Exception e)
-        {
-          Debug.debugException(e);
-          throw new WebApplicationException(
-              e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-      }
-    };
-    builder.entity(output);
-  }
-
 
   /**
    * Handles OAuth bearer token validation. This method should only be called if
@@ -1032,5 +1084,21 @@ public abstract class AbstractSCIMResource extends AbstractDynamicResource
     setResponseEntity(builder, mediaType, exception);
 
     return builder.build();
+  }
+
+  /**
+   * Retrieves the backend that should service the provided endpoint.
+   *
+   * @param endpoint The endpoint requested.
+   * @return The backend that should service the provided endpoint.
+   */
+  private SCIMBackend getBackend(final String endpoint)
+  {
+    if(endpoint.equals(RESOURCE_ENDPOINT_SCHEMAS))
+    {
+      return resourceSchemaBackend;
+    }
+
+    return application.getBackend();
   }
 }

@@ -18,9 +18,8 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.sdk.OAuthTokenHandler;
-import com.unboundid.scim.sdk.SCIMBackend;
 
-import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -47,19 +46,13 @@ public class BulkResource extends AbstractBulkResource
    *
    * @param application        The SCIM JAX-RS application associated with this
    *                           resource.
-   * @param bulkResourceStats  The resource stats for the bulk operation
-   *                           end-point.
-   * @param backend            The SCIMBackend to use to process individual
-   *                           operations within a bulk operation.
    * @param tokenHandler       The token handler to use for OAuth
    *                           authentication.
    */
   public BulkResource(final SCIMApplication application,
-                      final ResourceStats bulkResourceStats,
-                      final SCIMBackend backend,
                       final OAuthTokenHandler tokenHandler)
   {
-    super(application, bulkResourceStats, backend, tokenHandler);
+    super(application, tokenHandler);
   }
 
 
@@ -68,7 +61,7 @@ public class BulkResource extends AbstractBulkResource
    * Implement the POST operation consuming and producing JSON format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -79,13 +72,13 @@ public class BulkResource extends AbstractBulkResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doJsonJsonPost(final InputStream inputStream,
-                                 @Context final ServletContext servletContext,
+                                 @Context final HttpServletRequest request,
                                  @Context final SecurityContext securityContext,
                                  @Context final HttpHeaders headers,
                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
     return postBulk(requestContext, inputStream);
@@ -97,7 +90,7 @@ public class BulkResource extends AbstractBulkResource
    * Implement the POST operation consuming and producing XML format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -108,13 +101,13 @@ public class BulkResource extends AbstractBulkResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_XML)
   public Response doXmlXmlPost(final InputStream inputStream,
-                               @Context final ServletContext servletContext,
+                               @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
                                @Context final HttpHeaders headers,
                                @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
     return postBulk(requestContext, inputStream);
@@ -127,7 +120,7 @@ public class BulkResource extends AbstractBulkResource
    * format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -138,13 +131,13 @@ public class BulkResource extends AbstractBulkResource
   @Consumes(MediaType.APPLICATION_XML)
   @Produces(MediaType.APPLICATION_JSON)
   public Response doXmlJsonPost(final InputStream inputStream,
-                                @Context final ServletContext servletContext,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
     return postBulk(requestContext, inputStream);
@@ -157,7 +150,7 @@ public class BulkResource extends AbstractBulkResource
    * format.
    *
    * @param inputStream      The content to be consumed.
-   * @param servletContext   The servlet context for the request.
+   * @param request          The HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -168,13 +161,13 @@ public class BulkResource extends AbstractBulkResource
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_XML)
   public Response doJsonXmlPost(final InputStream inputStream,
-                                @Context final ServletContext servletContext,
+                                @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
     return postBulk(requestContext, inputStream);

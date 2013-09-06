@@ -19,6 +19,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 
@@ -52,6 +53,31 @@ public final class DeleteResourceRequest extends SCIMRequest
                                final String resourceID)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor);
+    this.resourceID          = resourceID;
+  }
+
+
+
+  /**
+   * Create a new SCIM Delete Resource request from the provided information.
+   *
+   * @param baseURL              The base URL for the SCIM service.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
+   * @param resourceID           The target resource ID.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   */
+  public DeleteResourceRequest(final URI baseURL,
+                               final String authenticatedUserID,
+                               final ResourceDescriptor resourceDescriptor,
+                               final String resourceID,
+                               final HttpServletRequest httpServletRequest)
+  {
+    super(baseURL, authenticatedUserID, resourceDescriptor, httpServletRequest);
     this.resourceID          = resourceID;
   }
 

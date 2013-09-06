@@ -19,6 +19,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 
@@ -54,6 +55,32 @@ public class ResourceReturningRequest extends SCIMRequest
     super(baseURL, authenticatedUserID, resourceDescriptor);
     this.attributes = attributes;
   }
+
+
+
+  /**
+   * Create a new SCIM request from the provided information.
+   *
+   * @param baseURL              The base URL for the SCIM service.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
+   * @param attributes           The set of requested attributes.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   */
+  public ResourceReturningRequest(final URI baseURL,
+                                  final String authenticatedUserID,
+                                  final ResourceDescriptor resourceDescriptor,
+                                  final SCIMQueryAttributes attributes,
+                                  final HttpServletRequest httpServletRequest)
+  {
+    super(baseURL, authenticatedUserID, resourceDescriptor, httpServletRequest);
+    this.attributes = attributes;
+  }
+
 
 
 

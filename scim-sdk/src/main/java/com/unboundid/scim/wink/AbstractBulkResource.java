@@ -29,7 +29,6 @@ import com.unboundid.scim.sdk.BulkStreamResponse;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
-import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.ServerErrorException;
@@ -54,21 +53,12 @@ import java.util.logging.Level;
  */
 public class AbstractBulkResource
 {
+  private static final String RESOURCE_NAME = "Bulk";
+
   /**
    * The SCIM JAX-RS application associated with this resource.
    */
   private final SCIMApplication application;
-
-  /**
-   * The resource stats for the bulk operation end-point.
-   */
-  private final ResourceStats bulkResourceStats;
-
-  /**
-   * The SCIMBackend to use to process individual operations within a bulk
-   * operation.
-   */
-  private final SCIMBackend backend;
 
   /**
    * The OAuth 2.0 bearer token handler. This may be null.
@@ -80,21 +70,13 @@ public class AbstractBulkResource
    *
    * @param application        The SCIM JAX-RS application associated with this
    *                           resource.
-   * @param bulkResourceStats  The resource stats for the bulk operation
-   *                           end-point.
-   * @param backend            The SCIMBackend to use to process individual
-   *                           operations within a bulk operation.
    * @param tokenHandler       The token handler to use for OAuth
    *                           authentication.
    */
   public AbstractBulkResource(final SCIMApplication application,
-                              final ResourceStats bulkResourceStats,
-                              final SCIMBackend backend,
                               final OAuthTokenHandler tokenHandler)
   {
     this.application       = application;
-    this.bulkResourceStats = bulkResourceStats;
-    this.backend           = backend;
     this.tokenHandler      = tokenHandler;
   }
 
@@ -116,12 +98,14 @@ public class AbstractBulkResource
         MediaType.APPLICATION_JSON_TYPE))
     {
       unmarshaller = new JsonUnmarshaller();
-      bulkResourceStats.incrementStat(ResourceStats.POST_CONTENT_JSON);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.POST_CONTENT_JSON);
     }
     else
     {
       unmarshaller = new XmlUnmarshaller();
-      bulkResourceStats.incrementStat(ResourceStats.POST_CONTENT_XML);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.POST_CONTENT_XML);
     }
 
     Response.ResponseBuilder responseBuilder;
@@ -190,7 +174,8 @@ public class AbstractBulkResource
           {
             final BulkContentRequestHandler handler =
                 new BulkContentRequestHandler(application, requestContext,
-                                              backend, bulkStreamResponse,
+                                              application.getBackend(),
+                                              bulkStreamResponse,
                                               tokenHandler);
             unmarshaller.bulkUnmarshal(requestFile, bulkConfig, handler);
 
@@ -199,7 +184,8 @@ public class AbstractBulkResource
             setResponseEntity(responseBuilder,
                               requestContext.getProduceMediaType(),
                               bulkStreamResponse);
-            bulkResourceStats.incrementStat(ResourceStats.POST_OK);
+            application.getStatsForResource(RESOURCE_NAME).incrementStat(
+                ResourceStats.POST_OK);
           }
           catch (Exception e)
           {
@@ -240,17 +226,20 @@ public class AbstractBulkResource
       responseBuilder = Response.status(e.getStatusCode());
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         e);
-      bulkResourceStats.incrementStat("post-" + e.getStatusCode());
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          "post-" + e.getStatusCode());
     }
 
     if (requestContext.getProduceMediaType() == MediaType.APPLICATION_JSON_TYPE)
     {
-      bulkResourceStats.incrementStat(ResourceStats.POST_RESPONSE_JSON);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.POST_RESPONSE_JSON);
     }
     else if (requestContext.getProduceMediaType() ==
              MediaType.APPLICATION_XML_TYPE)
     {
-      bulkResourceStats.incrementStat(ResourceStats.POST_RESPONSE_XML);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.POST_RESPONSE_XML);
     }
 
     return responseBuilder.build();

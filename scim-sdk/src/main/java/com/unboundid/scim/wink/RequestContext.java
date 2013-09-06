@@ -17,7 +17,7 @@
 
 package com.unboundid.scim.wink;
 
-import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
@@ -32,9 +32,9 @@ import static com.unboundid.scim.sdk.SCIMConstants.*;
 public class RequestContext
 {
   /**
-   * The servlet context of the request.
+   * The HTTP servlet request.
    */
-  private final ServletContext servletContext;
+  private final HttpServletRequest request;
 
   /**
    * The security context of the request.
@@ -81,21 +81,21 @@ public class RequestContext
   /**
    * Creates the resource implementation for a request.
    *
-   * @param servletContext   The servlet context for the request.
-   * @param securityContext  The security context for the request.
+   * @param request   The servlet context for the request.
+   * @param securityContext  The HTTP servlet request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
    * @param consumeMediaType The media type to be consumed, if any.
    * @param produceMediaType The media type to be produced, if any.
    */
-  public RequestContext(final ServletContext servletContext,
+  public RequestContext(final HttpServletRequest request,
                         final SecurityContext securityContext,
                         final HttpHeaders headers,
                         final UriInfo uriInfo,
                         final MediaType consumeMediaType,
                         final MediaType produceMediaType)
   {
-    this.servletContext   = servletContext;
+    this.request = request;
     this.securityContext  = securityContext;
     this.headers          = headers;
     this.uriInfo          = uriInfo;
@@ -142,9 +142,9 @@ public class RequestContext
    * Retrieve the servlet context of the request.
    * @return The servlet context of the request.
    */
-  public ServletContext getServletContext()
+  public HttpServletRequest getRequest()
   {
-    return servletContext;
+    return request;
   }
 
 

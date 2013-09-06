@@ -73,11 +73,6 @@ import java.util.concurrent.atomic.AtomicReference;
 public class BulkContentRequestHandler extends BulkContentHandler
 {
   /**
-   * The resource descriptors keyed by endpoint.
-   */
-  private final Map<String,ResourceDescriptor> descriptors;
-
-  /**
    * The SCIM application.
    */
   private final SCIMApplication application;
@@ -150,7 +145,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
       final BulkStreamResponse bulkStreamResponse,
       final OAuthTokenHandler tokenHandler)
   {
-    this.descriptors        = application.getDescriptors();
     this.application        = application;
     this.requestContext     = requestContext;
     this.backend            = backend;
@@ -205,7 +199,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
   @Override
   public ResourceDescriptor getResourceDescriptor(final String endpoint)
   {
-    return descriptors.get(endpoint);
+    return backend.getResourceDescriptor(endpoint);
   }
 
 
@@ -479,7 +473,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        requestContext.getAuthID(),
                                        descriptor,
                                        resource.getScimObject(),
-                                       queryAttributes);
+                                       queryAttributes,
+                                       requestContext.getRequest());
 
           if (requestContext.getAuthID() == null)
           {
@@ -496,7 +491,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
               postResourceRequest = new PostResourceRequest(
                               requestContext.getUriInfo().getBaseUri(),
                               authID, descriptor, resource.getScimObject(),
-                              queryAttributes);
+                              queryAttributes,
+                              requestContext.getRequest());
             }
           }
 
@@ -516,7 +512,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        descriptor,
                                        resourceID,
                                        resource.getScimObject(),
-                                       queryAttributes);
+                                       queryAttributes,
+                                       requestContext.getRequest());
 
           if (requestContext.getAuthID() == null)
           {
@@ -533,7 +530,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
               putResourceRequest = new PutResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
                       authID, descriptor, resourceID, resource.getScimObject(),
-                      queryAttributes);
+                      queryAttributes, requestContext.getRequest());
             }
           }
 
@@ -548,7 +545,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        descriptor,
                                        resourceID,
                                        resource.getScimObject(),
-                                       queryAttributes);
+                                       queryAttributes,
+                                       requestContext.getRequest());
 
           if (requestContext.getAuthID() == null)
           {
@@ -565,7 +563,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
               patchResourceRequest = new PatchResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
                       authID, descriptor, resourceID, resource.getScimObject(),
-                      queryAttributes);
+                      queryAttributes, requestContext.getRequest());
             }
           }
 
@@ -578,7 +576,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
              new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
                                        requestContext.getAuthID(),
                                        descriptor,
-                                       resourceID);
+                                       resourceID,
+                                       requestContext.getRequest());
 
           if (requestContext.getAuthID() == null)
           {
@@ -594,7 +593,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
               String authID = authIDRef.get();
               deleteResourceRequest = new DeleteResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
-                      authID, descriptor, resourceID);
+                      authID, descriptor, resourceID,
+                      requestContext.getRequest());
             }
           }
 

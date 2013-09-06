@@ -17,7 +17,12 @@
 
 package com.unboundid.scim.sdk;
 
+import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.schema.ResourceDescriptor;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * This class defines an API for a backend that can be plugged into the SCIM
@@ -147,4 +152,60 @@ public abstract class SCIMBackend
    */
   public abstract BaseResource patchResource(
           final PatchResourceRequest request) throws SCIMException;
+
+
+
+  /**
+   * Retrieves whether this backend supports sorting.
+   *
+   * @return {@code true} if sorting is supported or {@code false} otherwise.
+   */
+  public boolean supportsSorting()
+  {
+    return true;
+  }
+
+
+
+  /**
+   * Retrieves the authentication schemes supported by this backend.
+   *
+   * @return The authentication schemes supported by this backend.
+   */
+  public Collection<AuthenticationScheme> getSupportedAuthenticationSchemes()
+  {
+    return Collections.singleton(AuthenticationScheme.createBasic(true));
+  }
+
+
+
+  /**
+   * Retrieve the resource descriptors served by this backend.
+   *
+   * @return  The resource descriptors served by this backend.
+   */
+  public abstract Collection<ResourceDescriptor> getResourceDescriptors();
+
+
+
+  /**
+   * Retrieve the resource descriptor for the specified endpoint.
+   *
+   * @param endpoint The endpoint of the resource descriptor to retrieve.
+   *
+   * @return The resource descriptor for the specified endpoint or {@code null}
+   *         if no resource descriptors with the specified endpoint was found.
+   */
+  public ResourceDescriptor getResourceDescriptor(final String endpoint)
+  {
+    for(ResourceDescriptor resourceDescriptor : getResourceDescriptors())
+    {
+      if(resourceDescriptor.getEndpoint().equals(endpoint))
+      {
+        return resourceDescriptor;
+      }
+    }
+
+    return null;
+  }
 }

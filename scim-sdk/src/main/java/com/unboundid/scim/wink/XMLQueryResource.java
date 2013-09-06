@@ -17,12 +17,12 @@
 
 package com.unboundid.scim.wink;
 
-import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
-import com.unboundid.scim.sdk.SCIMBackend;
 
-import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -48,26 +48,22 @@ import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
  * on a SCIM resource where the client requests XML response format in the URL
  * by appending ".xml" on to the endpoint.
  */
+@Path("{endpoint}.xml")
 public class XMLQueryResource extends AbstractSCIMResource
 {
   /**
    * Create a new SCIM wink resource for XML query operations on a
    * SCIM endpoint.
    *
-   * @param resourceDescriptor   The ResourceDescriptor associated with this
-   *                             resource.
-   * @param resourceStats       The ResourceStats instance to use.
-   * @param backend             The SCIMBackend to use to process requests.
+   * @param application         The SCIM JAX-RS application associated with this
+   *                            resource.
    * @param tokenHandler        The token handler to use for OAuth
    *                            authentication.
    */
-  public XMLQueryResource(final ResourceDescriptor resourceDescriptor,
-                          final ResourceStats resourceStats,
-                          final SCIMBackend backend,
+  public XMLQueryResource(final SCIMApplication application,
                           final OAuthTokenHandler tokenHandler)
   {
-    super(resourceDescriptor.getEndpoint() + ".xml",
-        resourceDescriptor, resourceStats, backend, tokenHandler);
+    super(application, tokenHandler);
   }
 
 
@@ -75,7 +71,8 @@ public class XMLQueryResource extends AbstractSCIMResource
   /**
    * Implement the GET operation producing XML format.
    *
-   * @param servletContext   The servlet context of the current request.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
    * @param securityContext  The security context of the current request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -92,7 +89,8 @@ public class XMLQueryResource extends AbstractSCIMResource
    */
   @GET
   @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlGet(@Context final ServletContext servletContext,
+  public Response doXmlGet(@PathParam("endpoint") final String endpoint,
+                           @Context final HttpServletRequest request,
                            @Context final SecurityContext securityContext,
                            @Context final HttpHeaders headers,
                            @Context final UriInfo uriInfo,
@@ -112,11 +110,11 @@ public class XMLQueryResource extends AbstractSCIMResource
                            final String pageSize)
   {
     final RequestContext requestContext =
-        new RequestContext(servletContext, securityContext, headers, uriInfo,
+        new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_XML_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
 
-    return getUsers(requestContext, filterString, baseID, searchScope,
+    return getUsers(requestContext, endpoint, filterString, baseID, searchScope,
                     sortBy, sortOrder, pageStartIndex, pageSize);
   }
 

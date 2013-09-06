@@ -19,6 +19,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 
@@ -61,6 +62,37 @@ public final class PutResourceRequest extends ResourceReturningRequest
                             final SCIMQueryAttributes attributes)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
+    this.resourceID          = resourceID;
+    this.resourceObject      = resourceObject;
+  }
+
+
+
+  /**
+   * Create a new SCIM Put Resource request from the provided information.
+   *
+   * @param baseURL              The base URL for the SCIM service.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
+   * @param resourceID           The target resource ID.
+   * @param resourceObject       The new contents of the resource.
+   * @param attributes           The set of requested attributes.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   */
+  public PutResourceRequest(final URI baseURL,
+                            final String authenticatedUserID,
+                            final ResourceDescriptor resourceDescriptor,
+                            final String resourceID,
+                            final SCIMObject resourceObject,
+                            final SCIMQueryAttributes attributes,
+                            final HttpServletRequest httpServletRequest)
+  {
+    super(baseURL, authenticatedUserID, resourceDescriptor, attributes,
+          httpServletRequest);
     this.resourceID          = resourceID;
     this.resourceObject      = resourceObject;
   }

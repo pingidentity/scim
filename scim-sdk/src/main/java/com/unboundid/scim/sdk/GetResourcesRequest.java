@@ -19,6 +19,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 
@@ -84,6 +85,48 @@ public final class GetResourcesRequest extends ResourceReturningRequest
                              final SCIMQueryAttributes attributes)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
+    this.filter         = filter;
+    this.baseID         = baseID;
+    this.searchScope    = searchScope;
+    this.sortParameters = sortParameters;
+    this.pageParameters = pageParameters;
+  }
+
+
+
+  /**
+   * Create a new SCIM Get Resource request from the provided information.
+   *
+   * @param baseURL               The base URL for the SCIM service.
+   * @param authenticatedUserID   The authenticated user name or {@code null} if
+   *                              the request is not authenticated.
+   * @param resourceDescriptor    The ResourceDescriptor associated with this
+   *                              request.
+   * @param filter                The filter parameters of the request.
+   * @param baseID                The SCIM resource ID of the search base entry,
+   *                              or {@code null}.
+   * @param searchScope           The LDAP search scope to use, or {@code null}
+   *                              if the default (whole-subtree) should be used.
+   * @param sortParameters        The sorting parameters of the request.
+   * @param pageParameters        The pagination parameters of the request.
+   * @param attributes            The set of requested attributes.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   */
+  public GetResourcesRequest(final URI baseURL,
+                             final String authenticatedUserID,
+                             final ResourceDescriptor resourceDescriptor,
+                             final SCIMFilter filter,
+                             final String baseID,
+                             final String searchScope,
+                             final SortParameters sortParameters,
+                             final PageParameters pageParameters,
+                             final SCIMQueryAttributes attributes,
+                             final HttpServletRequest httpServletRequest)
+  {
+    super(baseURL, authenticatedUserID, resourceDescriptor, attributes,
+          httpServletRequest);
     this.filter         = filter;
     this.baseID         = baseID;
     this.searchScope    = searchScope;

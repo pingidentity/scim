@@ -19,6 +19,7 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 
 
@@ -44,6 +45,10 @@ public abstract class SCIMRequest
    */
   private final ResourceDescriptor resourceDescriptor;
 
+  /**
+   * The HttpServletRequest that initiated this SCIM request.
+   */
+  private final HttpServletRequest httpServletRequest;
 
 
   /**
@@ -61,6 +66,31 @@ public abstract class SCIMRequest
     this.baseURL             = baseURL;
     this.authenticatedUserID = authenticatedUserID;
     this.resourceDescriptor = resourceDescriptor;
+    this.httpServletRequest = null;
+  }
+
+
+
+  /**
+   * Create a new SCIM request from the provided information.
+   *
+   * @param baseURL              The base URL for the SCIM service.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   */
+  public SCIMRequest(final URI baseURL, final String authenticatedUserID,
+                     final ResourceDescriptor resourceDescriptor,
+                     final HttpServletRequest httpServletRequest)
+  {
+    this.baseURL             = baseURL;
+    this.authenticatedUserID = authenticatedUserID;
+    this.resourceDescriptor = resourceDescriptor;
+    this.httpServletRequest = httpServletRequest;
   }
 
 
@@ -97,5 +127,17 @@ public abstract class SCIMRequest
    */
   public ResourceDescriptor getResourceDescriptor() {
     return resourceDescriptor;
+  }
+
+
+
+  /**
+   * Get the HTTP servlet request associated with this request.
+   *
+   * @return The HTTP servlet request associated with this request or
+   *         {@code null} if this request is not initiated by a servlet.
+   */
+  public HttpServletRequest getHttpServletRequest() {
+    return httpServletRequest;
   }
 }

@@ -82,6 +82,7 @@ import javax.ws.rs.core.UriBuilder;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -1104,6 +1105,14 @@ public abstract class LDAPBackend
       Debug.debugException(e);
       throw ResourceMapper.toSCIMException(e);
     }
+  }
+
+
+
+  @Override
+  public Collection<ResourceDescriptor> getResourceDescriptors()
+  {
+    return resourceMappers.keySet();
   }
 
 

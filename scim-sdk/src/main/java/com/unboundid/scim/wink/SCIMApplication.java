@@ -27,9 +27,7 @@ import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.SortConfig;
 import com.unboundid.scim.data.XmlDataFormatConfig;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
-import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.schema.CoreSchema;
-import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -55,7 +53,6 @@ import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 public class SCIMApplication extends WinkApplication
 {
   private final Set<Object> instances;
-  private final Map<String,ResourceDescriptor> descriptors;
   private final Map<String,ResourceStats> resourceStats;
   private final SCIMBackend backend;
   private final boolean supportsOAuth;
@@ -70,76 +67,32 @@ public class SCIMApplication extends WinkApplication
    * Create a new SCIMApplication that defines the endpoints provided by the
    * ResourceDescriptors and uses the provided backend to process the request.
    *
-   * @param resourceDescriptors The ResourceDescriptors to serve.
    * @param backend The backend that should be used to process the requests.
    * @param tokenHandler The OAuthTokenHandler implementation to use (this may
    *                     be {@code null}.
    */
   public SCIMApplication(
-      final Collection<ResourceDescriptor> resourceDescriptors,
       final SCIMBackend backend,
       final OAuthTokenHandler tokenHandler)
   {
-    descriptors =
-        new HashMap<String, ResourceDescriptor>(resourceDescriptors.size());
-    for (final ResourceDescriptor descriptor : resourceDescriptors)
-    {
-      descriptors.put(descriptor.getEndpoint(), descriptor);
-    }
+    instances = new HashSet<Object>(7);
 
-    instances = new HashSet<Object>(resourceDescriptors.size() * 4 + 12);
-    Collection<ResourceStats> statsCollection =
-        new ArrayList<ResourceStats>(resourceDescriptors.size() + 2);
+    instances.add(new MonitorResource(this));
 
-    ResourceStats stats = new ResourceStats("monitor");
-    instances.add(new MonitorResource(this, stats));
-    statsCollection.add(stats);
-
-    stats = new ResourceStats(
-        CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR.getName());
-    instances.add(new ServiceProviderConfigResource(this, stats));
-    instances.add(new XMLServiceProviderConfigResource(this, stats));
-    instances.add(new JSONServiceProviderConfigResource(this, stats));
-    statsCollection.add(stats);
-
-    stats = new ResourceStats(
-        CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR.getName());
-    // The resources for the /Schema and /Schemas endpoints.
-    ResourceSchemaBackend resourceSchemaBackend =
-        new ResourceSchemaBackend(resourceDescriptors);
-    instances.add(new SCIMResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend, tokenHandler));
-    instances.add(new XMLQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend, tokenHandler));
-    instances.add(new JSONQueryResource(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR,
-        stats, resourceSchemaBackend, tokenHandler));
-    statsCollection.add(stats);
-
-    for(ResourceDescriptor resourceDescriptor : resourceDescriptors)
-    {
-      stats = new ResourceStats(resourceDescriptor.getName());
-      instances.add(new SCIMResource(resourceDescriptor,
-              stats, backend, tokenHandler));
-      instances.add(new XMLQueryResource(resourceDescriptor,
-              stats, backend, tokenHandler));
-      instances.add(new JSONQueryResource(resourceDescriptor,
-              stats, backend, tokenHandler));
-      statsCollection.add(stats);
-    }
+    instances.add(new ServiceProviderConfigResource(this));
+    instances.add(new XMLServiceProviderConfigResource(this));
+    instances.add(new JSONServiceProviderConfigResource(this));
 
     // The Bulk operation endpoint.
-    stats = new ResourceStats("Bulk");
-    instances.add(new BulkResource(this, stats, backend, tokenHandler));
-    instances.add(new JSONBulkResource(this, stats, backend, tokenHandler));
-    instances.add(new XMLBulkResource(this, stats, backend, tokenHandler));
-    statsCollection.add(stats);
+    instances.add(new BulkResource(this, tokenHandler));
+    instances.add(new JSONBulkResource(this, tokenHandler));
+    instances.add(new XMLBulkResource(this, tokenHandler));
 
-    this.resourceStats =
-        new HashMap<String, ResourceStats>(statsCollection.size());
-    for (final ResourceStats s : statsCollection)
-    {
-      resourceStats.put(s.getName(), s);
-    }
+    instances.add(new SCIMResource(this, tokenHandler));
+    instances.add(new XMLQueryResource(this, tokenHandler));
+    instances.add(new JSONQueryResource(this, tokenHandler));
+
+    this.resourceStats = new HashMap<String, ResourceStats>();
     this.backend = backend;
 
     if (tokenHandler != null)
@@ -184,7 +137,13 @@ public class SCIMApplication extends WinkApplication
    */
   public ResourceStats getStatsForResource(final String resourceName)
   {
-    return resourceStats.get(resourceName);
+    ResourceStats stats = resourceStats.get(resourceName);
+    if(stats == null)
+    {
+      stats = new ResourceStats(resourceName);
+      resourceStats.put(resourceName, stats);
+    }
+    return stats;
   }
 
   /**
@@ -207,36 +166,17 @@ public class SCIMApplication extends WinkApplication
         backend.getConfig().getMaxResults()));
     serviceProviderConfig.setChangePasswordConfig(
         new ChangePasswordConfig(true));
-    serviceProviderConfig.setSortConfig(new SortConfig(true));
+    serviceProviderConfig.setSortConfig(
+        new SortConfig(backend.supportsSorting()));
     serviceProviderConfig.setETagConfig(new ETagConfig(false));
 
     final List<AuthenticationScheme> authenticationSchemes =
-        new ArrayList<AuthenticationScheme>(2);
-    authenticationSchemes.add(
-        new AuthenticationScheme(
-            "Http Basic",
-            "The HTTP Basic Access Authentication scheme. This scheme is not " +
-            "considered to be a secure method of user authentication (unless " +
-            "used in conjunction with some external secure system such as " +
-            "SSL), as the user name and password are passed over the network " +
-            "as cleartext.",
-            "http://www.ietf.org/rfc/rfc2617.txt",
-            "http://en.wikipedia.org/wiki/Basic_access_authentication",
-            "httpbasic", true));
+        new ArrayList<AuthenticationScheme>();
+    authenticationSchemes.addAll(backend.getSupportedAuthenticationSchemes());
 
     if (supportsOAuth)
     {
-      authenticationSchemes.add(
-        new AuthenticationScheme(
-            "OAuth 2.0",
-            "The OAuth 2.0 Bearer Token Authentication scheme. OAuth enables " +
-            "clients to access protected resources by obtaining an access " +
-            "token, which is defined in draft-ietf-oauth-v2-31 as \"a string " +
-            "representing an access authorization issued to the client\", " +
-            "rather than using the resource owner's credentials directly.",
-            "http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-23",
-            "http://oauth.net/2/",
-            "oauth2", false));
+      authenticationSchemes.add(AuthenticationScheme.createOAuth2(false));
     }
 
     serviceProviderConfig.setAuthenticationSchemes(authenticationSchemes);
@@ -244,6 +184,18 @@ public class SCIMApplication extends WinkApplication
     serviceProviderConfig.setXmlDataFormatConfig(new XmlDataFormatConfig(true));
 
     return serviceProviderConfig;
+  }
+
+
+
+  /**
+   * Retrieves the SCIMBackend used by this SCIMApplication.
+   *
+   * @return The SCIMBackend used by this SCIMApplication.
+   */
+  public SCIMBackend getBackend()
+  {
+    return backend;
   }
 
 
@@ -280,17 +232,6 @@ public class SCIMApplication extends WinkApplication
   public void setBulkMaxConcurrentRequests(final int bulkMaxConcurrentRequests)
   {
     bulkMaxConcurrentRequestsSemaphore.setMaxPermits(bulkMaxConcurrentRequests);
-  }
-
-
-
-  /**
-   * Retrieve the resource descriptors keyed by name of endpoint.
-   * @return  The resource descriptors keyed by name of endpoint.
-   */
-  public Map<String, ResourceDescriptor> getDescriptors()
-  {
-    return descriptors;
   }
 
 

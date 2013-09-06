@@ -38,20 +38,17 @@ import java.util.Map;
 @Path("monitor")
 public class MonitorResource
 {
+  private static final String RESOURCE_NAME = "monitor";
   private final SCIMApplication application;
-  private final ResourceStats resourceStats;
 
   /**
    * Create a new JAX-RS resource.
    *
    * @param application    The SCIM JAX-RS application associated with this
    *                       resource.
-   * @param resourceStats  The ResourceStats instance to use.
    */
-  public MonitorResource(final SCIMApplication application,
-                         final ResourceStats resourceStats) {
+  public MonitorResource(final SCIMApplication application) {
     this.application = application;
-    this.resourceStats = resourceStats;
   }
 
   /**
@@ -68,14 +65,17 @@ public class MonitorResource
     {
       final JSONStringer writer = new JSONStringer();
       writeMonitorData(writer);
-      resourceStats.incrementStat(ResourceStats.GET_RESPONSE_JSON);
-      resourceStats.incrementStat(ResourceStats.GET_OK);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.GET_RESPONSE_JSON);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.GET_OK);
       return Response.ok(writer.toString(), MediaType.APPLICATION_JSON).build();
     }
     catch (JSONException e)
     {
       Debug.debugException(e);
-      resourceStats.incrementStat(ResourceStats.GET_INTERNAL_SERVER_ERROR);
+      application.getStatsForResource(RESOURCE_NAME).incrementStat(
+          ResourceStats.GET_INTERNAL_SERVER_ERROR);
       return Response.serverError().entity(e.getMessage()).build();
     }
   }
