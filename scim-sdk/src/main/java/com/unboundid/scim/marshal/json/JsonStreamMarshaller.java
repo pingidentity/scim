@@ -475,6 +475,11 @@ public class JsonStreamMarshaller implements StreamMarshaller
     jsonWriter.array();
     for (SCIMAttributeValue value : values)
     {
+      if (value == null)
+      {
+        continue;
+      }
+
       if (value.isComplex())
       {
         jsonWriter.object();

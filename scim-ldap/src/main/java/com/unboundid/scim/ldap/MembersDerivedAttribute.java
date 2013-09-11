@@ -179,7 +179,12 @@ public class MembersDerivedAttribute extends DerivedAttribute
             {
               for(SearchResultEntry rEntry : searchResult.getSearchEntries())
               {
-                values.add(createMemberValue(groupResolver, rEntry));
+                final SCIMAttributeValue v =
+                    createMemberValue(groupResolver, rEntry);
+                if (v != null)
+                {
+                  values.add(v);
+                }
               }
             }
           }
@@ -205,7 +210,12 @@ public class MembersDerivedAttribute extends DerivedAttribute
             {
               final SearchResultEntry rEntry =
                   searchResult.getSearchEntries().get(0);
-              values.add(createMemberValue(groupResolver, rEntry));
+              final SCIMAttributeValue v =
+                  createMemberValue(groupResolver, rEntry);
+              if (v != null)
+              {
+                values.add(v);
+              }
             }
           }
         }

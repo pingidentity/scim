@@ -1498,10 +1498,24 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     groupOfUniqueNames.setMembers(members);
     groupOfUniqueNames = groupEndpoint.create(groupOfUniqueNames);
 
-    //Create a static group via LDAP
+    //Create a static group via LDAP that includes one member that is not under
+    //the SCIM users base.
+    final String outOfScopeDN =
+        "uid=outOfScope.1," + dsInstance.getPrimaryBaseDN();
+    dsInstance.addEntry("dn:" + outOfScopeDN,
+        "objectclass: top",
+        "objectclass: person",
+        "objectclass: organizationalPerson",
+        "objectclass: inetOrgPerson",
+        "uid: outOfScope.1",
+        "cn: outOfScope.1",
+        "givenname: outOfScope",
+        "sn: User");
+
     dsInstance.getConnectionPool().add(
         generateGroupOfNamesEntry("groupOfNames", groupBaseDN,
-                                  "uid=groupsUser.1," + userBaseDN));
+                                  "uid=groupsUser.1," + userBaseDN,
+                                  outOfScopeDN));
 
     //Create a dynamic group via LDAP
     dsInstance.addEntry(

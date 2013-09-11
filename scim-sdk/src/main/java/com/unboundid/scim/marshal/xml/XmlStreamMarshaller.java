@@ -512,6 +512,11 @@ public class XmlStreamMarshaller implements StreamMarshaller
 
     for (final SCIMAttributeValue value : values)
     {
+      if (value == null)
+      {
+        continue;
+      }
+
       writeChildStartElement(scimAttribute, xmlStreamWriter);
 
       if (value.isComplex())
