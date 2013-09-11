@@ -26,7 +26,6 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
-import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.ldap.sdk.ModifyDNRequest;
@@ -40,6 +39,7 @@ import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
+import com.unboundid.ldap.sdk.controls.SimplePagedResultsControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
 import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
@@ -114,6 +114,19 @@ public abstract class LDAPBackend
    */
   private volatile Map<ResourceDescriptor, ResourceMapper> resourceMappers;
 
+  /**
+   * Flag to indicate whether this backend supports the PostRead Request
+   * Control.
+   */
+  private boolean supportsPostReadRequestControl = false;
+
+  /**
+   * Flag to indicate whether this backend supports the Virtual List View
+   * Request Control.
+   */
+  private boolean supportsVLVRequestControl = false;
+
+
   static
   {
     HashSet<String> attrs = new HashSet<String>(2);
@@ -147,6 +160,56 @@ public abstract class LDAPBackend
       final Map<ResourceDescriptor, ResourceMapper> resourceMappers)
   {
     this.resourceMappers = resourceMappers;
+  }
+
+
+
+  /**
+   * Configures this LDAPBackend to use or not use the PostReadRequestControl.
+   *
+   * @param supported {@code true} if the control is supported, {@code false}
+   *                  if not.
+   */
+  public void setSupportsPostReadRequestControl(final boolean supported)
+  {
+    this.supportsPostReadRequestControl = supported;
+  }
+
+
+
+  /**
+   * Determines if this LDAPBackend supports the PostReadRequestControl.
+   *
+   * @return {@code true} if the control is supported, {@code false} otherwise.
+   */
+  public boolean supportsPostReadRequestControl()
+  {
+    return this.supportsPostReadRequestControl;
+  }
+
+
+
+  /**
+   * Configures this LDAPBackend to use or not use the VLVRequestControl.
+   *
+   * @param supported {@code true} if the control is supported, {@code false} if
+   *                  not.
+   */
+  public void setSupportsVLVRequestControl(final boolean supported)
+  {
+    this.supportsVLVRequestControl = supported;
+  }
+
+
+
+  /**
+   * Determines if this LDAPBackend supports the VLVRequestControl.
+   *
+   * @return {@code true} if the control is supported, {@code false} otherwise.
+   */
+  public boolean supportsVLVRequestControl()
+  {
+    return this.supportsVLVRequestControl;
   }
 
 
@@ -431,7 +494,6 @@ public abstract class LDAPBackend
           }
         }
 
-        // Use the VLV control to perform pagination.
         final PageParameters pageParameters = request.getPageParameters();
         int numLeftToReturn = totalToReturn - resultListener.getTotalResults();
         if (pageParameters != null)
@@ -443,26 +505,37 @@ public abstract class LDAPBackend
                       resultListener.getTotalResults();
           }
 
-          //We cannot set a size limit when using the VLV control; it will
-          //handle that internally.
-          searchRequest.setSizeLimit(0);
-
-          startIndex = (int) pageParameters.getStartIndex();
-          searchRequest.addControl(
-                  new VirtualListViewRequestControl(
-                          startIndex, 0, numLeftToReturn-1, 0, null, true));
-
-          // VLV requires a sort control.
-          if (!searchRequest.hasControl(
-                  ServerSideSortRequestControl.SERVER_SIDE_SORT_REQUEST_OID))
+          //Use the VLV control to perform pagination if possible
+          if (supportsVLVRequestControl)
           {
+            //We cannot set a size limit when using the VLV control; it will
+            //handle that internally.
+            searchRequest.setSizeLimit(0);
+
+            startIndex = (int) pageParameters.getStartIndex();
+            searchRequest.addControl(new VirtualListViewRequestControl(
+                            startIndex, 0, numLeftToReturn-1, 0, null, true));
+
+            //VLV requires a sort control
+            if (!searchRequest.hasControl(
+                    ServerSideSortRequestControl.SERVER_SIDE_SORT_REQUEST_OID))
+            {
+              searchRequest.addControl(
+                   new ServerSideSortRequestControl(new SortKey("uid"))); //TODO
+            }
+          }
+          else
+          {
+            //Fall back to using the SimplePagedResults control. This generally
+            //available on most LDAP servers.
             searchRequest.addControl(
-                  new ServerSideSortRequestControl(new SortKey("uid"))); // TODO
+                    new SimplePagedResultsControl(numLeftToReturn));
           }
         }
         else
         {
-          searchRequest.setSizeLimit(maxResults);
+          searchRequest.addControl(
+                  new SimplePagedResultsControl(numLeftToReturn));
         }
 
         // Include any controls that are needed by derived attributes.
@@ -472,21 +545,7 @@ public abstract class LDAPBackend
             controls.toArray(new Control[controls.size()]));
 
         // Invoke the search operation.
-        try
-        {
-          searchResult = ldapInterface.search(searchRequest);
-        }
-        catch (LDAPSearchException e)
-        {
-          if(e.getResultCode().equals(ResultCode.SIZE_LIMIT_EXCEEDED))
-          {
-            searchResult = e.getSearchResult();
-          }
-          else
-          {
-            throw e;
-          }
-        }
+        searchResult = ldapInterface.search(searchRequest);
 
         if (searchRequest.getScope() == SearchScope.BASE ||
                 resultListener.getTotalResults() >= totalToReturn)
@@ -515,7 +574,7 @@ public abstract class LDAPBackend
       else
       {
         return new Resources<BaseResource>(scimObjects,
-                      resultListener.getTotalResults(), 1);
+                      resultListener.getTotalResults(), startIndex);
       }
     }
     catch (LDAPException e)
@@ -581,8 +640,11 @@ public abstract class LDAPBackend
           mapper.toLDAPEntry(request.getResourceObject(), ldapInterface);
 
       final AddRequest addRequest = new AddRequest(entry);
-      addRequest.addControl(
-          new PostReadRequestControl(requestAttributes));
+      if (supportsPostReadRequestControl)
+      {
+        addRequest.addControl(
+            new PostReadRequestControl(requestAttributes));
+      }
 
       final LDAPResult addResult = ldapInterface.add(addRequest);
 
@@ -591,21 +653,16 @@ public abstract class LDAPBackend
       if (c != null)
       {
         addedEntry = c.getEntry();
-
-        // Work around issue DS-5918.
-        if (addedEntry.hasAttribute("entryUUID"))
+      }
+      else
+      {
+        final SearchRequest r = new SearchRequest(entry.getDN(),
+                 SearchScope.BASE, Filter.createPresenceFilter("objectclass"),
+                    requestAttributes);
+        final Entry actualEntry = ldapInterface.searchForEntry(r);
+        if(actualEntry != null)
         {
-          final SearchRequest r =
-              new SearchRequest(entry.getDN(),
-                                SearchScope.BASE,
-                                Filter.createPresenceFilter("objectclass"),
-                                requestAttributes);
-          r.setSizeLimit(1);
-          final Entry actualEntry = ldapInterface.searchForEntry(r);
-          if (actualEntry != null)
-          {
-            addedEntry = actualEntry;
-          }
+          addedEntry = actualEntry;
         }
       }
 
@@ -779,7 +836,7 @@ public abstract class LDAPBackend
           // If there are no other mods left, we need to include the
           // PostReadRequestControl now since we won't be performing a modify
           // operation later.
-          if(mods.isEmpty())
+          if(mods.isEmpty() && supportsPostReadRequestControl)
           {
             modifyDNRequest.addControl(
                 new PostReadRequestControl(requestAttributes));
@@ -796,26 +853,19 @@ public abstract class LDAPBackend
         {
           final ModifyRequest modifyRequest =
               new ModifyRequest(modifiedEntry.getDN(), mods);
-          modifyRequest.addControl(
-                new PostReadRequestControl(requestAttributes));
+          if (supportsPostReadRequestControl)
+          {
+            modifyRequest.addControl(
+                  new PostReadRequestControl(requestAttributes));
+          }
+
           final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
           c = getPostReadResponseControl(modifyResult);
         }
 
         if (c != null)
         {
-          // Work around issue DS-5918.
-          if (c.getEntry().hasAttribute("entryUUID"))
-          {
-            returnEntry =
-                mapper.getReturnEntry(ldapInterface, resourceID,
-                                      request.getAttributes(),
-                                      requestAttributes);
-          }
-          else
-          {
-            returnEntry = new SearchResultEntry(c.getEntry());
-          }
+          returnEntry = new SearchResultEntry(c.getEntry());
         }
         else
         {
@@ -1321,10 +1371,14 @@ public abstract class LDAPBackend
    *                         decode the post-read response control contained in
    *                         the provided result.
    */
-  public static PostReadResponseControl getPostReadResponseControl(
-      final LDAPResult result)
-      throws LDAPException
+  private static PostReadResponseControl getPostReadResponseControl(
+      final LDAPResult result) throws LDAPException
   {
+    if (result == null)
+    {
+      return null;
+    }
+
     final Control c = result.getResponseControl(
         PostReadResponseControl.POST_READ_RESPONSE_OID);
     if (c == null)
@@ -1429,7 +1483,7 @@ public abstract class LDAPBackend
    * @throws SCIMException If any potential schema violations are found or if
    *                       there was an error during the determination.
    */
-  public static void checkSchemaForPatch(
+  protected static void checkSchemaForPatch(
       final PatchResourceRequest request, final SearchResultEntry currentEntry,
       final ResourceMapper mapper, final LDAPRequestInterface ldapInterface)
       throws SCIMException

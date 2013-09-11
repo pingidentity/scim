@@ -477,6 +477,8 @@ public final class SCIMServletExtension
 
     backend = new ServerContextBackend(resourceMappers, serverContext);
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
+    backend.setSupportsPostReadRequestControl(true);
+    backend.setSupportsVLVRequestControl(true);
 
     final FilePermission tmpDataDirPermission;
     try

@@ -257,7 +257,16 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMFilter filter;
       if (filterString != null && !filterString.isEmpty())
       {
-        filter = SCIMFilter.parse(filterString, resourceDescriptor.getSchema());
+        if(resourceDescriptor.getSchema().equalsIgnoreCase(
+                "urn:unboundid:schemas:scim:ldap:1.0"))
+        {
+          filter = SCIMFilter.parse(
+                  filterString, resourceDescriptor.getSchema());
+        }
+        else
+        {
+          filter = SCIMFilter.parse(filterString);
+        }
       }
       else
       {

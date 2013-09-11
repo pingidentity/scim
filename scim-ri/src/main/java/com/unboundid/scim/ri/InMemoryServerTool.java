@@ -24,8 +24,8 @@ import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.schema.Schema;
+import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.wink.SCIMApplication;
 import com.unboundid.util.CommandLineTool;
 import com.unboundid.util.MinimalLogFormatter;
@@ -535,10 +535,12 @@ public class InMemoryServerTool
     }
 
     final String contextPath = contextPathArgument.getValue();
-    final SCIMBackend backend =
+    final LDAPBackend backend =
         new InMemoryLDAPBackend(scimServer.getResourceMappers(),
                                 directoryServer);
     backend.getConfig().setMaxResults(maxResultsArgument.getValue());
+    backend.setSupportsPostReadRequestControl(true);
+    backend.setSupportsVLVRequestControl(true);
 
     final SCIMApplication application =
         scimServer.registerBackend(contextPath, backend);

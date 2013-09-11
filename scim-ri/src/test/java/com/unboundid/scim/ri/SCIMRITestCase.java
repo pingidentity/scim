@@ -37,8 +37,8 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.SCIMTestCase;
+import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
-import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.wink.ResourceStats;
 import com.unboundid.scim.wink.SCIMApplication;
@@ -98,7 +98,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
   private static int ssPort = -1;
 
   // The LDAP SCIM backend.
-  private static SCIMBackend ldapBackend;
+  private static LDAPBackend ldapBackend;
 
   /**
    * The SCIM service to be used to access the server.
@@ -237,6 +237,9 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     ldapBackend = new ExternalLDAPBackend(testSS.getResourceMappers(),
                                           ldapConfig);
     ldapBackend.getConfig().setMaxResults(ssConfig.getMaxResults());
+    ldapBackend.setSupportsPostReadRequestControl(true);
+    ldapBackend.setSupportsVLVRequestControl(true);
+
     scimApplication = testSS.registerBackend("/", ldapBackend);
     testSS.startListening();
 
