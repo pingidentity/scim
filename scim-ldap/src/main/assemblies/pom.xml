@@ -19,7 +19,7 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-ldap</artifactId>
-    <version>1.4.6</version>
+    <version>1.5.0</version>
     <packaging>jar</packaging>
 
     <name>UnboundID SCIM-LDAP</name>

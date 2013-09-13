@@ -19,7 +19,7 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>1.4.6</version>
+    <version>1.5.0</version>
     <packaging>jar</packaging>
 
     <name>UnboundID SCIM SDK</name>
@@ -88,7 +88,7 @@
         <dependency>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
-          <version>4.2.5</version>
+          <version>4.2.6</version>
         </dependency>
         <dependency>
           <groupId>org.apache.wink</groupId>

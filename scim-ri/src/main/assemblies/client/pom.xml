@@ -20,7 +20,7 @@
     <artifactId>scim-ri-client</artifactId>
     <packaging>jar</packaging>
     <name>UnboundID SCIM Reference Implementation Client</name>
-    <version>1.4.1</version>
+    <version>1.5.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-sdk</artifactId>
-            <version>1.3.2</version>
+            <version>1.5.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.wink</groupId>
