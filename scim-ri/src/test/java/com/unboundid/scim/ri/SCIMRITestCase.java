@@ -239,6 +239,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     ldapBackend.getConfig().setMaxResults(ssConfig.getMaxResults());
     ldapBackend.setSupportsPostReadRequestControl(true);
     ldapBackend.setSupportsVLVRequestControl(true);
+    ldapBackend.setSupportsSimplePagedResultsControl(true);
 
     scimApplication = testSS.registerBackend("/", ldapBackend);
     testSS.startListening();

@@ -479,6 +479,7 @@ public final class SCIMServletExtension
     backend.getConfig().setMaxResults(maxResultsArg.getValue());
     backend.setSupportsPostReadRequestControl(true);
     backend.setSupportsVLVRequestControl(true);
+    backend.setSupportsSimplePagedResultsControl(true);
 
     final FilePermission tmpDataDirPermission;
     try

@@ -541,6 +541,7 @@ public class InMemoryServerTool
     backend.getConfig().setMaxResults(maxResultsArgument.getValue());
     backend.setSupportsPostReadRequestControl(true);
     backend.setSupportsVLVRequestControl(true);
+    backend.setSupportsSimplePagedResultsControl(true);
 
     final SCIMApplication application =
         scimServer.registerBackend(contextPath, backend);

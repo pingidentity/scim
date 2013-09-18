@@ -26,6 +26,7 @@ import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.ldap.sdk.ModifyDNRequest;
@@ -126,6 +127,12 @@ public abstract class LDAPBackend
    */
   private boolean supportsVLVRequestControl = false;
 
+  /**
+   * Flag to indicate whether this backend supports the Simple Paged Results
+   * Request Control.
+   */
+  private boolean supportsSimplePagesResultsControl = false;
+
 
   static
   {
@@ -210,6 +217,32 @@ public abstract class LDAPBackend
   public boolean supportsVLVRequestControl()
   {
     return this.supportsVLVRequestControl;
+  }
+
+
+
+  /**
+   * Configures this LDAPBackend to use or not use the
+   * SimplePagedResultsControl.
+   *
+   * @param supported {@code true} if the control is supported, {@code false} if
+   *                  not.
+   */
+  public void setSupportsSimplePagedResultsControl(final boolean supported)
+  {
+    this.supportsSimplePagesResultsControl = supported;
+  }
+
+
+
+  /**
+   * Determines if this LDAPBackend supports the SimplePagedResultsControl.
+   *
+   * @return {@code true} if the control is supported, {@code false} otherwise.
+   */
+  public boolean supportsSimplePagedResultsControl()
+  {
+    return this.supportsSimplePagesResultsControl;
   }
 
 
@@ -524,18 +557,26 @@ public abstract class LDAPBackend
                    new ServerSideSortRequestControl(new SortKey("uid"))); //TODO
             }
           }
-          else
+          else if (supportsSimplePagesResultsControl)
           {
-            //Fall back to using the SimplePagedResults control. This generally
-            //available on most LDAP servers.
+            //Fall back to using the SimplePagedResults control (if available)
             searchRequest.addControl(
                     new SimplePagedResultsControl(numLeftToReturn));
           }
+          else
+          {
+            //If nothing else, fall back to just using the LDAP size limit
+            searchRequest.setSizeLimit(numLeftToReturn);
+          }
         }
-        else
+        else if (supportsSimplePagesResultsControl)
         {
           searchRequest.addControl(
                   new SimplePagedResultsControl(numLeftToReturn));
+        }
+        else
+        {
+          searchRequest.setSizeLimit(numLeftToReturn);
         }
 
         // Include any controls that are needed by derived attributes.
@@ -545,7 +586,25 @@ public abstract class LDAPBackend
             controls.toArray(new Control[controls.size()]));
 
         // Invoke the search operation.
-        searchResult = ldapInterface.search(searchRequest);
+        try
+        {
+          searchResult = ldapInterface.search(searchRequest);
+        }
+        catch(LDAPSearchException e)
+        {
+          if(e.getResultCode().equals(ResultCode.SIZE_LIMIT_EXCEEDED))
+          {
+            searchResult = e.getSearchResult();
+            if (searchResult == null)
+            {
+              throw e;
+            }
+          }
+          else
+          {
+            throw e;
+          }
+        }
 
         if (searchRequest.getScope() == SearchScope.BASE ||
                 resultListener.getTotalResults() >= totalToReturn)
