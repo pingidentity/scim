@@ -27,7 +27,6 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
-import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.OAuthToken;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.OAuthTokenStatus;
@@ -35,6 +34,7 @@ import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.ResourceSchemaBackend;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMBackend;
@@ -114,7 +114,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       resourceDescriptor = backend.getResourceDescriptor(endpoint);
       if(resourceDescriptor == null)
       {
-        throw new InvalidResourceException(
+        throw new ResourceNotFoundException(
                 endpoint + " is not a valid resource endpoint");
       }
       String authID = requestContext.getAuthID();
@@ -240,7 +240,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       resourceDescriptor = backend.getResourceDescriptor(endpoint);
       if(resourceDescriptor == null)
       {
-        throw new InvalidResourceException(
+        throw new ResourceNotFoundException(
                 endpoint + " is not a valid resource endpoint");
       }
       String authID = requestContext.getAuthID();
@@ -450,7 +450,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       resourceDescriptor = backend.getResourceDescriptor(endpoint);
       if(resourceDescriptor == null)
       {
-        throw new InvalidResourceException(
+        throw new ResourceNotFoundException(
                 endpoint + " is not a valid resource endpoint");
       }
       final Unmarshaller unmarshaller;
@@ -571,7 +571,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       resourceDescriptor = backend.getResourceDescriptor(endpoint);
       if(resourceDescriptor == null)
       {
-        throw new InvalidResourceException(
+        throw new ResourceNotFoundException(
                 endpoint + " is not a valid resource endpoint");
       }
       final Unmarshaller unmarshaller;
@@ -693,7 +693,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       resourceDescriptor = backend.getResourceDescriptor(endpoint);
       if(resourceDescriptor == null)
       {
-        throw new InvalidResourceException(
+        throw new ResourceNotFoundException(
                 endpoint + " is not a valid resource endpoint");
       }
       String authID = requestContext.getAuthID();
@@ -822,7 +822,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       resourceDescriptor = backend.getResourceDescriptor(endpoint);
       if(resourceDescriptor == null)
       {
-        throw new InvalidResourceException(
+        throw new ResourceNotFoundException(
                 endpoint + " is not a valid resource endpoint");
       }
       String authID = requestContext.getAuthID();
