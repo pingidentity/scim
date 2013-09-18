@@ -75,8 +75,9 @@ public class SCIMApplication extends WinkApplication
       final SCIMBackend backend,
       final OAuthTokenHandler tokenHandler)
   {
-    instances = new HashSet<Object>(7);
+    instances = new HashSet<Object>();
 
+    instances.add(new RootResource(this));
     instances.add(new MonitorResource(this));
 
     instances.add(new ServiceProviderConfigResource(this));
