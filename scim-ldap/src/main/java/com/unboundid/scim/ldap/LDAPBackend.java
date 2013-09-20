@@ -1127,43 +1127,32 @@ public abstract class LDAPBackend
           // If there are no other mods left AND we need to return the resource,
           // then we need to include the PostReadRequestControl now since we
           // won't be performing a modify operation later.
-          if(mods.isEmpty())
+          if(mods.isEmpty() && supportsPostReadRequestControl)
           {
             modifyDNRequest.addControl(
                     new PostReadRequestControl(requestAttributes));
           }
           final LDAPResult modifyDNResult =
                   ldapInterface.modifyDN(modifyDNRequest);
-          if(mods.isEmpty())
-          {
-            c = getPostReadResponseControl(modifyDNResult);
-          }
+          c = getPostReadResponseControl(modifyDNResult);
         }
 
         if(!mods.isEmpty())
         {
           final ModifyRequest modifyRequest =
                   new ModifyRequest(modifiedEntry.getDN(), mods);
-          modifyRequest.addControl(
+          if (supportsPostReadRequestControl)
+          {
+            modifyRequest.addControl(
                 new PostReadRequestControl(requestAttributes));
+          }
           final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
           c = getPostReadResponseControl(modifyResult);
         }
 
         if (c != null)
         {
-          // Work around issue DS-5918.
-          if (c.getEntry().hasAttribute("entryUUID"))
-          {
-            returnEntry =
-                mapper.getReturnEntry(ldapInterface, resourceID,
-                                      request.getAttributes(),
-                                      requestAttributes);
-          }
-          else
-          {
-            returnEntry = new SearchResultEntry(c.getEntry());
-          }
+          returnEntry = new SearchResultEntry(c.getEntry());
         }
         else
         {
@@ -1177,10 +1166,9 @@ public abstract class LDAPBackend
       {
         // No modifications were necessary (the mod set was empty).
         // Fetch the entry again, this time with the required return attributes.
-        returnEntry =
-            mapper.getReturnEntry(ldapInterface, resourceID,
-                                  request.getAttributes(),
-                                  requestAttributes);
+        returnEntry = mapper.getReturnEntry(ldapInterface, resourceID,
+                                            request.getAttributes(),
+                                            requestAttributes);
       }
 
       final BaseResource resource =
