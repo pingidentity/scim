@@ -455,6 +455,18 @@
       </complex>
     </attribute>
 
+    <!-- CUSTOMIZATION:
+         Make descriptions accessible as simpleMultiValued attribute
+    -->
+    <attribute name="descriptions"
+               schema="urn:scim:schemas:extension:enterprise:1.0"
+               readOnly="false" required="false">
+      <description>Describes the User</description>
+      <simpleMultiValued childName="description"
+                         dataType="string" caseExact="false">
+          <mapping ldapAttribute="description"/>
+      </simpleMultiValued>
+    </attribute>
   </resource>
 
 

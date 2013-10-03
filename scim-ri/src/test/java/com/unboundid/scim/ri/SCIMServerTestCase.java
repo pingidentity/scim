@@ -205,12 +205,23 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
   public void testGetUser()
       throws Exception
   {
+    // Use custom resource mapping with descriptions for this test
+    File f = getFile(
+       "scim-ri/src/test/resources/resources-custom-tests.xml");
+    assertTrue(f.exists());
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setResourcesFile(f);
+    reconfigureTestSuite(config);
+
     // Get a reference to the in-memory test DS.
     final InMemoryDirectoryServer testDS = getTestDS();
     testDS.add(generateDomainEntry("example", "dc=com"));
     testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
-    SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
+    SCIMEndpoint<UserResource> endpoint = service.getEndpoint(
+            service.getResourceDescriptor("User", null),
+            UserResource.USER_RESOURCE_FACTORY);
+
     // A user ID that does not exist should not return anything.
     try
     {
@@ -227,7 +238,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
         "Barbara", "Jensen", "password",
         new Attribute("mail", "user.1@example.com"),
         new Attribute("l", "Austin"),
-        new Attribute("postalCode", "78759")));
+        new Attribute("postalCode", "78759"),
+        new Attribute("description", "first", "second", "third")
+    ));
 
     // Determine the user ID.
     final String userID = endpoint.query(null).iterator().next().getId();
@@ -247,6 +260,26 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(user1.getName().getGivenName(), "Barbara");
     assertNotNull(user1.getEmails());
     assertNotNull(user1.getAddresses());
+
+    // Test to ensure that custom multi valued attributes return DS-8226
+    Iterator<UserResource> customResults =
+            endpoint.query(SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION +
+                           ":descriptions.value eq \"second\"").iterator();
+    assertTrue(customResults.hasNext());
+    final UserResource user2 = customResults.next();
+    Collection<com.unboundid.scim.data.Entry<String>> descriptions =
+            user2.getAttributeValues(
+                    SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
+                    "descriptions",
+                    com.unboundid.scim.data.Entry.STRINGS_RESOLVER);
+    List<String> values = new ArrayList<String>(3);
+    for (com.unboundid.scim.data.Entry entry : descriptions)
+    {
+      values.add((String)entry.getValue());
+    }
+    assertTrue(values.contains("first"));
+    assertTrue(values.contains("second"));
+    assertTrue(values.contains("third"));
 
     // Ensure that we can retrieve the user again using meta.location
     /*
@@ -300,6 +333,10 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     {
       //expected
     }
+
+    // Clean Up
+    config.setResourcesFile(getFile("resource/resources.xml"));
+    reconfigureTestSuite(config);
   }
 
 
