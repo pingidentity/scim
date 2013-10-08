@@ -222,7 +222,7 @@ public class DiffTestCase extends SCIMTestCase
 
     // - unchanged
     Collection<Entry<String>> emails =
-        new ArrayList<Entry<String>>(1);
+        new ArrayList<Entry<String>>(2);
     emails.add(new com.unboundid.scim.data.Entry<String>(
         "bjensen@example.com", "work", true));
     emails.add(new com.unboundid.scim.data.Entry<String>(
@@ -566,6 +566,78 @@ public class DiffTestCase extends SCIMTestCase
     assertTrue(address3AddFound);
     assertTrue(address3DeleteFound);
     assertTrue(address4DeleteFound);
+  }
+
+  /**
+   * Test another version of multi-valued complex attribute diffs where the
+   * attribute is actually simple, but uses the 'value' sub-attribute and thus
+   * is also complex.
+   *
+   * @throws Exception if an error occurs
+   */
+  @Test
+  public void testDiffMultiValuedComplexAttribute2() throws Exception
+  {
+    UserResource source = new UserResource(CoreSchema.USER_DESCRIPTOR);
+    UserResource target = new UserResource(CoreSchema.USER_DESCRIPTOR);
+
+    // - unchanged
+    Collection<Entry<String>> emails = new ArrayList<Entry<String>>(2);
+    emails.add(new com.unboundid.scim.data.Entry<String>(
+            "bjensen@example.com", null));
+    emails.add(new com.unboundid.scim.data.Entry<String>(
+            "babs@jensen.org", null));
+
+    source.setEmails(emails);
+    target.setEmails(emails);
+    Diff<UserResource> d = Diff.generate(source, target);
+    UserResource result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    SCIMObject patch = d.toPartialResource(
+            UserResource.USER_RESOURCE_FACTORY, false).getScimObject();
+    assertFalse(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "emails"));
+
+    // - add a new value and delete the two existing values
+    Collection<Entry<String>> emails2 = new ArrayList<Entry<String>>(3);
+    emails2.add(new com.unboundid.scim.data.Entry<String>(
+            "bryanj@yahoo.com", null));
+    target.setEmails(emails2);
+
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+            UserResource.USER_RESOURCE_FACTORY, false).getScimObject();
+    assertTrue(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "emails"));
+    assertEquals(result.getEmails().size(), 1);
+    assertEquals(result.getEmails(), target.getEmails());
+
+    // - add a value that already exists and two new values
+    emails2.clear();
+    emails2.add(new com.unboundid.scim.data.Entry<String>(
+            "bjensen@example.com", null));
+    emails2.add(new com.unboundid.scim.data.Entry<String>(
+            "bryanj@gmail.com", null));
+    emails2.add(new com.unboundid.scim.data.Entry<String>(
+            "bryanj@yahoo.com", null));
+    target.setEmails(emails2);
+
+    d = Diff.generate(source, target);
+    result = d.apply(source, UserResource.USER_RESOURCE_FACTORY);
+    assertEquals(result, target);
+
+    patch = d.toPartialResource(
+            UserResource.USER_RESOURCE_FACTORY, false).getScimObject();
+    assertTrue(patch.hasAttribute(SCIMConstants.SCHEMA_URI_CORE, "emails"));
+    assertEquals(result.getEmails().size(), 3);
+    assertTrue(result.getEmails()
+            .contains(new Entry<String>("bjensen@example.com", null)));
+    assertTrue(result.getEmails()
+            .contains(new Entry<String>("bryanj@yahoo.com", null)));
+    assertTrue(result.getEmails()
+            .contains(new Entry<String>("bryanj@gmail.com", null)));
   }
 
   /**

@@ -252,22 +252,20 @@ public final class Diff<R extends BaseResource>
                 SCIMAttributeValue valueToUpdate = null;
                 List<SCIMAttributeValue> finalValues =
                         new LinkedList<SCIMAttributeValue>();
-                if (type != null)
-                {
-                  for(SCIMAttributeValue currentValue :
-                          currentAttribute.getValues())
-                  {
-                    String currentType = currentValue.getSubAttributeValue(
-                            "type", AttributeValueResolver.STRING_RESOLVER);
 
-                    if (type.equalsIgnoreCase(currentType))
-                    {
-                      valueToUpdate = currentValue;
-                    }
-                    else
-                    {
-                      finalValues.add(currentValue);
-                    }
+                for(SCIMAttributeValue currentValue :
+                               currentAttribute.getValues())
+                {
+                  String currentType = currentValue.getSubAttributeValue(
+                          "type", AttributeValueResolver.STRING_RESOLVER);
+
+                  if (type != null && type.equalsIgnoreCase(currentType))
+                  {
+                    valueToUpdate = currentValue;
+                  }
+                  else if (!currentValue.equals(value))
+                  {
+                    finalValues.add(currentValue);
                   }
                 }
 
@@ -283,11 +281,13 @@ public final class Diff<R extends BaseResource>
                   {
                     if(subAttrMap.containsKey(subAttrName))
                     {
+                      //Replace the subAttr with the incoming value
                       finalSubAttrs.put(subAttrName,
                               subAttrMap.get(subAttrName));
                     }
                     else
                     {
+                      //Leave this subAttr as-is (it's not being modified)
                       finalSubAttrs.put(subAttrName,
                               existingSubAttrMap.get(subAttrName));
                     }
@@ -307,7 +307,6 @@ public final class Diff<R extends BaseResource>
                   SCIMAttributeValue updatedValue = SCIMAttributeValue
                           .createComplexValue(finalSubAttrs.values());
                   finalValues.add(updatedValue);
-
                 }
                 else
                 {
