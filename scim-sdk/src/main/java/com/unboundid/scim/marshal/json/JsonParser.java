@@ -32,9 +32,11 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
 
@@ -77,9 +79,9 @@ public class JsonParser
       // present if 1) the attrs are all core and 2) the client decided to omit
       // the schema declaration.
       final JSONArray schemas;
-      if (jsonObject.has("schemas"))
+      if (jsonObject.has(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME))
       {
-        schemas = jsonObject.getJSONArray("schemas");
+        schemas = jsonObject.getJSONArray(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME);
       }
       else if (defaultSchemas != null)
       {
@@ -92,75 +94,45 @@ public class JsonParser
         schemas = new JSONArray(schemaArray);
       }
 
-      //If there is a only single schema specified, then all attributes are
-      //assumed to be under that schema.
-      boolean singleSchema = (schemas.length() == 1);
-
+      final Set<String> schemaSet = new HashSet<String>(schemas.length());
       for (int i = 0; i < schemas.length(); i++)
       {
-        final String schema = toLowerCase(schemas.getString(i));
+        schemaSet.add(toLowerCase(schemas.getString(i)));
+      }
 
-        if (singleSchema)
+      final Iterator k = jsonObject.keys();
+      while (k.hasNext())
+      {
+        final String attributeKey = (String) k.next();
+        final String attributeKeyLower = toLowerCase(attributeKey);
+
+        if(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME.equals(attributeKeyLower))
         {
-          //Even if there is a single schema, it is still possible that the
-          //attributes are all wrapped in a JSON object (with the schema URN
-          //as the key). This handles that case.
-          final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
-          if (schemaAttrs != null)
-          {
-            --i;
-            singleSchema = false;
-            continue;
-          }
+          continue;
+        }
 
-          final Iterator keys = jsonObject.keys();
+        if (schemaSet.contains(attributeKeyLower))
+        {
+          //This key is a container for some extended schema
+          JSONObject schemaAttrs = jsonObject.getJSONObject(attributeKey);
+          final Iterator keys = schemaAttrs.keys();
           while (keys.hasNext())
           {
             final String attributeName = (String) keys.next();
-            if (SCIMConstants.SCHEMAS_ATTRIBUTE_NAME.equals(attributeName))
-            {
-              continue;
-            }
             final AttributeDescriptor attributeDescriptor =
-                    resourceDescriptor.getAttribute(schema, attributeName);
-            final Object jsonAttribute = jsonObject.get(attributeName);
+                   resourceDescriptor.getAttribute(attributeKey, attributeName);
+            final Object jsonAttribute = schemaAttrs.get(attributeName);
             scimObject.addAttribute(
                     create(attributeDescriptor, jsonAttribute));
           }
         }
         else
         {
-          final JSONObject schemaAttrs = jsonObject.optJSONObject(schema);
-          if (schemaAttrs != null)
-          {
-            if (resourceDescriptor.getAttributeSchemas().contains(schema))
-            {
-              final Iterator keys = schemaAttrs.keys();
-              while (keys.hasNext())
-              {
-                final String attributeName = (String) keys.next();
-                final AttributeDescriptor attributeDescriptor =
-                        resourceDescriptor.getAttribute(schema, attributeName);
-                final Object jsonAttribute = schemaAttrs.get(attributeName);
-                scimObject.addAttribute(
-                        create(attributeDescriptor, jsonAttribute));
-              }
-            }
-          }
-          else if (SCIMConstants.SCHEMA_URI_CORE.equals(schema))
-          {
-            for (AttributeDescriptor attributeDescriptor :
-                    resourceDescriptor.getAttributes(schema))
-            {
-              final Object jsonAttribute =
-                     jsonObject.opt(toLowerCase(attributeDescriptor.getName()));
-              if (jsonAttribute != null)
-              {
-                scimObject.addAttribute(
-                        create(attributeDescriptor, jsonAttribute));
-              }
-            }
-          }
+          final Object jsonAttribute = jsonObject.get(attributeKey);
+          final AttributeDescriptor attributeDescriptor =
+                  resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                          attributeKey);
+          scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
         }
       }
 
@@ -323,7 +295,7 @@ public class JsonParser
       if (!(jsonAttribute instanceof JSONObject))
       {
         throw new InvalidResourceException(
-            "JSON object expected for multi-valued attribute '" +
+            "JSON object expected for complex attribute '" +
             descriptor.getName() + "'");
       }
       return SCIMAttribute.create(
