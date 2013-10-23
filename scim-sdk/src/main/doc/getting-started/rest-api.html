@@ -80,7 +80,10 @@ SchemeRegistry schemeRegistry = new SchemeRegistry();
 schemeRegistry.register(httpScheme);
 schemeRegistry.register(httpsScheme);
 
-ThreadSafeClientConnManager mgr = new ThreadSafeClientConnManager(schemeRegistry);
+final PoolingClientConnectionManager mgr =
+        new PoolingClientConnectionManager(schemeRegistry);
+mgr.setMaxTotal(200);
+mgr.setDefaultMaxPerRoute(20);
 
 HttpParams params = new BasicHttpParams();
 DefaultHttpClient.setDefaultHttpParams(params);
@@ -91,11 +94,9 @@ DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
 Credentials credentials = new UsernamePasswordCredentials(
   "uid=bjensen,dc=example,dc=com", "pAssw0rd");
 
-httpClient.getCredentialsProvider().setCredentials(
-  new AuthScope("localhost", -1), credentials);
+httpClient.getCredentialsProvider().setCredentials(AuthScope.ANY, credentials);
 
-httpClient.addRequestInterceptor(
-  new PreemptiveAuthInterceptor(new BasicScheme(), credentials), 0);
+httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
 
 URI secureUri = URI.create("https://localhost:52443");
 SCIMService secureScimService = new SCIMService(secureUri, new ApacheHttpClientConfig(httpClient));
