@@ -126,8 +126,10 @@ public class SCIMException extends Exception implements SCIMResponse
       case -1  : return new ConnectException(errorMessage);
       case 400 : return new InvalidResourceException(errorMessage);
       case 401 : return new UnauthorizedException(errorMessage);
+      case 403 : return new ForbiddenException(errorMessage);
       case 404 : return new ResourceNotFoundException(errorMessage);
       case 409 : return new ResourceConflictException(errorMessage);
+      case 413 : return new RequestEntityTooLargeException(errorMessage);
       case 500 : return new ServerErrorException(errorMessage);
       case 501 : return new UnsupportedOperationException(errorMessage);
       default : return new SCIMException(statusCode, errorMessage, cause);

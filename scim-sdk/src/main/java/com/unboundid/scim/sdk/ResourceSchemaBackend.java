@@ -132,7 +132,7 @@ public class ResourceSchemaBackend extends SCIMBackend
     int total = rds.size();
     if(request.getPageParameters() != null)
     {
-      fromIndex = (int)request.getPageParameters().getStartIndex() - 1;
+      fromIndex = request.getPageParameters().getStartIndex() - 1;
       int endIndex =
           Math.min(request.getPageParameters().getCount() + fromIndex,
                    rds.size());

@@ -1694,7 +1694,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     // Fetch the users one page at a time with page size equal to 1.
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
     int pageSize = 1;
-    for (long startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
+    for (int startIndex = 1; startIndex <= NUM_USERS; startIndex += pageSize)
     {
       final Resources<UserResource> resources =
           userEndpoint.query("userName sw \"paginationUser\"", null,
@@ -1706,7 +1706,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(userDNs.size(), NUM_USERS);
 
     // Create some groups.
-    final long NUM_GROUPS = 10;
+    final int NUM_GROUPS = 10;
     for (int i = 0; i < NUM_GROUPS; i++)
     {
       final String cn = "paginationGroup." + i;
@@ -1719,7 +1719,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
            service.getGroupEndpoint();
     pageSize = 3;
     final Set<String> groupIDs = new HashSet<String>();
-    for (long startIndex = 1; startIndex <= NUM_GROUPS; startIndex += pageSize)
+    for (int startIndex = 1; startIndex <= NUM_GROUPS; startIndex += pageSize)
     {
       final Resources<GroupResource> resources =
         groupEndpoint.query("displayName sw \"paginationGroup\"",
@@ -1740,7 +1740,7 @@ public class SCIMExtensionTestCase extends ServerExtensionTestCase
     assertEquals(groupIDs.size(), NUM_GROUPS);
 
     // Attempt to fetch resources from a non-existent page.
-    final long startIndex = NUM_GROUPS + 1;
+    final int startIndex = NUM_GROUPS + 1;
     final Resources<GroupResource> resources =
         groupEndpoint.query("displayName sw \"paginationGroup\"",
           new SortParameters("displayName", "ascending"),

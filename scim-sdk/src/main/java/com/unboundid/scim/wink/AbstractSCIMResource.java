@@ -287,13 +287,13 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       }
 
       // Parse the pagination parameters.
-      long startIndex = -1;
+      int startIndex = -1;
       int count = -1;
       if (pageStartIndex != null && !pageStartIndex.isEmpty())
       {
         try
         {
-          startIndex = Long.parseLong(pageStartIndex);
+          startIndex = Integer.parseInt(pageStartIndex);
         }
         catch (NumberFormatException e)
         {

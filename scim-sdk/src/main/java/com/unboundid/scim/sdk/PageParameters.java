@@ -27,7 +27,7 @@ public final class PageParameters
   /**
    * The offset of the first resource to be returned.
    */
-  private final long startIndex;
+  private final int startIndex;
 
   /**
    * The maximum number of resources to return in a single page, or zero if the
@@ -45,7 +45,7 @@ public final class PageParameters
    *                   page, or zero if the server should choose how many to
    *                   return.
    */
-  public PageParameters(final long startIndex, final int count)
+  public PageParameters(final int startIndex, final int count)
   {
     this.startIndex = startIndex;
     this.count = count;
@@ -58,7 +58,7 @@ public final class PageParameters
    *
    * @return The offset of the first resource to be returned.
    */
-  public long getStartIndex()
+  public int getStartIndex()
   {
     return startIndex;
   }

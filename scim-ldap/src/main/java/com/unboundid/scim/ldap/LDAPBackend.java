@@ -545,7 +545,7 @@ public abstract class LDAPBackend
             //handle that internally.
             searchRequest.setSizeLimit(0);
 
-            startIndex = (int) pageParameters.getStartIndex();
+            startIndex = pageParameters.getStartIndex();
             searchRequest.addControl(new VirtualListViewRequestControl(
                             startIndex, 0, numLeftToReturn-1, 0, null, true));
 
