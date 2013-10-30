@@ -639,7 +639,7 @@ public class SCIMEndpoint<R extends BaseResource>
     Diff<R> diff = new Diff<R>(resourceDescriptor, attributesToDelete,
                                attributesToUpdate);
     final BaseResource resource =
-            diff.toPartialResource(resourceFactory, false);
+            diff.toPartialResource(resourceFactory, true);
 
     StreamingOutput output = new StreamingOutput() {
       public void write(final OutputStream outputStream)

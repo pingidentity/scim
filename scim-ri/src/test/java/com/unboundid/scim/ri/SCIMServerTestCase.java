@@ -916,6 +916,27 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     long afterCount =
         getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
     assertEquals(beforeCount, afterCount - 1);
+
+    //Try to create the user with an invalid manager id
+    user.setSingularAttributeValue(
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+            Manager.MANAGER_RESOLVER, new Manager("fake-id", "Mr. Manager"));
+    beforeCount = getStatsForResource("User").getStat(
+            ResourceStats.POST_BAD_REQUEST);
+    try
+    {
+      userEndpoint.create(user);
+      fail("Expected a 400 response when trying to create user with " +
+              "invalid manager id");
+    }
+    catch(InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    afterCount = getStatsForResource("User").getStat(
+            ResourceStats.POST_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
+
     user.setSingularAttributeValue(
         SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
         Manager.MANAGER_RESOLVER,

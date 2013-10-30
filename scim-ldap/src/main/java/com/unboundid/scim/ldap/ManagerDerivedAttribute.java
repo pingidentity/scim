@@ -21,6 +21,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
@@ -121,7 +122,7 @@ public class ManagerDerivedAttribute extends DerivedAttribute
   {
     final SCIMAttribute scimAttribute =
         scimObject.getAttribute(getAttributeDescriptor().getSchema(),
-                                getAttributeDescriptor().getName());
+                getAttributeDescriptor().getName());
     if (scimAttribute != null)
     {
       final SCIMAttribute managerId =
@@ -129,11 +130,22 @@ public class ManagerDerivedAttribute extends DerivedAttribute
       if (managerId == null)
       {
         throw new InvalidResourceException(
-            "The manager attribute does not have a managerId");
+            "The manager attribute does not have a managerId.");
       }
+
       final String resourceID = managerId.getValue().getStringValue();
-      final String dn = searchResolver.getDnFromId(ldapInterface, resourceID);
-      attributes.add(new Attribute("manager", dn));
+      try
+      {
+        final String dn = searchResolver.getDnFromId(ldapInterface, resourceID);
+        attributes.add(new Attribute("manager", dn));
+      }
+      catch(ResourceNotFoundException e)
+      {
+        //If the manager id is non-existent, we want to return a 400 to the
+        //client, not a 404.
+        throw new InvalidResourceException("The managerId '" + resourceID +
+                "' does not exist.");
+      }
     }
   }
 }
