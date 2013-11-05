@@ -219,8 +219,12 @@ public class ResourceSearchResultListener implements SearchResultListener
       if (request.getFilter() == null ||
           scimObject.matchesFilter(request.getFilter()))
       {
-        if (request.getAttributes().allAttributesRequested())
+        if (request.getAttributes().allAttributesRequested() ||
+                resourceMapper.getDefaultSchemaURI().equals(
+                        "urn:unboundid:schemas:scim:ldap:1.0"))
         {
+          //If we are using the Identity Access API, the paring was already
+          //done inside the LDAPResourceMapper.toSCIMAttributes() method.
           resources.add(resource);
         }
         else
