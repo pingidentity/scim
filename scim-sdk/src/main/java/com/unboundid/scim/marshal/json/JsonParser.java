@@ -128,6 +128,11 @@ public class JsonParser
         }
         else
         {
+          if (!schemaSet.contains(SCIMConstants.SCHEMA_URI_CORE))
+          {
+            throw new Exception("'" + SCIMConstants.SCHEMA_URI_CORE +
+                    "' must be declared in the schemas attribute.");
+          }
           final Object jsonAttribute = jsonObject.get(attributeKey);
           final AttributeDescriptor attributeDescriptor =
                   resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE,

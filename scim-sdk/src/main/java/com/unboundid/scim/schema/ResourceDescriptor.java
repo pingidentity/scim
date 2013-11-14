@@ -124,7 +124,7 @@ public class ResourceDescriptor extends BaseResource
     }
     if(attributeDescriptor == null)
     {
-      if (strictMode)
+      if (strictMode || SCIMConstants.SCHEMA_URI_CORE.equalsIgnoreCase(schema))
       {
         throw new InvalidResourceException("Attribute " + schema +
             SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE + name +

@@ -21,6 +21,7 @@ import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -28,8 +29,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
 import java.io.InputStream;
 
@@ -41,17 +41,16 @@ public class UnmarshallerTestCase extends SCIMTestCase {
    *
    * @throws Exception If the test fails.
    */
-  @Test(enabled = true)
+  @Test
   public void testUnmarshal() throws Exception {
     final ResourceDescriptor userResourceDescriptor =
         CoreSchema.USER_DESCRIPTOR;
-    final InputStream testJson =
+    InputStream testJson =
         getResource("/com/unboundid/scim/marshal/spec/core-user.json");
     final Unmarshaller unmarshaller = new JsonUnmarshaller();
     final SCIMObject o = unmarshaller.unmarshal(
         testJson, userResourceDescriptor,
         BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
-    // weak need todo a deep assert
     assertNotNull(o);
     SCIMAttribute roles =
         o.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "roles");
@@ -119,5 +118,19 @@ public class UnmarshallerTestCase extends SCIMTestCase {
         "C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1" +
         "+GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=");
     binaryAttributeValue.getBinaryValue();  // Should not throw.
+
+    testJson = getResource("/com/unboundid/scim/marshal/spec/mixed-user.json");
+    try
+    {
+      unmarshaller.unmarshal(testJson, userResourceDescriptor,
+              BaseResource.BASE_RESOURCE_FACTORY);
+      fail("Expected JSONUnmarshaller to detect an ambiguous " +
+              "resource representation.");
+    }
+    catch(InvalidResourceException e)
+    {
+      //expected
+      System.err.println(e.getMessage());
+    }
   }
 }
