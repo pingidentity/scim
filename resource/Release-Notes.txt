@@ -1,7 +1,50 @@
-UnboundID SCIM SDK, Server Extension, and Reference Implementation Release Notes
+UnboundID SCIM SDK and Reference Implementation Release Notes
 
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
+
+---------- SCIM 1.5.0 ----------
+
+  * Release Date: November 15, 2013
+
+  * This is an upgrade release with some significant enhancements. Users of
+    previous releases are encouraged to upgrade.
+
+  * New Features
+
+    - Refactor the SCIMBackend API so ResourceDescriptors may be retrieved. Use
+      Path templates with one Wink resource instead of creating a Wink resource
+      per resource type. Add the HttpServletRequest into the various Request
+      objects so they can be used by the SCIMBackend. Issue: DS-9385
+
+    - Add a utility class to generate a diff between two SCIM resources which is
+      useful for performing update operations using PATCH instead of PUT.
+      Issue: DS-9055
+
+    - Add support for the "operation" sub-attribute to the Entry class that
+      represents a single value of a multi-valued attribute. This sub-attribute
+      is used to mark a specific value for deletion in a PATCH operation.
+
+    - Enhance the SCIMObject.removeAttribute() method to support removing
+      specific sub-attributes. Issue: DS-9008
+
+  * Resolved Issues
+
+    - Fix an issue in the JSONParser where it could let non-core attributes slip
+      through when they were not qualified with a schema URN. Issue: DS-7965
+
+    - Fix an issue where the equals() method on SCIMAttribute depended on the
+      ordering of the values. Issue: DS-9008
+
+    - Fix a bug that allowed SCIM requests to update attributes that were
+      designated as 'read only' in the SCIM resource schema. Issue: DS-9068
+
+    - Ensure that each element of a SCIM bulk response's operations list
+      includes a location field when required. Issue: DS-7360
+
+    - Update SCIM to use version 1.3.0 of the Wink libraries and version 4.2.6
+      of the Apache HttpClient libraries. Issue:DS-8517
+
 
 ---------- SCIM 1.3.2 ----------
 
