@@ -43,6 +43,7 @@ import com.unboundid.scim.sdk.UnauthorizedException;
 
 import static com.unboundid.scim.wink.AbstractSCIMResource.validateOAuthToken;
 
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -254,7 +255,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
       }
 
       BulkOperation response = BulkOperation.createResponse(
-          method, bulkException.getBulkId(),
+          method, null, bulkException.getBulkId(),
           location, status);
       bulkStreamResponse.writeBulkOperation(response);
       errorCount++;
@@ -283,12 +284,15 @@ public class BulkContentRequestHandler extends BulkContentHandler
     final Method method = operation.getMethod();
     final String bulkId = operation.getBulkId();
     final String path = operation.getPath();
-    BaseResource resource = operation.getData();
+    final String etag = operation.getVersion();
+    final BaseResource resource = operation.getData();
 
     int statusCode = 200;
     String location = null;
     String endpoint = null;
     String resourceID = null;
+    String responseVersion = null;
+    Collection<EntityTag> requestVersions = null;
 
     final ResourceDescriptor descriptor;
     final ResourceStats resourceStats;
@@ -460,6 +464,38 @@ public class BulkContentRequestHandler extends BulkContentHandler
         }
       }
 
+      if(etag != null)
+      {
+        String[] valueTokens = etag.split(",");
+        requestVersions = new ArrayList<EntityTag>(valueTokens.length);
+        for(String token : valueTokens)
+        {
+          EntityTag tag;
+          try
+          {
+            tag = EntityTag.valueOf(token);
+          }
+          catch(IllegalArgumentException e)
+          {
+            throw new InvalidResourceException(e.getMessage(), e);
+          }
+          if(tag.getValue().equals("*"))
+          {
+            // Should behave as if the if-match header was not there
+            requestVersions = null;
+            break;
+          }
+          else
+          {
+            requestVersions.add(tag);
+          }
+        }
+      }
+      else if(method == Method.PUT || method == Method.PATCH)
+      {
+        throw new InvalidResourceException("meta.version must be specified");
+      }
+
       // Request no attributes because we will not provide the resource in
       // the response.
       final SCIMQueryAttributes queryAttributes =
@@ -500,6 +536,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
                   backend.postResource(postResourceRequest);
 
           resourceID = postedResource.getId();
+          responseVersion = postedResource.getMeta().getVersion();
           locationBuilder.path(resourceID);
           statusCode = 201;
           resourceStats.incrementStat(ResourceStats.POST_OK);
@@ -512,6 +549,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        descriptor,
                                        resourceID,
                                        resource.getScimObject(),
+                                       requestVersions,
                                        queryAttributes,
                                        requestContext.getRequest());
 
@@ -530,11 +568,13 @@ public class BulkContentRequestHandler extends BulkContentHandler
               putResourceRequest = new PutResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
                       authID, descriptor, resourceID, resource.getScimObject(),
-                      queryAttributes, requestContext.getRequest());
+                      requestVersions, queryAttributes,
+                      requestContext.getRequest());
             }
           }
 
-          backend.putResource(putResourceRequest);
+          responseVersion =
+              backend.putResource(putResourceRequest).getMeta().getVersion();
           resourceStats.incrementStat(ResourceStats.PUT_OK);
           break;
 
@@ -545,6 +585,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        descriptor,
                                        resourceID,
                                        resource.getScimObject(),
+                                       requestVersions,
                                        queryAttributes,
                                        requestContext.getRequest());
 
@@ -563,11 +604,13 @@ public class BulkContentRequestHandler extends BulkContentHandler
               patchResourceRequest = new PatchResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
                       authID, descriptor, resourceID, resource.getScimObject(),
-                      queryAttributes, requestContext.getRequest());
+                      requestVersions, queryAttributes,
+                      requestContext.getRequest());
             }
           }
 
-          backend.patchResource(patchResourceRequest);
+          responseVersion =
+             backend.patchResource(patchResourceRequest).getMeta().getVersion();
           resourceStats.incrementStat(ResourceStats.PATCH_OK);
           break;
 
@@ -577,6 +620,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        requestContext.getAuthID(),
                                        descriptor,
                                        resourceID,
+                                       requestVersions,
                                        requestContext.getRequest());
 
           if (requestContext.getAuthID() == null)
@@ -593,7 +637,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
               String authID = authIDRef.get();
               deleteResourceRequest = new DeleteResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
-                      authID, descriptor, resourceID,
+                      authID, descriptor, resourceID, requestVersions,
                       requestContext.getRequest());
             }
           }
@@ -669,7 +713,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
     final Status status =
         new Status(String.valueOf(statusCode), null);
 
-    return BulkOperation.createResponse(method, bulkId, location, status);
+    return BulkOperation.createResponse(method, bulkId, responseVersion,
+        location, status);
   }
 
 

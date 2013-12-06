@@ -211,7 +211,9 @@ public class BulkOperation
    *                    POST, PUT, PATCH or DELETE.
    * @param bulkId      The bulk operation identifier, required when the method
    *                    is POST.
-   * @param location    The resource endpoint URL, or {code null} if this is
+   * @param version     The resource version, or {@code null} if version is
+   *                    not available or not supported.
+   * @param location    The resource endpoint URL, or {@code null} if this is
    *                    the response to a DELETE operation or a failed POST
    *                    operation.
    * @param status      Information about the success or failure of the
@@ -221,10 +223,11 @@ public class BulkOperation
    */
   public static BulkOperation createResponse(final Method method,
                                              final String bulkId,
+                                             final String version,
                                              final String location,
                                              final Status status)
   {
-    return new BulkOperation(method, bulkId, null, null, location, null,
+    return new BulkOperation(method, bulkId, version, null, location, null,
                              status);
   }
 

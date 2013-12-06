@@ -21,7 +21,9 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.EntityTag;
 import java.net.URI;
+import java.util.Collection;
 
 
 /**
@@ -40,6 +42,10 @@ public class PatchResourceRequest extends ResourceReturningRequest
    */
   private final SCIMObject resourceObject;
 
+  /**
+   * The versions that at least one must be matched to perform the operation.
+   */
+  private final Collection<EntityTag> versions;
 
   /**
    * Create a new SCIM request from the provided information.
@@ -51,6 +57,8 @@ public class PatchResourceRequest extends ResourceReturningRequest
    *                             request.
    * @param resourceID           The target resource ID.
    * @param resourceObject       The new contents of the resource.
+   * @param versions             The versions that at least one must be matched
+   *                             to perform the operation.
    * @param attributes           The set of requested attributes.
    */
   public PatchResourceRequest(final URI baseURL,
@@ -58,11 +66,13 @@ public class PatchResourceRequest extends ResourceReturningRequest
                               final ResourceDescriptor resourceDescriptor,
                               final String resourceID,
                               final SCIMObject resourceObject,
+                              final Collection<EntityTag> versions,
                               final SCIMQueryAttributes attributes)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
     this.resourceID = resourceID;
     this.resourceObject = resourceObject;
+    this.versions = versions;
   }
 
 
@@ -76,6 +86,8 @@ public class PatchResourceRequest extends ResourceReturningRequest
    *                             request.
    * @param resourceID           The target resource ID.
    * @param resourceObject       The new contents of the resource.
+   * @param versions             The versions that at least one must be matched
+   *                             to perform the operation.
    * @param attributes           The set of requested attributes.
    * @param httpServletRequest   The HTTP servlet request associated with this
    *                             request or {@code null} if this request is not
@@ -86,6 +98,7 @@ public class PatchResourceRequest extends ResourceReturningRequest
                               final ResourceDescriptor resourceDescriptor,
                               final String resourceID,
                               final SCIMObject resourceObject,
+                              final Collection<EntityTag> versions,
                               final SCIMQueryAttributes attributes,
                               final HttpServletRequest httpServletRequest)
   {
@@ -93,6 +106,7 @@ public class PatchResourceRequest extends ResourceReturningRequest
           httpServletRequest);
     this.resourceID = resourceID;
     this.resourceObject = resourceObject;
+    this.versions = versions;
   }
 
 
@@ -116,5 +130,19 @@ public class PatchResourceRequest extends ResourceReturningRequest
   public SCIMObject getResourceObject()
   {
     return resourceObject;
+  }
+
+
+  /**
+   * Get the versions that at least one must be matched to perform the
+   * operation.
+   *
+   * @return The versions that at least one must be matched to perform the
+   *         operation or {@code null} if the operation should be performed
+   *         normally.
+   */
+  public Collection<EntityTag> getVersions()
+  {
+    return versions;
   }
 }

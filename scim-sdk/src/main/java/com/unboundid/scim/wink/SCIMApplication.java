@@ -169,7 +169,8 @@ public class SCIMApplication extends WinkApplication
         new ChangePasswordConfig(true));
     serviceProviderConfig.setSortConfig(
         new SortConfig(backend.supportsSorting()));
-    serviceProviderConfig.setETagConfig(new ETagConfig(false));
+    serviceProviderConfig.setETagConfig(
+        new ETagConfig(backend.supportsVersioning()));
 
     final List<AuthenticationScheme> authenticationSchemes =
         new ArrayList<AuthenticationScheme>();

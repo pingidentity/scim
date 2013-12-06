@@ -38,6 +38,7 @@ import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkResponse;
 import com.unboundid.scim.sdk.Diff;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.PreconditionFailedException;
 import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
@@ -253,6 +254,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertNotNull(user1.getMeta().getCreated());
     assertNotNull(user1.getMeta().getLastModified());
     assertNotNull(user1.getMeta().getLocation());
+    assertNotNull(user1.getMeta().getVersion());
     assertLocation(user1.getMeta().getLocation(), "Users", userID);
     assertNotNull(user1.getUserName());
     assertEquals(user1.getUserName(), "b jensen");
@@ -298,6 +300,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertNotNull(partialUser.getMeta().getCreated());
     assertNotNull(partialUser.getMeta().getLastModified());
     assertNotNull(partialUser.getMeta().getLocation());
+    assertNotNull(partialUser.getMeta().getVersion());
     assertNotNull(partialUser.getUserName());
     assertNotNull(partialUser.getName());
     assertNotNull(partialUser.getName().getFormatted());
@@ -438,6 +441,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
       assertNotNull(u.getMeta().getCreated());
       assertNotNull(u.getMeta().getLastModified());
       assertNotNull(u.getMeta().getLocation());
+      assertNotNull(u.getMeta().getVersion());
       assertNotNull(u.getName());
       assertNotNull(u.getName().getFamilyName());
       assertNotNull(u.getName().getGivenName());
@@ -615,6 +619,10 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
                   new Modification(ModificationType.ADD, "description",
                                    "This value should be preserved"));
 
+    // Get the latest version
+    groupA = groupEndpoint.get(groupA.getId());
+    groupB = groupEndpoint.get(groupB.getId());
+
     // Add some members to each group.
     final com.unboundid.scim.data.Entry<String> member2 =
         new com.unboundid.scim.data.Entry<String>(
@@ -662,9 +670,12 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertTrue(entry.hasAttributeValue("uniqueMember", dnGroupA));
     assertTrue(entry.hasAttribute("description"));
 
+    groupA = groupEndpoint.get(groupA.getId());
+    groupB = groupEndpoint.get(groupB.getId());
+
     // Delete the groups.
-    groupEndpoint.delete(groupB.getId());
-    groupEndpoint.delete(groupA.getId());
+    groupEndpoint.delete(groupB);
+    groupEndpoint.delete(groupA);
 
     assertNull(testDS.getEntry(dnGroupA));
     assertNull(testDS.getEntry(dnGroupB));
@@ -700,7 +711,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     SCIMEndpoint<UserResource> endpoint = service.getUserEndpoint();
     // Post a new user.
-    final UserResource user1 = endpoint.create(user);
+    UserResource user1 = endpoint.create(user);
     assertNotNull(user1);
 
     // Add some values to the user.
@@ -709,10 +720,10 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     user1.setName(newName);
 
     // Put the updated user.
-    endpoint.update(user1);
+    user1 = endpoint.update(user1);
 
     // Delete the user.
-    endpoint.delete(user1.getId());
+    endpoint.delete(user1);
   }
 
 
@@ -783,7 +794,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     //Now change the password
     user.setPassword("anotherPassword");
 
-    UserResource returnedUser = userEndpoint.update(user, "id");
+    UserResource returnedUser = userEndpoint.update(user);
 
     //Verify what is returned from the SDK
     assertEquals(returnedUser.getId(), user.getId());
@@ -1160,14 +1171,11 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     //the Directory entry, but should not fail.
     long beforeCount =
         getStatsForResource("User").getStat(ResourceStats.PUT_OK);
-    returnedUser = userEndpoint.update(user);
+    returnedUser = userEndpoint.update(returnedUser);
     long afterCount =
         getStatsForResource("User").getStat(ResourceStats.PUT_OK);
 
     assertEquals(beforeCount, afterCount - 1);
-
-    // Again, an update with the previously returned content should not fail.
-    userEndpoint.update(returnedUser);
 
     // Try to put the user WITH a read only attribute included
     String origDeptValue = returnedUser.getSingularAttributeValue(
@@ -1179,7 +1187,19 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
             "department", AttributeValueResolver.STRING_RESOLVER, "69");
     try
     {
-      userEndpoint.update(returnedUser);
+      // Try putting with no etag (for backward compatibility)
+      userEndpoint.update(returnedUser.getId(), null, returnedUser);
+    }
+    catch (InvalidResourceException e)
+    {
+      e.printStackTrace();
+      fail("Expected success when doing PUT with read only attribute but " +
+                   "got exception: " + e.toString());
+    }
+    try
+    {
+      // Try putting with wildcard etag
+      userEndpoint.update(returnedUser.getId(), "*, \"123\"", returnedUser);
     }
     catch (InvalidResourceException e)
     {
@@ -1199,7 +1219,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
             "department", AttributeValueResolver.STRING_RESOLVER, null);
     try
     {
-      userEndpoint.update(returnedUser);
+      // Try putting with multiple etags
+      userEndpoint.update(returnedUser.getId(),
+          "\"123\"," + returnedUser.getMeta().getVersion(), returnedUser);
     }
     catch (InvalidResourceException e)
     {
@@ -1215,6 +1237,25 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     returnedUser.setSingularAttributeValue(
           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
           "department", AttributeValueResolver.STRING_RESOLVER, origDeptValue);
+
+    // Try to put user with non-matching etag
+    beforeCount =
+        getStatsForResource("User").getStat(
+            ResourceStats.PUT_PRECONDITION_FAILED);
+    try
+    {
+      userEndpoint.update(user.getId(), "\"123\"", user);
+      fail("Expected PreconditionFailedException when putting with " +
+          "non-matching etag");
+    }
+    catch(PreconditionFailedException e)
+    {
+      //expected
+    }
+    afterCount =
+        getStatsForResource("User").getStat(
+            ResourceStats.PUT_PRECONDITION_FAILED);
+    assertEquals(beforeCount, afterCount - 1);
 
     // Try to put the user with a missing required attribute
     beforeCount =
@@ -1307,7 +1348,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     //the Directory Server will record the actual modifyTimestamp using the
     //TimeThread, which only updates once every 100ms.
     Date startTime = new Date(System.currentTimeMillis() - 500);
-    userEndpoint.update(sourceUser.getId(), diff.getAttributesToUpdate(),
+    userEndpoint.update(sourceUser, diff.getAttributesToUpdate(),
         diff.getAttributesToDelete());
     UserResource returnedUser = getUser("testModifyWithPut");
     Date lastModified = returnedUser.getMeta().getLastModified();
@@ -1418,7 +1459,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
           scimObject.getAttribute(
               SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber"));
 
-    userEndpoint.update(user.getId(), attrsToUpdate, null);
+    user = userEndpoint.update(user, attrsToUpdate, null);
 
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry = testDS.getEntry(
@@ -1441,17 +1482,66 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(entry.getAttributeValue("homePhone"), "972-987-6543");
     assertEquals(entry.getAttributeValues("mail").length, 2);
 
+    String[] attrsToGet = { "userName", "title", "userType",
+            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION + ":employeeNumber" };
     //Make the exact same update again; this should result in no net change to
     //the Directory entry, but should not fail.
 
     long beforeCount =
         getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
 
-    userEndpoint.update(user.getId(), attrsToUpdate, null);
+    // Try patching with no etag (for backward compatibility)
+    user = userEndpoint.update(user.getId(), null, attrsToUpdate, null);
 
     long afterCount =
         getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
 
+    assertEquals(beforeCount, afterCount - 1);
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
+
+    // Try patching with wildcard etag
+    user = userEndpoint.update(user.getId(), "*, \"123\"", attrsToUpdate, null);
+
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
+
+    assertEquals(beforeCount, afterCount - 1);
+
+    //Make the exact same update again; this should result in no net change to
+    //the Directory entry, but should not fail.
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
+
+    // Try patching with multiple etags
+    user = userEndpoint.update(user.getId(),
+        "\"123\"," + user.getMeta().getVersion(), attrsToUpdate, null,
+        attrsToGet);
+
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PATCH_OK);
+
+    assertEquals(beforeCount, afterCount - 1);
+
+    // Try to put user with non-matching etag
+    beforeCount =
+        getStatsForResource("User").getStat(
+            ResourceStats.PATCH_PRECONDITION_FAILED);
+    try
+    {
+      userEndpoint.update(user.getId(), "\"123\"", attrsToUpdate, null);
+      fail("Expected PreconditionFailedException when patching with " +
+          "non-matching etag");
+    }
+    catch(PreconditionFailedException e)
+    {
+      //expected
+    }
+    afterCount =
+        getStatsForResource("User").getStat(
+            ResourceStats.PATCH_PRECONDITION_FAILED);
     assertEquals(beforeCount, afterCount - 1);
 
     beforeCount =
@@ -1460,7 +1550,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     {
       //Try to update an entry that doesn't exist
       userEndpoint.update(
-              "uid=fakeUserName," + userBaseDN, attrsToUpdate, null);
+              "uid=fakeUserName," + userBaseDN, "\"12345\"", attrsToUpdate,
+              null);
       fail("Expected ResourceNotFoundException when patching " +
               "non-existent user");
     }
@@ -1533,10 +1624,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     //the Directory Server will record the actual modifyTimestamp using the
     //TimeThread, which only updates once every 100ms.
     Date startTime = new Date(System.currentTimeMillis() - 500);
-    String[] attrsToGet = { "userName", "title", "userType",
-            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION + ":employeeNumber" };
-    UserResource returnedUser = userEndpoint.update(user.getId(), null,
-                                  attrsToUpdate, attrsToDelete, attrsToGet);
+    UserResource returnedUser = userEndpoint.update(user.getId(),
+        user.getMeta().getVersion(), attrsToUpdate, attrsToDelete, attrsToGet);
     Date lastModified = returnedUser.getMeta().getLastModified();
     Date endTime = new Date(System.currentTimeMillis() + 500);
 
@@ -1607,7 +1696,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     attrsToUpdate.add(groupAttr);
     try
     {
-      userEndpoint.update(user.getId(), null, attrsToUpdate, null, null);
+      userEndpoint.update(user, attrsToUpdate, null);
       fail("Expected a 400 response when trying to patch user with " +
           "read only attr");
     }
@@ -1641,11 +1730,30 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
-    final String userID = getUser("testDelete").getId();
+    final UserResource user = getUser("testDelete");
+
     long beforeCount =
-        getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
-    userEndpoint.delete(userID);
+        getStatsForResource("User").getStat(
+            ResourceStats.DELETE_PRECONDITION_FAILED);
+    try
+    {
+      userEndpoint.delete(user.getId(), "\"123\"");
+      fail("Expected PreconditionFailedException when deleting with " +
+          "non-matching etag");
+    }
+    catch(PreconditionFailedException e)
+    {
+      //expected
+    }
     long afterCount =
+        getStatsForResource("User").getStat(
+            ResourceStats.DELETE_PRECONDITION_FAILED);
+    assertEquals(beforeCount, afterCount - 1);
+
+    beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
+    userEndpoint.delete(user);
+    afterCount =
         getStatsForResource("User").getStat(ResourceStats.DELETE_OK);
 
     assertEquals(beforeCount, afterCount - 1);
@@ -1655,7 +1763,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     try
     {
       //Should throw ResourceNotFoundException
-      userEndpoint.delete(userID);
+      userEndpoint.delete(user);
       fail("Expected ResourceNotFoundException when deleting " +
               "non-existent user");
     }
@@ -1667,6 +1775,55 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
         getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
     assertEquals(beforeCount, afterCount - 1);
   }
+
+
+
+  /**
+   * Tests the basic DELETE functionality via SCIM with wildcard etag.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testDeleteUser2() throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    testDS.add(
+       generateUserEntry("testDelete", userBaseDN, "Test", "User", "password"));
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource user = getUser("testDelete");
+    userEndpoint.delete(user.getId(), "*, \"123\"");
+  }
+
+
+
+  /**
+   * Tests the basic DELETE functionality via SCIM with multiple etags.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testDeleteUser3() throws Exception
+  {
+     // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    testDS.add(
+       generateUserEntry("testDelete", userBaseDN, "Test", "User", "password"));
+
+    SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+
+    final UserResource user = getUser("testDelete");
+    userEndpoint.delete(user.getId(), "\"123\"," + user.getMeta().getVersion());
+  }
+
 
 
 
@@ -1739,6 +1896,34 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertNull(user.getDisplayName());
     assertNull(user.getEmails());
     assertNull(user.getPassword());
+
+    //Make sure the stats were updated properly
+    assertEquals(beforeCount, afterCount - 1);
+
+    // Verify that precondition GET works
+    beforeCount =
+            getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
+    assertNull(userEndpoint.get(user.getId(), user.getMeta().getVersion()));
+    afterCount =
+            getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
+
+    //Make sure the stats were updated properly
+    assertEquals(beforeCount, afterCount - 1);
+
+    // Verify that precondition GET works with wildcard etag
+    beforeCount =
+            getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
+    assertNull(userEndpoint.get(user.getId(), "*, \"123\""));
+    afterCount =
+            getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
+
+    // Verify that precondition GET works with multiple etags
+    beforeCount =
+            getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
+    assertNull(userEndpoint.get(user.getId(), "\"123\"," +
+        user.getMeta().getVersion()));
+    afterCount =
+            getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
 
     //Make sure the stats were updated properly
     assertEquals(beforeCount, afterCount - 1);
@@ -2041,7 +2226,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertTrue(config.getFilterConfig().getMaxResults() > 0);
     assertTrue(config.getChangePasswordConfig().isSupported());
     assertTrue(config.getSortConfig().isSupported());
-    assertFalse(config.getETagConfig().isSupported());
+    assertTrue(config.getETagConfig().isSupported());
     assertTrue(config.getAuthenticationSchemes().size() > 0);
     assertTrue(config.getXmlDataFormatConfig().isSupported());
 
@@ -2189,10 +2374,11 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
         BulkOperation.Method.POST, "alice", null,
         "/Users", userAlice));
     operations.add(BulkOperation.createRequest(
-        BulkOperation.Method.PUT, "bob", null,
+        BulkOperation.Method.PUT, "bob",
+        "\"123\"," + userBob.getMeta().getVersion(),
         "/Users/" + userBob.getId(), userBob));
     operations.add(BulkOperation.createRequest(
-        BulkOperation.Method.DELETE, null, null,
+        BulkOperation.Method.DELETE, null, "*",
         "/Users/" + userDave.getId(), null));
     operations.add(BulkOperation.createRequest(
         BulkOperation.Method.POST, "group", null,
@@ -2246,6 +2432,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
               o.getMethod().equals(BulkOperation.Method.PUT))
       {
         assertNotNull(r.getLocation());
+        assertNotNull(r.getVersion());
       }
 
       assertNotNull(r.getStatus());
@@ -2290,7 +2477,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(group.getMembers().iterator().next().getValue(),
                  userAlice.getId());
 
-    groupEndpoint.delete(group.getId());
+    groupEndpoint.delete(group);
   }
 
 
@@ -2309,10 +2496,11 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
-    final UserResource testUser = userEndpoint.newResource();
+    UserResource testUser = userEndpoint.newResource();
     testUser.setName(new Name("Test Invalid Bulk", "Bulk", null,
                               "Test", null, null));
     testUser.setUserName("test-invalid-bulk");
+    testUser = userEndpoint.create(testUser);
 
     final SCIMEndpoint<GroupResource> groupEndpoint =
         service.getGroupEndpoint();
@@ -2338,8 +2526,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     // Missing path.
     testInvalidBulkOperation(
-        BulkOperation.createRequest(BulkOperation.Method.DELETE, null, null,
-                                    null, null),
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null,
+                                    "\"123\"", null, null),
         "400");
 
     // POST with missing data.
@@ -2356,8 +2544,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     // DELETE specifies a path with no resource ID.
     testInvalidBulkOperation(
-        BulkOperation.createRequest(BulkOperation.Method.DELETE, null, null,
-                                    "/Users", null),
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null,
+                                    "\"123\"", "/Users", null),
         "400");
 
     // Undefined bulkId reference in the data.
@@ -2368,9 +2556,29 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     // PATCH a resource that doesn't exist.
     testInvalidBulkOperation(
-        BulkOperation.createRequest(BulkOperation.Method.PATCH, null, null,
+        BulkOperation.createRequest(BulkOperation.Method.PATCH, null, "\"123\"",
                                     "/Users/1", testUser),
         "404");
+
+    // PUT a resource with non-matching version
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.PUT, null, "\"123\"",
+                                    "/Users/" + testUser.getId(), testUser),
+        "412");
+
+    // DELETE a resource with non-matching version
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.DELETE, null,
+                                    "\"123\"", "/Users/" + testUser.getId(),
+                                    testUser),
+        "412");
+    // PATCH a resource with non-matching version
+    testInvalidBulkOperation(
+        BulkOperation.createRequest(BulkOperation.Method.PATCH, null, "\"123\"",
+                                    "/Users/" + testUser.getId(), testUser),
+        "412");
+
+    userEndpoint.delete(testUser);
   }
 
 

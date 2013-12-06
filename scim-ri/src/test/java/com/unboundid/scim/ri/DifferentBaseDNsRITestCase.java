@@ -156,7 +156,7 @@ public class DifferentBaseDNsRITestCase extends SCIMRITestCase
 
     //Verify that user1 correctly identifies its two groups which should
     //both be direct.
-    user1 = endpoint.get(user1.getId(), "id", "meta", "groups");
+    user1 = endpoint.get(user1.getId(), null, "id", "meta", "groups");
     assertEquals(user1.getGroups().size(), 2);
     for(com.unboundid.scim.data.Entry<String> entry : user1.getGroups())
     {
@@ -167,7 +167,7 @@ public class DifferentBaseDNsRITestCase extends SCIMRITestCase
 
     //Verify that user2 correctly identifies its two groups which should
     //both be direct.
-    user2 = endpoint.get(user2.getId(), "id", "meta", "groups");
+    user2 = endpoint.get(user2.getId(), null, "id", "meta", "groups");
     assertEquals(user2.getGroups().size(), 2);
     for(com.unboundid.scim.data.Entry<String> entry : user2.getGroups())
     {

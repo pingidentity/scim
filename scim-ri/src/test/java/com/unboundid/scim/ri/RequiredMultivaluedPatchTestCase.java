@@ -139,7 +139,7 @@ public class RequiredMultivaluedPatchTestCase extends SCIMRITestCase
     List<SCIMAttribute> attrsToUpdate = Collections.singletonList(emails);
 
     // This should work fine as we are deleting just one value.
-    userEndpoint.update(user.getId(), null, attrsToUpdate, null);
+    user = userEndpoint.update(user, attrsToUpdate, null);
 
     value = SCIMAttributeValue.createStringValue("testEmail.2@example.com");
     SCIMAttribute email2Value = SCIMAttribute.create(
@@ -162,7 +162,7 @@ public class RequiredMultivaluedPatchTestCase extends SCIMRITestCase
 
     try
     {
-      userEndpoint.update(user.getId(), null, attrsToUpdate, null);
+      userEndpoint.update(user, attrsToUpdate, null);
       fail("Expected a 400 response when trying to patch user by " +
           "deleting all values of a required multi-valued attr");
     }

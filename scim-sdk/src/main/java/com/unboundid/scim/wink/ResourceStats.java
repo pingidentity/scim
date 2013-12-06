@@ -79,6 +79,11 @@ public class ResourceStats
   public static final String GET_OK = "get-successful";
 
   /**
+   * Number of versioned get requests that were not modified.
+   */
+  public static final String GET_NOT_MODIFIED = "get-not-modified";
+
+  /**
    * Number of get requests that failed with code 400 Bad Request.
    */
   public static final String GET_BAD_REQUEST = "get-400"
@@ -340,6 +345,11 @@ public class ResourceStats
    * Number of delete requests that failed with code 409 Conflict.
    */
   public static final String DELETE_CONFLICT = "delete-409";
+
+  /**
+   * Number of delete requests that failed with code 412 Precondition Failed.
+   */
+  public static final String DELETE_PRECONDITION_FAILED = "delete-412";
 
   /**
    * Number of delete requests that failed with code 500 Internal Server Error.

@@ -20,8 +20,9 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.EntityTag;
 import java.net.URI;
-
+import java.util.Collection;
 
 
 /**
@@ -35,6 +36,10 @@ public final class DeleteResourceRequest extends SCIMRequest
    */
   private final String resourceID;
 
+  /**
+   * The versions that at least one must be matched to perform the operation.
+   */
+  private final Collection<EntityTag> versions;
 
 
   /**
@@ -45,15 +50,19 @@ public final class DeleteResourceRequest extends SCIMRequest
    *                             the request is not authenticated.
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             request.
-   * @param resourceID    The target resource ID.
+   * @param resourceID           The target resource ID.
+   * @param versions             The versions that at least one must be matched
+   *                             to perform the operation.
    */
   public DeleteResourceRequest(final URI baseURL,
                                final String authenticatedUserID,
                                final ResourceDescriptor resourceDescriptor,
-                               final String resourceID)
+                               final String resourceID,
+                               final Collection<EntityTag> versions)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor);
     this.resourceID          = resourceID;
+    this.versions            = versions;
   }
 
 
@@ -67,6 +76,8 @@ public final class DeleteResourceRequest extends SCIMRequest
    * @param resourceDescriptor   The ResourceDescriptor associated with this
    *                             request.
    * @param resourceID           The target resource ID.
+   * @param versions             The versions that at least one must be matched
+   *                             to perform the operation.
    * @param httpServletRequest   The HTTP servlet request associated with this
    *                             request or {@code null} if this request is not
    *                             initiated by a servlet.
@@ -75,10 +86,12 @@ public final class DeleteResourceRequest extends SCIMRequest
                                final String authenticatedUserID,
                                final ResourceDescriptor resourceDescriptor,
                                final String resourceID,
+                               final Collection<EntityTag> versions,
                                final HttpServletRequest httpServletRequest)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor, httpServletRequest);
     this.resourceID          = resourceID;
+    this.versions            = versions;
   }
 
 
@@ -90,5 +103,19 @@ public final class DeleteResourceRequest extends SCIMRequest
   public String getResourceID()
   {
     return resourceID;
+  }
+
+
+  /**
+   * Get the versions that at least one must be matched to perform the
+   * operation.
+   *
+   * @return The versions that at least one must be matched to perform the
+   *         operation or {@code null} if the operation should be performed
+   *         normally.
+   */
+  public Collection<EntityTag> getVersions()
+  {
+    return versions;
   }
 }

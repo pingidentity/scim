@@ -130,8 +130,7 @@ public class ClientTest
   public void testDeleteUser() throws Exception
   {
     final UserResource user = createUser();
-    String id = user.getId();
-    client.getUserEndpoint().delete(id);
+    client.getUserEndpoint().delete(user);
   }
 
 

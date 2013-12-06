@@ -542,6 +542,7 @@ public class InMemoryServerTool
     backend.setSupportsPostReadRequestControl(true);
     backend.setSupportsVLVRequestControl(true);
     backend.setSupportsSimplePagedResultsControl(true);
+    backend.setSupportsAssertionRequestControl(true);
 
     final SCIMApplication application =
         scimServer.registerBackend(contextPath, backend);

@@ -27,6 +27,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.OAuthToken;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.OAuthTokenStatus;
@@ -45,11 +46,13 @@ import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.UnauthorizedException;
 
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -127,6 +130,32 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMQueryAttributes queryAttributes =
           new SCIMQueryAttributes(resourceDescriptor, attributes);
 
+      Collection<EntityTag> versions = null;
+      List<String> ifNoneMatchHeaders =
+          requestContext.getHeaders().getRequestHeader(
+              HttpHeaders.IF_NONE_MATCH);
+
+      final String ifNoneMatchHeader = ifNoneMatchHeaders ==
+          null || ifNoneMatchHeaders.isEmpty() ?
+          null : ifNoneMatchHeaders.get(0);
+
+      if(ifNoneMatchHeader != null)
+      {
+        String[] valueTokens = ifNoneMatchHeader.split(",");
+        versions = new ArrayList<EntityTag>(valueTokens.length);
+        for(String token : valueTokens)
+        {
+          try
+          {
+            versions.add(EntityTag.valueOf(token));
+          }
+          catch(IllegalArgumentException e)
+          {
+            throw new InvalidResourceException(e.getMessage(), e);
+          }
+        }
+      }
+
       // Process the request.
       GetResourceRequest getResourceRequest =
           new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
@@ -156,15 +185,39 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
 
       BaseResource resource =
           backend.getResource(getResourceRequest);
+
       // Build the response.
-      responseBuilder = Response.status(Response.Status.OK);
-      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                        resource);
-      URI location = resource.getMeta().getLocation();
-      if(location != null)
+      boolean matchFound = false;
+      if(versions != null)
       {
-        responseBuilder.location(location);
+        EntityTag currentVersion =
+            EntityTag.valueOf(resource.getMeta().getVersion());
+        for(EntityTag version : versions)
+        {
+          if(version.getValue().equals("*") || currentVersion.equals(version))
+          {
+            matchFound = true;
+            break;
+          }
+        }
       }
+
+      if(matchFound)
+      {
+        responseBuilder = Response.status(Response.Status.NOT_MODIFIED);
+        application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.GET_NOT_MODIFIED);
+      }
+      else
+      {
+        responseBuilder = Response.status(Response.Status.OK);
+        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                          resource);
+        application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.GET_OK);
+      }
+      responseBuilder.location(resource.getMeta().getLocation());
+      responseBuilder.tag(resource.getMeta().getVersion());
 
       if (requestContext.getOrigin() != null)
       {
@@ -174,8 +227,6 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
           Boolean.TRUE.toString());
 
-      application.getStatsForResource(resourceDescriptor.getName()).
-        incrementStat(ResourceStats.GET_OK);
       if(requestContext.getProduceMediaType() ==
           MediaType.APPLICATION_JSON_TYPE)
       {
@@ -516,6 +567,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
           resource);
       responseBuilder.location(resource.getMeta().getLocation());
+      responseBuilder.tag(resource.getMeta().getVersion());
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.POST_OK);
       if(requestContext.getProduceMediaType() ==
@@ -604,11 +656,46 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMQueryAttributes queryAttributes =
           new SCIMQueryAttributes(resourceDescriptor, attributes);
 
+      Collection<EntityTag> versions = null;
+        List<String> ifMatchHeaders =
+            requestContext.getHeaders().getRequestHeader(HttpHeaders.IF_MATCH);
+
+      final String ifMatchHeader = ifMatchHeaders ==
+          null || ifMatchHeaders.isEmpty() ? null : ifMatchHeaders.get(0);
+
+      if(ifMatchHeader != null)
+      {
+        String[] valueTokens = ifMatchHeader.split(",");
+        versions = new ArrayList<EntityTag>(valueTokens.length);
+        for(String token : valueTokens)
+        {
+          EntityTag tag;
+          try
+          {
+            tag = EntityTag.valueOf(token);
+          }
+          catch(IllegalArgumentException e)
+          {
+            throw new InvalidResourceException(e.getMessage(), e);
+          }
+          if(tag.getValue().equals("*"))
+          {
+            // Should behave as if the if-match header was not there
+            versions = null;
+            break;
+          }
+          else
+          {
+            versions.add(tag);
+          }
+        }
+      }
+
       // Process the request.
       PutResourceRequest putResourceRequest =
           new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
               authID, resourceDescriptor, userID,
-              puttedResource.getScimObject(), queryAttributes,
+              puttedResource.getScimObject(), versions, queryAttributes,
               requestContext.getRequest());
 
       if (authID == null)
@@ -628,7 +715,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           putResourceRequest =
              new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
                   authID, resourceDescriptor, userID,
-                  puttedResource.getScimObject(), queryAttributes,
+                  puttedResource.getScimObject(), versions, queryAttributes,
                   requestContext.getRequest());
         }
       }
@@ -639,6 +726,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         scimResponse);
       responseBuilder.location(scimResponse.getMeta().getLocation());
+      responseBuilder.tag(scimResponse.getMeta().getVersion());
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.PUT_OK);
       if(requestContext.getProduceMediaType() ==
@@ -725,12 +813,47 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMQueryAttributes queryAttributes =
               new SCIMQueryAttributes(resourceDescriptor, attributes);
 
+      Collection<EntityTag> versions = null;
+      List<String> ifMatchHeaders =
+          requestContext.getHeaders().getRequestHeader(HttpHeaders.IF_MATCH);
+
+      final String ifMatchHeader = ifMatchHeaders ==
+          null || ifMatchHeaders.isEmpty() ? null : ifMatchHeaders.get(0);
+
+      if(ifMatchHeader != null)
+      {
+        String[] valueTokens = ifMatchHeader.split(",");
+        versions = new ArrayList<EntityTag>(valueTokens.length);
+        for(String token : valueTokens)
+        {
+          EntityTag tag;
+          try
+          {
+            tag = EntityTag.valueOf(token);
+          }
+          catch(IllegalArgumentException e)
+          {
+            throw new InvalidResourceException(e.getMessage(), e);
+          }
+          if(tag.getValue().equals("*"))
+          {
+            // Should behave as if the if-match header was not there
+            versions = null;
+            break;
+          }
+          else
+          {
+            versions.add(tag);
+          }
+        }
+      }
+
       // Process the request.
       PatchResourceRequest patchResourceRequest =
               new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
                       authID, resourceDescriptor, userID,
-                      patchedResource.getScimObject(), queryAttributes,
-                      requestContext.getRequest());
+                      patchedResource.getScimObject(), versions,
+                      queryAttributes, requestContext.getRequest());
 
       if (authID == null)
       {
@@ -749,7 +872,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           patchResourceRequest =
              new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
                    authID, resourceDescriptor, userID,
-                   patchedResource.getScimObject(), queryAttributes,
+                   patchedResource.getScimObject(), versions, queryAttributes,
                    requestContext.getRequest());
         }
       }
@@ -768,6 +891,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       {
         responseBuilder = Response.status(Response.Status.NO_CONTENT);
       }
+      responseBuilder.location(scimResponse.getMeta().getLocation());
+      responseBuilder.tag(scimResponse.getMeta().getVersion());
 
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.PATCH_OK);
@@ -830,9 +955,47 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       {
         throw new UnauthorizedException("Invalid credentials");
       }
+
+      Collection<EntityTag> versions = null;
+      List<String> ifMatchHeaders =
+          requestContext.getHeaders().getRequestHeader(HttpHeaders.IF_MATCH);
+
+      final String ifMatchHeader = ifMatchHeaders ==
+          null || ifMatchHeaders.isEmpty() ? null : ifMatchHeaders.get(0);
+
+
+      if(ifMatchHeader != null)
+      {
+        String[] valueTokens = ifMatchHeader.split(",");
+        versions = new ArrayList<EntityTag>(valueTokens.length);
+        for(String token : valueTokens)
+        {
+          EntityTag tag;
+          try
+          {
+            tag = EntityTag.valueOf(token);
+          }
+          catch(IllegalArgumentException e)
+          {
+            throw new InvalidResourceException(e.getMessage(), e);
+          }
+          if(tag.getValue().equals("*"))
+          {
+            // Should behave as if the if-match header was not there
+            versions = null;
+            break;
+          }
+          else
+          {
+            versions.add(tag);
+          }
+        }
+      }
+
       DeleteResourceRequest deleteResourceRequest =
         new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-            authID, resourceDescriptor, userID, requestContext.getRequest());
+            authID, resourceDescriptor, userID, versions,
+            requestContext.getRequest());
 
       if (authID == null)
       {
@@ -850,7 +1013,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           authID = authIDRef.get();
           deleteResourceRequest =
              new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                   authID, resourceDescriptor, userID,
+                   authID, resourceDescriptor, userID, versions,
                    requestContext.getRequest());
         }
       }

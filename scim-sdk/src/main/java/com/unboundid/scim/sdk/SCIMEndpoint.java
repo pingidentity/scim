@@ -45,6 +45,7 @@ import org.apache.wink.client.ClientWebException;
 import org.apache.wink.client.RestClient;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -147,7 +148,7 @@ public class SCIMEndpoint<R extends BaseResource>
   public R get(final String id)
       throws SCIMException
   {
-    return get(id, null, null);
+    return get(id, null, (String[]) null);
   }
 
   /**
@@ -157,8 +158,9 @@ public class SCIMEndpoint<R extends BaseResource>
    * @param id The ID of the resource to retrieve.
    * @param etag The entity tag that indicates the entry should be returned
    *             only if the entity tag of the current resource is different
-   *             from the provided value. A value of <code>null</code> indicates
-   *             unconditional return.
+   *             from the provided value and a value of "*" will not return
+   *             an entry if the resource still exists. A value of
+   *             <code>null</code> indicates unconditional return.
    * @param requestedAttributes The attributes of the resource to retrieve.
    * @return The retrieved resource or <code>null</code> if the requested
    * resource has not been modified.
@@ -186,12 +188,12 @@ public class SCIMEndpoint<R extends BaseResource>
 
     if(scimService.getUserAgent() != null)
     {
-      clientResource.header("User-Agent", scimService.getUserAgent());
+      clientResource.header(HttpHeaders.USER_AGENT, scimService.getUserAgent());
     }
 
     if(etag != null && !etag.isEmpty())
     {
-      clientResource.header("If-None-Match", etag);
+      clientResource.header(HttpHeaders.IF_NONE_MATCH, etag);
     }
 
     InputStream entity = null;
@@ -248,7 +250,7 @@ public class SCIMEndpoint<R extends BaseResource>
   public Resources<R> query(final String filter)
       throws SCIMException
   {
-    return query(filter, null, null, null);
+    return query(filter, null, null);
   }
 
   /**
@@ -377,20 +379,6 @@ public class SCIMEndpoint<R extends BaseResource>
     }
   }
 
-
-
-  /**
-   * Create the specified resource instance at the service provider.
-   *
-   * @param resource The resource to create.
-   * @return The newly inserted resource returned by the service provider.
-   * @throws SCIMException If an error occurs.
-   */
-  public R create(final R resource) throws SCIMException
-  {
-    return create(resource, null);
-  }
-
   /**
    * Create the specified resource instance at the service provider and return
    * only the specified attributes from the newly inserted resource.
@@ -481,7 +469,14 @@ public class SCIMEndpoint<R extends BaseResource>
   public R update(final R resource)
       throws SCIMException
   {
-    return update(resource, null, null);
+    if(resource.getId() == null)
+    {
+      throw new InvalidResourceException("Resource must have a valid ID");
+    }
+    return update(resource.getId(),
+                  resource.getMeta() == null ?
+                      null : resource.getMeta().getVersion(),
+                  resource);
   }
 
   /**
@@ -500,6 +495,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @return The updated resource returned by the service provider.
    * @throws SCIMException If an error occurs.
    */
+  @Deprecated
   public R update(final R resource, final String etag,
                   final String... requestedAttributes)
       throws SCIMException
@@ -509,6 +505,30 @@ public class SCIMEndpoint<R extends BaseResource>
     {
       throw new InvalidResourceException("Resource must have a valid ID");
     }
+    return update(id, etag, resource, requestedAttributes);
+  }
+
+  /**
+   * Update the existing resource with the one provided (using the HTTP PUT
+   * method). This update is conditional upon the provided entity tag matching
+   * the tag from the current resource. If (and only if) they match, the update
+   * will be performed.
+   *
+   * @param id The ID of the resource to update.
+   * @param etag The entity tag value that is the expected value for the target
+   *             resource. A value of <code>null</code> will not set an
+   *             etag precondition and a value of "*" will perform an
+   *             unconditional update.
+   * @param resource The modified resource to be updated.
+   * @param requestedAttributes The attributes of updated resource
+   *                            to return.
+   * @return The updated resource returned by the service provider.
+   * @throws SCIMException If an error occurs.
+   */
+  public R update(final String id, final String etag, final R resource,
+                  final String... requestedAttributes)
+      throws SCIMException
+  {
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).path(id).build();
@@ -518,11 +538,11 @@ public class SCIMEndpoint<R extends BaseResource>
     addAttributesQuery(clientResource, requestedAttributes);
     if(scimService.getUserAgent() != null)
     {
-      clientResource.header("User-Agent", scimService.getUserAgent());
+      clientResource.header(HttpHeaders.USER_AGENT, scimService.getUserAgent());
     }
     if(etag != null && !etag.isEmpty())
     {
-      clientResource.header("If-Match", etag);
+      clientResource.header(HttpHeaders.IF_MATCH, etag);
     }
 
     StreamingOutput output = new StreamingOutput() {
@@ -592,6 +612,38 @@ public class SCIMEndpoint<R extends BaseResource>
    * specified, those attributes will be removed from the resource before the
    * {@code attributesToUpdate} are merged into the resource.
    *
+   * @param resource The to update.
+   * @param attributesToUpdate The list of attributes (and their new values) to
+   *                           update on the resource.
+   * @param attributesToDelete The list of attributes to delete on the resource.
+   * @return The updated resource returned by the service provider, or
+   *         an empty resource with returned meta data if the service provider
+   *         returned no content.
+   * @throws SCIMException If an error occurs.
+   */
+  public R update(final R resource,
+                  final List<SCIMAttribute> attributesToUpdate,
+                  final List<String> attributesToDelete)
+      throws SCIMException
+  {
+    if(resource.getId() == null)
+    {
+      throw new InvalidResourceException("Resource must have a valid ID");
+    }
+
+    return update(resource.getId(),
+        resource.getMeta() == null ?
+            null : resource.getMeta().getVersion(),
+        attributesToUpdate,
+        attributesToDelete);
+  }
+
+  /**
+   * Update the existing resource with the one provided (using the HTTP PATCH
+   * method). Note that if the {@code attributesToDelete} parameter is
+   * specified, those attributes will be removed from the resource before the
+   * {@code attributesToUpdate} are merged into the resource.
+   *
    * @param id The ID of the resource to update.
    * @param etag The entity tag value that is the expected value for the target
    *             resource. A value of <code>null</code> will not set an
@@ -605,8 +657,9 @@ public class SCIMEndpoint<R extends BaseResource>
    * @param attributesToDelete The list of attributes to delete on the resource.
    * @param requestedAttributes The attributes of updated resource to return.
    * @return The updated resource returned by the service provider, or
-   *         {@code null} if the {@code requestedAttributes} parameter was not
-   *         specified.
+   *         an empty resource with returned meta data if the
+   *         {@code requestedAttributes} parameter was not specified and
+   *         the service provider returned no content.
    * @throws SCIMException If an error occurs.
    */
   public R update(final String id, final String etag,
@@ -615,10 +668,6 @@ public class SCIMEndpoint<R extends BaseResource>
                   final String... requestedAttributes)
           throws SCIMException
   {
-    if(id == null)
-    {
-      throw new InvalidResourceException("Resource must have a valid ID");
-    }
     URI uri =
             UriBuilder.fromUri(scimService.getBaseURL()).path(
                     resourceDescriptor.getEndpoint()).path(id).build();
@@ -629,11 +678,11 @@ public class SCIMEndpoint<R extends BaseResource>
 
     if(scimService.getUserAgent() != null)
     {
-      clientResource.header("User-Agent", scimService.getUserAgent());
+      clientResource.header(HttpHeaders.USER_AGENT, scimService.getUserAgent());
     }
     if(etag != null && !etag.isEmpty())
     {
-      clientResource.header("If-Match", etag);
+      clientResource.header(HttpHeaders.IF_MATCH, etag);
     }
 
     Diff<R> diff = new Diff<R>(resourceDescriptor, attributesToDelete,
@@ -689,7 +738,12 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       else if (response.getStatusType() == Response.Status.NO_CONTENT)
       {
-         return null;
+        R emptyResource =
+            resourceFactory.createResource(resourceDescriptor,
+                new SCIMObject());
+        emptyResource.setId(id);
+        addMissingMetaData(response, emptyResource);
+        return emptyResource;
       }
       else
       {
@@ -729,6 +783,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @param attributesToDelete The list of attributes to delete on the resource.
    * @throws SCIMException If an error occurs.
    */
+  @Deprecated
   public void update(final String id,
                      final List<SCIMAttribute> attributesToUpdate,
                      final List<String> attributesToDelete)
@@ -743,10 +798,24 @@ public class SCIMEndpoint<R extends BaseResource>
    * @param id The ID of the resource to delete.
    * @throws SCIMException If an error occurs.
    */
+  @Deprecated
   public void delete(final String id)
       throws SCIMException
   {
     delete(id, null);
+  }
+
+  /**
+   * Delete the specified resource instance.
+   *
+   * @param resource The resource to delete.
+   * @throws SCIMException If an error occurs.
+   */
+  public void delete(final R resource)
+      throws SCIMException
+  {
+    delete(resource.getId(), resource.getMeta() == null ?
+        null : resource.getMeta().getVersion());
   }
 
   /**
@@ -773,11 +842,11 @@ public class SCIMEndpoint<R extends BaseResource>
     clientResource.contentType(contentType);
     if(scimService.getUserAgent() != null)
     {
-      clientResource.header("User-Agent", scimService.getUserAgent());
+      clientResource.header(HttpHeaders.USER_AGENT, scimService.getUserAgent());
     }
     if(etag != null && !etag.isEmpty())
     {
-      clientResource.header("If-Match", etag);
+      clientResource.header(HttpHeaders.IF_MATCH, etag);
     }
 
 
@@ -861,12 +930,13 @@ public class SCIMEndpoint<R extends BaseResource>
   {
     URI headerLocation = null;
     String headerEtag = null;
-    List<String> values = response.getHeaders().get("Location");
+    List<String> values =
+        response.getHeaders().get(HttpHeaders.LOCATION);
     if(values != null && !values.isEmpty())
     {
       headerLocation = URI.create(values.get(0));
     }
-    values = response.getHeaders().get("Etag");
+    values = response.getHeaders().get(HttpHeaders.ETAG);
     if(values != null && !values.isEmpty())
     {
       headerEtag = values.get(0);

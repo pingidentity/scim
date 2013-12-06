@@ -37,6 +37,7 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.ldap.sdk.controls.AssertionRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
@@ -54,6 +55,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.PatchResourceRequest;
+import com.unboundid.scim.sdk.PreconditionFailedException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -79,6 +81,7 @@ import com.unboundid.scim.sdk.UnsupportedOperationException;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.Validator;
 
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.UriBuilder;
 
 import java.text.ParseException;
@@ -109,6 +112,8 @@ public abstract class LDAPBackend
    * making requests to the underlying LDAP server.
    */
   private static final Set<String> DEFAULT_LASTMOD_ATTRS;
+  private static final String CREATE_TIMESTAMP_ATTR = "createTimestamp";
+  private static final String MODIFY_TIMESTAMP_ATTR = "modifyTimestamp";
 
   /**
    * The resource mappers configured for SCIM resource end-points.
@@ -133,12 +138,17 @@ public abstract class LDAPBackend
    */
   private boolean supportsSimplePagesResultsControl = false;
 
+  /**
+   * Flag to indicate whether this backend supports the Assertion Request
+   * Control.
+   */
+  private boolean supportsAssertionRequestControl = false;
 
   static
   {
     HashSet<String> attrs = new HashSet<String>(2);
-    attrs.add("createTimestamp");
-    attrs.add("modifyTimestamp");
+    attrs.add(CREATE_TIMESTAMP_ATTR);
+    attrs.add(MODIFY_TIMESTAMP_ATTR);
     DEFAULT_LASTMOD_ATTRS = Collections.unmodifiableSet(attrs);
   }
 
@@ -246,6 +256,40 @@ public abstract class LDAPBackend
   }
 
 
+
+  /**
+   * Configures this LDAPBackend to use or not use the
+   * AssertionRequestControl.
+   *
+   * @param supported {@code true} if the control is supported, {@code false} if
+   *                  not.
+   */
+  public void setSupportsAssertionRequestControl(final boolean supported)
+  {
+    this.supportsAssertionRequestControl = supported;
+  }
+
+
+
+  /**
+   * Determines if this LDAPBackend supports the AssertionRequestControl.
+   *
+   * @return {@code true} if the control is supported, {@code false} otherwise.
+   */
+  public boolean supportsAssertionRequestControl()
+  {
+    return this.supportsAssertionRequestControl;
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean supportsVersioning()
+  {
+    return supportsAssertionRequestControl;
+  }
 
   /**
    * Retrieve an LDAP interface that may be used to interact with the LDAP
@@ -768,6 +812,51 @@ public abstract class LDAPBackend
       final Entry entry =
           mapper.getEntryWithoutAttrs(ldapInterface, request.getResourceID());
       final DeleteRequest deleteRequest = new DeleteRequest(entry.getDN());
+
+      Set<Date> version;
+      if(supportsVersioning() && request.getVersions() != null &&
+          !request.getVersions().isEmpty())
+      {
+        version = new HashSet<Date>(request.getVersions().size());
+        for(EntityTag tag : request.getVersions())
+        {
+          if(!tag.isWeak())
+          {
+            try
+            {
+              version.add(new Date(Long.valueOf(tag.getValue())));
+            }
+            catch (NumberFormatException e)
+            {
+              Debug.debugException(e);
+              // Ignore.
+            }
+          }
+        }
+        if(version.isEmpty())
+        {
+          throw new LDAPException(ResultCode.ASSERTION_FAILED);
+        }
+        Filter filter;
+        if(version.size() > 1)
+        {
+          List<Filter> filters = new ArrayList<Filter>(version.size());
+          for(Date v : version)
+          {
+            filters.add(Filter.createEqualityFilter(
+                MODIFY_TIMESTAMP_ATTR,
+                StaticUtils.encodeGeneralizedTime(v)));
+          }
+          filter = Filter.createORFilter(filters);
+        }
+        else
+        {
+          filter = Filter.createEqualityFilter(
+              MODIFY_TIMESTAMP_ATTR,
+              StaticUtils.encodeGeneralizedTime(version.iterator().next()));
+        }
+        deleteRequest.addControl(new AssertionRequestControl(filter, true));
+      }
       final LDAPResult result = ldapInterface.delete(deleteRequest);
 
       if (!result.getResultCode().equals(ResultCode.SUCCESS))
@@ -782,6 +871,12 @@ public abstract class LDAPBackend
       {
         throw new ResourceNotFoundException(
             "Resource " + request.getResourceID() + " not found");
+      }
+      if(supportsAssertionRequestControl &&
+          e.getResultCode().equals(ResultCode.ASSERTION_FAILED))
+      {
+        throw new PreconditionFailedException("Resource changed since last " +
+            "retrieved");
       }
       throw ResourceMapper.toSCIMException(e);
     }
@@ -803,6 +898,27 @@ public abstract class LDAPBackend
           request.getResourceDescriptor(), false);
     }
 
+    Set<Date> version = null;
+    if(supportsVersioning() && request.getVersions() != null &&
+        !request.getVersions().isEmpty())
+    {
+      version = new HashSet<Date>(request.getVersions().size());
+      for(EntityTag tag : request.getVersions())
+      {
+        if(!tag.isWeak())
+        {
+          try
+          {
+            version.add(new Date(Long.valueOf(tag.getValue())));
+          }
+          catch (NumberFormatException e)
+          {
+            Debug.debugException(e);
+            // Ignore.
+          }
+        }
+      }
+    }
 
     final ResourceMapper mapper =
         getResourceMapper(request.getResourceDescriptor());
@@ -813,6 +929,13 @@ public abstract class LDAPBackend
         mapper.getModifiableLDAPAttributeTypes(request.getResourceObject());
     final String[] mappedAttributes = new String[mappedAttributeSet.size()];
     mappedAttributeSet.toArray(mappedAttributes);
+    String[] getEntryAttributes = mappedAttributes;
+    if(version != null)
+    {
+      getEntryAttributes = new String[mappedAttributeSet.size() + 1];
+      mappedAttributeSet.toArray(getEntryAttributes);
+      getEntryAttributes[getEntryAttributes.length - 1] = MODIFY_TIMESTAMP_ATTR;
+    }
 
     final String resourceID = request.getResourceID();
     final List<Modification> mods = new ArrayList<Modification>();
@@ -823,7 +946,37 @@ public abstract class LDAPBackend
       final LDAPRequestInterface ldapInterface =
           getLDAPRequestInterface(request.getAuthenticatedUserID());
       final SearchResultEntry currentEntry =
-          mapper.getEntry(ldapInterface, resourceID, mappedAttributes);
+          mapper.getEntry(ldapInterface, resourceID, getEntryAttributes);
+
+      if(version != null)
+      {
+        try
+        {
+          boolean matchFound = false;
+          final Date currentVersion = StaticUtils.decodeGeneralizedTime(
+              currentEntry.getAttributeValue(MODIFY_TIMESTAMP_ATTR));
+
+          for(Date v : version)
+          {
+            if(v.equals(currentVersion))
+            {
+              matchFound = true;
+              break;
+            }
+          }
+
+          if(!matchFound)
+          {
+            throw new LDAPException(ResultCode.ASSERTION_FAILED);
+          }
+        }
+        catch (ParseException e)
+        {
+          Debug.debugException(e);
+          throw new ServerErrorException(
+              "Value for modifyTimestamp attribute is invalid");
+        }
+      }
 
       mods.addAll(mapper.toLDAPModificationsForPut(currentEntry,
           request.getResourceObject(), mappedAttributes, ldapInterface));
@@ -885,6 +1038,29 @@ public abstract class LDAPBackend
           }
         }
 
+        AssertionRequestControl assertionRequestControl = null;
+        if(version != null)
+        {
+          Filter filter;
+          if(version.size() > 1)
+          {
+            List<Filter> filters = new ArrayList<Filter>(version.size());
+            for(Date v : version)
+            {
+              filters.add(Filter.createEqualityFilter(
+                  MODIFY_TIMESTAMP_ATTR,
+                  StaticUtils.encodeGeneralizedTime(v)));
+            }
+            filter = Filter.createORFilter(filters);
+          }
+          else
+          {
+            filter = Filter.createEqualityFilter(
+                MODIFY_TIMESTAMP_ATTR,
+                StaticUtils.encodeGeneralizedTime(version.iterator().next()));
+          }
+          assertionRequestControl = new AssertionRequestControl(filter, true);
+        }
         PostReadResponseControl c = null;
         if(!modifiedEntry.getParsedDN().equals(currentEntry.getParsedDN()))
         {
@@ -900,12 +1076,20 @@ public abstract class LDAPBackend
             modifyDNRequest.addControl(
                 new PostReadRequestControl(requestAttributes));
           }
+          if(assertionRequestControl != null)
+          {
+            modifyDNRequest.addControl(assertionRequestControl);
+          }
           final LDAPResult modifyDNResult =
               ldapInterface.modifyDN(modifyDNRequest);
-          if(mods.isEmpty())
-          {
-            c = getPostReadResponseControl(modifyDNResult);
-          }
+          c = getPostReadResponseControl(modifyDNResult);
+          // Since the assertion that the current wasn't changed since we
+          // retrieved it is used with mod DN, we shouldn't use the assertion
+          // again with further mods because:
+          // - May not know the latest modifyTimestamp
+          // - Avoid doing a partial update where the mod DN succeeds but
+          //   the subsequent modify fails because of the assertion.
+          assertionRequestControl = null;
         }
 
         if(!mods.isEmpty())
@@ -916,6 +1100,10 @@ public abstract class LDAPBackend
           {
             modifyRequest.addControl(
                   new PostReadRequestControl(requestAttributes));
+          }
+          if(assertionRequestControl != null)
+          {
+            modifyRequest.addControl(assertionRequestControl);
           }
 
           final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
@@ -962,6 +1150,12 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
+      if(supportsAssertionRequestControl &&
+          e.getResultCode().equals(ResultCode.ASSERTION_FAILED))
+      {
+        throw new PreconditionFailedException("Resource changed since last " +
+            "retrieved");
+      }
       throw ResourceMapper.toSCIMException(e);
     }
   }
@@ -1025,6 +1219,28 @@ public abstract class LDAPBackend
       }
     }
 
+    Set<Date> version = null;
+    if(supportsVersioning() && request.getVersions() != null &&
+        !request.getVersions().isEmpty())
+    {
+      version = new HashSet<Date>(request.getVersions().size());
+      for(EntityTag tag : request.getVersions())
+      {
+        if(!tag.isWeak())
+        {
+          try
+          {
+            version.add(new Date(Long.valueOf(tag.getValue())));
+          }
+          catch (NumberFormatException e)
+          {
+            Debug.debugException(e);
+            // Ignore.
+          }
+        }
+      }
+    }
+
     final ResourceMapper mapper =
             getResourceMapper(request.getResourceDescriptor());
 
@@ -1032,6 +1248,10 @@ public abstract class LDAPBackend
     // the resource.
     final Set<String> mappedAttributeSet =
           mapper.getModifiableLDAPAttributeTypes(request.getResourceObject());
+    if(version != null)
+    {
+      mappedAttributeSet.add(MODIFY_TIMESTAMP_ATTR);
+    }
     final String[] mappedAttributes = new String[mappedAttributeSet.size()];
     mappedAttributeSet.toArray(mappedAttributes);
 
@@ -1045,6 +1265,36 @@ public abstract class LDAPBackend
               getLDAPRequestInterface(request.getAuthenticatedUserID());
       final SearchResultEntry currentEntry =
               mapper.getEntry(ldapInterface, resourceID, mappedAttributes);
+
+      if(version != null)
+      {
+        try
+        {
+          boolean matchFound = false;
+          final Date currentVersion = StaticUtils.decodeGeneralizedTime(
+              currentEntry.getAttributeValue(MODIFY_TIMESTAMP_ATTR));
+
+          for(Date v : version)
+          {
+            if(v.equals(currentVersion))
+            {
+              matchFound = true;
+              break;
+            }
+          }
+
+          if(!matchFound)
+          {
+            throw new LDAPException(ResultCode.ASSERTION_FAILED);
+          }
+        }
+        catch (ParseException e)
+        {
+          Debug.debugException(e);
+          throw new ServerErrorException(
+              "Value for modifyTimestamp attribute is invalid");
+        }
+      }
 
       mods.addAll(mapper.toLDAPModificationsForPatch(currentEntry,
               request.getResourceObject(), ldapInterface));
@@ -1117,6 +1367,29 @@ public abstract class LDAPBackend
                   "Patching resource, mods=" + mods);
         }
 
+        AssertionRequestControl assertionRequestControl = null;
+        if(version != null)
+        {
+          Filter filter;
+          if(version.size() > 1)
+          {
+            List<Filter> filters = new ArrayList<Filter>(version.size());
+            for(Date v : version)
+            {
+              filters.add(Filter.createEqualityFilter(
+                  MODIFY_TIMESTAMP_ATTR,
+                  StaticUtils.encodeGeneralizedTime(v)));
+            }
+            filter = Filter.createORFilter(filters);
+          }
+          else
+          {
+            filter = Filter.createEqualityFilter(
+                MODIFY_TIMESTAMP_ATTR,
+                StaticUtils.encodeGeneralizedTime(version.iterator().next()));
+          }
+          assertionRequestControl = new AssertionRequestControl(filter, true);
+        }
         PostReadResponseControl c = null;
         if(!modifiedEntry.getParsedDN().equals(currentEntry.getParsedDN()))
         {
@@ -1132,9 +1405,20 @@ public abstract class LDAPBackend
             modifyDNRequest.addControl(
                     new PostReadRequestControl(requestAttributes));
           }
+          if(assertionRequestControl != null)
+          {
+            modifyDNRequest.addControl(assertionRequestControl);
+          }
           final LDAPResult modifyDNResult =
                   ldapInterface.modifyDN(modifyDNRequest);
           c = getPostReadResponseControl(modifyDNResult);
+          // Since the assertion that the current wasn't changed since we
+          // retrieved it is used with mod DN, we shouldn't use the assertion
+          // again with further mods because:
+          // - May not know the latest modifyTimestamp
+          // - Avoid doing a partial update where the mod DN succeeds but
+          //   the subsequent modify fails because of the assertion.
+          assertionRequestControl = null;
         }
 
         if(!mods.isEmpty())
@@ -1145,6 +1429,10 @@ public abstract class LDAPBackend
           {
             modifyRequest.addControl(
                 new PostReadRequestControl(requestAttributes));
+          }
+          if(assertionRequestControl != null)
+          {
+            modifyRequest.addControl(assertionRequestControl);
           }
           final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
           c = getPostReadResponseControl(modifyResult);
@@ -1200,6 +1488,12 @@ public abstract class LDAPBackend
     catch (LDAPException e)
     {
       Debug.debugException(e);
+      if(supportsAssertionRequestControl &&
+          e.getResultCode().equals(ResultCode.ASSERTION_FAILED))
+      {
+        throw new PreconditionFailedException("Resource changed since last " +
+            "retrieved");
+      }
       throw ResourceMapper.toSCIMException(e);
     }
   }
@@ -1229,7 +1523,7 @@ public abstract class LDAPBackend
    *
    * @throws SCIMException  If an error occurs.
    */
-  public static void setIdAndMetaAttributes(
+  void setIdAndMetaAttributes(
       final ResourceMapper resourceMapper,
       final BaseResource resource,
       final SCIMRequest request,
@@ -1273,7 +1567,7 @@ public abstract class LDAPBackend
     }
 
     Date modifyDate = null;
-    Attribute modifyTimeAttr = entry.getAttribute("modifyTimestamp");
+    Attribute modifyTimeAttr = entry.getAttribute(MODIFY_TIMESTAMP_ATTR);
     if(modifyTimeAttr != null && modifyTimeAttr.hasValue())
     {
       try
@@ -1313,7 +1607,9 @@ public abstract class LDAPBackend
     uriBuilder.path(resourceID);
 
     resource.setMeta(new Meta(createDate, modifyDate,
-        uriBuilder.build(), null));
+        uriBuilder.build(), supportsVersioning() && modifyDate != null ?
+        new EntityTag(String.valueOf(modifyDate.getTime())).toString() :
+        null));
 
     if (queryAttributes != null)
     {

@@ -84,6 +84,12 @@ public class ResourceSearchResultListener implements SearchResultListener
   private final SCIMQueryAttributes attributes;
 
 
+  /**
+   * The LDAPBackend that is processing the SCIM request.
+   */
+  private final LDAPBackend ldapBackend;
+
+
 
   /**
    * Create a new search result listener to retrieve SCIM objects.
@@ -102,6 +108,7 @@ public class ResourceSearchResultListener implements SearchResultListener
                                       final int maxResults)
       throws SCIMException
   {
+    this.ldapBackend    = backend;
     this.resourceMapper =
         backend.getResourceMapper(request.getResourceDescriptor());
     this.request        = request;
@@ -213,7 +220,7 @@ public class ResourceSearchResultListener implements SearchResultListener
       final BaseResource resource =
           new BaseResource(request.getResourceDescriptor(), scimObject);
 
-      LDAPBackend.setIdAndMetaAttributes(resourceMapper, resource, request,
+      ldapBackend.setIdAndMetaAttributes(resourceMapper, resource, request,
                                          searchEntry, null);
 
       if (request.getFilter() == null ||

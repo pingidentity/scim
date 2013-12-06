@@ -166,6 +166,17 @@ public abstract class SCIMBackend
   }
 
 
+  /**
+   * Retrieves whether this backends supports resource versioning.
+   *
+   * @return {@code true} if versioning is supported or {@code false} otherwise.
+   */
+  public boolean supportsVersioning()
+  {
+    return false;
+  }
+
+
 
   /**
    * Retrieves the authentication schemes supported by this backend.

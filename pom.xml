@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.5.1-SNAPSHOT</version>
+    <version>1.6.0-SNAPSHOT</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
@@ -49,7 +49,6 @@
         <module>scim-sdk</module>
         <module>scim-ldap</module>
         <module>scim-ri</module>
-        <module>scim-extension</module>
     </modules>
 
     <build>
