@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!--
+  ~ Copyright 2011-2013 UnboundID Corp.
+  ~
+  ~ This program is free software; you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License (GPLv2 only)
+  ~ or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+  ~ as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program; if not, see <http://www.gnu.org/licenses>.
+  -->
+
+<scim:User xmlns:scim="urn:scim:schemas:core:1.0"
+           xmlns:enterprise="urn:scim:schemas:extension:enterprise:1.0">
+
+  <id>uid=user.0,ou=People,dc=example,dc=com</id>
+  <userName>user.0</userName>
+  <name>
+    <formatted>Aaren Atp</formatted>
+    <familyName>Atp</familyName>
+    <givenName>Aaren</givenName>
+  </name>
+  <emails>
+    <email>
+      <value>user.0@example.com</value>
+      <primary>false</primary>
+      <type>work</type>
+    </email>
+  </emails>
+  <phoneNumbers>
+    <phoneNumber>
+      <value>tel:+1-319-805-3070</value>
+      <primary>false</primary>
+      <type>work</type>
+    </phoneNumber>
+    <phoneNumber>
+      <value>+1 003 490 8631</value>
+      <primary>false</primary>
+      <type>home</type>
+    </phoneNumber>
+  </phoneNumbers>
+  <addresses>
+    <address>
+      <type>work</type>
+      <formatted>
+        Aaren Atp 46045 Locust Street Sioux City, IL 24769
+      </formatted>
+      <streetAddress>46045 Locust Street</streetAddress>
+      <locality>Sioux City</locality>
+      <region>IL</region>
+      <postalCode>24769</postalCode>
+    </address>
+  </addresses>
+
+  <x509Certificates>
+    <x509Certificate>
+      <value>
+        MIIDQzCCAqygAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwTjELMAkGA1UEBhMCVVMx
+        EzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAoMC2V4YW1wbGUuY29tMRQwEgYD
+        VQQDDAtleGFtcGxlLmNvbTAeFw0xMTEwMjIwNjI0MzFaFw0xMjEwMDQwNjI0MzFa
+        MH8xCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRQwEgYDVQQKDAtl
+        eGFtcGxlLmNvbTEhMB8GA1UEAwwYTXMuIEJhcmJhcmEgSiBKZW5zZW4gSUlJMSIw
+        IAYJKoZIhvcNAQkBFhNiamVuc2VuQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0B
+        AQEFAAOCAQ8AMIIBCgKCAQEA7Kr+Dcds/JQ5GwejJFcBIP682X3xpjis56AK02bc
+        1FLgzdLI8auoR+cC9/Vrh5t66HkQIOdA4unHh0AaZ4xL5PhVbXIPMB5vAPKpzz5i
+        PSi8xO8SL7I7SDhcBVJhqVqr3HgllEG6UClDdHO7nkLuwXq8HcISKkbT5WFTVfFZ
+        zidPl8HZ7DhXkZIRtJwBweq4bvm3hM1Os7UQH05ZS6cVDgweKNwdLLrT51ikSQG3
+        DYrl+ft781UQRIqxgwqCfXEuDiinPh0kkvIi5jivVu1Z9QiwlYEdRbLJ4zJQBmDr
+        SGTMYn4lRc2HgHO4DqB/bnMVorHB0CC6AV1QoFK4GPe1LwIDAQABo3sweTAJBgNV
+        HRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZp
+        Y2F0ZTAdBgNVHQ4EFgQU8pD0U0vsZIsaA16lL8En8bx0F/gwHwYDVR0jBBgwFoAU
+        dGeKitcaF7gnzsNwDx708kqaVt0wDQYJKoZIhvcNAQEFBQADgYEAA81SsFnOdYJt
+        Ng5Tcq+/ByEDrBgnusx0jloUhByPMEVkoMZ3J7j1ZgI8rAbOkNngX8+pKfTiDz1R
+        C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1
+        +GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=
+      </value>
+    </x509Certificate>
+  </x509Certificates>
+
+  <enterprise:employeeNumber>0</enterprise:employeeNumber>
+  <enterprise:costCenter>100</enterprise:costCenter>
+  <enterprise:organization>Example</enterprise:organization>
+  <enterprise:division>People</enterprise:division>
+  <enterprise:department>Sales</enterprise:department>
+  <enterprise:manager>
+    <managerId>uid=user.1,ou=People,dc=example,dc=com</managerId>
+    <displayName>User One</displayName>
+  </enterprise:manager>
+
+</scim:User>

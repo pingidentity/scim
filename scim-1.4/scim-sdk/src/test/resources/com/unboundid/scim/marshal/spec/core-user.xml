@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scim:User xmlns:scim="urn:scim:schemas:core:1.0">
+    <id>uid=005D0000001Az1u,ou=People,dc=example,dc=com</id>
+    <meta>
+        <created>2010-01-23T04:56:22Z</created>
+        <lastModified>2011-05-13T04:42:34Z</lastModified>
+        <location>
+            http://example.com/User/uid=005D0000001Az1u,
+            ou=People,dc=example,dc=com
+        </location>
+    </meta>
+    <externalId>701984</externalId>
+    <userName>bjensen@example.com</userName>
+    <name>
+        <formatted>Ms. Babs J Jensen III</formatted>
+        <familyName>Jensen</familyName>
+        <givenName>Barbara</givenName>
+        <middleName>Jane</middleName>
+        <honorificPrefix>Ms.</honorificPrefix>
+        <honorificSuffix>III</honorificSuffix>
+    </name>
+    <displayName>Babs Jensen</displayName>
+    <nickName>Babs</nickName>
+    <profileUrl>https://example.com/bjensen</profileUrl>
+    <title>Tour Guide</title>
+    <userType>Employee</userType>
+    <preferredLanguage>en_US</preferredLanguage>
+    <locale>en_US</locale>
+    <timezone>America/Los_Angeles</timezone>
+    <emails>
+        <email>
+            <value>bjensen@example.com</value>
+            <primary>true</primary>
+            <type>work</type>
+        </email>
+        <email>
+            <value>babs@jensen</value>
+            <type>home</type>
+        </email>
+    </emails>
+    <phoneNumbers>
+        <phoneNumber>
+            <value>800-864-8377</value>
+            <primary>true</primary>
+            <type>work</type>
+        </phoneNumber>
+        <phoneNumber>
+            <value>818-123-4567</value>
+            <type>mobile</type>
+        </phoneNumber>
+    </phoneNumbers>
+    <ims>
+        <im>
+            <value>someaimhandle</value>
+            <type>aim</type>
+        </im>
+    </ims>
+    <photos>
+        <photo>
+            <value>
+                https://photos.example.com/profilephoto/uid=005D0000001Az1u,
+                ou=People,dc=example,dc=com/F"
+            </value>
+            <type>photo</type>
+        </photo>
+        <photo>
+            <value>
+                https://photos.example.com/profilephoto/uid=005D0000001Az1u,
+                ou=People,dc=example,dc=com/T"
+            </value>
+            <type>thumbnail</type>
+        </photo>
+    </photos>
+    <addresses>
+        <address>
+            <primary>true</primary>
+            <type>work</type>
+            <formatted>100 Universal City Plaza Hollywood, CA 91608 USA
+            </formatted>
+            <streetAddress>100 Universal City Plaza</streetAddress>
+            <locality>Hollywood</locality>
+            <region>CA</region>
+            <postalCode>91608</postalCode>
+            <country>USA</country>
+        </address>
+        <address>
+            <type>home</type>
+            <formatted>456 Hollywood Blvd Hollywood, CA 91608 USA</formatted>
+            <streetAddress>456 Hollywood Blvd</streetAddress>
+            <locality>San Francisco</locality>
+            <region>CA</region>
+            <postalCode>91608</postalCode>
+            <country>USA</country>
+        </address>
+    </addresses>
+    <groups>
+        <group>
+            <value>00300000005N2Y6AA</value>
+            <primary>true</primary>
+            <type>Tour Guides</type>
+        </group>
+        <group>
+            <value>00300000005N34H78</value>
+            <primary>true</primary>
+            <type>Employees</type>
+        </group>
+        <group>
+            <value>00300000005N98YT1</value>
+            <type>US Employees</type>
+        </group>
+    </groups>
+    <x509Certificates>
+      <x509Certificate>
+        <value>
+          MIIDQzCCAqygAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwTjELMAkGA1UEBhMCVVMx
+          EzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAoMC2V4YW1wbGUuY29tMRQwEgYD
+          VQQDDAtleGFtcGxlLmNvbTAeFw0xMTEwMjIwNjI0MzFaFw0xMjEwMDQwNjI0MzFa
+          MH8xCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRQwEgYDVQQKDAtl
+          eGFtcGxlLmNvbTEhMB8GA1UEAwwYTXMuIEJhcmJhcmEgSiBKZW5zZW4gSUlJMSIw
+          IAYJKoZIhvcNAQkBFhNiamVuc2VuQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0B
+          AQEFAAOCAQ8AMIIBCgKCAQEA7Kr+Dcds/JQ5GwejJFcBIP682X3xpjis56AK02bc
+          1FLgzdLI8auoR+cC9/Vrh5t66HkQIOdA4unHh0AaZ4xL5PhVbXIPMB5vAPKpzz5i
+          PSi8xO8SL7I7SDhcBVJhqVqr3HgllEG6UClDdHO7nkLuwXq8HcISKkbT5WFTVfFZ
+          zidPl8HZ7DhXkZIRtJwBweq4bvm3hM1Os7UQH05ZS6cVDgweKNwdLLrT51ikSQG3
+          DYrl+ft781UQRIqxgwqCfXEuDiinPh0kkvIi5jivVu1Z9QiwlYEdRbLJ4zJQBmDr
+          SGTMYn4lRc2HgHO4DqB/bnMVorHB0CC6AV1QoFK4GPe1LwIDAQABo3sweTAJBgNV
+          HRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZp
+          Y2F0ZTAdBgNVHQ4EFgQU8pD0U0vsZIsaA16lL8En8bx0F/gwHwYDVR0jBBgwFoAU
+          dGeKitcaF7gnzsNwDx708kqaVt0wDQYJKoZIhvcNAQEFBQADgYEAA81SsFnOdYJt
+          Ng5Tcq+/ByEDrBgnusx0jloUhByPMEVkoMZ3J7j1ZgI8rAbOkNngX8+pKfTiDz1R
+          C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1
+          +GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=
+        </value>
+      </x509Certificate>
+    </x509Certificates>
+</scim:User>

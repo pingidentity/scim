@@ -1,0 +1,220 @@
+<!--
+  ~ Copyright 2011-2013 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>scim-parent</artifactId>
+        <groupId>com.unboundid.product.scim</groupId>
+        <version>1.4.5</version>
+    </parent>
+    <artifactId>scim-ldap</artifactId>
+    <packaging>jar</packaging>
+    <name>UnboundID SCIM LDAP</name>
+
+    <properties>
+      <main.basedir>${project.basedir}/..</main.basedir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <headerLocation>config/gpl.sourceheader</headerLocation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>jaxb2-maven-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>xjc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <packageName>com.unboundid.scim.ldap</packageName>
+                    <clearOutputDir>true</clearOutputDir>
+                    <schemaDirectory>${main.basedir}/resource</schemaDirectory>
+                    <schemaFiles>resources.xsd</schemaFiles>
+                    <outputDirectory>${project.build.genSourceDirectory}/jaxb2</outputDirectory>
+                    <npa>true</npa>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+				        <version>2.3</version>
+				        <executions>
+                  <execution>
+                    <id>copy-resources-xsd</id>
+                    <phase>process-resources</phase>
+                    <goals>
+                      <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                      <overwrite>true</overwrite>
+                      <outputDirectory>${project.build.outputDirectory}/com/unboundid/scim/ldap</outputDirectory>
+                      <resources>
+                        <resource>
+                          <directory>${main.basedir}/resource</directory>
+                          <includes>
+                            <include>*.xsd</include>
+                          </includes>
+                        </resource>
+                      </resources>
+                    </configuration>
+                  </execution>
+				          <execution>
+                      <id>copy-resources-xml</id>
+                      <phase>process-resources</phase>
+                      <goals>
+                         <goal>copy-resources</goal>
+                      </goals>
+                      <configuration>
+                        <overwrite>true</overwrite>
+                        <outputDirectory>${project.build.testOutputDirectory}/com/unboundid/scim/ldap</outputDirectory>
+                        <resources>
+                          <resource>
+                            <directory>${main.basedir}/resource</directory>
+                            <includes>
+                              <include>resources.xml</include>
+                            </includes>
+                          </resource>
+                        </resources>
+                      </configuration>
+                   </execution>
+			          </executions>
+		        </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-source-plugin</artifactId>
+              <executions>
+                <execution>
+                  <!-- A jar of the project sources is required for publishing to
+                       Maven Central. -->
+                  <goals>
+                    <goal>jar</goal>
+                  </goals>
+                  <configuration>
+                    <archive>
+                      <addMavenDescriptor>false</addMavenDescriptor>
+                    </archive>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+		    <plugin>
+		      <groupId>org.apache.maven.plugins</groupId>
+		      <artifactId>maven-antrun-plugin</artifactId>
+		      <executions>
+		        <execution>
+                  <!-- We can't use the maven-gpg-plugin for this because it only signs the actual project artifacts.
+                       Also, gpg can only sign one file at a time, so we have to run the command four times. -->
+                  <id>sign-artifacts</id>
+                  <phase>verify</phase>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                  <configuration>
+                    <target if="gpg.sign">
+                      <mkdir dir="${project.build.directory}/gpg" />
+                      <!-- Private GPG key is on ci-centos6-04 (Release slave) -->
+                      <!-- GPG_PASSPHRASE is an environment variable in Jenkins. -->
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/pom.xml.asc ${project.basedir}/src/main/assemblies/pom.xml" />
+                      </exec>
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/${project.build.finalName}.jar.asc ${project.build.finalName}.jar" />
+                      </exec>
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/${project.build.finalName}-sources.jar.asc ${project.build.finalName}-sources.jar" />
+                      </exec>
+                      <exec dir="${project.build.directory}" executable="gpg" inputString="${env.GPG_PASSPHRASE}" failonerror="true">
+                        <arg line="-ab --no-tty --batch --passphrase-fd 0 --output gpg/${project.build.finalName}-javadoc.jar.asc ${project.build.finalName}-javadoc.jar" />
+                      </exec>
+                    </target>
+                  </configuration>
+                </execution>
+		      </executions>
+		    </plugin>
+		    <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2.1</version>
+                <executions>
+                    <execution>
+                    <!-- We use an assembly instead of the maven-javadoc-plugin to
+                         create the javadoc jar (required for publishing to Maven Central)
+                         because we have copied in certain resources to the javadoc directory.
+                         See the SCIM-Parent POM for more info. -->
+                        <id>create-javadoc-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/assemblies/javadoc.xml</descriptor>
+                            </descriptors>
+                            <attach>false</attach>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-sonatype-bundle</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/src/main/assemblies/sonatype-bundle.xml</descriptor>
+                            </descriptors>
+                            <attach>false</attach>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>sonatype-bundle</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.unboundid.product</groupId>
+            <artifactId>ldapsdk</artifactId>
+            <version>2.3.3-se</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.scim</groupId>
+            <artifactId>scim-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>jsr311-api</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.libphonenumber</groupId>
+            <artifactId>libphonenumber</artifactId>
+            <version>5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.scim</groupId>
+            <artifactId>scim-sdk</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
+        </dependency>
+    </dependencies>
+</project>
+

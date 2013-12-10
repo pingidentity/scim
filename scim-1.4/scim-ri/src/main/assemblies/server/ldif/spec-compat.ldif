@@ -1,0 +1,38 @@
+# Copyright 2011-2013 UnboundID Corp.
+# All Rights Reserved.
+#
+# Core SCIM specification user data
+
+dn: dc=example,dc=com
+dc: example
+description: SCIM default domain
+objectClass: dcObject
+objectClass: organization
+o: example.com
+
+dn: ou=people,dc=example,dc=com
+ou: people
+description: SCIM people
+objectclass: organizationalunit
+
+dn: uid=bjensen,ou=people,dc=example,dc=com
+objectclass: inetOrgPerson
+cn: Ms. Barbara J Jensen III
+sn: Jensen
+givenName: Barbara
+uid: bjensen
+userpassword: password
+telephoneNumber: 555-555-8377
+mail: bjensen@example.com
+mail: babs@example.com
+
+dn: uid=jsmith,ou=people,dc=example,dc=com
+objectclass: inetOrgPerson
+cn: Mr. John Smith
+sn: Smith
+givenName: John
+uid: jsmith
+userpassword: password
+telephoneNumber: 555-555-1256
+mail: jsmith@example.com
+mail: john@example.com

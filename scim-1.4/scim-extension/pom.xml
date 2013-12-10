@@ -1,0 +1,262 @@
+<!--
+  ~ Copyright 2011-2013 UnboundID Corp.
+  ~ All Rights Reserved.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>scim-parent</artifactId>
+        <groupId>com.unboundid.product.scim</groupId>
+        <version>1.4.5</version>
+    </parent>
+    <artifactId>scim-extension</artifactId>
+    <packaging>jar</packaging>
+    <name>UnboundID SCIM Server Plugin</name>
+
+    <properties>
+      <main.basedir>${project.basedir}/..</main.basedir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.unboundid.build</groupId>
+                <artifactId>coverage-diff-plugin</artifactId>
+                <version>1.0</version>
+                <executions>
+                    <execution>
+                        <id>instrument-extension</id>
+                        <goals>
+                            <goal>instrument-server-sdk-extension</goal>
+                        </goals>
+                        <configuration>
+                            <extraLibraryPatterns>
+                                <extraLibraryPattern>scim.*</extraLibraryPattern>
+                            </extraLibraryPatterns>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>coverage-diff</id>
+                        <goals>
+                            <goal>coverage-diff</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                    <debugForkedProcess>${debugForkedProcess}</debugForkedProcess>
+                    <!-- Setting forkMode to none keeps the surefire tests from continuing to
+                        run if you ^C the tests, but it also means that debugForkedProcess
+                        cannot be used to debug the tests.
+                   <forkMode>none</forkMode> -->
+                    <environmentVariables>
+                        <TERM>xterm</TERM>
+                    </environmentVariables>
+                    <systemPropertyVariables>
+                        <serverInstanceVersion>3.5.0.0-GA</serverInstanceVersion>
+                        <pauseOnFailure>${pauseOnFailure}</pauseOnFailure>
+                        <externalInstanceDir>${project.build.directory}/tests/external-instances</externalInstanceDir>
+                        <coverageDataDir>${project.build.directory}</coverageDataDir>
+                        <extensionZipFile>${project.build.directory}/${project.build.finalName}-instrumented.zip</extensionZipFile>
+                        <main.basedir>${main.basedir}</main.basedir>
+                    </systemPropertyVariables>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>com.unboundid.directory.tests.externalinstance.TestListener,com.unboundid.directory.tests.externalinstance.VersionRestrictionAnnotationTransformer</value>
+                        </property>
+                    </properties>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>surefire-it</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-zip-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${basedir}/src/main/assemblies/zip.xml</descriptor>
+                            </descriptors>
+                            <attach>false</attach>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Implementation-Title>${project.artifactId}</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Vendor>UnboundID Corp.</Implementation-Vendor>
+                            <Implementation-Vendor-Id>com.unboundid</Implementation-Vendor-Id>
+                            <Implementation-URL>http://www.unboundid.com</Implementation-URL>
+                            <Extension-Support-Contact>support@unboundid.com</Extension-Support-Contact>
+                            <!-- Note: The server rejects a version with a SNAPSHOT qualifier. -->
+                            <UnboundID-Server-SDK-Version>${unboundid.serversdk.version}</UnboundID-Server-SDK-Version>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <id>generate-javadoc</id>
+                    <phase>prepare-package</phase>
+                    <configuration>
+                      <linksource>false</linksource>
+                    </configuration>
+                  </execution>
+                </executions>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-antrun-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>generate-docs</id>
+                  <phase>process-classes</phase>
+                  <configuration>
+                      <!-- Generate documentation for the extensions. -->
+                      <target name="generate-extension-docs">
+                        <property name="doc.dir" location="${project.reporting.outputDirectory}/extension-docs" />
+                        <delete dir="${doc.dir}" />
+                        <mkdir dir="${doc.dir}/images" />
+
+                        <copy file="${main.basedir}/resource/unboundid.css" toDir="${doc.dir}" />
+
+                        <copy toDir="${doc.dir}/images">
+                          <fileset dir="${main.basedir}/resource/images">
+                            <include name="**/*" />
+                          </fileset>
+                        </copy>
+
+                        <taskdef name="genExtDocs" className="com.unboundid.buildutils.GenerateExtensionDocumentation">
+                            <classpath>
+                              <path path="${project.build.outputDirectory}" />
+                              <path refId="maven.compile.classpath" />
+                            </classpath>
+                        </taskdef>
+
+                        <genExtDocs sourceRoot="${project.build.sourceDirectory}" docRoot="${doc.dir}" />
+                      </target>
+                  </configuration>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <!-- We don't want to publish this to the Engineering Repo. -->
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.unboundid.product</groupId>
+            <artifactId>ldapsdk</artifactId>
+            <version>2.3.3-ce</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.ds</groupId>
+            <artifactId>server-sdk</artifactId>
+            <version>${unboundid.serversdk.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.ds</groupId>
+            <artifactId>server-sdk</artifactId>
+            <version>${unboundid.serversdk.version}</version>
+            <classifier>build-utils</classifier>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.aggregate</groupId>
+            <artifactId>jetty-all</artifactId>
+            <version>8.1.10.v20130312</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.scim</groupId>
+            <artifactId>scim-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.product.scim</groupId>
+            <artifactId>scim-ldap</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wink</groupId>
+            <artifactId>wink-server</artifactId>
+            <version>1.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.directory.testtools</groupId>
+            <artifactId>standalone-ds-test-harness</artifactId>
+            <version>1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.unboundid.directory.testtools</groupId>
+            <artifactId>standalone-ds-test-harness</artifactId>
+            <version>1.0</version>
+            <classifier>sources</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.wink</groupId>
+            <artifactId>wink-client-apache-httpclient</artifactId>
+            <version>1.3.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.2.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.6.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

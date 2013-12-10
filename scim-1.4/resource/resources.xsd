@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Copyright 2011-2013 UnboundID Corp.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License (GPLv2 only)
+  or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+  as published by the Free Software Foundation.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, see <http://www.gnu.org/licenses>.
+-->
+
+<xs:schema xmlns="http://www.unboundid.com/scim-ldap"
+           targetNamespace="http://www.unboundid.com/scim-ldap"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+
+  <!--
+     Simple Types
+   -->
+
+  <xs:simpleType name="DataType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="binary"/>
+      <xs:enumeration value="boolean"/>
+      <xs:enumeration value="dateTime"/>
+      <xs:enumeration value="integer"/>
+      <xs:enumeration value="string"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OnConflict">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="merge"/>
+      <xs:enumeration value="overwrite"/>
+      <xs:enumeration value="preserve"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--
+     Complex Types
+   -->
+
+  <xs:complexType name="ResourcesDefinition">
+    <xs:sequence>
+      <xs:element name="resource" type="ResourceDefinition"
+                  minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="LDAPSearch" type="LDAPSearchParameters"
+                  minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ResourceDefinition">
+    <xs:sequence>
+      <xs:element name="description" type="xs:string"/>
+      <xs:element name="endpoint" type="xs:string"/>
+      <xs:element name="LDAPSearchRef" type="LDAPSearchParametersRef"
+                  minOccurs="1" />
+      <xs:element name="LDAPAdd" type="LDAPAddParameters" minOccurs="0" />
+      <xs:element name="attribute" type="AttributeDefinition"
+                  minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
+    <xs:attribute name="schema" type="xs:string" use="required"/>
+    <xs:attribute name="mapping" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="AttributeDefinition">
+    <xs:sequence>
+      <xs:element name="description" type="xs:string"/>
+      <xs:element name="derivation" type="DerivedAttributeDefinition"
+                  minOccurs="0" />
+      <xs:choice>
+        <xs:element name="simple" type="SimpleAttributeDefinition"/>
+        <xs:element name="complex" type="ComplexAttributeDefinition"/>
+        <xs:element name="simpleMultiValued" type="SimpleMultiValuedAttributeDefinition"/>
+        <xs:element name="complexMultiValued" type="ComplexMultiValuedAttributeDefinition"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
+    <xs:attribute name="schema" type="xs:string" use="required"/>
+    <xs:attribute name="readOnly" type="xs:boolean" default="false"/>
+    <xs:attribute name="required" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="DerivedAttributeDefinition">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
+    <xs:attribute name="javaClass" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="SimpleAttributeDefinition">
+    <xs:sequence>
+      <xs:element name="mapping" type="AttributeMapping"
+                  minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="dataType" type="DataType" use="required"/>
+    <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="ComplexAttributeDefinition">
+    <xs:sequence>
+      <xs:element name="subAttribute" type="SubAttributeDefinition"
+                  minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SimpleMultiValuedAttributeDefinition">
+    <xs:sequence>
+      <xs:element name="canonicalValue" type="CanonicalValue"
+                  minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="mapping" type="AttributeMapping"
+                  minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="childName" type="xs:Name" use="required"/>
+    <xs:attribute name="dataType" type="DataType" use="required"/>
+    <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="ComplexMultiValuedAttributeDefinition">
+    <xs:sequence>
+      <xs:element name="subAttribute" type="SubAttributeDefinition"
+                  minOccurs="1" maxOccurs="unbounded"/>
+      <xs:element name="canonicalValue" type="CanonicalValue"
+                  minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="childName" type="xs:Name" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="SubAttributeDefinition">
+    <xs:sequence>
+      <xs:element name="description" type="xs:string"/>
+      <xs:element name="mapping" type="AttributeMapping"
+                  minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
+    <xs:attribute name="readOnly" type="xs:boolean" default="false"/>
+    <xs:attribute name="required" type="xs:boolean" default="false"/>
+    <xs:attribute name="dataType" type="DataType" use="required"/>
+    <xs:attribute name="caseExact" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="CanonicalValue">
+    <xs:sequence>
+      <xs:element name="subMapping" type="SubAttributeMapping"
+                  minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="AttributeMapping">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
+    <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
+    <xs:attribute name="transform" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="SubAttributeMapping">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:Name" use="required"/>
+    <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
+    <xs:attribute name="transform" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="LDAPSearchParameters">
+    <xs:sequence>
+      <xs:element name="baseDN" type="xs:string" maxOccurs="unbounded"/>
+      <xs:element name="filter" type="xs:string"/>
+      <xs:element name="resourceIDMapping" type="ResourceIDMapping"
+                  minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:ID" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="LDAPSearchParametersRef">
+    <xs:attribute name="idref" type="xs:IDREF" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="LDAPAddParameters">
+    <xs:sequence>
+      <xs:element name="DNTemplate" type="xs:string"/>
+      <xs:element name="fixedAttribute" type="FixedAttribute"
+                  minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="FixedAttribute">
+    <xs:sequence>
+      <xs:element name="fixedValue" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="ldapAttribute" type="xs:string" use="required"/>
+    <xs:attribute name="onConflict" type="OnConflict" default="merge"/>
+  </xs:complexType>
+
+  <xs:complexType name="ResourceIDMapping">
+    <xs:complexContent>
+      <xs:extension base="AttributeMapping">
+        <xs:attribute name="createdBy" type="CreatedBy"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:simpleType name="CreatedBy">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="scim-consumer"/>
+      <xs:enumeration value="directory"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--
+    Root Element
+   -->
+
+  <xs:element name="resources" type="ResourcesDefinition"/>
+
+</xs:schema>

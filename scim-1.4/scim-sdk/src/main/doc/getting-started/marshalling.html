@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID SCIM SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="resources/unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="resources/images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID SCIM SDK" id="logo">
+          <img src="resources/images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID SCIM SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID SCIM SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Marshalling and Unmarshalling Data</h2>
+
+              <p>
+                The <tt>com.unboundid.scim.sdk.marshal</tt> package contains types for converting
+                SCIM objects to and from an external representation. Currently the UnboundID SCIM SDK
+                supports marshalling via both XML and JSON representations. In addition, the
+                <tt>BaseResource</tt> class implements a <tt>marshal(Marshaller, OutputStream)</tt> method
+                with which you can serialize the resource using any marshaller you choose.
+              </p>
+
+              <p>
+                Custom marshaller implementations can easily be created by implementing the
+                <tt>com.unboundid.scim.sdk.marshal.Marshaller</tt> and
+                <tt>com.unboundid.scim.sdk.marhsal.Unmarshaller</tt> interfaces.
+                These implementations are required to be thread-safe. Unmarshallers should
+                typically make use of the <tt>com.unboundid.scim.sdk.SCIMAttribute</tt> and
+                <tt>com.unboundid.scim.sdk.SCIMAttributeValue</tt> classes to convert the raw
+                data back into Java objects. Likewise, marshallers will typically use the same
+                classes to retrieve the raw data from the Java objects and convert in into
+                the target format.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2011&#x2011;2013 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

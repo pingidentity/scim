@@ -1,0 +1,132 @@
+<!--
+  Copyright 2011-2013 UnboundID Corp.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License (GPLv2 only)
+  or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+  as published by the Free Software Foundation.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, see <http://www.gnu.org/licenses>.
+-->
+<assembly
+        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>scim-ri</id>
+    <formats>
+        <format>zip</format>
+        <format>dir</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies</directory>
+            <includes>
+                <include>README.txt</include>
+            </includes>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.build.directory}</directory>
+            <includes>
+                <include>3RD_PARTY_LICENSES.txt</include>
+            </includes>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${main.basedir}/resource/licenses</directory>
+            <includes>
+                <include>LICENSE*.txt</include>
+            </includes>
+            <excludes>
+                <exclude>licenseTable.xml</exclude>
+            </excludes>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>javadoc</outputDirectory>
+            <directory>${project.build.directory}/javadoc</directory>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>server</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/server</directory>
+            <includes>
+                <include>ldif/*</include>
+            </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>server/tools</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/server/tools</directory>
+            <includes>
+                <include>*.bat</include>
+            </includes>
+            <lineEnding>crlf</lineEnding>
+            <directoryMode>755</directoryMode>
+            <fileMode>755</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>server/tools</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/server/tools</directory>
+            <excludes>
+                <exclude>*.bat</exclude>
+            </excludes>
+            <lineEnding>lf</lineEnding>
+            <directoryMode>755</directoryMode>
+            <fileMode>755</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>server/config</outputDirectory>
+            <directory>${main.basedir}/resource</directory>
+            <includes>
+                <include>resources.xsd</include>
+                <include>resources.xml</include>
+            </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>client</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/client</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>client/src/main/java</outputDirectory>
+            <directory>${project.build.sourceDirectory}</directory>
+            <includes>
+                <include>com/unboundid/scim/ri/client/*.java</include>
+            </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${main.basedir}/resource/Release-Notes.txt</source>
+            <fileMode>644</fileMode>
+        </file>
+    </files>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>server/lib</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </dependencySet>
+    </dependencySets>
+</assembly>

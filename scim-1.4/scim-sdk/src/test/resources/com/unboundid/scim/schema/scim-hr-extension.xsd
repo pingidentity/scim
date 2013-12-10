@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright 2011-2013 UnboundID Corp.
+  ~
+  ~ This program is free software; you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License (GPLv2 only)
+  ~ or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
+  ~ as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program; if not, see <http://www.gnu.org/licenses>.
+  -->
+
+<xs:schema targetNamespace="http://hr.example.org"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+    <xs:element name="gender" type="xs:string"/>
+    <xs:element name="paygrade" type="xs:string"/>
+</xs:schema>

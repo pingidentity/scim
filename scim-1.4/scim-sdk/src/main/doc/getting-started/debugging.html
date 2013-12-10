@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID SCIM SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="resources/unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="resources/images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID SCIM SDK" id="logo">
+          <img src="resources/images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID SCIM SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID SCIM SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Logging and Debugging</h2>
+
+              <p>
+                The UnboundID SCIM SDK provides a basic logging facility based on the JDK
+                logging framework. Using this helps make it easier to maintain and debug
+                applications written with the UnboundID SCIM SDK.
+              </p>
+
+              <p>
+                The primary class to use for logging and debugging is the
+                <tt>com.unboundid.scim.sdk.Debug</tt> class. The SDK itself uses this
+                class extensively to log exceptions and other various conditions. It
+                exposes a number of static methods so that client code can make use of it
+                as well. The following example demonstrates how to enable debugging and
+                write information about all messages with a WARNING level or higher to a
+                file named "/tmp/scim.log":
+              </p>
+
+<pre>
+Debug.setEnabled(true);
+Logger logger = Debug.getLogger();
+FileHandler fileHandler = new FileHandler("/tmp/scim.log");
+fileHandler.setLevel(Level.WARNING);
+logger.addHandler(fileHandler);
+</pre>
+
+              <p>
+                You can use that same <tt>Debug</tt> class to do any logging from within
+                your application code. There is a generic <tt>debug()</tt> method which can be used
+                in any context, and it has an overloaded version which accepts a <tt>Throwable</tt>
+                as the last parameter. Using this in your exception handlers will make it
+                much easier to track down problems.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2011&#x2011;2013 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

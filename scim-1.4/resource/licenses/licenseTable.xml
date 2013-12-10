@@ -1,0 +1,53 @@
+<!--
+   This is the license lookup table for SCIM. It contains mappings for any of the 3rd party
+   dependencies which do not list a license it their POM, or list a license who's name cannot
+   be automatically recognized by the OSS license plugin.
+-->
+<SCHEMES>
+  <SCHEME name="artifact-coordinates">
+     <LICENSES>
+       <LICENSE index="1">
+         <GROUPID>javax.xml.bind</GROUPID>
+         <ARTIFACTID>jaxb-api</ARTIFACTID>
+         <VERSION>2.2</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="2">
+         <GROUPID>org.slf4j</GROUPID>
+         <ARTIFACTID>slf4j-api</ARTIFACTID>
+         <VERSION>1.6.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="3">
+         <GROUPID>org.slf4j</GROUPID>
+         <ARTIFACTID>slf4j-simple</ARTIFACTID>
+         <VERSION>1.6.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+       <LICENSE index="4">
+         <GROUPID>org.slf4j</GROUPID>
+         <ARTIFACTID>jcl-over-slf4j</ARTIFACTID>
+         <VERSION>1.6.1</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
+       </LICENSE>
+      <LICENSE index="5">
+        <GROUPID>asm</GROUPID>
+        <ARTIFACTID>asm-commons</ARTIFACTID>
+        <VERSION>3.1</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:asm-license:txt:license:1.0</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="6">
+        <GROUPID>asm</GROUPID>
+        <ARTIFACTID>asm-tree</ARTIFACTID>
+        <VERSION>3.1</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:asm-license:txt:license:1.0</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="7">
+        <GROUPID>asm</GROUPID>
+        <ARTIFACTID>asm</ARTIFACTID>
+        <VERSION>3.1</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:asm-license:txt:license:1.0</LICENSE_COORDINATES>
+      </LICENSE>
+     </LICENSES>
+  </SCHEME>
+</SCHEMES>

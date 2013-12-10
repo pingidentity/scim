@@ -1,0 +1,17 @@
+<your commit message here>
+
+===BEGIN-RELEASE-NOTE===
+<release note text here>
+===END-RELEASE-NOTE===
+
+===BEGIN-INTERNAL-COMMENT===
+<optional comments to QA etc. here>
+===END-INTERNAL-COMMENT===
+
+JiraIssue:SCIM-<Jira Issue ID>
+
+SalesforceCaseNumber:<SF case number>
+
+Product:scim-sdk
+Product:scim-ri
+Product:scim-extension

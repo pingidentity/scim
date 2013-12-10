@@ -1,0 +1,227 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/html4/loose.dtd">
+
+
+<html>
+  <head>
+    <title>UnboundID SCIM SDK</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="resources/unboundid.css" type="text/css">
+    <link rel="shortcut icon" href="resources/images/favicon.ico">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      <div id="headercontainer">
+        <a href="http://www.unboundid.com/" title="UnboundID SCIM SDK" id="logo">
+          <img src="resources/images/+___.gif" width="274" height="99" alt="UnboundID" style="float: left;">
+        </a>
+        <div id="headertitle">
+          <br>
+          <h1>UnboundID SCIM SDK</h1>
+        </div>
+      </div>
+
+      <div id="content">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr valign="top">
+            <td style="padding: 10px 30px 20px 40px;">
+
+              <table border="0" width="100%">
+                <tr>
+                  <td align="right" valign="middle">
+                    <a href="index.html" style="font-size: 85%;">Getting Started with the UnboundID SCIM SDK</a>
+                  </td>
+                </tr>
+              </table>
+
+              <h2>Creating Custom Resources</h2>
+
+              <p>
+                The <tt>com.unboundid.scim.sdk.data</tt> package contains data types and model
+                classes for constructing and working with different resource types. The base class
+                from which all SCIM resources are derived is called <tt>BaseResource</tt>. There are
+                <tt>UserResource</tt> and <tt>GroupResource</tt> classes provided, but users can
+                create any type of resource by simply sub-classing <tt>BaseResource</tt> and providing
+                any methods specific to that type of resource. Here is an example of defining a
+                "Device" resource:
+              </p>
+
+<pre>
+public class DeviceResource extends BaseResource
+{
+  /**
+   * Create a new empty device resource.
+   *
+   * @param resourceDescriptor The resource descriptor of this resource.
+   */
+  public DeviceResource(final ResourceDescriptor resourceDescriptor)
+  {
+    super(resourceDescriptor);
+  }
+
+  /**
+   * Create a device resource based on the provided SCIMObject.
+   *
+   * @param resourceDescriptor The resource descriptor of this resource.
+   * @param scimObject The SCIMObject containing all the attributes and values.
+   */
+  public DeviceResource(final ResourceDescriptor resourceDescriptor,
+                        final SCIMObject scimObject)
+  {
+    super(resourceDescriptor, scimObject);
+  }
+
+  /**
+   * Sets the vendor name for this device.
+   */
+   public void setVendorName(String vendorName)
+   {
+     try
+     {
+       setSingularAttributeValue("urn:com:example:device:1.0", "vendorName",
+                     AttributeValueResolver.STRING_RESOLVER, vendorName);
+     }
+     catch(InvalidResourceException e)
+     {
+       Debug.debugException(e);
+     }
+   }
+
+  /**
+   * Retrieves the vendor name for this device.
+   *
+   * @return The vendor name of this device.
+   */
+  public String getVendorName()
+  {
+    return getSingularAttributeValue("urn:com:example:device:1.0",
+                 "vendorName", AttributeValueResolver.STRING_RESOLVER);
+  }
+}
+</pre>
+
+              <p>
+                Once you have a custom resource defined, it's nice to have a
+                factory for creating them. The SCIM SDK defines an interface for this
+                called <tt>com.unboundid.scim.sdk.data.ResourceFactory</tt>. A
+                <tt>ResourceFactory</tt> defines how to create one of your custom resources,
+                but it also provides the mechanism for obtaining a <tt>SCIMEndpoint</tt> from
+                the service provider which represents your custom resource type. This
+                is done by passing the ResourceFactory into the
+                <tt>SCIMService.getEndpoint(ResourceDescriptor, ResourceFactory&lt;R&gt;)</tt> method.
+                An example is shown below:
+              </p>
+
+<pre>
+public static final ResourceFactory&lt;DeviceResource&gt; DEVICE_RESOURCE_FACTORY =
+     new ResourceFactory&lt;DeviceResource&gt;()
+     {
+         public DeviceResource createResource(
+                                  final ResourceDescriptor resourceDescriptor,
+                                  final SCIMObject scimObject)
+         {
+            return new DeviceResource(resourceDescriptor, scimObject);
+         }
+     };
+
+ResourceDescriptor deviceDescriptor = scimService.getResourceDescriptor("Device");
+SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
+  deviceDescriptor, DEVICE_RESOURCE_FACTORY);
+</pre>
+
+               <p>
+                 At this point, you have a SCIMEndpoint for your custom resource type,
+                 with which you can perform queries or add, modify, and delete resources.
+               </p>
+
+               <h2>Custom Attributes</h2>
+
+               <p>
+                There are a set of low-level classes (e.g. SCIMObject, SCIMAttribute, SCIMAttributeValue, etc...)
+                that represent the SCIM data model. These classes are bound to higher-level classes by the
+                use of <tt>com.unboundid.scim.data.ResourceFactory</tt> and <tt>com.unboundid.scim.data.AttributeValueResolver</tt>.
+                The SCIM SDK includes AttributeValueResolvers for all simple and complex attribute types
+                defined in the SCIM core schema. You can also implement your own custom AttributeValueResolver
+                to handle custom attributes exposed by your service provider.
+              </p>
+
+              <p>
+                <tt>BaseResource</tt> (and all subclasses) are backed by these lower-level SCIM data classes.
+                <tt>AttributeValueResolver</tt> converts Java objects that represent attribute values to/from the
+                <tt>com.unboundid.scim.sdk.SCIMAttribute</tt> class. Convenience methods are added by
+                subclasses of BaseResource so that attributes can be retrieved by schema URN and
+                attribute name, and then converted by an AttributeResolver to its Java object.
+              </p>
+
+              <p>
+                As an example, supposed the Device resource (from above) had a complex attribute called
+                "SupportedFormats" to determine which types multi-media formats were supported by the device.
+                You would likely define a SupportedFormats class to represent this attribute type, and in that
+                class you would create an AttributeValueResolver as follows:
+              </p>
+
+<pre>
+public static final AttributeValueResolver&lt;SupportedFormats&gt; SUPPORTED_FORMATS_RESOLVER =
+         new AttributeValueResolver&lt;SupportedFormats&gt;()
+         {
+            public SupportedFormats toInstance(final SCIMAttributeValue value)
+            {
+              return new SupportedFormats(
+                  value.getSingularSubAttributeValue("supportsAudio", BOOLEAN_RESOLVER),
+                  value.getSingularSubAttributeValue("supportsPhoto", BOOLEAN_RESOLVER),
+                  value.getSingularSubAttributeValue("supportsVideo", BOOLEAN_RESOLVER));
+            }
+
+            public SCIMAttributeValue fromInstance(
+                final AttributeDescriptor attributeDescriptor,
+                final SupportedFormats value) throws InvalidResourceException
+            {
+              final List&lt;SCIMAttribute&gt; subAttributes = new ArrayList&lt;SCIMAttribute&gt;(3);
+
+              if (value.supportsAudio != null)
+              {
+                subAttributes.add(
+                    SCIMAttribute.create(
+                        attributeDescriptor.getSubAttribute("supportsAudio"),
+                        SCIMAttributeValue.createBooleanValue(value.supportsAudio)));
+              }
+
+              if (value.supportsPhoto != null)
+              {
+                subAttributes.add(
+                    SCIMAttribute.create(
+                        attributeDescriptor.getSubAttribute("supportsPhoto"),
+                        SCIMAttributeValue.createBooleanValue(value.supportsPhoto)));
+              }
+
+              if (value.supportsVideo != null)
+              {
+                subAttributes.add(
+                    SCIMAttribute.create(
+                        attributeDescriptor.getSubAttribute("supportsVideo"),
+                        SCIMAttributeValue.createBooleanValue(value.supportsVideo)));
+              }
+
+              return SCIMAttributeValue.createComplexValue(subAttributes);
+            }
+          };
+</pre>
+
+              <p>
+                The <tt>com.unboundid.scim.data.Manager</tt> class is another good example
+                of how this works.
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div id="footer">
+        Copyright &copy; 2011&#x2011;2013 &ndash; UnboundID Corp. &ndash; All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
+

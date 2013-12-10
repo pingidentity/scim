@@ -1,0 +1,107 @@
+{
+    "schemas":[
+        "urn:scim:schemas:core:1.0",
+        "http://hr.example.com"
+    ],
+    "id":"uid=babs",
+    "externalId":"701984",
+    "userName":"babs",
+    "name": {
+        "formatted":"Ms. Barbara J Jensen III",
+        "familyName":"Jensen",
+        "givenName":"Barbara"
+    },
+    "displayName":"Babs Jensen",
+    "nickName":"Babs",
+    "profileUrl":"https://example.com/bjensen",
+    "title":"Tour Guide",
+    "userType":"Employee",
+    "preferredLanguage":"en_US",
+    "locale":"en_US",
+    "timezone":"America/Los_Angeles",
+    "emails":[
+        {
+            "value":"babs@example.com",
+            "primary":true,
+            "type":"work"
+        },
+        {
+            "value":"babsathome@example.com",
+            "type":"home"
+        }
+    ],
+    "phoneNumbers":[
+        {
+            "value":"800-864-8377",
+            "primary":true,
+            "type":"work"
+        },
+        {
+            "value":"818-123-4567",
+            "type":"mobile"
+        }
+    ],
+    "ims":[
+        {
+            "value":"800-864-8377",
+            "primary":true,
+            "type":"work"
+        },
+        {
+            "value":"someaimhandle",
+            "type":"aim"
+        }
+    ],
+    "photos":[
+        {
+            "value":"https://photos.example.com/profilephoto/uid=005D0000001Az1u,ou=People,dc=example,dc=com/F",
+            "type":"https://photos.example.com/profilephoto/uid=005D0000001Az1u,ou=People,dc=example,dc=com/T"
+        },
+        {
+            "value":"someaimhandle",
+            "type":"thumbnail"
+        }
+    ],
+    "addresses":[
+        {
+            "formatted":"100 Universal City Plaza Hollywood, CA 91608 USA",
+            "streetAddress":"100 Universal City Plaza",
+            "locality":"Hollywood",
+            "region":"CA",
+            "postalCode":"91608",
+            "country":"USA",
+            "primary":true,
+            "type":"work"
+        },
+        {
+            "formatted":"456 Hollywood Blvd San Francisco, CA 91608 USA",
+            "streetAddress":"456 Hollywood Blvd",
+            "locality":"San Francisco",
+            "region":"CA",
+            "postalCode":"94127",
+            "country":"USA",
+            "type":"home"
+        }
+    ],
+    "groups":[
+    {
+        "value":"00300000005N2Y6AA",
+        "primary":true,
+        "type":"Tour Guides"
+    },
+    {
+        "value":"00300000005N34H78",
+        "type":"Employees"
+    },
+    {
+        "value":"00300000005N98YT1",
+        "type":"US Employees"
+    }
+    ],
+    "roles":["Employee","Accounting","Web"],
+    "x509Certificates": [
+    {
+      "value": "MIIDQzCCAqygAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwTjELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAoMC2V4YW1wbGUuY29tMRQwEgYDVQQDDAtleGFtcGxlLmNvbTAeFw0xMTEwMjIwNjI0MzFaFw0xMjEwMDQwNjI0MzFaMH8xCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRQwEgYDVQQKDAtleGFtcGxlLmNvbTEhMB8GA1UEAwwYTXMuIEJhcmJhcmEgSiBKZW5zZW4gSUlJMSIwIAYJKoZIhvcNAQkBFhNiamVuc2VuQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7Kr+Dcds/JQ5GwejJFcBIP682X3xpjis56AK02bc1FLgzdLI8auoR+cC9/Vrh5t66HkQIOdA4unHh0AaZ4xL5PhVbXIPMB5vAPKpzz5iPSi8xO8SL7I7SDhcBVJhqVqr3HgllEG6UClDdHO7nkLuwXq8HcISKkbT5WFTVfFZzidPl8HZ7DhXkZIRtJwBweq4bvm3hM1Os7UQH05ZS6cVDgweKNwdLLrT51ikSQG3DYrl+ft781UQRIqxgwqCfXEuDiinPh0kkvIi5jivVu1Z9QiwlYEdRbLJ4zJQBmDrSGTMYn4lRc2HgHO4DqB/bnMVorHB0CC6AV1QoFK4GPe1LwIDAQABo3sweTAJBgNVHRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQU8pD0U0vsZIsaA16lL8En8bx0F/gwHwYDVR0jBBgwFoAUdGeKitcaF7gnzsNwDx708kqaVt0wDQYJKoZIhvcNAQEFBQADgYEAA81SsFnOdYJtNg5Tcq+/ByEDrBgnusx0jloUhByPMEVkoMZ3J7j1ZgI8rAbOkNngX8+pKfTiDz1RC4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1+GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo="
+    }
+  ],
+}
