@@ -2276,6 +2276,44 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
 
   /**
+   * Tests HTTP Basic Auth With Funky Password.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testBasicAuthWithFunkyPassword() throws Exception
+  {
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    final String FUNKY_PASSWORD = "P@ss:word//{}";
+
+    // Create a new user.
+    final String dn = "uid=basicAuthUser," + userBaseDN;
+    testDS.add(
+        generateUserEntry(
+            "basicAuthUser", userBaseDN, "Basic", "User", FUNKY_PASSWORD));
+    final String id = getUser("basicAuthUser").getId();
+
+    // Create a client service that authenticates as the user.
+    final SCIMService basicAuthService = createSCIMService(dn, FUNKY_PASSWORD);
+
+    // Check that the authenticated user can read its own entry.
+    final SCIMEndpoint<UserResource> endpoint =
+        basicAuthService.getUserEndpoint();
+    final UserResource userResource = endpoint.get(id);
+    assertNotNull(userResource);
+
+    System.out.println("basicAuthUser = " + userResource);
+    assertNotNull(userResource.getMeta().getCreated());
+    assertNotNull(userResource.getMeta().getLastModified());
+  }
+
+
+
+  /**
    * Tests HTTP Basic Auth with the wrong credentials.
    *
    * @throws Exception If the test fails.

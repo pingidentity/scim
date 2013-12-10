@@ -165,9 +165,15 @@ public class BasicAuthenticationFilter implements Filter
           String credentialsStr = Base64.decodeToString(authorization[1]);
           if(credentialsStr != null)
           {
-            String[] credentials = credentialsStr.split(":");
-            if(credentials.length == 2 &&
-                scimBackend.authenticate(credentials[0], credentials[1]))
+            String[] credentials = credentialsStr.split(":", 2);
+            if(credentials.length == 2)
+            {
+              if (scimBackend.authenticate(credentials[0], credentials[1]))
+              {
+                authID = credentials[0];
+              }
+            }
+            else if(scimBackend.authenticate(credentials[0], ""))
             {
               authID = credentials[0];
             }
