@@ -40,8 +40,8 @@
     </organization>
 
     <scm>
-        <connection>scm:svn:https://svn.unboundid.lab/components/scim/tags/scim-1.4.4</connection>
-        <developerConnection>scm:svn:https://svn.unboundid.lab/components/scim/tags/scim-1.4.4</developerConnection>
+        <connection>scm:svn:https://svn.unboundid.lab/components/scim/branches/scim-1.4</connection>
+        <developerConnection>scm:svn:https://svn.unboundid.lab/components/scim/branches/scim-1.4</developerConnection>
     </scm>
 
     <modules>
