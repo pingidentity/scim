@@ -3,6 +3,18 @@ UnboundID SCIM SDK, Server Extension, and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.4.x ----------
+
+  * Release Date: December, 2013
+
+  * This is a maintenance release.
+
+  * Resolved Issues
+
+     - Fix a bug where authentication with SCIM would fail because the 
+       password provided contains a colon character.
+       Issue:DS-10045
+
 ---------- SCIM 1.3.2 ----------
 
   * Release Date: April 28, 2013
