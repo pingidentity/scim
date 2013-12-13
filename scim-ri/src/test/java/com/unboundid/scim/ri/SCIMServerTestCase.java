@@ -2637,10 +2637,12 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // We allow only the individual operation to fail within the request.
     final BulkResponse response = service.processBulkRequest(Arrays.asList(o));
     final Status status = response.iterator().next().getStatus();
+    final String bulkId = response.iterator().next().getBulkId();
 
     assertNotNull(status);
     assertEquals(status.getCode(), expectedResponseCode);
     assertNotNull(status.getDescription());
+    assertEquals(bulkId, o.getBulkId());
   }
 
 

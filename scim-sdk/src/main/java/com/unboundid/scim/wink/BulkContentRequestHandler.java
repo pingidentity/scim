@@ -255,7 +255,7 @@ public class BulkContentRequestHandler extends BulkContentHandler
       }
 
       BulkOperation response = BulkOperation.createResponse(
-          method, null, bulkException.getBulkId(),
+          method, bulkException.getBulkId(), null,
           location, status);
       bulkStreamResponse.writeBulkOperation(response);
       errorCount++;
