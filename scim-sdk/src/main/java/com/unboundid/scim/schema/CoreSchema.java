@@ -54,8 +54,9 @@ public class CoreSchema
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
 
   /**
-   * Adds the default sub-attributes for multi-valued attributes. This
-   * will include the type, primary, display and operation attributes.
+   * Adds the default sub-attributes for multi-valued attributes if they don't
+   * already exist. This will include the type, primary, display and operation
+   * attributes.
    *
    * @param schema          The schema of the multi-valued attribute.
    * @param dataType        The data type of the value sub-attribute.
@@ -75,41 +76,84 @@ public class CoreSchema
         "attribute's function; e.g., \"work\" or " + "\"home\"",
         schema, false, false, false, canonicalValues);
 
+    final AttributeDescriptor value = AttributeDescriptor.createSubAttribute(
+        "value", dataType, "The attribute's significant value",
+        schema, false, true, false);
+
     int numSubAttributes = 0;
+    boolean displayExists = false;
+    boolean primaryExists = false;
+    boolean typeExists = false;
+    boolean operationExists = false;
+    boolean valueExists = false;
     if (subAttributes != null)
     {
       numSubAttributes = subAttributes.length;
+
+      for(AttributeDescriptor attribute : subAttributes)
+      {
+        if(attribute.equals(MULTIVALUED_DISPLAY))
+        {
+          displayExists = true;
+        }
+        else if(attribute.equals(MULTIVALUED_PRIMARY))
+        {
+          primaryExists = true;
+        }
+        else if(attribute.equals(type))
+        {
+          typeExists = true;
+        }
+        else if(attribute.equals(MULTIVALUED_OPERATION))
+        {
+          operationExists = true;
+        }
+        else if(attribute.equals(value))
+        {
+          valueExists = true;
+        }
+      }
     }
 
-    int i = 0;
-    final AttributeDescriptor[] allSubAttributes;
-    if (dataType == AttributeDescriptor.DataType.COMPLEX)
+    final List<AttributeDescriptor> allSubAttributes =
+        new ArrayList<AttributeDescriptor>(numSubAttributes + 5);
+    if (dataType != AttributeDescriptor.DataType.COMPLEX)
     {
-      allSubAttributes = new AttributeDescriptor[numSubAttributes + 4];
+      if(!valueExists)
+      {
+        allSubAttributes.add(value);
+      }
     }
-    else
+
+    if(!displayExists)
     {
-      allSubAttributes = new AttributeDescriptor[numSubAttributes + 5];
-      allSubAttributes[i++] = AttributeDescriptor.createSubAttribute(
-        "value", dataType, "The attribute's significant value",
-        schema, false, true, false);
+      allSubAttributes.add(MULTIVALUED_DISPLAY);
+    }
+    if(!primaryExists)
+    {
+      allSubAttributes.add(MULTIVALUED_PRIMARY);
+    }
+    if(!typeExists)
+    {
+      allSubAttributes.add(type);
+    }
+    if(!operationExists)
+    {
+      allSubAttributes.add(MULTIVALUED_OPERATION);
     }
 
-    allSubAttributes[i++] = MULTIVALUED_DISPLAY;
-    allSubAttributes[i++] = MULTIVALUED_PRIMARY;
-    allSubAttributes[i++] = type;
-    allSubAttributes[i++] = MULTIVALUED_OPERATION;
-
-    if (numSubAttributes > 0) {
-      System.arraycopy(subAttributes, 0, allSubAttributes, i, numSubAttributes);
+    if (numSubAttributes > 0)
+    {
+      allSubAttributes.addAll(Arrays.asList(subAttributes));
     }
 
-    return allSubAttributes;
+    return allSubAttributes.toArray(
+        new AttributeDescriptor[allSubAttributes.size()]);
   }
 
   /**
-   * Adds the common resource attributes. This will include id, externalId,
-   * and meta.
+   * Adds the common resource attributes if they don't already exist.
+   * This will include id, externalId, and meta.
    *
    * @param attributes A list specifying the attributes of a resource.
    * @return The list of attributes including the common attributes.
@@ -118,19 +162,47 @@ public class CoreSchema
       final AttributeDescriptor... attributes)
   {
     int numAttributes = 0;
+    boolean idExists = false;
+    boolean metaExists = false;
+    boolean externalIdExists = false;
     if (attributes != null)
     {
       numAttributes = attributes.length;
+
+      for(AttributeDescriptor attribute : attributes)
+      {
+        if(attribute.equals(ID))
+        {
+          idExists = true;
+        }
+        else if(attribute.equals(META))
+        {
+          metaExists = true;
+        }
+        else if(attribute.equals(EXTERNAL_ID))
+        {
+          externalIdExists = true;
+        }
+      }
     }
 
-    List<AttributeDescriptor> attributeList =
+    final List<AttributeDescriptor> attributeList =
         new ArrayList<AttributeDescriptor>(numAttributes + 3);
 
     // These attributes need to be in the same order as defined in the SCIM XML
     // schema scim-core.xsd.
-    attributeList.add(ID);
-    attributeList.add(META);
-    attributeList.add(EXTERNAL_ID);
+    if(!idExists)
+    {
+      attributeList.add(ID);
+    }
+    if(!metaExists)
+    {
+      attributeList.add(META);
+    }
+    if(!externalIdExists)
+    {
+      attributeList.add(EXTERNAL_ID);
+    }
     if (numAttributes > 0)
     {
       attributeList.addAll(Arrays.asList(attributes));
