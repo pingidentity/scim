@@ -32,6 +32,12 @@ import com.unboundid.util.ByteString;
 public class BooleanTransformation extends Transformation
 {
   /**
+   * The name of the special element that may be present inside the
+   * boolean transformation which will invert the boolean value while mapping.
+   */
+  public static final String INVERT = "invert";
+
+  /**
    * {@inheritDoc}
    */
   @Override
@@ -43,7 +49,7 @@ public class BooleanTransformation extends Transformation
       case BOOLEAN:
         final String s = byteString.stringValue();
         final Attribute a = new Attribute("dummy", s);
-        return new SimpleValue(a.getValueAsBoolean());
+        return new SimpleValue(invertIfRequired(a.getValueAsBoolean()));
 
       case DATETIME:
       case STRING:
@@ -69,7 +75,7 @@ public class BooleanTransformation extends Transformation
     switch (descriptor.getDataType())
     {
       case BOOLEAN:
-        if (simpleValue.getBooleanValue())
+        if (invertIfRequired(simpleValue.getBooleanValue()))
         {
           return new ASN1OctetString("TRUE");
         }
@@ -99,7 +105,7 @@ public class BooleanTransformation extends Transformation
   public String toLDAPFilterValue(final String scimFilterValue)
   {
     SimpleValue simpleValue = new SimpleValue(scimFilterValue);
-    if (simpleValue.getBooleanValue())
+    if (invertIfRequired(simpleValue.getBooleanValue()))
     {
       return "TRUE";
     }
@@ -107,5 +113,17 @@ public class BooleanTransformation extends Transformation
     {
       return "FALSE";
     }
+  }
+
+  /**
+   * Invert the boolean value if configured to do so.
+   *
+   * @param value The boolean value to invert if necessary.
+   *
+   * @return The inverted or provided boolean.
+   */
+  private boolean invertIfRequired(final boolean value)
+  {
+    return getArguments().containsKey(INVERT) ? !value : value;
   }
 }
