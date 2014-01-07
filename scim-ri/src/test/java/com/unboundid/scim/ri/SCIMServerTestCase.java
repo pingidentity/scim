@@ -1774,6 +1774,18 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     afterCount =
         getStatsForResource("User").getStat(ResourceStats.DELETE_NOT_FOUND);
     assertEquals(beforeCount, afterCount - 1);
+
+    try
+    {
+      //Should throw PreconditionFailedException
+      userEndpoint.delete(user.getId(), "*");
+      fail("Expected PreconditionFailedException when deleting " +
+              "non-existent user with * eTag");
+    }
+    catch(PreconditionFailedException e)
+    {
+      //expected
+    }
   }
 
 

@@ -81,7 +81,7 @@ public class ResourceStats
   /**
    * Number of versioned get requests that were not modified.
    */
-  public static final String GET_NOT_MODIFIED = "get-not-modified";
+  public static final String GET_NOT_MODIFIED = "get-304";
 
   /**
    * Number of get requests that failed with code 400 Bad Request.

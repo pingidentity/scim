@@ -20,9 +20,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.EntityTag;
 import java.net.URI;
-import java.util.Collection;
 
 
 /**
@@ -42,12 +40,6 @@ public final class PutResourceRequest extends ResourceReturningRequest
   private final SCIMObject resourceObject;
 
   /**
-   * The versions that at least one must be matched to perform the operation.
-   */
-  private final Collection<EntityTag> versions;
-
-
-  /**
    * Create a new SCIM Put Resource request from the provided information.
    *
    * @param baseURL              The base URL for the SCIM service.
@@ -57,8 +49,6 @@ public final class PutResourceRequest extends ResourceReturningRequest
    *                             request.
    * @param resourceID           The target resource ID.
    * @param resourceObject       The new contents of the resource.
-   * @param versions             The versions that at least one must be matched
-   *                             to perform the operation.
    * @param attributes           The set of requested attributes.
    */
   public PutResourceRequest(final URI baseURL,
@@ -66,13 +56,11 @@ public final class PutResourceRequest extends ResourceReturningRequest
                             final ResourceDescriptor resourceDescriptor,
                             final String resourceID,
                             final SCIMObject resourceObject,
-                            final Collection<EntityTag> versions,
                             final SCIMQueryAttributes attributes)
   {
     super(baseURL, authenticatedUserID, resourceDescriptor, attributes);
     this.resourceID          = resourceID;
     this.resourceObject      = resourceObject;
-    this.versions            = versions;
   }
 
 
@@ -87,8 +75,6 @@ public final class PutResourceRequest extends ResourceReturningRequest
    *                             request.
    * @param resourceID           The target resource ID.
    * @param resourceObject       The new contents of the resource.
-   * @param versions             The versions that at least one must be matched
-   *                             to perform the operation.
    * @param attributes           The set of requested attributes.
    * @param httpServletRequest   The HTTP servlet request associated with this
    *                             request or {@code null} if this request is not
@@ -99,7 +85,6 @@ public final class PutResourceRequest extends ResourceReturningRequest
                             final ResourceDescriptor resourceDescriptor,
                             final String resourceID,
                             final SCIMObject resourceObject,
-                            final Collection<EntityTag> versions,
                             final SCIMQueryAttributes attributes,
                             final HttpServletRequest httpServletRequest)
   {
@@ -107,7 +92,41 @@ public final class PutResourceRequest extends ResourceReturningRequest
           httpServletRequest);
     this.resourceID          = resourceID;
     this.resourceObject      = resourceObject;
-    this.versions            = versions;
+  }
+
+
+
+  /**
+   * Create a new SCIM Put Resource request from the provided information.
+   *
+   * @param baseURL              The base URL for the SCIM service.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
+   * @param resourceID           The target resource ID.
+   * @param resourceObject       The new contents of the resource.
+   * @param attributes           The set of requested attributes.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   * @param ifMatchHeaderValue   The If-Match header value.
+   * @param ifNoneMatchHeaderValue The If-None-Match header value.
+   */
+  public PutResourceRequest(final URI baseURL,
+                            final String authenticatedUserID,
+                            final ResourceDescriptor resourceDescriptor,
+                            final String resourceID,
+                            final SCIMObject resourceObject,
+                            final SCIMQueryAttributes attributes,
+                            final HttpServletRequest httpServletRequest,
+                            final String ifMatchHeaderValue,
+                            final String ifNoneMatchHeaderValue)
+  {
+    super(baseURL, authenticatedUserID, resourceDescriptor, attributes,
+        httpServletRequest,ifMatchHeaderValue, ifNoneMatchHeaderValue);
+    this.resourceID          = resourceID;
+    this.resourceObject      = resourceObject;
   }
 
 
@@ -132,19 +151,5 @@ public final class PutResourceRequest extends ResourceReturningRequest
   public SCIMObject getResourceObject()
   {
     return resourceObject;
-  }
-
-
-  /**
-   * Get the versions that at least one must be matched to perform the
-   * operation.
-   *
-   * @return The versions that at least one must be matched to perform the
-   *         operation or {@code null} if the operation should be performed
-   *         normally.
-   */
-  public Collection<EntityTag> getVersions()
-  {
-    return versions;
   }
 }

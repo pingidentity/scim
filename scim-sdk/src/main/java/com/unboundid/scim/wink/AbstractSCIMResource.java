@@ -25,6 +25,7 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
+import com.unboundid.scim.sdk.ForbiddenException;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -46,13 +47,10 @@ import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.UnauthorizedException;
 
-import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -130,32 +128,6 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMQueryAttributes queryAttributes =
           new SCIMQueryAttributes(resourceDescriptor, attributes);
 
-      Collection<EntityTag> versions = null;
-      List<String> ifNoneMatchHeaders =
-          requestContext.getHeaders().getRequestHeader(
-              HttpHeaders.IF_NONE_MATCH);
-
-      final String ifNoneMatchHeader = ifNoneMatchHeaders ==
-          null || ifNoneMatchHeaders.isEmpty() ?
-          null : ifNoneMatchHeaders.get(0);
-
-      if(ifNoneMatchHeader != null)
-      {
-        String[] valueTokens = ifNoneMatchHeader.split(",");
-        versions = new ArrayList<EntityTag>(valueTokens.length);
-        for(String token : valueTokens)
-        {
-          try
-          {
-            versions.add(EntityTag.valueOf(token));
-          }
-          catch(IllegalArgumentException e)
-          {
-            throw new InvalidResourceException(e.getMessage(), e);
-          }
-        }
-      }
-
       // Process the request.
       GetResourceRequest getResourceRequest =
           new GetResourceRequest(requestContext.getUriInfo().getBaseUri(),
@@ -187,35 +159,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           backend.getResource(getResourceRequest);
 
       // Build the response.
-      boolean matchFound = false;
-      if(versions != null)
-      {
-        EntityTag currentVersion =
-            EntityTag.valueOf(resource.getMeta().getVersion());
-        for(EntityTag version : versions)
-        {
-          if(version.getValue().equals("*") || currentVersion.equals(version))
-          {
-            matchFound = true;
-            break;
-          }
-        }
-      }
-
-      if(matchFound)
-      {
-        responseBuilder = Response.status(Response.Status.NOT_MODIFIED);
-        application.getStatsForResource(resourceDescriptor.getName()).
-          incrementStat(ResourceStats.GET_NOT_MODIFIED);
-      }
-      else
-      {
-        responseBuilder = Response.status(Response.Status.OK);
+      responseBuilder = Response.status(Response.Status.OK);
         setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                          resource);
+            resource);
         application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.GET_OK);
-      }
       responseBuilder.location(resource.getMeta().getLocation());
       responseBuilder.tag(resource.getMeta().getVersion());
 
@@ -242,8 +190,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                        e);
+      if(e.getStatusCode() != 304)
+      {
+        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                          e);
+      }
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -349,15 +300,15 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
         catch (NumberFormatException e)
         {
           Debug.debugException(e);
-          throw SCIMException.createException(
-              400, "The pagination startIndex value '" + pageStartIndex +
+          throw new InvalidResourceException(
+              "The pagination startIndex value '" + pageStartIndex +
               "' is not parsable");
         }
 
         if (startIndex <= 0)
         {
-          throw SCIMException.createException(
-              400, "The pagination startIndex value '" + pageStartIndex +
+          throw new InvalidResourceException(
+              "The pagination startIndex value '" + pageStartIndex +
               "' is invalid because it is not greater than zero");
         }
       }
@@ -370,15 +321,15 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
         catch (NumberFormatException e)
         {
           Debug.debugException(e);
-          throw SCIMException.createException(
-              400, "The pagination count value '" + pageSize +
+          throw new InvalidResourceException(
+              "The pagination count value '" + pageSize +
               "' is not parsable");
         }
 
         if (count <= 0)
         {
-          throw SCIMException.createException(
-              400, "The pagination count value '" + pageSize +
+          throw new InvalidResourceException(
+              "The pagination count value '" + pageSize +
               "' is invalid because it is not greater than zero");
         }
       }
@@ -656,46 +607,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMQueryAttributes queryAttributes =
           new SCIMQueryAttributes(resourceDescriptor, attributes);
 
-      Collection<EntityTag> versions = null;
-        List<String> ifMatchHeaders =
-            requestContext.getHeaders().getRequestHeader(HttpHeaders.IF_MATCH);
-
-      final String ifMatchHeader = ifMatchHeaders ==
-          null || ifMatchHeaders.isEmpty() ? null : ifMatchHeaders.get(0);
-
-      if(ifMatchHeader != null)
-      {
-        String[] valueTokens = ifMatchHeader.split(",");
-        versions = new ArrayList<EntityTag>(valueTokens.length);
-        for(String token : valueTokens)
-        {
-          EntityTag tag;
-          try
-          {
-            tag = EntityTag.valueOf(token);
-          }
-          catch(IllegalArgumentException e)
-          {
-            throw new InvalidResourceException(e.getMessage(), e);
-          }
-          if(tag.getValue().equals("*"))
-          {
-            // Should behave as if the if-match header was not there
-            versions = null;
-            break;
-          }
-          else
-          {
-            versions.add(tag);
-          }
-        }
-      }
-
       // Process the request.
       PutResourceRequest putResourceRequest =
           new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
               authID, resourceDescriptor, userID,
-              puttedResource.getScimObject(), versions, queryAttributes,
+              puttedResource.getScimObject(), queryAttributes,
               requestContext.getRequest());
 
       if (authID == null)
@@ -715,7 +631,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           putResourceRequest =
              new PutResourceRequest(requestContext.getUriInfo().getBaseUri(),
                   authID, resourceDescriptor, userID,
-                  puttedResource.getScimObject(), versions, queryAttributes,
+                  puttedResource.getScimObject(), queryAttributes,
                   requestContext.getRequest());
         }
       }
@@ -744,8 +660,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                        e);
+      if(e.getStatusCode() != 302)
+      {
+        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                          e);
+      }
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -813,46 +732,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       final SCIMQueryAttributes queryAttributes =
               new SCIMQueryAttributes(resourceDescriptor, attributes);
 
-      Collection<EntityTag> versions = null;
-      List<String> ifMatchHeaders =
-          requestContext.getHeaders().getRequestHeader(HttpHeaders.IF_MATCH);
-
-      final String ifMatchHeader = ifMatchHeaders ==
-          null || ifMatchHeaders.isEmpty() ? null : ifMatchHeaders.get(0);
-
-      if(ifMatchHeader != null)
-      {
-        String[] valueTokens = ifMatchHeader.split(",");
-        versions = new ArrayList<EntityTag>(valueTokens.length);
-        for(String token : valueTokens)
-        {
-          EntityTag tag;
-          try
-          {
-            tag = EntityTag.valueOf(token);
-          }
-          catch(IllegalArgumentException e)
-          {
-            throw new InvalidResourceException(e.getMessage(), e);
-          }
-          if(tag.getValue().equals("*"))
-          {
-            // Should behave as if the if-match header was not there
-            versions = null;
-            break;
-          }
-          else
-          {
-            versions.add(tag);
-          }
-        }
-      }
-
       // Process the request.
       PatchResourceRequest patchResourceRequest =
               new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
                       authID, resourceDescriptor, userID,
-                      patchedResource.getScimObject(), versions,
+                      patchedResource.getScimObject(),
                       queryAttributes, requestContext.getRequest());
 
       if (authID == null)
@@ -872,7 +756,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           patchResourceRequest =
              new PatchResourceRequest(requestContext.getUriInfo().getBaseUri(),
                    authID, resourceDescriptor, userID,
-                   patchedResource.getScimObject(), versions, queryAttributes,
+                   patchedResource.getScimObject(), queryAttributes,
                    requestContext.getRequest());
         }
       }
@@ -911,8 +795,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-              e);
+      if(e.getStatusCode() != 302)
+      {
+        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                          e);
+      }
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -956,45 +843,9 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
         throw new UnauthorizedException("Invalid credentials");
       }
 
-      Collection<EntityTag> versions = null;
-      List<String> ifMatchHeaders =
-          requestContext.getHeaders().getRequestHeader(HttpHeaders.IF_MATCH);
-
-      final String ifMatchHeader = ifMatchHeaders ==
-          null || ifMatchHeaders.isEmpty() ? null : ifMatchHeaders.get(0);
-
-
-      if(ifMatchHeader != null)
-      {
-        String[] valueTokens = ifMatchHeader.split(",");
-        versions = new ArrayList<EntityTag>(valueTokens.length);
-        for(String token : valueTokens)
-        {
-          EntityTag tag;
-          try
-          {
-            tag = EntityTag.valueOf(token);
-          }
-          catch(IllegalArgumentException e)
-          {
-            throw new InvalidResourceException(e.getMessage(), e);
-          }
-          if(tag.getValue().equals("*"))
-          {
-            // Should behave as if the if-match header was not there
-            versions = null;
-            break;
-          }
-          else
-          {
-            versions.add(tag);
-          }
-        }
-      }
-
       DeleteResourceRequest deleteResourceRequest =
         new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-            authID, resourceDescriptor, userID, versions,
+            authID, resourceDescriptor, userID,
             requestContext.getRequest());
 
       if (authID == null)
@@ -1013,7 +864,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           authID = authIDRef.get();
           deleteResourceRequest =
              new DeleteResourceRequest(requestContext.getUriInfo().getBaseUri(),
-                   authID, resourceDescriptor, userID, versions,
+                   authID, resourceDescriptor, userID,
                    requestContext.getRequest());
         }
       }
@@ -1026,8 +877,11 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     } catch (SCIMException e) {
       // Build the response.
       responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                        e);
+      if(e.getStatusCode() != 302)
+      {
+        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+                          e);
+      }
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -1193,8 +1047,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     }
     builder.header("WWW-Authenticate", authHeaderValue);
 
-    SCIMException exception =
-            SCIMException.createException(400, errorDescription);
+    SCIMException exception = new InvalidResourceException(errorDescription);
     setResponseEntity(builder, mediaType, exception);
 
     return builder.build();
@@ -1218,8 +1071,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     }
     builder.header("WWW-Authenticate", authHeaderValue);
 
-    SCIMException exception =
-            SCIMException.createException(401, errorDescription);
+    SCIMException exception = new UnauthorizedException(errorDescription);
     setResponseEntity(builder, mediaType, exception);
 
     return builder.build();
@@ -1251,8 +1103,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     }
     builder.header("WWW-Authenticate", authHeaderValue);
 
-    SCIMException exception =
-            SCIMException.createException(403, errorDescription);
+    SCIMException exception = new ForbiddenException(errorDescription);
     setResponseEntity(builder, mediaType, exception);
 
     return builder.build();

@@ -83,6 +83,36 @@ public class ResourceReturningRequest extends SCIMRequest
 
 
 
+  /**
+   * Create a new SCIM request from the provided information.
+   *
+   * @param baseURL              The base URL for the SCIM service.
+   * @param authenticatedUserID  The authenticated user name or {@code null} if
+   *                             the request is not authenticated.
+   * @param resourceDescriptor   The ResourceDescriptor associated with this
+   *                             request.
+   * @param attributes           The set of requested attributes.
+   * @param httpServletRequest   The HTTP servlet request associated with this
+   *                             request or {@code null} if this request is not
+   *                             initiated by a servlet.
+   * @param ifMatchHeaderValue   The If-Match header value.
+   * @param ifNoneMatchHeaderValue The If-None-Match header value.
+   */
+  public ResourceReturningRequest(final URI baseURL,
+                                  final String authenticatedUserID,
+                                  final ResourceDescriptor resourceDescriptor,
+                                  final SCIMQueryAttributes attributes,
+                                  final HttpServletRequest httpServletRequest,
+                                  final String ifMatchHeaderValue,
+                                  final String ifNoneMatchHeaderValue)
+  {
+    super(baseURL, authenticatedUserID, resourceDescriptor, httpServletRequest,
+        ifMatchHeaderValue, ifNoneMatchHeaderValue);
+    this.attributes = attributes;
+  }
+
+
+
 
 
 

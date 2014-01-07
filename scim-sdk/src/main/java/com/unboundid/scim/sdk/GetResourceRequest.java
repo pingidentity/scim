@@ -20,6 +20,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.EntityTag;
 import java.net.URI;
 
 
@@ -96,5 +97,25 @@ public final class GetResourceRequest extends ResourceReturningRequest
   public String getResourceID()
   {
     return resourceID;
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected void evaluateIfNoneMatch(final EntityTag eTag,
+                                     final String headerValue)
+      throws SCIMException
+  {
+    try
+    {
+      super.evaluateIfNoneMatch(eTag, headerValue);
+    }
+    catch (PreconditionFailedException e)
+    {
+      throw new SCIMException(304, e.getMessage());
+    }
   }
 }

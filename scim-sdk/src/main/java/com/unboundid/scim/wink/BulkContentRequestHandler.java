@@ -464,38 +464,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
         }
       }
 
-      if(etag != null)
-      {
-        String[] valueTokens = etag.split(",");
-        requestVersions = new ArrayList<EntityTag>(valueTokens.length);
-        for(String token : valueTokens)
-        {
-          EntityTag tag;
-          try
-          {
-            tag = EntityTag.valueOf(token);
-          }
-          catch(IllegalArgumentException e)
-          {
-            throw new InvalidResourceException(e.getMessage(), e);
-          }
-          if(tag.getValue().equals("*"))
-          {
-            // Should behave as if the if-match header was not there
-            requestVersions = null;
-            break;
-          }
-          else
-          {
-            requestVersions.add(tag);
-          }
-        }
-      }
-      else if(method == Method.PUT || method == Method.PATCH)
-      {
-        throw new InvalidResourceException("meta.version must be specified");
-      }
-
       // Request no attributes because we will not provide the resource in
       // the response.
       final SCIMQueryAttributes queryAttributes =
@@ -549,9 +517,9 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        descriptor,
                                        resourceID,
                                        resource.getScimObject(),
-                                       requestVersions,
                                        queryAttributes,
-                                       requestContext.getRequest());
+                                       requestContext.getRequest(),
+                                       etag, null);
 
           if (requestContext.getAuthID() == null)
           {
@@ -568,8 +536,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
               putResourceRequest = new PutResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
                       authID, descriptor, resourceID, resource.getScimObject(),
-                      requestVersions, queryAttributes,
-                      requestContext.getRequest());
+                      queryAttributes, requestContext.getRequest(),
+                      etag, null);
             }
           }
 
@@ -585,9 +553,9 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        descriptor,
                                        resourceID,
                                        resource.getScimObject(),
-                                       requestVersions,
                                        queryAttributes,
-                                       requestContext.getRequest());
+                                       requestContext.getRequest(),
+                                       etag, null);
 
           if (requestContext.getAuthID() == null)
           {
@@ -604,8 +572,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
               patchResourceRequest = new PatchResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
                       authID, descriptor, resourceID, resource.getScimObject(),
-                      requestVersions, queryAttributes,
-                      requestContext.getRequest());
+                      queryAttributes, requestContext.getRequest(),
+                      etag, null);
             }
           }
 
@@ -620,8 +588,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
                                        requestContext.getAuthID(),
                                        descriptor,
                                        resourceID,
-                                       requestVersions,
-                                       requestContext.getRequest());
+                                       requestContext.getRequest(),
+                                       etag, null);
 
           if (requestContext.getAuthID() == null)
           {
@@ -637,8 +605,8 @@ public class BulkContentRequestHandler extends BulkContentHandler
               String authID = authIDRef.get();
               deleteResourceRequest = new DeleteResourceRequest(
                       requestContext.getUriInfo().getBaseUri(),
-                      authID, descriptor, resourceID, requestVersions,
-                      requestContext.getRequest());
+                      authID, descriptor, resourceID,
+                      requestContext.getRequest(), etag, null);
             }
           }
 

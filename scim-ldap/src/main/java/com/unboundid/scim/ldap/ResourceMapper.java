@@ -34,7 +34,11 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
+import com.unboundid.scim.sdk.ForbiddenException;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.PreconditionFailedException;
+import com.unboundid.scim.sdk.ResourceConflictException;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -46,6 +50,7 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.StaticUtils;
+import com.unboundid.scim.sdk.UnauthorizedException;
 import com.unboundid.util.Validator;
 import org.xml.sax.SAXException;
 
@@ -1821,24 +1826,26 @@ public class ResourceMapper
       case ResultCode.NOT_ALLOWED_ON_NONLEAF_INT_VALUE:
       case ResultCode.NOT_ALLOWED_ON_RDN_INT_VALUE:
       case ResultCode.OBJECT_CLASS_MODS_PROHIBITED_INT_VALUE:
-        return SCIMException.createException(400, errorMessage);
+        return new InvalidResourceException(errorMessage, e);
 
       case ResultCode.INVALID_CREDENTIALS_INT_VALUE:
-        return SCIMException.createException(401, errorMessage);
+        return new UnauthorizedException(errorMessage, e);
 
       case ResultCode.INSUFFICIENT_ACCESS_RIGHTS_INT_VALUE:
-        return SCIMException.createException(403, errorMessage);
+        return new ForbiddenException(errorMessage, e);
 
       case ResultCode.NO_SUCH_OBJECT_INT_VALUE:
-        return SCIMException.createException(404, errorMessage);
+        return new ResourceNotFoundException(errorMessage, e);
 
       case ResultCode.CONSTRAINT_VIOLATION_INT_VALUE:
       case ResultCode.ATTRIBUTE_OR_VALUE_EXISTS_INT_VALUE:
       case ResultCode.ENTRY_ALREADY_EXISTS_INT_VALUE:
-        return SCIMException.createException(409, errorMessage);
+        return new ResourceConflictException(errorMessage, e);
+      case ResultCode.ASSERTION_FAILED_INT_VALUE:
+        return new PreconditionFailedException(errorMessage, e);
 
       default:
-        return SCIMException.createException(500, errorMessage);
+        return new ServerErrorException(errorMessage, e);
     }
   }
 }
