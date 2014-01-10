@@ -140,10 +140,9 @@ public abstract class LDAPBackend
   private boolean supportsSimplePagesResultsControl = false;
 
   /**
-   * Flag to indicate whether this backend supports the Assertion Request
-   * Control.
+   * The attribute whose value to use as the entity tag.
    */
-  private boolean supportsAssertionRequestControl = false;
+  private String entityTagAttribute = null;
 
   static
   {
@@ -261,28 +260,32 @@ public abstract class LDAPBackend
 
 
   /**
-   * Configures this LDAPBackend to use or not use the
-   * AssertionRequestControl.
+   * Retrieves the attribute whose value to use as the entity tag.
    *
-   * @param supported {@code true} if the control is supported, {@code false} if
-   *                  not.
+   * @return The attribute whose value to use as the entity tag or {@code null}
+   *         if entity tag support is disabled.
    */
-  public void setSupportsAssertionRequestControl(final boolean supported)
+  public String getEntityTagAttribute()
   {
-    this.supportsAssertionRequestControl = supported;
+    return entityTagAttribute;
   }
 
 
 
   /**
-   * Determines if this LDAPBackend supports the AssertionRequestControl.
+   * Configures this LDAPBackend to use the value of the specified LDAP
+   * attribute as entity tags and to use the AssertionRequestControl.
    *
-   * @return {@code true} if the control is supported, {@code false} otherwise.
+   * @param entityTagAttribute The attribute whose value to use as the entity
+   *                           tag. The first value will be used for multivalued
+   *                           attributes or {@code null} to disable entity tag
+   *                           support.
    */
-  public boolean supportsAssertionRequestControl()
+  public void setEntityTagAttribute(final String entityTagAttribute)
   {
-    return this.supportsAssertionRequestControl;
+    this.entityTagAttribute = entityTagAttribute;
   }
+
 
 
   /**
@@ -291,7 +294,7 @@ public abstract class LDAPBackend
   @Override
   public boolean supportsVersioning()
   {
-    return supportsAssertionRequestControl;
+    return entityTagAttribute != null;
   }
 
   /**
@@ -366,6 +369,10 @@ public abstract class LDAPBackend
         mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.addAll(getLastModAttributes());
     requestAttributeSet.add("objectclass");
+    if(supportsVersioning())
+    {
+      requestAttributeSet.add(entityTagAttribute);
+    }
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -392,11 +399,11 @@ public abstract class LDAPBackend
     final BaseResource resource =
         new BaseResource(request.getResourceDescriptor());
 
-    Date currentModifyDate = null;
+    EntityTag currentEtag;
     if(supportsVersioning())
     {
-      currentModifyDate = getModifyDate(entry);
-      request.checkPreconditions(toEtag(currentModifyDate));
+      currentEtag = getEntityTagValue(entry);
+      request.checkPreconditions(currentEtag);
     }
 
     setIdAndMetaAttributes(mapper, resource, request, entry,
@@ -435,6 +442,10 @@ public abstract class LDAPBackend
           resourceMapper.toLDAPAttributeTypes(request.getAttributes());
       requestAttributeSet.addAll(getLastModAttributes());
       requestAttributeSet.add("objectclass");
+      if(supportsVersioning())
+      {
+        requestAttributeSet.add(entityTagAttribute);
+      }
 
       final int maxResults = getConfig().getMaxResults();
       final LDAPRequestInterface ldapInterface =
@@ -746,6 +757,10 @@ public abstract class LDAPBackend
         mapper.toLDAPAttributeTypes(request.getAttributes()));
     requestAttributeSet.addAll(getLastModAttributes());
     requestAttributeSet.add("objectclass");
+    if(supportsVersioning())
+    {
+      requestAttributeSet.add(entityTagAttribute);
+    }
 
     final String[] requestAttributes = new String[requestAttributeSet.size()];
     requestAttributeSet.toArray(requestAttributes);
@@ -834,8 +849,15 @@ public abstract class LDAPBackend
       final Entry entry;
       try
       {
-        entry = mapper.getEntry(ldapInterface, request.getResourceID(),
-            MODIFY_TIMESTAMP_ATTR, DS_UPDATE_TIME_ATTR);
+        if(supportsVersioning())
+        {
+          entry = mapper.getEntry(ldapInterface, request.getResourceID(),
+              entityTagAttribute);
+        }
+        else
+        {
+          entry = mapper.getEntry(ldapInterface, request.getResourceID());
+        }
       }
       catch (ResourceNotFoundException e)
       {
@@ -849,20 +871,19 @@ public abstract class LDAPBackend
       final DeleteRequest deleteRequest = new DeleteRequest(entry.getDN());
       if(supportsVersioning())
       {
-        final Date currentModifyDate = getModifyDate(entry);
-        request.checkPreconditions(toEtag(currentModifyDate));
+        final EntityTag currentEtag = getEntityTagValue(entry);
+        request.checkPreconditions(currentEtag);
 
         final Filter filter;
-        if(currentModifyDate != null)
+        if(currentEtag != null)
         {
-          filter = Filter.createEqualityFilter(
-              MODIFY_TIMESTAMP_ATTR,
-              StaticUtils.encodeGeneralizedTime(currentModifyDate));
+          filter = Filter.createEqualityFilter(entityTagAttribute,
+              currentEtag.getValue());
         }
         else
         {
           filter = Filter.createNOTFilter(Filter.createPresenceFilter(
-              MODIFY_TIMESTAMP_ATTR));
+              entityTagAttribute));
         }
         deleteRequest.addControl(new AssertionRequestControl(filter, true));
       }
@@ -919,10 +940,9 @@ public abstract class LDAPBackend
     String[] getEntryAttributes = mappedAttributes;
     if(supportsVersioning())
     {
-      getEntryAttributes = new String[mappedAttributeSet.size() + 2];
+      getEntryAttributes = new String[mappedAttributeSet.size() + 1];
       mappedAttributeSet.toArray(getEntryAttributes);
-      getEntryAttributes[getEntryAttributes.length - 2] = MODIFY_TIMESTAMP_ATTR;
-      getEntryAttributes[getEntryAttributes.length - 1] = DS_UPDATE_TIME_ATTR;
+      getEntryAttributes[getEntryAttributes.length - 1] = entityTagAttribute;
     }
 
     final String resourceID = request.getResourceID();
@@ -948,11 +968,11 @@ public abstract class LDAPBackend
         throw e;
       }
 
-      Date currentModifyDate = null;
+      EntityTag currentEtag = null;
       if(supportsVersioning())
       {
-        currentModifyDate = getModifyDate(currentEntry);
-        request.checkPreconditions(toEtag(currentModifyDate));
+        currentEtag = getEntityTagValue(currentEntry);
+        request.checkPreconditions(currentEtag);
       }
 
       mods.addAll(mapper.toLDAPModificationsForPut(currentEntry,
@@ -963,6 +983,10 @@ public abstract class LDAPBackend
           mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.addAll(getLastModAttributes());
       requestAttributeSet.add("objectclass");
+      if(supportsVersioning())
+      {
+        requestAttributeSet.add(entityTagAttribute);
+      }
 
       final String[] requestAttributes =
           new String[requestAttributeSet.size()];
@@ -1019,16 +1043,15 @@ public abstract class LDAPBackend
         if(supportsVersioning())
         {
           final Filter filter;
-          if(currentModifyDate != null)
+          if(currentEtag != null)
           {
-            filter = Filter.createEqualityFilter(
-                MODIFY_TIMESTAMP_ATTR,
-                StaticUtils.encodeGeneralizedTime(currentModifyDate));
+            filter = Filter.createEqualityFilter(entityTagAttribute,
+                currentEtag.getValue());
           }
           else
           {
             filter = Filter.createNOTFilter(Filter.createPresenceFilter(
-                MODIFY_TIMESTAMP_ATTR));
+                entityTagAttribute));
           }
           assertionRequestControl = new AssertionRequestControl(filter, true);
         }
@@ -1189,12 +1212,12 @@ public abstract class LDAPBackend
 
     // Retrieve all modifiable mapped attributes to get the current state of
     // the resource.
-    final Set<String> mappedAttributeSet =
-          mapper.getModifiableLDAPAttributeTypes(request.getResourceObject());
+    final Set<String> mappedAttributeSet = new HashSet<String>();
+    mappedAttributeSet.addAll(
+        mapper.getModifiableLDAPAttributeTypes(request.getResourceObject()));
     if(supportsVersioning())
     {
-      mappedAttributeSet.add(MODIFY_TIMESTAMP_ATTR);
-      mappedAttributeSet.add(DS_UPDATE_TIME_ATTR);
+      mappedAttributeSet.add(entityTagAttribute);
     }
     final String[] mappedAttributes = new String[mappedAttributeSet.size()];
     mappedAttributeSet.toArray(mappedAttributes);
@@ -1222,11 +1245,11 @@ public abstract class LDAPBackend
         throw e;
       }
 
-      Date currentModifyDate = null;
+      EntityTag currentEtag = null;
       if(supportsVersioning())
       {
-        currentModifyDate = getModifyDate(currentEntry);
-        request.checkPreconditions(toEtag(currentModifyDate));
+        currentEtag = getEntityTagValue(currentEntry);
+        request.checkPreconditions(currentEtag);
       }
 
       mods.addAll(mapper.toLDAPModificationsForPatch(currentEntry,
@@ -1237,6 +1260,10 @@ public abstract class LDAPBackend
             mapper.toLDAPAttributeTypes(request.getAttributes()));
       requestAttributeSet.addAll(getLastModAttributes());
       requestAttributeSet.add("objectclass");
+      if(supportsVersioning())
+      {
+        requestAttributeSet.add(entityTagAttribute);
+      }
 
       String[] requestAttributes = new String[requestAttributeSet.size()];
       requestAttributeSet.toArray(requestAttributes);
@@ -1304,16 +1331,15 @@ public abstract class LDAPBackend
         if(supportsVersioning())
         {
           final Filter filter;
-          if(currentModifyDate != null)
+          if(currentEtag != null)
           {
-            filter = Filter.createEqualityFilter(
-                MODIFY_TIMESTAMP_ATTR,
-                StaticUtils.encodeGeneralizedTime(currentModifyDate));
+            filter = Filter.createEqualityFilter(entityTagAttribute,
+                currentEtag.getValue());
           }
           else
           {
             filter = Filter.createNOTFilter(Filter.createPresenceFilter(
-                MODIFY_TIMESTAMP_ATTR));
+                entityTagAttribute));
           }
           assertionRequestControl = new AssertionRequestControl(filter, true);
         }
@@ -1468,7 +1494,7 @@ public abstract class LDAPBackend
 
     resource.setMeta(new Meta(createDate, modifyDate,
         uriBuilder.build(),
-        supportsVersioning() ? toEtag(modifyDate).toString() : null));
+        supportsVersioning() ? getEntityTagValue(entry).toString() : null));
 
     if (queryAttributes != null)
     {
@@ -1567,16 +1593,23 @@ public abstract class LDAPBackend
   }
 
   /**
-   * Convert a timestamp to an ETag.
+   * Get the value for the entity tag from the entry.
    *
-   * @param modifyDate The timestamp to convert.
+   * @param entry The entry to retrieve the entity tag from.
    *
-   * @return The ETag representation of the timestamp.
+   * @return The value for the entity tag.
+   * @throws ServerErrorException If the entity tag attribute is not found.
    */
-  private EntityTag toEtag(final Date modifyDate)
+  private EntityTag getEntityTagValue(final Entry entry)
+      throws ServerErrorException
   {
-    return new EntityTag(String.valueOf(
-        modifyDate == null ? 0 : modifyDate.getTime()));
+    Attribute entityTagAttr = entry.getAttribute(entityTagAttribute);
+    if(entityTagAttr != null && entityTagAttr.hasValue())
+    {
+      return new EntityTag(entityTagAttr.getValue());
+    }
+    throw new ServerErrorException("Entity tag attribute " +
+        entityTagAttribute + " is not present in returned entry");
   }
 
   /**

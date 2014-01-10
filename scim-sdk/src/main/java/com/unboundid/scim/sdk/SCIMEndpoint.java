@@ -162,7 +162,7 @@ public class SCIMEndpoint<R extends BaseResource>
    *             an entry if the resource still exists. A value of
    *             <code>null</code> indicates unconditional return.
    * @param requestedAttributes The attributes of the resource to retrieve.
-   * @return The retrieved resource or <code>null</code> if the requested
+   * @return The retrieved resource.
    * resource has not been modified.
    * @throws SCIMException If an error occurs.
    */
@@ -202,11 +202,7 @@ public class SCIMEndpoint<R extends BaseResource>
       ClientResponse response = clientResource.get();
       entity = response.getEntity(InputStream.class);
 
-      if(response.getStatusType() == Response.Status.NOT_MODIFIED)
-      {
-        return null;
-      }
-      else if(response.getStatusType() == Response.Status.OK)
+      if(response.getStatusType() == Response.Status.OK)
       {
         R resource = unmarshaller.unmarshal(entity, resourceDescriptor,
             resourceFactory);
@@ -999,6 +995,21 @@ public class SCIMEndpoint<R extends BaseResource>
     {
       scimException = SCIMException.createException(
           response.getStatusCode(), response.getMessage());
+    }
+
+    if(response.getStatusType() == Response.Status.PRECONDITION_FAILED)
+    {
+      scimException = new PreconditionFailedException(
+          scimException.getMessage(),
+          response.getHeaders().getFirst(HttpHeaders.ETAG),
+          scimException.getCause());
+    }
+    else if(response.getStatusType() == Response.Status.NOT_MODIFIED)
+    {
+      scimException = new NotModifiedException(
+          scimException.getMessage(),
+          response.getHeaders().getFirst(HttpHeaders.ETAG),
+          scimException.getCause());
     }
 
     return scimException;

@@ -251,8 +251,9 @@ public abstract class SCIMRequest
 
     if (!isMatch(eTags, eTag))
     {
+
       throw new PreconditionFailedException(
-          "Resource changed since last retrieved");
+          "Resource changed since last retrieved", eTag.toString(), null);
     }
   }
 
@@ -272,7 +273,8 @@ public abstract class SCIMRequest
     if (isMatch(eTags, eTag))
     {
       throw new PreconditionFailedException(
-          "Resource did not change since last retrieved");
+          "Resource did not change since last retrieved",
+          eTag.toString(), null);
     }
   }
 

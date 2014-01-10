@@ -18,29 +18,28 @@
 package com.unboundid.scim.sdk;
 
 /**
- * Signals server failed to update as Resource changed on the server since last
- * retrieved
+ * Signals the Resource has not changed on the server since last retrieved
  *
  * This exception corresponds to HTTP response code
- * 412 PRECONDITION FAILED.
+ * 304 NOT MODIFIED.
  */
-public class PreconditionFailedException extends SCIMException
+public class NotModifiedException extends SCIMException
 {
   private final String version;
 
   /**
-   * Create a new <code>PreconditionFailedException</code> from the provided
+   * Create a new <code>NotModifiedException</code> from the provided
    * information.
    *
    * @param errorMessage  The error message for this SCIM exception.
    */
-  public PreconditionFailedException(final String errorMessage) {
-    super(412, errorMessage);
-    this.version = null;
+  public NotModifiedException(final String errorMessage) {
+    super(304, errorMessage);
+    version = null;
   }
 
   /**
-   * Create a new <code>PreconditionFailedException</code> from the provided
+   * Create a new <code>NotModifiedException</code> from the provided
    * information.
    *
    * @param errorMessage  The error message for this SCIM exception.
@@ -49,14 +48,14 @@ public class PreconditionFailedException extends SCIMException
    *                      is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    */
-  public PreconditionFailedException(final String errorMessage,
-                                     final Throwable cause) {
-    super(412, errorMessage, cause);
-    this.version = null;
+  public NotModifiedException(final String errorMessage,
+                              final Throwable cause) {
+    super(304, errorMessage, cause);
+    version = null;
   }
 
   /**
-   * Create a new <code>PreconditionFailedException</code> from the provided
+   * Create a new <code>NotModifiedException</code> from the provided
    * information.
    *
    * @param errorMessage  The error message for this SCIM exception.
@@ -66,15 +65,15 @@ public class PreconditionFailedException extends SCIMException
    *                      is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    */
-  public PreconditionFailedException(final String errorMessage,
-                                     final String version,
-                                     final Throwable cause) {
-    super(412, errorMessage, cause);
+  public NotModifiedException(final String errorMessage,
+                              final String version,
+                              final Throwable cause) {
+    super(304, errorMessage, cause);
     this.version = version;
   }
 
   /**
-   * Retrieves the current version of the Resource.
+   * Retrieves the version of the Resource.
    *
    * @return The current version of the Resource.
    */

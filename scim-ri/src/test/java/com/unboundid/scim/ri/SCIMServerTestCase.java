@@ -38,6 +38,7 @@ import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.BulkResponse;
 import com.unboundid.scim.sdk.Diff;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.NotModifiedException;
 import com.unboundid.scim.sdk.PreconditionFailedException;
 import com.unboundid.scim.sdk.ResourceConflictException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
@@ -1251,6 +1252,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     catch(PreconditionFailedException e)
     {
       //expected
+      assertNotNull(e.getVersion());
     }
     afterCount =
         getStatsForResource("User").getStat(
@@ -1538,6 +1540,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     catch(PreconditionFailedException e)
     {
       //expected
+      assertNotNull(e.getVersion());
     }
     afterCount =
         getStatsForResource("User").getStat(
@@ -1744,6 +1747,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     catch(PreconditionFailedException e)
     {
       //expected
+      assertNotNull(e.getVersion());
     }
     long afterCount =
         getStatsForResource("User").getStat(
@@ -1915,7 +1919,16 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Verify that precondition GET works
     beforeCount =
             getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
-    assertNull(userEndpoint.get(user.getId(), user.getMeta().getVersion()));
+    try
+    {
+      userEndpoint.get(user.getId(), user.getMeta().getVersion());
+      fail("GET with current etag should result in NotModifiedException");
+    }
+    catch(NotModifiedException e)
+    {
+      // Expected
+      assertEquals(e.getVersion(), user.getMeta().getVersion());
+    }
     afterCount =
             getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
 
@@ -1925,15 +1938,36 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Verify that precondition GET works with wildcard etag
     beforeCount =
             getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
-    assertNull(userEndpoint.get(user.getId(), "*, \"123\""));
+    try
+    {
+      userEndpoint.get(user.getId(), "*, \"123\"");
+      fail("GET with wildcard etag should result in NotModifiedException");
+    }
+    catch(NotModifiedException e)
+    {
+      // Expected
+      assertEquals(e.getVersion(), user.getMeta().getVersion());
+    }
     afterCount =
             getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
+
+    //Make sure the stats were updated properly
+    assertEquals(beforeCount, afterCount - 1);
 
     // Verify that precondition GET works with multiple etags
     beforeCount =
             getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
-    assertNull(userEndpoint.get(user.getId(), "\"123\"," +
-        user.getMeta().getVersion()));
+    try
+    {
+      userEndpoint.get(user.getId(), "\"123\"," +
+          user.getMeta().getVersion());
+      fail("GET with current etag should result in NotModifiedException");
+    }
+    catch(NotModifiedException e)
+    {
+      // Expected
+      assertEquals(e.getVersion(), user.getMeta().getVersion());
+    }
     afterCount =
             getStatsForResource("User").getStat(ResourceStats.GET_NOT_MODIFIED);
 
@@ -2650,11 +2684,17 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     final BulkResponse response = service.processBulkRequest(Arrays.asList(o));
     final Status status = response.iterator().next().getStatus();
     final String bulkId = response.iterator().next().getBulkId();
+    final String version = response.iterator().next().getVersion();
 
     assertNotNull(status);
     assertEquals(status.getCode(), expectedResponseCode);
     assertNotNull(status.getDescription());
     assertEquals(bulkId, o.getBulkId());
+
+    if(status.getCode().equals("412"))
+    {
+      assertNotNull(version);
+    }
   }
 
 

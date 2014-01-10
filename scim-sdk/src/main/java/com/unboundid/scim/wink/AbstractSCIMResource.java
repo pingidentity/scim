@@ -29,12 +29,14 @@ import com.unboundid.scim.sdk.ForbiddenException;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.NotModifiedException;
 import com.unboundid.scim.sdk.OAuthToken;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.OAuthTokenStatus;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
+import com.unboundid.scim.sdk.PreconditionFailedException;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.ResourceSchemaBackend;
@@ -188,13 +190,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
             incrementStat(ResourceStats.GET_RESPONSE_XML);
       }
     } catch (SCIMException e) {
-      // Build the response.
-      responseBuilder = Response.status(e.getStatusCode());
-      if(e.getStatusCode() != 304)
-      {
-        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                          e);
-      }
+      Debug.debugException(e);
+      responseBuilder = error(e, requestContext);
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -535,10 +532,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       }
     } catch (SCIMException e) {
       Debug.debugException(e);
-      // Build the response.
-      responseBuilder = Response.status(e.getStatusCode());
-      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                        e);
+      responseBuilder = error(e, requestContext);
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -658,13 +652,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
             incrementStat(ResourceStats.PUT_RESPONSE_XML);
       }
     } catch (SCIMException e) {
-      // Build the response.
-      responseBuilder = Response.status(e.getStatusCode());
-      if(e.getStatusCode() != 302)
-      {
-        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                          e);
-      }
+      Debug.debugException(e);
+      responseBuilder = error(e, requestContext);
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -793,13 +782,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
             incrementStat(ResourceStats.PATCH_RESPONSE_XML);
       }
     } catch (SCIMException e) {
-      // Build the response.
-      responseBuilder = Response.status(e.getStatusCode());
-      if(e.getStatusCode() != 302)
-      {
-        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                          e);
-      }
+      Debug.debugException(e);
+      responseBuilder = error(e, requestContext);
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -875,13 +859,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.DELETE_OK);
     } catch (SCIMException e) {
-      // Build the response.
-      responseBuilder = Response.status(e.getStatusCode());
-      if(e.getStatusCode() != 302)
-      {
-        setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
-                          e);
-      }
+      Debug.debugException(e);
+      responseBuilder = error(e, requestContext);
       if(resourceDescriptor != null)
       {
         application.getStatsForResource(resourceDescriptor.getName()).
@@ -1123,5 +1102,35 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     }
 
     return application.getBackend();
+  }
+
+  /**
+   * Returns a ResponseBuilder from the provided SCIMException and
+   * RequestContext.
+   *
+   * @param e The SCIMException.
+   * @param requestContext The request context.
+   * @return The ResponseBuilder.
+   */
+  private Response.ResponseBuilder error(final SCIMException e,
+                                         final RequestContext requestContext)
+  {
+    // Build the response.
+    Response.ResponseBuilder responseBuilder =
+        Response.status(e.getStatusCode());
+    if(e instanceof NotModifiedException)
+    {
+      responseBuilder.tag(((NotModifiedException)e).getVersion());
+    }
+    else
+    {
+      if(e instanceof PreconditionFailedException)
+      {
+        responseBuilder.tag(((PreconditionFailedException)e).getVersion());
+      }
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+          e);
+    }
+    return responseBuilder;
   }
 }

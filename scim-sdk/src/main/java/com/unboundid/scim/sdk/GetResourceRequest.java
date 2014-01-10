@@ -115,7 +115,7 @@ public final class GetResourceRequest extends ResourceReturningRequest
     }
     catch (PreconditionFailedException e)
     {
-      throw new SCIMException(304, e.getMessage());
+      throw new NotModifiedException(e.getMessage(), e.getVersion(), null);
     }
   }
 }

@@ -30,6 +30,7 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
+import com.unboundid.scim.sdk.PreconditionFailedException;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -43,7 +44,6 @@ import com.unboundid.scim.sdk.UnauthorizedException;
 
 import static com.unboundid.scim.wink.AbstractSCIMResource.validateOAuthToken;
 
-import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -254,8 +254,16 @@ public class BulkContentRequestHandler extends BulkContentHandler
         location = locationBuilder.build().toString();
       }
 
+      // Include the current ETag for PreconditionFailedExceptions
+      String version = null;
+      if(bulkException.getCause() instanceof PreconditionFailedException)
+      {
+        version = ((PreconditionFailedException)
+            bulkException.getCause()).getVersion();
+      }
+
       BulkOperation response = BulkOperation.createResponse(
-          method, bulkException.getBulkId(), null,
+          method, bulkException.getBulkId(), version,
           location, status);
       bulkStreamResponse.writeBulkOperation(response);
       errorCount++;
@@ -292,7 +300,6 @@ public class BulkContentRequestHandler extends BulkContentHandler
     String endpoint = null;
     String resourceID = null;
     String responseVersion = null;
-    Collection<EntityTag> requestVersions = null;
 
     final ResourceDescriptor descriptor;
     final ResourceStats resourceStats;
