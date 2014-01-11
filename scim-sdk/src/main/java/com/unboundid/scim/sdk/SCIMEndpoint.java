@@ -163,7 +163,6 @@ public class SCIMEndpoint<R extends BaseResource>
    *             <code>null</code> indicates unconditional return.
    * @param requestedAttributes The attributes of the resource to retrieve.
    * @return The retrieved resource.
-   * resource has not been modified.
    * @throws SCIMException If an error occurs.
    */
   public R get(final String id, final String etag,
