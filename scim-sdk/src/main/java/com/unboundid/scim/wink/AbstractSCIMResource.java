@@ -56,10 +56,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.unboundid.scim.sdk.SCIMConstants.
-    HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static com.unboundid.scim.sdk.SCIMConstants.
-    HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_ATTRIBUTES;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_SCHEMAS;
 
@@ -168,14 +164,6 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           incrementStat(ResourceStats.GET_OK);
       responseBuilder.location(resource.getMeta().getLocation());
       responseBuilder.tag(resource.getMeta().getVersion());
-
-      if (requestContext.getOrigin() != null)
-      {
-        responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
-            requestContext.getOrigin());
-      }
-      responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
-          Boolean.TRUE.toString());
 
       if(requestContext.getProduceMediaType() ==
           MediaType.APPLICATION_JSON_TYPE)
@@ -385,14 +373,6 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           Response.status(Response.Status.OK);
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         resources);
-
-      if (requestContext.getOrigin() != null)
-      {
-        responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_ORIGIN,
-            requestContext.getOrigin());
-      }
-      responseBuilder.header(HEADER_NAME_ACCESS_CONTROL_ALLOW_CREDENTIALS,
-          Boolean.TRUE.toString());
 
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.QUERY_OK);
