@@ -20,6 +20,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -147,5 +148,24 @@ public class ManagerDerivedAttribute extends DerivedAttribute
                 "' does not exist.");
       }
     }
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Set<String> toLDAPAttributeTypes(final AttributePath scimAttribute)
+      throws InvalidResourceException
+  {
+    String subAttributeName = scimAttribute.getSubAttributeName();
+    if (subAttributeName != null)
+    {
+      // Just to make sure the sub-attribute is a valid one for this attribute.
+      descriptor.getSubAttribute(subAttributeName);
+    }
+
+    return Collections.singleton("manager");
   }
 }

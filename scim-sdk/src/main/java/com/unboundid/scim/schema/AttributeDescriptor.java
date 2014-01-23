@@ -351,15 +351,15 @@ public final class AttributeDescriptor {
           attributeDescriptor.getSubAttribute("caseExact"),
           SCIMAttributeValue.createBooleanValue(value.isCaseExact())));
 
-      if(value.getSubAttributes() != null)
+      if(value.subAttributes != null)
       {
         final AttributeDescriptor subAttributesDescriptor =
             allowNesting ? attributeDescriptor :
             attributeDescriptor.getSubAttribute("subAttributes");
         final SCIMAttributeValue[] subAttributeValues =
-            new SCIMAttributeValue[value.getSubAttributes().size()];
+            new SCIMAttributeValue[value.subAttributes.size()];
         int i = 0;
-        for(AttributeDescriptor subAttribute : value.getSubAttributes())
+        for(AttributeDescriptor subAttribute : value.subAttributes.values())
         {
           subAttributeValues[i++] = (allowNesting ? this :
               new SubAttributeDescriptorResolver(value.getSchema())).
@@ -507,7 +507,9 @@ public final class AttributeDescriptor {
    */
   public Collection<AttributeDescriptor> getSubAttributes()
   {
-    return subAttributes == null ? null : subAttributes.values();
+    Map<String, AttributeDescriptor> allSubAttributes =
+        CoreSchema.addNormativeSubAttributes(this, subAttributes);
+    return allSubAttributes == null ? null : allSubAttributes.values();
   }
 
   /**
@@ -523,9 +525,11 @@ public final class AttributeDescriptor {
       throws InvalidResourceException
   {
     // TODO: Should we have a strict and non strict mode?
+    Map<String, AttributeDescriptor> allSubAttributes =
+        CoreSchema.addNormativeSubAttributes(this, subAttributes);
     AttributeDescriptor subAttribute =
-        subAttributes == null ? null :
-        subAttributes.get(toLowerCase(externalName));
+        allSubAttributes == null ? null :
+            allSubAttributes.get(toLowerCase(externalName));
     if(subAttribute == null)
     {
       throw new InvalidResourceException("Sub-attribute " + externalName +
@@ -714,6 +718,17 @@ public final class AttributeDescriptor {
       final String schema, final boolean readOnly, final boolean required,
       final boolean caseExact, final AttributeDescriptor... subAttributes)
   {
+    if(subAttributes != null)
+    {
+      for(AttributeDescriptor subAttribute : subAttributes)
+      {
+        if(subAttribute.getDataType() == DataType.COMPLEX)
+        {
+          throw new IllegalArgumentException("Complex sub-attributes are not " +
+              "allowed");
+        }
+      }
+    }
     return newAttribute(name, null, dataType, description, schema, readOnly,
         required, caseExact, subAttributes);
   }
@@ -726,28 +741,35 @@ public final class AttributeDescriptor {
    * @param name                 The attribute's name.
    * @param multiValuedChildName The child XML element name for multi-valued
    *                             attributes.
-   * @param dataType             The attribute's data type.
    * @param description          The attribute's human readable description.
    * @param schema               The attribute's associated schema.
    * @param readOnly             Whether the attribute is mutable.
    * @param required             Whether the attribute is required.
    * @param caseExact            Whether the string attribute is case sensitive.
-   * @param canonicalValues The list of canonical values for the type attribute.
    * @param subAttributes        A list specifying the contained attributes.
    * @return                     A new multi-valued attribute descriptor
    *                             with the provided information.
    */
   public static AttributeDescriptor createMultiValuedAttribute(
       final String name, final String multiValuedChildName,
-      final DataType dataType, final String description, final String schema,
+      final String description, final String schema,
       final boolean readOnly, final boolean required, final boolean caseExact,
-      final String[] canonicalValues,
       final AttributeDescriptor... subAttributes)
   {
-    return newAttribute(name, multiValuedChildName, dataType,
+    if(subAttributes != null)
+    {
+      for(AttributeDescriptor subAttribute : subAttributes)
+      {
+        if(subAttribute.getDataType() == DataType.COMPLEX)
+        {
+          throw new IllegalArgumentException("Complex sub-attributes are not " +
+              "allowed");
+        }
+      }
+    }
+    return newAttribute(name, multiValuedChildName, DataType.COMPLEX,
         description, schema, readOnly, required, caseExact,
-        CoreSchema.addCommonMultiValuedSubAttributes(
-            schema, dataType, canonicalValues, subAttributes));
+        subAttributes);
   }
 
   /**

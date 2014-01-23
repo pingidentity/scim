@@ -299,10 +299,10 @@ public class DiffTestCase extends SCIMTestCase
         getValues().length, 2);
     assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
-        AttributeValueResolver.STRING_RESOLVER).contains("ims"));
+        AttributeValueResolver.STRING_RESOLVER).contains("ims.value"));
     assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
-        AttributeValueResolver.STRING_RESOLVER).contains("entitlements"));
+        AttributeValueResolver.STRING_RESOLVER).contains("entitlements.value"));
     SCIMAttributeValue[] values =
         patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
             "entitlements").getValues();
@@ -365,10 +365,10 @@ public class DiffTestCase extends SCIMTestCase
         "phoneNumbers").getValues().length, 2);
     assertFalse(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
-        AttributeValueResolver.STRING_RESOLVER).contains("ims"));
+        AttributeValueResolver.STRING_RESOLVER).contains("ims.value"));
     assertTrue(patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta").
         getValue().getSubAttributeValues("attributes",
-        AttributeValueResolver.STRING_RESOLVER).contains("entitlements"));
+        AttributeValueResolver.STRING_RESOLVER).contains("entitlements.value"));
     values =
         patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
             "entitlements").getValues();

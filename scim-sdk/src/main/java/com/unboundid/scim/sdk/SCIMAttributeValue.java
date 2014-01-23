@@ -39,49 +39,8 @@ import java.util.Map;
  * <li>Complex values are composed of a set of subordinate SCIM attributes.</li>
  * </ul>
  */
-public final class SCIMAttributeValue
+public abstract class SCIMAttributeValue
 {
-  /**
-   * The simple attribute value, or {@code null} if the attribute value is
-   * complex.
-   */
-  private final SimpleValue value;
-
-  /**
-   * The attributes comprising the complex value, keyed by the lower case
-   * name of the attribute, or {@code null} if the attribute value is simple.
-   */
-  private final Map<String,SCIMAttribute> attributes;
-
-
-
-  /**
-   * Create a new instance of a SCIM attribute value.
-   *
-   * @param value  The simple value.
-   */
-  public SCIMAttributeValue(final SimpleValue value)
-  {
-    this.value      = value;
-    this.attributes = null;
-  }
-
-
-
-  /**
-   * Create a new instance of a SCIM complex attribute value.
-   *
-   * @param attributes  The attributes comprising the complex value, keyed by
-   *                    the name of the attribute.
-   */
-  private SCIMAttributeValue(final Map<String,SCIMAttribute> attributes)
-  {
-    this.value = null;
-    this.attributes = attributes;
-  }
-
-
-
   /**
    * Create a new simple attribute value of the specified data type.
    *
@@ -114,7 +73,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createStringValue(final String value)
   {
-    return new SCIMAttributeValue(new SimpleValue(value));
+    return new SimpleSCIMAttributeValue(new SimpleValue(value));
   }
 
 
@@ -128,7 +87,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createBooleanValue(final Boolean value)
   {
-    return new SCIMAttributeValue(new SimpleValue(value));
+    return new SimpleSCIMAttributeValue(new SimpleValue(value));
   }
 
 
@@ -142,7 +101,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createDateValue(final Date value)
   {
-    return new SCIMAttributeValue(new SimpleValue(value));
+    return new SimpleSCIMAttributeValue(new SimpleValue(value));
   }
 
 
@@ -156,7 +115,7 @@ public final class SCIMAttributeValue
    */
   public static SCIMAttributeValue createBinaryValue(final byte[] value)
   {
-    return new SCIMAttributeValue(new SimpleValue(value));
+    return new SimpleSCIMAttributeValue(new SimpleValue(value));
   }
 
   /**
@@ -219,28 +178,6 @@ public final class SCIMAttributeValue
 
 
   /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String toString()
-  {
-    final StringBuilder sb = new StringBuilder();
-    sb.append("SCIMAttributeValue{");
-    if (value != null)
-    {
-      sb.append("value=").append(value);
-    }
-    else
-    {
-      sb.append("attributes=").append(attributes);
-    }
-    sb.append('}');
-    return sb.toString();
-  }
-
-
-
-  /**
    * Create a new complex attribute value from the provided attributes.
    *
    * @param attributes  The attributes comprising the complex value.
@@ -262,7 +199,7 @@ public final class SCIMAttributeValue
       }
       map.put(lowerCaseName, a);
     }
-    return new SCIMAttributeValue(Collections.unmodifiableMap(map));
+    return new ComplexSCIMAttributeValue(Collections.unmodifiableMap(map));
   }
 
 
@@ -289,7 +226,7 @@ public final class SCIMAttributeValue
       }
       map.put(lowerCaseName, a);
     }
-    return new SCIMAttributeValue(Collections.unmodifiableMap(map));
+    return new ComplexSCIMAttributeValue(Collections.unmodifiableMap(map));
   }
 
 
@@ -300,10 +237,7 @@ public final class SCIMAttributeValue
    * @return  {@code true} if this attribute value is complex, or {@code false}
    *          otherwise.
    */
-  public boolean isComplex()
-  {
-    return this.value == null;
-  }
+  public abstract boolean isComplex();
 
 
 
@@ -314,10 +248,7 @@ public final class SCIMAttributeValue
    * @return  The simple value, or {@code null} if the attribute value is
    * complex.
    */
-  public SimpleValue getValue()
-  {
-    return value;
-  }
+  abstract SimpleValue getValue();
 
 
 
@@ -330,6 +261,11 @@ public final class SCIMAttributeValue
    */
   public String getStringValue()
   {
+    SimpleValue value = getValue();
+    if(value == null)
+    {
+      return null;
+    }
     return value.getStringValue();
   }
 
@@ -344,6 +280,11 @@ public final class SCIMAttributeValue
    */
   public Boolean getBooleanValue()
   {
+    SimpleValue value = getValue();
+    if(value == null)
+    {
+      return null;
+    }
     return value.getBooleanValue();
   }
 
@@ -358,6 +299,11 @@ public final class SCIMAttributeValue
    */
   public Double getDecimalValue()
   {
+    SimpleValue value = getValue();
+    if(value == null)
+    {
+      return null;
+    }
     return value.getDoubleValue();
   }
 
@@ -372,6 +318,11 @@ public final class SCIMAttributeValue
    */
   public Long getIntegerValue()
   {
+    SimpleValue value = getValue();
+    if(value == null)
+    {
+      return null;
+    }
     return value.getLongValue();
   }
 
@@ -386,6 +337,11 @@ public final class SCIMAttributeValue
    */
   public Date getDateValue()
   {
+    SimpleValue value = getValue();
+    if(value == null)
+    {
+      return null;
+    }
     return value.getDateValue();
   }
 
@@ -400,6 +356,11 @@ public final class SCIMAttributeValue
    */
   public byte[] getBinaryValue()
   {
+    SimpleValue value = getValue();
+    if(value == null)
+    {
+      return null;
+    }
     return value.getBinaryValue();
   }
 
@@ -412,10 +373,7 @@ public final class SCIMAttributeValue
    *
    * @return  The attributes comprising the complex value.
    */
-  public Map<String, SCIMAttribute> getAttributes()
-  {
-    return attributes;
-  }
+  public abstract Map<String, SCIMAttribute> getAttributes();
 
 
 
@@ -431,6 +389,7 @@ public final class SCIMAttributeValue
    */
   public SCIMAttribute getAttribute(final String attributeName)
   {
+    Map<String, SCIMAttribute> attributes = getAttributes();
     if (attributes != null)
     {
       return attributes.get(StaticUtils.toLowerCase(attributeName));
@@ -455,6 +414,7 @@ public final class SCIMAttributeValue
    */
   public boolean hasAttribute(final String attributeName)
   {
+    Map<String, SCIMAttribute> attributes = getAttributes();
     if (attributes != null)
     {
       return attributes.containsKey(StaticUtils.toLowerCase(attributeName));
@@ -465,40 +425,4 @@ public final class SCIMAttributeValue
     }
   }
 
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    SCIMAttributeValue that = (SCIMAttributeValue) o;
-
-    if (attributes != null ? !attributes.equals(that.attributes) :
-        that.attributes != null) {
-      return false;
-    }
-    if (value != null ? !value.equals(that.value) : that.value != null) {
-      return false;
-    }
-
-    return true;
-  }
-
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public int hashCode() {
-    int result = value != null ? value.hashCode() : 0;
-    result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
-    return result;
-  }
 }

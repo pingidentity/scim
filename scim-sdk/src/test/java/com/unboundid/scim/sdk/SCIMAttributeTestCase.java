@@ -18,6 +18,7 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.SCIMTestCase;
+import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
 import org.testng.annotations.Test;
@@ -213,6 +214,40 @@ public class SCIMAttributeTestCase
     catch (Exception e)
     {
       // This is expected.
+    }
+  }
+
+
+
+  /**
+   * Ensure that simple values can be accessed as complex and vise-versa for
+   * multi-valued attributes.
+   *
+   * @throws InvalidResourceException if an unexpected error occurs.
+   */
+  @Test
+  public void testMultiValuedAttributeValue() throws InvalidResourceException
+  {
+    AttributeDescriptor phoneNumbersDescriptor =
+        CoreSchema.USER_DESCRIPTOR.getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "phoneNumbers");
+
+    SCIMAttributeValue value1 = SCIMAttributeValue.createValue(
+        AttributeDescriptor.DataType.STRING, "someNumber");
+    SCIMAttributeValue value2 = SCIMAttributeValue.createComplexValue(
+        SCIMAttribute.create(phoneNumbersDescriptor.getSubAttribute("value"),
+            SCIMAttributeValue.createValue(
+                AttributeDescriptor.DataType.STRING, "someNumber")));
+
+   SCIMAttribute phoneNumbers =
+       SCIMAttribute.create(phoneNumbersDescriptor, value1, value2);
+
+    assertEquals(phoneNumbers.getValues().length, 2);
+    for(SCIMAttributeValue value : phoneNumbers.getValues())
+    {
+      assertEquals(value.getStringValue(), "someNumber");
+      assertEquals(value.getSubAttributeValue("value",
+          AttributeValueResolver.STRING_RESOLVER), "someNumber");
     }
   }
 }

@@ -20,6 +20,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;
 
@@ -41,7 +42,7 @@ public class BooleanTransformation extends Transformation
    * {@inheritDoc}
    */
   @Override
-  public SimpleValue toSCIMValue(final AttributeDescriptor descriptor,
+  public SCIMAttributeValue toSCIMValue(final AttributeDescriptor descriptor,
                                  final ByteString byteString)
   {
     switch (descriptor.getDataType())
@@ -49,7 +50,8 @@ public class BooleanTransformation extends Transformation
       case BOOLEAN:
         final String s = byteString.stringValue();
         final Attribute a = new Attribute("dummy", s);
-        return new SimpleValue(invertIfRequired(a.getValueAsBoolean()));
+        return SCIMAttributeValue.createBooleanValue(
+            invertIfRequired(a.getValueAsBoolean()));
 
       case DATETIME:
       case STRING:
@@ -70,12 +72,12 @@ public class BooleanTransformation extends Transformation
    */
   @Override
   public ASN1OctetString toLDAPValue(final AttributeDescriptor descriptor,
-                                     final SimpleValue simpleValue)
+                                     final SCIMAttributeValue value)
   {
     switch (descriptor.getDataType())
     {
       case BOOLEAN:
-        if (invertIfRequired(simpleValue.getBooleanValue()))
+        if (invertIfRequired(value.getBooleanValue()))
         {
           return new ASN1OctetString("TRUE");
         }

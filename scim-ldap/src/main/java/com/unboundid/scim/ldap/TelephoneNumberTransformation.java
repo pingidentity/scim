@@ -24,7 +24,7 @@ import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
-import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.util.ByteString;
 
 import java.util.logging.Level;
@@ -75,8 +75,8 @@ public class TelephoneNumberTransformation extends Transformation
   }
 
   @Override
-  public SimpleValue toSCIMValue(final AttributeDescriptor descriptor,
-                                 final ByteString byteString)
+  public SCIMAttributeValue toSCIMValue(final AttributeDescriptor descriptor,
+                                        final ByteString byteString)
   {
     PhoneNumberUtil util = PhoneNumberUtil.getInstance();
     switch (descriptor.getDataType())
@@ -94,16 +94,17 @@ public class TelephoneNumberTransformation extends Transformation
                   number.getRawInput() + " doesn't seem to be a valid phone " +
                       "number and will not be canonicalized to RFC3966 format");
             }
-            return new SimpleValue(byteString.stringValue());
+            return SCIMAttributeValue.createStringValue(
+                byteString.stringValue());
           }
-          return new SimpleValue(
+          return SCIMAttributeValue.createStringValue(
               util.format(number, PhoneNumberUtil.PhoneNumberFormat.RFC3966));
         }
         catch(NumberParseException e)
         {
           // Don't fail but just pass the string as is to SCIM.
           Debug.debugException(e);
-          return new SimpleValue(byteString.stringValue());
+          return SCIMAttributeValue.createStringValue(byteString.stringValue());
         }
 
       case DATETIME:
@@ -121,7 +122,7 @@ public class TelephoneNumberTransformation extends Transformation
 
   @Override
   public ASN1OctetString toLDAPValue(final AttributeDescriptor descriptor,
-                                     final SimpleValue simpleValue)
+                                     final SCIMAttributeValue value)
   {
     PhoneNumberUtil util = PhoneNumberUtil.getInstance();
     switch (descriptor.getDataType())
@@ -130,7 +131,7 @@ public class TelephoneNumberTransformation extends Transformation
         try
         {
           final Phonenumber.PhoneNumber number =
-              util.parse(simpleValue.getStringValue(), getDefaultCountry());
+              util.parse(value.getStringValue(), getDefaultCountry());
           if(!util.isPossibleNumber(number))
           {
             if(Debug.debugEnabled())
@@ -139,7 +140,7 @@ public class TelephoneNumberTransformation extends Transformation
                   number.getRawInput() + " doesn't seem to be a valid phone " +
                       "number and will not be canonicalized to LDAP format");
             }
-            return new ASN1OctetString(simpleValue.getStringValue());
+            return new ASN1OctetString(value.getStringValue());
           }
           return new ASN1OctetString(
               util.format(number, getLdapFormat()));
@@ -149,7 +150,7 @@ public class TelephoneNumberTransformation extends Transformation
           // Don't fail but just pass the string as is to LDAP and let it
           // figure it out.
           Debug.debugException(e);
-          return new ASN1OctetString(simpleValue.getStringValue());
+          return new ASN1OctetString(value.getStringValue());
         }
 
       case DATETIME:

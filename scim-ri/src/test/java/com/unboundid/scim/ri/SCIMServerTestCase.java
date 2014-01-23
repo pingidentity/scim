@@ -640,9 +640,13 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     newMembers.add(memberA);
     groupB.setMembers(newMembers);
 
-    // Put the updated groups.
+    // Put and patch the updated groups.
     groupA = groupEndpoint.update(groupA);
-    groupB = groupEndpoint.update(groupB);
+    groupEndpoint.update(groupB,
+        Collections.singletonList(groupB.getScimObject().getAttribute(
+            SCIMConstants.SCHEMA_URI_CORE, "members")),
+        Collections.singletonList("members.value"));
+    groupB = groupEndpoint.get(groupB.getId());
 
     assertEquals(groupA.getMembers().size(), 2);
     Iterator<com.unboundid.scim.data.Entry<String>> i =
@@ -1421,7 +1425,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
         "telephoneNumber: 512-123-4567",
         "homePhone: 972-987-6543",
         "mail: testEmail.1@example.com",
-        "mail: testEmail.2@example.com");
+        "mail: testEmail.2@example.com",
+        "displayName: Test User");
 
     //Update the entry via SCIM
     UserResource user = getUser("testModifyWithPatch");
@@ -1440,6 +1445,10 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     user.setSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
             AttributeValueResolver.STRING_RESOLVER, "456");
+    user.setSingularAttributeValue(
+        SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
+        Manager.MANAGER_RESOLVER,
+        new Manager(user.getId(), null));
 
     SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
 
@@ -1460,6 +1469,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     attrsToUpdate.add(
           scimObject.getAttribute(
               SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber"));
+    attrsToUpdate.add(
+          scimObject.getAttribute(
+              SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager"));
 
     user = userEndpoint.update(user, attrsToUpdate, null);
 
@@ -1476,6 +1488,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(entry.getAttributeValue("employeeNumber"), "456");
     assertEquals(entry.getAttributeValue("displayName"),
             "Test Modify with PATCH");
+    assertTrue(entry.getAttributeValue("manager").equalsIgnoreCase(
+        "uid=testModifyWithPatch," + userBaseDN));
     assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
         ResultCode.SUCCESS);
 
@@ -1573,7 +1587,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     attrsToUpdate.clear();
 
     List<String> attrsToDelete = Collections.unmodifiableList(
-        asList("phoneNumbers", "name.familyName"));
+        asList("phoneNumbers.value", "name.givenName", "displayName",
+           SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION + ":manager"));
 
     SCIMAttributeValue value =
             SCIMAttributeValue.createStringValue("testEmail.1@example.com");
@@ -1639,17 +1654,17 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertTrue(entry.hasObjectClass("inetOrgPerson"));
     assertEquals(entry.getAttributeValue("uid"), "testModifyWithPatch");
     assertEquals(entry.getAttributeValue("cn"), "Test User");
-    assertEquals(entry.getAttributeValue("givenname"), "Test");
     assertEquals(entry.getAttributeValue("sn"), "PatchedUser");
     assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
     assertEquals(entry.getAttributeValue("employeeNumber"), "456");
-    assertEquals(entry.getAttributeValue("displayName"),
-            "Test Modify with PATCH");
     assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
         ResultCode.SUCCESS);
 
     assertFalse(entry.hasAttribute("telephoneNumber"));
     assertFalse(entry.hasAttribute("homePhone"));
+    assertFalse(entry.hasAttribute("givenname"));
+    assertFalse(entry.hasAttribute("displayName"));
+    assertFalse(entry.hasAttribute("manager"));
     assertEquals(entry.getAttributeValues("mail").length, 2);
     List<String> emailList = Arrays.asList(entry.getAttributeValues("mail"));
     assertFalse(emailList.contains("testEmail.1@example.com"));

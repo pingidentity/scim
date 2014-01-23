@@ -147,7 +147,7 @@ public class JsonParser
     {
       throw new InvalidResourceException(
           "Resource '" + resourceDescriptor.getName() + "' is malformed: " +
-          e.getMessage());
+          e.getMessage(), e);
     }
   }
 

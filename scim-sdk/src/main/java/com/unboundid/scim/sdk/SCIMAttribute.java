@@ -22,6 +22,7 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -91,7 +92,67 @@ public final class SCIMAttribute
   public static SCIMAttribute create(
       final AttributeDescriptor descriptor, final SCIMAttributeValue... values)
   {
-    return new SCIMAttribute(descriptor, values);
+    // Make sure all values of a multi-valued attributes are represented using
+    // the special MultiValuedSCIMAttributeValue implementation.
+    SCIMAttributeValue[] valuesCopy;
+    if(values != null)
+    {
+      valuesCopy = new SCIMAttributeValue[values.length];
+      if(descriptor.isMultiValued())
+      {
+        int i = 0;
+        for(SCIMAttributeValue value : values)
+        {
+          if(!(value instanceof
+              MultiValuedSCIMAttributeValue))
+          {
+            if(value.isComplex())
+            {
+              valuesCopy[i++] =
+                  new MultiValuedSCIMAttributeValue(
+                      value.getAttributes());
+            }
+            else
+            {
+              // Try to convert to complex value by using the value
+              // sub-attribute.
+              SCIMAttribute valueSubAttribute;
+              try
+              {
+                valueSubAttribute =
+                    new SCIMAttribute(descriptor.getSubAttribute("value"),
+                        value);
+              }
+              catch (InvalidResourceException e)
+              {
+                // The multi-valued attribute did not define a value
+                // sub-attribute. Throw error.
+                throw new IllegalArgumentException("Values of multi-valued " +
+                    "attributes must be complex when the normative value " +
+                    "sub-attribute is not defined");
+              }
+
+              valuesCopy[i++] =
+                  new MultiValuedSCIMAttributeValue(
+                      Collections.singletonMap("value", valueSubAttribute));
+            }
+          }
+          else
+          {
+            valuesCopy[i++] = value;
+          }
+        }
+      }
+      else
+      {
+        System.arraycopy(values, 0, valuesCopy, 0, values.length);
+      }
+    }
+    else
+    {
+      valuesCopy = new SCIMAttributeValue[0];
+    }
+    return new SCIMAttribute(descriptor, valuesCopy);
   }
 
 

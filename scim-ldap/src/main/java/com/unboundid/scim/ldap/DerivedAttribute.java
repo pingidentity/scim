@@ -22,7 +22,9 @@ import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -244,6 +246,21 @@ public abstract class DerivedAttribute
       final Collection<Attribute> attributes,
       final LDAPRequestInterface ldapInterface,
       final LDAPSearchResolver searchResolver) throws SCIMException;
+
+
+
+  /**
+   * Map the provided SCIM attribute to LDAP attributes.
+   *
+   * @param scimAttribute  The SCIM attribute to be mapped.
+   *
+   * @return  The set of LDAP attribute types.
+   * @throws InvalidResourceException if the SCIM attribute path contains an
+   *                                  undefined attribute.
+   */
+  public abstract Set<String> toLDAPAttributeTypes(
+      final AttributePath scimAttribute)
+      throws InvalidResourceException;
 
 
 

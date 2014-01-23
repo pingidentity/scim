@@ -23,6 +23,7 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -112,6 +113,21 @@ public abstract class AttributeMapper
    *                                  attribute.
    */
   public abstract Filter toLDAPFilter(final SCIMFilter filter)
+      throws InvalidResourceException;
+
+
+
+  /**
+   * Map the provided SCIM attribute to LDAP attributes.
+   *
+   * @param scimAttribute  The SCIM attribute to be mapped.
+   *
+   * @return  The set of LDAP attribute types.
+   * @throws InvalidResourceException if the SCIM attribute path contains an
+   *                                  undefined attribute.
+   */
+  public abstract Set<String> toLDAPAttributeTypes(
+      final AttributePath scimAttribute)
       throws InvalidResourceException;
 
 

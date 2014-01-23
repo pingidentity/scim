@@ -68,6 +68,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -293,8 +294,10 @@ public class ResourceMapper
       final List<DerivedAttribute> derivedAttributes =
           new ArrayList<DerivedAttribute>();
       final AttributeDescriptor[] attributeDescriptors =
-          new AttributeDescriptor[resource.getAttribute().size()];
-      int i = 0;
+          new AttributeDescriptor[resource.getAttribute().size() + 2];
+      attributeDescriptors[0] = CoreSchema.ID_DESCRIPTOR;
+      attributeDescriptors[1] = CoreSchema.META_DESCRIPTOR;
+      int i = 2;
       for (final AttributeDefinition attributeDefinition :
           resource.getAttribute())
       {
@@ -465,48 +468,73 @@ public class ResourceMapper
       final SimpleMultiValuedAttributeDefinition simpleMultiValuedDefinition =
           attributeDefinition.getSimpleMultiValued();
 
-      final String[] CanonicalValues =
+      final String[] canonicalValues =
           new String[simpleMultiValuedDefinition.getCanonicalValue().size()];
 
       int i = 0;
       for (final CanonicalValue CanonicalValue :
           simpleMultiValuedDefinition.getCanonicalValue())
       {
-        CanonicalValues[i++] = CanonicalValue.getName();
+        canonicalValues[i++] = CanonicalValue.getName();
       }
 
-      return AttributeDescriptor.createMultiValuedAttribute(
-          attributeDefinition.getName(),
-          simpleMultiValuedDefinition.getChildName(),
+      AttributeDescriptor.DataType dataType =
           AttributeDescriptor.DataType.parse(
-              simpleMultiValuedDefinition.getDataType().value()),
-          attributeDefinition.getDescription(),
-          schema,
-          attributeDefinition.isReadOnly(),
-          attributeDefinition.isRequired(),
-          simpleMultiValuedDefinition.isCaseExact(),
-          CanonicalValues);
+              simpleMultiValuedDefinition.getDataType().value());
+
+      if(canonicalValues.length > 0)
+      {
+        return AttributeDescriptor.createMultiValuedAttribute(
+            attributeDefinition.getName(),
+            simpleMultiValuedDefinition.getChildName(),
+            attributeDefinition.getDescription(),
+            schema,
+            attributeDefinition.isReadOnly(),
+            attributeDefinition.isRequired(),
+            simpleMultiValuedDefinition.isCaseExact(),
+            CoreSchema.createMultiValuedValueDescriptor(schema, dataType),
+            CoreSchema.createMultiValuedTypeDescriptor(schema,
+                canonicalValues));
+      }
+      else
+      {
+        return AttributeDescriptor.createMultiValuedAttribute(
+            attributeDefinition.getName(),
+            simpleMultiValuedDefinition.getChildName(),
+            attributeDefinition.getDescription(),
+            schema,
+            attributeDefinition.isReadOnly(),
+            attributeDefinition.isRequired(),
+            simpleMultiValuedDefinition.isCaseExact(),
+            CoreSchema.createMultiValuedValueDescriptor(schema, dataType));
+      }
     }
     else if (attributeDefinition.getComplexMultiValued() != null)
     {
       final ComplexMultiValuedAttributeDefinition complexMultiValuedDefinition =
           attributeDefinition.getComplexMultiValued();
 
-      final String[] CanonicalValues =
+      final String[] canonicalValues =
           new String[complexMultiValuedDefinition.getCanonicalValue().size()];
 
       int i = 0;
       for (final CanonicalValue CanonicalValue :
           complexMultiValuedDefinition.getCanonicalValue())
       {
-        CanonicalValues[i++] = CanonicalValue.getName();
+        canonicalValues[i++] = CanonicalValue.getName();
       }
 
-      final AttributeDescriptor[] subAttributes =
-          new AttributeDescriptor[
-              complexMultiValuedDefinition.getSubAttribute().size()];
-
+      AttributeDescriptor[] subAttributes = new AttributeDescriptor[
+          complexMultiValuedDefinition.getSubAttribute().size()];
       i = 0;
+      if(canonicalValues.length > 0)
+      {
+        subAttributes = new AttributeDescriptor[
+            complexMultiValuedDefinition.getSubAttribute().size() + 1];
+        subAttributes[
+            complexMultiValuedDefinition.getSubAttribute().size()] =
+            CoreSchema.createMultiValuedTypeDescriptor(schema, canonicalValues);
+      }
       for (final SubAttributeDefinition subAttributeDefinition :
           complexMultiValuedDefinition.getSubAttribute())
       {
@@ -523,13 +551,11 @@ public class ResourceMapper
       return AttributeDescriptor.createMultiValuedAttribute(
           attributeDefinition.getName(),
           complexMultiValuedDefinition.getChildName(),
-          AttributeDescriptor.DataType.COMPLEX,
           attributeDefinition.getDescription(),
           schema,
           attributeDefinition.isReadOnly(),
           attributeDefinition.isRequired(),
-          false,
-          CanonicalValues, subAttributes);
+          false, subAttributes);
     }
     else
     {
@@ -710,30 +736,40 @@ public class ResourceMapper
    * Retrieve the set of LDAP attribute types that are mapped from the given
    * set of SCIM attributes.
    *
-   * @param scimAttributes  The SCIM attribute descriptors to map.
+   * @param scimAttributes  The SCIM attributes to map.
    *
    * @return  The set of LDAP attribute types that are derived from the given
    *          SCIM attributes.
+   * @throws InvalidResourceException if the SCIM attributes contains an
+   *                                  undefined attribute.
    */
   protected Set<String> toLDAPAttributeTypes(
-          final Set<AttributeDescriptor> scimAttributes)
+      final Set<AttributePath> scimAttributes)
+      throws InvalidResourceException
   {
-    final Set<String> ldapAttributes = new HashSet<String>();
-    for (final AttributeMapper m : attributeMappers.values())
+    final Set<String> ldapAttributes = new LinkedHashSet<String>();
+    for(AttributePath scimAttribute : scimAttributes)
     {
-      if (scimAttributes.contains(m.getAttributeDescriptor()))
-      {
-        ldapAttributes.addAll(m.getLDAPAttributeTypes());
-      }
-    }
+      final AttributeDescriptor attributeDescriptor =
+          resourceDescriptor.getAttribute(
+              scimAttribute.getAttributeSchema(),
+              scimAttribute.getAttributeName());
 
-    for (final Map.Entry<AttributeDescriptor,DerivedAttribute> e :
-            derivedAttributes.entrySet())
-    {
-      if (scimAttributes.contains(e.getKey()))
+      AttributeMapper attributeMapper =
+          attributeMappers.get(attributeDescriptor);
+
+      if (attributeMapper != null)
       {
-        final DerivedAttribute derivedAttribute = e.getValue();
-        ldapAttributes.addAll(derivedAttribute.getLDAPAttributeTypes());
+        ldapAttributes.addAll(
+            attributeMapper.toLDAPAttributeTypes(scimAttribute));
+      }
+
+      DerivedAttribute derivedAttribute =
+          derivedAttributes.get(attributeDescriptor);
+      if (derivedAttribute != null)
+      {
+        ldapAttributes.addAll(
+            derivedAttribute.toLDAPAttributeTypes(scimAttribute));
       }
     }
 
@@ -874,9 +910,12 @@ public class ResourceMapper
    *
    * @param scimObject The object containing attributes to be mapped.
    * @return The set of LDAP attribute types that should be requested.
+   * @throws InvalidResourceException if the SCIM attributes contains an
+   *                                  undefined attribute.
    */
   public Set<String> getModifiableLDAPAttributeTypes(
       final SCIMObject scimObject)
+      throws InvalidResourceException
   {
     final Set<String> ldapAttributeTypes =
             new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
@@ -914,8 +953,8 @@ public class ResourceMapper
       //values when performing a PATCH operation.
       if(meta.getValue().hasAttribute("attributes"))
       {
-        Set<AttributeDescriptor> scimAttributes =
-                new HashSet<AttributeDescriptor>();
+        Set<AttributePath> scimAttributes =
+                new LinkedHashSet<AttributePath>();
         SCIMAttribute attrToDelete = meta.getValue().getAttribute("attributes");
         for(SCIMAttributeValue attr : attrToDelete.getValues())
         {
@@ -932,19 +971,7 @@ public class ResourceMapper
 
           AttributePath path = AttributePath.parse(rawAttributeName,
                   getDefaultSchemaURI());
-          String attrName = path.getAttributeName();
-          if (path.getSubAttributeName() != null)
-          {
-            attrName = path.getSubAttributeName();
-          }
-
-          //Create a dummy AttributeDescriptor with the correct attribute name
-          //and schema URN. This is all we need to be able to convert to LDAP
-          //attribute types.
-          AttributeDescriptor descriptor = AttributeDescriptor.createAttribute(
-                  attrName, AttributeDescriptor.DataType.STRING,
-                  null, path.getAttributeSchema(), false, false, false);
-          scimAttributes.add(descriptor);
+          scimAttributes.add(path);
         }
 
         ldapAttributeTypes.addAll(toLDAPAttributeTypes(scimAttributes));
@@ -1020,8 +1047,8 @@ public class ResourceMapper
       SCIMAttribute attributesAttr = value.getAttribute("attributes");
       if (attributesAttr != null)
       {
-        final Set<AttributeDescriptor> scimAttributes =
-                new HashSet<AttributeDescriptor>();
+        Set<AttributePath> scimAttributes =
+                new LinkedHashSet<AttributePath>();
         for (SCIMAttributeValue val : attributesAttr.getValues())
         {
           String rawAttributeName;
@@ -1036,20 +1063,8 @@ public class ResourceMapper
           }
 
           AttributePath path = AttributePath.parse(rawAttributeName,
-                  getDefaultSchemaURI());
-          String attrName = path.getAttributeName();
-          if(path.getSubAttributeName() != null)
-          {
-            attrName = path.getSubAttributeName();
-          }
-
-          //Create a dummy AttributeDescriptor with the correct attribute name
-          //and schema URN. This is all we need to be able to convert to LDAP
-          //attribute types.
-          AttributeDescriptor descriptor = AttributeDescriptor.createAttribute(
-                  attrName, AttributeDescriptor.DataType.STRING,
-                  null, path.getAttributeSchema(), false, false, false);
-          scimAttributes.add(descriptor);
+              getDefaultSchemaURI());
+          scimAttributes.add(path);
         }
 
         Set<String> ldapAttributes = toLDAPAttributeTypes(scimAttributes);

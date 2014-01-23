@@ -19,7 +19,6 @@ package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.StreamMarshaller;
-import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.Resources;
@@ -474,8 +473,6 @@ public class XmlStreamMarshaller implements StreamMarshaller
               resource.getResourceDescriptor().getName());
     }
 
-    // Write the resource attributes in the order defined by the
-    // resource descriptor.
     for (String schema : resource.getScimObject().getSchemas())
     {
       for (SCIMAttribute a : resource.getScimObject().getAttributes(schema))
@@ -521,21 +518,15 @@ public class XmlStreamMarshaller implements StreamMarshaller
 
       if (value.isComplex())
       {
-        // Write the subordinate attributes in the order defined by the schema.
-        for (final AttributeDescriptor descriptor :
-            scimAttribute.getAttributeDescriptor().getSubAttributes())
+        for (final SCIMAttribute a : value.getAttributes().values())
         {
-          final SCIMAttribute a = value.getAttribute(descriptor.getName());
-          if (a != null)
+          if (a.getAttributeDescriptor().isMultiValued())
           {
-            if (a.getAttributeDescriptor().isMultiValued())
-            {
-              writeMultiValuedAttribute(a, xmlStreamWriter);
-            }
-            else
-            {
-              writeSingularAttribute(a, xmlStreamWriter);
-            }
+            writeMultiValuedAttribute(a, xmlStreamWriter);
+          }
+          else
+          {
+            writeSingularAttribute(a, xmlStreamWriter);
           }
         }
       }
@@ -570,30 +561,21 @@ public class XmlStreamMarshaller implements StreamMarshaller
                                       final XMLStreamWriter xmlStreamWriter)
     throws XMLStreamException
   {
-    final AttributeDescriptor attributeDescriptor =
-        scimAttribute.getAttributeDescriptor();
-
     writeStartElement(scimAttribute, xmlStreamWriter);
 
     final SCIMAttributeValue val = scimAttribute.getValue();
 
     if (val.isComplex())
     {
-      // Write the subordinate attributes in the order defined by the schema.
-      for (final AttributeDescriptor ad :
-          attributeDescriptor.getSubAttributes())
+      for (final SCIMAttribute a : val.getAttributes().values())
       {
-        final SCIMAttribute a = val.getAttribute(ad.getName());
-        if (a != null)
+        if (a.getAttributeDescriptor().isMultiValued())
         {
-          if (ad.isMultiValued())
-          {
-            writeMultiValuedAttribute(a, xmlStreamWriter);
-          }
-          else
-          {
-            writeSingularAttribute(a, xmlStreamWriter);
-          }
+          writeMultiValuedAttribute(a, xmlStreamWriter);
+        }
+        else
+        {
+          writeSingularAttribute(a, xmlStreamWriter);
         }
       }
     }

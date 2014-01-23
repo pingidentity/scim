@@ -19,7 +19,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.util.ByteString;
 
 
@@ -35,14 +35,14 @@ public class PostalAddressTransformation extends Transformation
    * {@inheritDoc}
    */
   @Override
-  public SimpleValue toSCIMValue(final AttributeDescriptor descriptor,
-                                 final ByteString byteString)
+  public SCIMAttributeValue toSCIMValue(final AttributeDescriptor descriptor,
+                                        final ByteString byteString)
   {
     switch (descriptor.getDataType())
     {
       case STRING:
         final String value = transformToSCIM(byteString.stringValue());
-        return new SimpleValue(value);
+        return SCIMAttributeValue.createStringValue(value);
 
       case DATETIME:
       case BOOLEAN:
@@ -63,12 +63,12 @@ public class PostalAddressTransformation extends Transformation
    */
   @Override
   public ASN1OctetString toLDAPValue(final AttributeDescriptor descriptor,
-                                     final SimpleValue simpleValue)
+                                     final SCIMAttributeValue scimValue)
   {
     switch (descriptor.getDataType())
     {
       case STRING:
-        final String value = transformToLDAP(simpleValue.getStringValue());
+        final String value = transformToLDAP(scimValue.getStringValue());
         return new ASN1OctetString(value);
 
       case DATETIME:

@@ -24,6 +24,7 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -133,8 +134,9 @@ public class ResourceDescriptor extends BaseResource
       else
       {
         attributeDescriptor = AttributeDescriptor.createMultiValuedAttribute(
-                name, "value", AttributeDescriptor.DataType.STRING, null,
-                schema, false, false, false, null);
+            name, "value", null, schema, false, false, false,
+            CoreSchema.createMultiValuedValueDescriptor(
+                schema, AttributeDescriptor.DataType.STRING));
       }
     }
     return attributeDescriptor;
@@ -244,8 +246,10 @@ public class ResourceDescriptor extends BaseResource
    */
   public Collection<AttributeDescriptor> getAttributes()
   {
-    return getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
-        "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER);
+    Collection<AttributeDescriptor> attributes =
+        getAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
+            "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER);
+    return CoreSchema.addCommonAttributes(attributes);
   }
 
   /**
@@ -261,6 +265,9 @@ public class ResourceDescriptor extends BaseResource
       setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER,
           attributes);
+      synchronized (this) {
+        attributesCache = null;
+      }
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
       throw new RuntimeException(e);
@@ -467,8 +474,7 @@ public class ResourceDescriptor extends BaseResource
     resourceDescriptor.setDescription(description);
     resourceDescriptor.setSchema(schema);
     resourceDescriptor.setEndpoint(endpoint);
-    resourceDescriptor.setAttributes(
-        CoreSchema.addCommonResourceAttributes(attributes));
+    resourceDescriptor.setAttributes(Arrays.asList(attributes));
 
     return resourceDescriptor;
   }

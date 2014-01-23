@@ -26,6 +26,7 @@ import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -38,6 +39,7 @@ import com.unboundid.util.StaticUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -403,5 +405,24 @@ public class MembersDerivedAttribute extends DerivedAttribute
         }
       }
     }
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Set<String> toLDAPAttributeTypes(final AttributePath scimAttribute)
+      throws InvalidResourceException
+  {
+    String subAttributeName = scimAttribute.getSubAttributeName();
+    if (subAttributeName != null)
+    {
+      // Just to make sure the sub-attribute is a valid one for this attribute.
+      descriptor.getSubAttribute(subAttributeName);
+    }
+
+    return Collections.singleton(ATTR_UNIQUE_MEMBER);
   }
 }

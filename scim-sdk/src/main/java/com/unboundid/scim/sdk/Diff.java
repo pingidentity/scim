@@ -850,17 +850,9 @@ public final class Diff<R extends BaseResource>
     final HashSet<String> subAttrs = schemaAttrs.get(toLowerCase(
         attribute.getName()));
 
-    if(subAttribute == null ||
-        attribute.getAttributeDescriptor().getDataType() !=
-            AttributeDescriptor.DataType.COMPLEX)
-    {
-      return subAttrs != null;
-    }
-    else
-    {
-      return subAttrs != null &&
-          subAttrs.contains(toLowerCase(subAttribute.getName()));
-    }
+    return subAttrs != null && (
+        !(subAttribute != null && !subAttrs.isEmpty()) ||
+            subAttrs.contains(toLowerCase(subAttribute.getName())));
   }
 
   /**
@@ -905,23 +897,24 @@ public final class Diff<R extends BaseResource>
       final HashMap<String, HashMap<String, HashSet<String>>> compareAttrs,
       final Set<String> attributesToDelete, final SCIMAttribute attribute)
   {
-    if(attribute.getAttributeDescriptor().getDataType() ==
-        AttributeDescriptor.DataType.COMPLEX)
+    if(attribute.getAttributeDescriptor().isMultiValued())
     {
-      if(attribute.getAttributeDescriptor().isMultiValued())
+      // Technically, all multi-valued attributes are complex since they may
+      // have sub-attributes.
+      Set<String> subAttributes = new HashSet<String>();
+      for(SCIMAttributeValue sourceValue : attribute.getValues())
       {
-        for(SCIMAttributeValue sourceValue : attribute.getValues())
+        if(sourceValue.isComplex())
         {
           for(Map.Entry<String, SCIMAttribute> e :
               filterSubAttributes(compareAttrs, attribute,
                   sourceValue).entrySet())
           {
-            // Skip normative sub-attributes for multi-valued attributes
+            // Skip non-significant normative sub-attributes
             if(e.getKey().equals("type") ||
                 e.getKey().equals("primary") ||
                 e.getKey().equals("operation") ||
-                e.getKey().equals("display") ||
-                e.getKey().equals("value"))
+                e.getKey().equals("display"))
             {
               continue;
             }
@@ -929,21 +922,35 @@ public final class Diff<R extends BaseResource>
             final AttributePath path =
                 new AttributePath(attribute.getSchema(),
                     attribute.getName(), e.getKey());
-            attributesToDelete.add(path.toString());
+            subAttributes.add(path.toString());
           }
         }
-      }
-      else
-      {
-        for(Map.Entry<String, SCIMAttribute> e :
-            filterSubAttributes(compareAttrs, attribute,
-                attribute.getValue()).entrySet())
+        else
         {
+          // There are no sub-attributes for this attribute, which is
+          // technically not correct. Just delete the whole attribute
           final AttributePath path =
               new AttributePath(attribute.getSchema(),
-                  attribute.getName(), e.getKey());
+                  attribute.getName(),
+                  null);
+          subAttributes.clear();
           attributesToDelete.add(path.toString());
+          break;
         }
+      }
+      attributesToDelete.addAll(subAttributes);
+    }
+    else if(attribute.getAttributeDescriptor().getDataType() ==
+        AttributeDescriptor.DataType.COMPLEX)
+    {
+      for(Map.Entry<String, SCIMAttribute> e :
+          filterSubAttributes(compareAttrs, attribute,
+              attribute.getValue()).entrySet())
+      {
+        final AttributePath path =
+            new AttributePath(attribute.getSchema(),
+                attribute.getName(), e.getKey());
+        attributesToDelete.add(path.toString());
       }
     }
     else

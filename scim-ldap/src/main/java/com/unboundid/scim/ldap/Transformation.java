@@ -20,7 +20,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.util.ByteString;
 import org.w3c.dom.Element;
 
@@ -135,7 +135,7 @@ public abstract class Transformation
    *
    * @return  The SCIM value.
    */
-  public abstract SimpleValue toSCIMValue(
+  public abstract SCIMAttributeValue toSCIMValue(
       final AttributeDescriptor descriptor,
       final ByteString byteString);
 
@@ -143,13 +143,13 @@ public abstract class Transformation
    * Transform a SCIM value to an LDAP value.
    *
    * @param descriptor   The SCIM attribute descriptor for the value.
-   * @param simpleValue  The SCIM value.
+   * @param value  The SCIM value.
    *
    * @return  The LDAP value as an ASN1 octet string.
    */
   public abstract ASN1OctetString toLDAPValue(
       final AttributeDescriptor descriptor,
-      final SimpleValue simpleValue);
+      final SCIMAttributeValue value);
 
   /**
    * Transform a SCIM filter value to an LDAP filter value.

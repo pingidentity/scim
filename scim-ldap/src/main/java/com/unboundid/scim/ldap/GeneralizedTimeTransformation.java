@@ -20,6 +20,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.util.ByteString;
 import com.unboundid.util.StaticUtils;
@@ -39,8 +40,8 @@ public class GeneralizedTimeTransformation extends Transformation
    * {@inheritDoc}
    */
   @Override
-  public SimpleValue toSCIMValue(final AttributeDescriptor descriptor,
-                                 final ByteString byteString)
+  public SCIMAttributeValue toSCIMValue(final AttributeDescriptor descriptor,
+                                        final ByteString byteString)
   {
     switch (descriptor.getDataType())
     {
@@ -49,7 +50,7 @@ public class GeneralizedTimeTransformation extends Transformation
         try
         {
           final Date date = StaticUtils.decodeGeneralizedTime(generalizedTime);
-          return new SimpleValue(date);
+          return SCIMAttributeValue.createDateValue(date);
         }
         catch (ParseException e)
         {
@@ -78,12 +79,12 @@ public class GeneralizedTimeTransformation extends Transformation
    */
   @Override
   public ASN1OctetString toLDAPValue(final AttributeDescriptor descriptor,
-                                     final SimpleValue simpleValue)
+                                     final SCIMAttributeValue value)
   {
     switch (descriptor.getDataType())
     {
       case DATETIME:
-        final Date date = simpleValue.getDateValue();
+        final Date date = value.getDateValue();
         return new ASN1OctetString(StaticUtils.encodeGeneralizedTime(date));
 
       case STRING:

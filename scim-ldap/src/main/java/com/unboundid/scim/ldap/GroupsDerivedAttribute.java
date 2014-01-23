@@ -28,6 +28,7 @@ import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -266,6 +267,19 @@ public class GroupsDerivedAttribute extends DerivedAttribute
       throws SCIMException
   {
     // No implementation required because this attribute is read-only.
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Set<String> toLDAPAttributeTypes(final AttributePath scimAttribute)
+      throws InvalidResourceException
+  {
+    // No implementation required because this attribute is read-only.
+    return Collections.emptySet();
   }
 
 

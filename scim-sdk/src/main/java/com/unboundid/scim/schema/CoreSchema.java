@@ -24,9 +24,11 @@ import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
 
 /**
  * Contains the resources and their attributes defined in
@@ -34,182 +36,6 @@ import java.util.List;
  */
 public class CoreSchema
 {
-  //// 3.  SCIM Schema Structure ////
-  private static final AttributeDescriptor MULTIVALUED_PRIMARY =
-      AttributeDescriptor.createSubAttribute("primary",
-          AttributeDescriptor.DataType.BOOLEAN,
-          "A Boolean value indicating the 'primary' or preferred attribute " +
-              "value for this attribute",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false);
-  private static final AttributeDescriptor MULTIVALUED_DISPLAY =
-      AttributeDescriptor.createSubAttribute("display",
-          AttributeDescriptor.DataType.STRING,
-          "A human readable name, primarily used for display purposes",
-          SCIMConstants.SCHEMA_URI_CORE, true, false, false);
-  private static final AttributeDescriptor MULTIVALUED_OPERATION =
-      AttributeDescriptor.createSubAttribute("operation",
-          AttributeDescriptor.DataType.STRING,
-          "The operation to perform on the multi-valued attribute during a " +
-              "PATCH request",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false);
-
-  /**
-   * Adds the default sub-attributes for multi-valued attributes if they don't
-   * already exist. This will include the type, primary, display and operation
-   * attributes.
-   *
-   * @param schema          The schema of the multi-valued attribute.
-   * @param dataType        The data type of the value sub-attribute.
-   * @param canonicalValues The list of canonical values for the type attribute.
-   * @param subAttributes  A list specifying the sub attributes of the complex
-   *                       attribute.
-   * @return The default sub-attributes for multi-valued attributes.
-   */
-  static AttributeDescriptor[] addCommonMultiValuedSubAttributes(
-      final String schema,
-      final AttributeDescriptor.DataType dataType,
-      final String[] canonicalValues,
-      final AttributeDescriptor... subAttributes)
-  {
-    final AttributeDescriptor type = AttributeDescriptor.createSubAttribute(
-        "type", AttributeDescriptor.DataType.STRING, "A label indicating the " +
-        "attribute's function; e.g., \"work\" or " + "\"home\"",
-        schema, false, false, false, canonicalValues);
-
-    final AttributeDescriptor value = AttributeDescriptor.createSubAttribute(
-        "value", dataType, "The attribute's significant value",
-        schema, false, true, false);
-
-    int numSubAttributes = 0;
-    boolean displayExists = false;
-    boolean primaryExists = false;
-    boolean typeExists = false;
-    boolean operationExists = false;
-    boolean valueExists = false;
-    if (subAttributes != null)
-    {
-      numSubAttributes = subAttributes.length;
-
-      for(AttributeDescriptor attribute : subAttributes)
-      {
-        if(attribute.equals(MULTIVALUED_DISPLAY))
-        {
-          displayExists = true;
-        }
-        else if(attribute.equals(MULTIVALUED_PRIMARY))
-        {
-          primaryExists = true;
-        }
-        else if(attribute.equals(type))
-        {
-          typeExists = true;
-        }
-        else if(attribute.equals(MULTIVALUED_OPERATION))
-        {
-          operationExists = true;
-        }
-        else if(attribute.equals(value))
-        {
-          valueExists = true;
-        }
-      }
-    }
-
-    final List<AttributeDescriptor> allSubAttributes =
-        new ArrayList<AttributeDescriptor>(numSubAttributes + 5);
-    if (dataType != AttributeDescriptor.DataType.COMPLEX)
-    {
-      if(!valueExists)
-      {
-        allSubAttributes.add(value);
-      }
-    }
-
-    if(!displayExists)
-    {
-      allSubAttributes.add(MULTIVALUED_DISPLAY);
-    }
-    if(!primaryExists)
-    {
-      allSubAttributes.add(MULTIVALUED_PRIMARY);
-    }
-    if(!typeExists)
-    {
-      allSubAttributes.add(type);
-    }
-    if(!operationExists)
-    {
-      allSubAttributes.add(MULTIVALUED_OPERATION);
-    }
-
-    if (numSubAttributes > 0)
-    {
-      allSubAttributes.addAll(Arrays.asList(subAttributes));
-    }
-
-    return allSubAttributes.toArray(
-        new AttributeDescriptor[allSubAttributes.size()]);
-  }
-
-  /**
-   * Adds the common resource attributes if they don't already exist.
-   * This will include id, externalId, and meta.
-   *
-   * @param attributes A list specifying the attributes of a resource.
-   * @return The list of attributes including the common attributes.
-   */
-  static List<AttributeDescriptor> addCommonResourceAttributes(
-      final AttributeDescriptor... attributes)
-  {
-    int numAttributes = 0;
-    boolean idExists = false;
-    boolean metaExists = false;
-    boolean externalIdExists = false;
-    if (attributes != null)
-    {
-      numAttributes = attributes.length;
-
-      for(AttributeDescriptor attribute : attributes)
-      {
-        if(attribute.equals(ID))
-        {
-          idExists = true;
-        }
-        else if(attribute.equals(META))
-        {
-          metaExists = true;
-        }
-        else if(attribute.equals(EXTERNAL_ID))
-        {
-          externalIdExists = true;
-        }
-      }
-    }
-
-    final List<AttributeDescriptor> attributeList =
-        new ArrayList<AttributeDescriptor>(numAttributes + 3);
-
-    // These attributes need to be in the same order as defined in the SCIM XML
-    // schema scim-core.xsd.
-    if(!idExists)
-    {
-      attributeList.add(ID);
-    }
-    if(!metaExists)
-    {
-      attributeList.add(META);
-    }
-    if(!externalIdExists)
-    {
-      attributeList.add(EXTERNAL_ID);
-    }
-    if (numAttributes > 0)
-    {
-      attributeList.addAll(Arrays.asList(attributes));
-    }
-    return attributeList;
-  }
-
   //// 5.  SCIM Core Schema ////
 
   //// 5.1.  Common Schema Attributes ////
@@ -393,29 +219,44 @@ public class CoreSchema
 
   private static final AttributeDescriptor EMAILS =
       AttributeDescriptor.createMultiValuedAttribute("emails",
-          "email", AttributeDescriptor.DataType.STRING,
-          "E-mail addresses for the User",
+          "email", "E-mail addresses for the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
-          new String[] {"work", "home", "other"});
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING),
+          createMultiValuedDisplayDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedPrimaryDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "work", "home", "other"));
   private static final AttributeDescriptor PHONE_NUMBERS =
       AttributeDescriptor.createMultiValuedAttribute("phoneNumbers",
-          "phoneNumber", AttributeDescriptor.DataType.STRING,
-          "Phone numbers for the User",
-          SCIMConstants.SCHEMA_URI_CORE,
-          false, false, false, new String[] {"fax", "pager", "other"});
+          "phoneNumber", "Phone numbers for the User",
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING),
+          createMultiValuedDisplayDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedPrimaryDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "fax", "pager", "other"));
   private static final AttributeDescriptor IMS =
       AttributeDescriptor.createMultiValuedAttribute("ims",
-          "im", AttributeDescriptor.DataType.STRING,
-          "Instant messaging address for the User",
+          "im", "Instant messaging address for the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
-          new String[] {"aim", "gtalk", "icq", "xmpp", "msn", "skype", "qq",
-              "yahoo"});
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING),
+          createMultiValuedDisplayDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedPrimaryDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "aim", "gtalk", "icq", "xmpp", "msn", "skype", "qq", "yahoo"));
   private static final AttributeDescriptor PHOTOS =
       AttributeDescriptor.createMultiValuedAttribute("photos",
-          "photo", AttributeDescriptor.DataType.STRING,
-          "URL of photos of the User",
+          "photo", "URL of photos of the User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
-          new String[] {"photo", "thumbnail"});
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING),
+          createMultiValuedDisplayDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedPrimaryDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "photo", "thumbnail"));
 
   private static final AttributeDescriptor ADDRESS_FORMATTED =
       AttributeDescriptor.createSubAttribute("formatted",
@@ -452,38 +293,48 @@ public class CoreSchema
           SCIMConstants.SCHEMA_URI_CORE, false, false, false);
   private static final AttributeDescriptor ADDRESSES =
       AttributeDescriptor.createMultiValuedAttribute("addresses",
-          "address", AttributeDescriptor.DataType.COMPLEX,
-          "A physical mailing address for this User",
+          "address", "A physical mailing address for this User",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
-          new String[]{"work", "home", "other"},
+          createMultiValuedPrimaryDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "work", "home", "other"),
           ADDRESS_FORMATTED, ADDRESS_STREET_ADDRESS, ADDRESS_LOCALITY,
           ADDRESS_REGION, ADDRESS_POSTAL_CODE, ADDRESS_COUNTRY);
 
   private static final AttributeDescriptor GROUPS =
       AttributeDescriptor.createMultiValuedAttribute("groups",
-          "group", AttributeDescriptor.DataType.STRING,
-          "A list of groups that the user belongs to",
+          "group", "A list of groups that the user belongs to",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
-          new String[] {"direct", "indirect"});
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING),
+          createMultiValuedDisplayDescriptor(SCIMConstants.SCHEMA_URI_CORE),
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "direct", "indirect"));
   private static final AttributeDescriptor ENTITLEMENTS =
       AttributeDescriptor.createMultiValuedAttribute("entitlements",
-          "entitlement", AttributeDescriptor.DataType.STRING,
+          "entitlement",
           "A list of entitlements for the User that represent a thing the " +
               "User has. That is, an entitlement is an additional right to a " +
               "thing, object or service",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false, null);
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING));
   private static final AttributeDescriptor ROLES =
       AttributeDescriptor.createMultiValuedAttribute("roles",
-          "role", AttributeDescriptor.DataType.STRING,
+          "role",
           "A list of roles for the User that collectively represent who the " +
               "User is",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false, null);
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING));
   private static final AttributeDescriptor X509CERTIFICATES =
       AttributeDescriptor.createMultiValuedAttribute("x509Certificates",
-          "x509Certificate", AttributeDescriptor.DataType.BINARY,
+          "x509Certificate",
           "A list of certificates issued to the User. Values are DER " +
               "encoded x509.",
-          SCIMConstants.SCHEMA_URI_CORE, false, false, false, null);
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.BINARY));
 
   //// 7.  SCIM Enterprise User Schema Extension ////
 
@@ -545,10 +396,13 @@ public class CoreSchema
           SCIMConstants.SCHEMA_URI_CORE, false, true, false);
   private static final AttributeDescriptor MEMBERS =
       AttributeDescriptor.createMultiValuedAttribute("members",
-          "member", AttributeDescriptor.DataType.STRING,
-          "A list of members of the Group",
+          "member", "A list of members of the Group",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
-          new String[] {"User", "Group"});
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "User", "Group"),
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING),
+          createMultiValuedDisplayDescriptor(SCIMConstants.SCHEMA_URI_CORE));
 
   //// 9.  Service Provider Configuration Schema ////
 
@@ -673,11 +527,13 @@ public class CoreSchema
           ETAG_SUPPORTED);
   private static final AttributeDescriptor AUTH_SCHEMES =
       AttributeDescriptor.createMultiValuedAttribute("authenticationSchemes",
-          "authenticationScheme", AttributeDescriptor.DataType.COMPLEX,
+          "authenticationScheme",
           "A complex type that specifies supported Authentication Scheme " +
               "properties.",
           SCIMConstants.SCHEMA_URI_CORE, true, true, false,
-          new String[]{"OAuth", "OAuth2", "HttpBasic", "httpDigest"},
+          createMultiValuedTypeDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              "OAuth", "OAuth2", "HttpBasic", "httpDigest"),
+          createMultiValuedPrimaryDescriptor(SCIMConstants.SCHEMA_URI_CORE),
           AUTH_SCHEME_NAME, AUTH_SCHEME_DESCRIPTION, AUTH_SCHEME_SPEC_URL,
           AUTH_SCHEME_DOCUMENTATION_URL);
   private static final AttributeDescriptor XML_DATA_TYPE_CONFIG =
@@ -763,9 +619,10 @@ public class CoreSchema
           SCIMConstants.SCHEMA_URI_CORE, true, true, false);
   private static final AttributeDescriptor ATTRIBUTES_CANONICAL_VALUES =
       AttributeDescriptor.createMultiValuedAttribute("canonicalValues",
-          "canonicalValue", AttributeDescriptor.DataType.STRING,
-          "A collection of canonical values",
-          SCIMConstants.SCHEMA_URI_CORE, true, false, false, null);
+          "canonicalValue", "A collection of canonical values",
+          SCIMConstants.SCHEMA_URI_CORE, true, false, false,
+          createMultiValuedValueDescriptor(SCIMConstants.SCHEMA_URI_CORE,
+              AttributeDescriptor.DataType.STRING));
 
   private static final AttributeDescriptor RESOURCE_SUB_ATTRIBUTES =
       AttributeDescriptor.newAttribute("subAttributes",
@@ -873,9 +730,9 @@ public class CoreSchema
           "details to Consumers",
           SCIMConstants.SCHEMA_URI_CORE,
           SCIMConstants.RESOURCE_ENDPOINT_SERVICE_PROVIDER_CONFIG,
-          CONFIG_DOCUMENTATION_URL, PATCH_CONFIG, BULK_CONFIG, FILTER_CONFIG,
-          CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG, AUTH_SCHEMES,
-          XML_DATA_TYPE_CONFIG);
+          ID, META, CONFIG_DOCUMENTATION_URL, PATCH_CONFIG, BULK_CONFIG,
+          FILTER_CONFIG, CHANGE_PASSWORD_CONFIG, SORT_CONFIG, ETAG_CONFIG,
+          AUTH_SCHEMES, XML_DATA_TYPE_CONFIG);
 
   /**
    * The SCIM User Schema.
@@ -884,11 +741,11 @@ public class CoreSchema
       ResourceDescriptor.create(SCIMConstants.RESOURCE_NAME_USER,
           "SCIM core resource for representing users",
           SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_USERS,
-          USER_NAME, NAME, DISPLAY_NAME, NICK_NAME, PROFILE_URL, TITLE,
-          USER_TYPE, PREFERRED_LANGUAGE, LOCALE, TIMEZONE, ACTIVE, PASSWORD,
-          EMAILS, PHONE_NUMBERS, IMS, PHOTOS, ADDRESSES, GROUPS, ENTITLEMENTS,
-          ROLES, X509CERTIFICATES, EMPLOYEE_NUMBER, COST_CENTER, ORGANIZATION,
-          DIVISION, DEPARTMENT, MANAGER);
+          ID, META, EXTERNAL_ID, USER_NAME, NAME, DISPLAY_NAME, NICK_NAME,
+          PROFILE_URL, TITLE, USER_TYPE, PREFERRED_LANGUAGE, LOCALE, TIMEZONE,
+          ACTIVE, PASSWORD, EMAILS, PHONE_NUMBERS, IMS, PHOTOS, ADDRESSES,
+          GROUPS, ENTITLEMENTS, ROLES, X509CERTIFICATES, EMPLOYEE_NUMBER,
+          COST_CENTER, ORGANIZATION, DIVISION, DEPARTMENT, MANAGER);
 
   /**
    * The SCIM Group Schema.
@@ -897,7 +754,7 @@ public class CoreSchema
       ResourceDescriptor.create(SCIMConstants.RESOURCE_NAME_GROUP,
           "SCIM core resource for representing groups",
           SCIMConstants.SCHEMA_URI_CORE, SCIMConstants.RESOURCE_ENDPOINT_GROUPS,
-          GROUP_DISPLAY_NAME, MEMBERS);
+          ID, META, EXTERNAL_ID, GROUP_DISPLAY_NAME, MEMBERS);
 
   /**
    * The SCIM AttributeDescriptor for the meta attribute.
@@ -913,4 +770,245 @@ public class CoreSchema
    * The SCIM AttributeDescriptor for the externalId attribute.
    */
   public static final AttributeDescriptor EXTERNAL_ID_DESCRIPTOR = EXTERNAL_ID;
+
+  //// 3.2 Multi-valued Attributes ////
+  /**
+   * Convenience method to create an attribute descriptor for the type normative
+   * sub-attribute of multi-valued attributes.
+   *
+   * @param schema The attribute's associated schema.
+   * @param canonicalValues The canonical values to include in the descriptor.
+   *
+   * @return The attribute descriptor for the type normative sub-attribute of
+   * multi-valued attributes.
+   */
+  public static AttributeDescriptor createMultiValuedTypeDescriptor(
+      final String schema, final String... canonicalValues)
+  {
+    return  AttributeDescriptor.createSubAttribute("type",
+        AttributeDescriptor.DataType.STRING,
+        "A label indicating the attribute's function; " +
+            "e.g., \"work\" or " + "\"home\"",
+        schema, false, false, false, canonicalValues);
+  }
+
+  /**
+   * Convenience method to create an attribute descriptor for the primary
+   * normative sub-attribute of multi-valued attributes.
+   *
+   * @param schema The attribute's associated schema.
+   *
+   * @return The attribute descriptor for the primary normative sub-attribute of
+   * multi-valued attributes.
+   */
+  public static AttributeDescriptor createMultiValuedPrimaryDescriptor(
+      final String schema)
+  {
+    return AttributeDescriptor.createSubAttribute("primary",
+        AttributeDescriptor.DataType.BOOLEAN,
+        "A Boolean value indicating the 'primary' or preferred attribute " +
+            "value for this attribute",
+        schema, false, false, false);
+  }
+
+  /**
+   * Convenience method to create an attribute descriptor for the display
+   * normative sub-attribute of multi-valued attributes.
+   *
+   * @param schema The attribute's associated schema.
+   *
+   * @return The attribute descriptor for the display normative sub-attribute of
+   * multi-valued attributes.
+   */
+  public static AttributeDescriptor createMultiValuedDisplayDescriptor(
+      final String schema)
+  {
+    return AttributeDescriptor.createSubAttribute("display",
+        AttributeDescriptor.DataType.STRING,
+        "A human readable name, primarily used for display purposes",
+        schema, true, false, false);
+  }
+
+  /**
+   * Convenience method to create an attribute descriptor for the operation
+   * normative sub-attribute of multi-valued attributes.
+   *
+   * @param schema The attribute's associated schema.
+   *
+   * @return The attribute descriptor for the display operation sub-attribute of
+   * multi-valued attributes.
+   */
+  public static AttributeDescriptor createMultiValuedOperationDescriptor(
+      final String schema)
+  {
+    return AttributeDescriptor.createSubAttribute("operation",
+        AttributeDescriptor.DataType.STRING,
+        "The operation to perform on the multi-valued attribute during a " +
+            "PATCH request",
+        schema, false, false, false);
+  }
+
+  /**
+   * Convenience method to create an attribute descriptor for the value
+   * normative sub-attribute of multi-valued attributes.
+   *
+   * @param schema The attribute's associated schema.
+   * @param dataType The data type of the value sub-attribute.
+   *
+   * @return The attribute descriptor for the value normative sub-attribute of
+   * multi-valued attributes.
+   */
+  public static AttributeDescriptor createMultiValuedValueDescriptor(
+      final String schema, final AttributeDescriptor.DataType dataType)
+  {
+    return AttributeDescriptor.createSubAttribute("value", dataType,
+        "The attribute's significant value", schema, false, true, false);
+  }
+
+
+  /**
+   * Add any missing core schema attributes described in section 5.1.
+   *
+   * @param attributes The currently defined attributes.
+   *
+   * @return The attributes with any missing core schema attributes added.
+   */
+  static Collection<AttributeDescriptor> addCommonAttributes(
+      final Collection<AttributeDescriptor> attributes)
+  {
+    boolean idMissing = true;
+    boolean externalIdMissing = true;
+    boolean metaMissing = true;
+    for(AttributeDescriptor attribute : attributes)
+    {
+      if(attribute.equals(ID))
+      {
+        idMissing = false;
+      }
+      if(attribute.equals(EXTERNAL_ID))
+      {
+        externalIdMissing = false;
+      }
+      if(attribute.equals(META))
+      {
+        metaMissing = false;
+      }
+    }
+
+    if(!idMissing && !externalIdMissing && !metaMissing)
+    {
+      return attributes;
+    }
+
+    ArrayList<AttributeDescriptor> missingAttributes =
+        new ArrayList<AttributeDescriptor>(attributes.size() + 3);
+    if(idMissing)
+    {
+      missingAttributes.add(ID);
+    }
+    if(externalIdMissing)
+    {
+      missingAttributes.add(EXTERNAL_ID);
+    }
+    if(metaMissing)
+    {
+      missingAttributes.add(META);
+    }
+    missingAttributes.addAll(attributes);
+    return missingAttributes;
+  }
+
+  /**
+   * Add any missing core schema sub-attributes described in section 5.1
+   * and 3.2.
+   *
+   * @param attributeDescriptor The attribute descriptor.
+   * @param subAttributes The map of sub-attributes currently defined.
+   *
+   * @return The map of sub-attributes with any missing normative sub-attributes
+   * added or {@code null} if there are no sub-attributes defined.
+   */
+  static Map<String, AttributeDescriptor> addNormativeSubAttributes(
+      final AttributeDescriptor attributeDescriptor,
+      final Map<String, AttributeDescriptor> subAttributes)
+  {
+    Map<String, AttributeDescriptor> missingSubAttributes =
+        new LinkedHashMap<String, AttributeDescriptor>();
+    if(attributeDescriptor.equals(META))
+    {
+      if(subAttributes == null ||
+          !subAttributes.containsKey(META_CREATED.getName()))
+      {
+        missingSubAttributes.put(META_CREATED.getName(), META_CREATED);
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey(toLowerCase(META_LAST_MODIFIED.getName())))
+      {
+        missingSubAttributes.put(toLowerCase(META_LAST_MODIFIED.getName()),
+            META_LAST_MODIFIED);
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey(META_LOCATION.getName()))
+      {
+        missingSubAttributes.put(META_LOCATION.getName(), META_LOCATION);
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey(META_VERSION.getName()))
+      {
+        missingSubAttributes.put(META_VERSION.getName(), META_VERSION);
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey(META_ATTRIBUTES.getName()))
+      {
+        missingSubAttributes.put(META_ATTRIBUTES.getName(), META_ATTRIBUTES);
+      }
+    }
+    else if(attributeDescriptor.isMultiValued())
+    {
+      if(subAttributes == null ||
+          !subAttributes.containsKey("type"))
+      {
+        missingSubAttributes.put("type", createMultiValuedTypeDescriptor(
+            attributeDescriptor.getSchema()));
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey("primary"))
+      {
+        missingSubAttributes.put("primary", createMultiValuedPrimaryDescriptor(
+            attributeDescriptor.getSchema()));
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey("display"))
+      {
+        missingSubAttributes.put("display", createMultiValuedDisplayDescriptor(
+            attributeDescriptor.getSchema()));
+      }
+      if(subAttributes == null ||
+          !subAttributes.containsKey("operation"))
+      {
+        missingSubAttributes.put("operation",
+            createMultiValuedOperationDescriptor(
+                attributeDescriptor.getSchema()));
+      }
+      if(attributeDescriptor.getDataType() !=
+                        AttributeDescriptor.DataType.COMPLEX &&
+          (subAttributes == null ||
+              !subAttributes.containsKey("value")))
+      {
+        missingSubAttributes.put("value", createMultiValuedValueDescriptor(
+            attributeDescriptor.getSchema(),
+            attributeDescriptor.getDataType()));
+      }
+    }
+
+    if(missingSubAttributes.isEmpty())
+    {
+      return subAttributes;
+    }
+    if(subAttributes != null)
+    {
+      missingSubAttributes.putAll(subAttributes);
+    }
+    return missingSubAttributes;
+  }
 }

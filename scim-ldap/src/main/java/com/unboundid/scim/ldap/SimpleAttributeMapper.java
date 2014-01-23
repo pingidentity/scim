@@ -24,13 +24,13 @@ import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMFilterType;
-import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.scim.sdk.SortParameters;
 
 import java.util.Collection;
@@ -162,6 +162,16 @@ public class SimpleAttributeMapper extends AttributeMapper
 
 
   @Override
+  public Set<String> toLDAPAttributeTypes(final AttributePath scimAttribute)
+      throws InvalidResourceException
+  {
+    final String ldapAttributeType = attributeTransformation.getLdapAttribute();
+    return Collections.singleton(ldapAttributeType);
+  }
+
+
+
+  @Override
   public ServerSideSortRequestControl toLDAPSortControl(
       final SortParameters sortParameters)
       throws InvalidResourceException
@@ -205,7 +215,7 @@ public class SimpleAttributeMapper extends AttributeMapper
       final ASN1OctetString ldapValue =
           attributeTransformation.getTransformation().toLDAPValue(
               getAttributeDescriptor(),
-              scimAttribute.getValue().getValue());
+              scimAttribute.getValue());
       attributes.add(new Attribute(ldapAttributeType, ldapValue));
     }
   }
@@ -222,11 +232,10 @@ public class SimpleAttributeMapper extends AttributeMapper
       final ASN1OctetString[] rawValues = a.getRawValues();
       if (rawValues.length > 0)
       {
-        final SimpleValue simpleValue =
+        final SCIMAttributeValue value =
             attributeTransformation.getTransformation().toSCIMValue(
                 getAttributeDescriptor(), rawValues[0]);
-        return SCIMAttribute.create(
-            getAttributeDescriptor(), new SCIMAttributeValue(simpleValue));
+        return SCIMAttribute.create(getAttributeDescriptor(), value);
       }
     }
 

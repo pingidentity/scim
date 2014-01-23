@@ -19,7 +19,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.scim.schema.AttributeDescriptor;
-import com.unboundid.scim.sdk.SimpleValue;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.util.ByteString;
 
 
@@ -34,13 +34,13 @@ public class DefaultTransformation extends Transformation
    * {@inheritDoc}
    */
   @Override
-  public SimpleValue toSCIMValue(final AttributeDescriptor descriptor,
-                                 final ByteString byteString)
+  public SCIMAttributeValue toSCIMValue(final AttributeDescriptor descriptor,
+                                        final ByteString byteString)
   {
     switch (descriptor.getDataType())
     {
       case BINARY:
-        return new SimpleValue(byteString.getValue());
+        return SCIMAttributeValue.createBinaryValue(byteString.getValue());
 
       case DATETIME:
       case STRING:
@@ -48,7 +48,7 @@ public class DefaultTransformation extends Transformation
       case DECIMAL:
       case INTEGER:
       default:
-        return new SimpleValue(byteString.stringValue());
+        return SCIMAttributeValue.createStringValue(byteString.stringValue());
     }
   }
 
@@ -59,12 +59,12 @@ public class DefaultTransformation extends Transformation
    */
   @Override
   public ASN1OctetString toLDAPValue(final AttributeDescriptor descriptor,
-                                     final SimpleValue simpleValue)
+                                     final SCIMAttributeValue value)
   {
     switch (descriptor.getDataType())
     {
       case BINARY:
-        return new ASN1OctetString(simpleValue.getBinaryValue());
+        return new ASN1OctetString(value.getBinaryValue());
 
       case DATETIME:
       case STRING:
@@ -72,7 +72,7 @@ public class DefaultTransformation extends Transformation
       case DECIMAL:
       case INTEGER:
       default:
-        return new ASN1OctetString(simpleValue.getStringValue());
+        return new ASN1OctetString(value.getStringValue());
     }
   }
 
