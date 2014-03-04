@@ -46,7 +46,6 @@
         <!-- This is the public POM for releasing to Maven Central. -->
         <include>pom.xml</include>
       </includes>
-      <filtered>true</filtered>
     </fileSet>
   </fileSets>
 </assembly>
