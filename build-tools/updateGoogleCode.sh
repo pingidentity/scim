@@ -1,6 +1,43 @@
 #!/bin/bash
 
+#
+# Executes a subversion merge using the provided arguments. If the merge fails,
+# then the script will be stopped.
+#
+# Arguments: 
+# 1: index
+# 2: source URL
+# 3: target directory
+#
+function do_merge()
+{
+  svn merge -c $1 $COMMON_UNBOUNDID_OPTS $2 $3
+  if [ $? -ne 0 ]
+  then
+    echo "Failed to merge change $1 at $2 into $3"
+    exit 1
+  fi
+}
+
+#
+# Asserts that all environment variables provided in the arguments are present.
+# If any variable is missing, then the script will be stopped.
+#
+function assert_variables_set()
+{
+  for i in "$@"
+  do
+    if [ -z "${!i}" ]
+    then
+      echo "Environment variable $i is not set"
+      exit 1
+    fi
+  done
+}
+
 # Note: CVSDUDE_USER and CVSDUDE_PASSWORD come from environment variables set by Jenkins.
+# M2_HOME is needed by mvn
+assert_variables_set CVSDUDE_USER CVSDUDE_PASSWORD M2_HOME
 
 COMMON_UNBOUNDID_OPTS="--username $CVSDUDE_USER --password $CVSDUDE_PASSWORD --non-interactive --no-auth-cache --trust-server-cert"
 COMMON_GOOGLE_OPTS="--username $GOOGLE_USER --password $GOOGLE_PASSWORD --non-interactive --no-auth-cache --trust-server-cert"
@@ -22,7 +59,7 @@ cd scimsdk
 CURRENT_REVISION=`cat .ubid-revision`
 LATEST_REVISION=`svn info $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk | grep Revision | grep -o "[0-9]*$"`
 echo "Google Code revision is $CURRENT_REVISION."
-echo "Latest CVSDude revision is $LATEST_REVISION."
+echo "Latest local revision is $LATEST_REVISION."
 echo
 
 for ((IDX=CURRENT_REVISION+1; IDX <= LATEST_REVISION; IDX++))
@@ -41,25 +78,25 @@ do
     set -e
 
     #Handle Build Tools
-    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/build-tools/src build-tools/src
+    do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/build-tools/src build-tools/src
 
     #Handle Config
-    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/config config
+    do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/config config
 
     #Handle Resources
     if [[ -z "$SKIP_RESOURCE_FOLDER" ]]
     then
-      svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/resource resource
+      do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/resource resource
     fi
 
     #Handle SCIM-SDK
-    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-sdk/src scim-sdk/src
+    do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/scim-sdk/src scim-sdk/src
 
     #Handle SCIM-LDAP
-    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ldap/src scim-ldap/src
+    do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/scim-ldap/src scim-ldap/src
 
     #Handle SCIM-RI
-    svn merge -c $IDX $COMMON_UNBOUNDID_OPTS https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
+    do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
 
     #Turn off command checking
     set +e
