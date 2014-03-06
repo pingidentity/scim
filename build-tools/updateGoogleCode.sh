@@ -142,6 +142,11 @@ do
     then
       #Commit the changes back to Google Code
       svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS
+      if [ $? -ne 0 ]
+      then
+        echo "Failed to update commit-message.$IDX.txt file"
+        exit 1
+      fi
     fi
 done
 
@@ -152,6 +157,11 @@ then
    echo -n $LATEST_REVISION > .ubid-revision
    svn commit -m "Updating .ubid-revision state file with the latest revision from the UnboundID repository." \
      $COMMON_GOOGLE_OPTS .ubid-revision
+   if [ $? -ne 0 ]
+   then
+     echo "Failed to update .ubid-revision file"
+     exit 1
+   fi
 fi
 
 echo "Finished."
