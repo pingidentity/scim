@@ -37,19 +37,24 @@ function assert_variables_set()
 
 # Note: CVSDUDE_USER and CVSDUDE_PASSWORD come from environment variables set by Jenkins.
 # M2_HOME is needed by mvn
-assert_variables_set CVSDUDE_USER CVSDUDE_PASSWORD M2_HOME
+assert_variables_set CVSDUDE_USER CVSDUDE_PASSWORD GOOGLE_USER GOOGLE_PASSWORD M2_HOME
 
 COMMON_UNBOUNDID_OPTS="--username $CVSDUDE_USER --password $CVSDUDE_PASSWORD --non-interactive --no-auth-cache --trust-server-cert"
 COMMON_GOOGLE_OPTS="--username $GOOGLE_USER --password $GOOGLE_PASSWORD --non-interactive --no-auth-cache --trust-server-cert"
 
 #Validate the command-line options
+DRYRUN=0
 if [[ -n "$1" ]]
 then
   if [[ "$1" != "--dry-run" ]]
   then
     echo "The only argument allowed is \"--dry-run\". This will do everything except commit the changes back to Google Code."
     exit 1
+  else
+    # This is a dry-run
+    DRYRUN=1
   fi
+  
 fi
 
 rm -rf scimsdk
@@ -138,7 +143,7 @@ do
 
     echo -e "Merged revision $IDX from the UnboundID repository." > commit-message.$IDX.txt
     echo -e "$LOG_MESSAGE" >> commit-message.$IDX.txt
-    if [[ "$1" != "--dry-run" ]]
+    if [ ${DRYRUN} -eq 0 ]
     then
       #Commit the changes back to Google Code
       svn commit -F commit-message.$IDX.txt $COMMON_GOOGLE_OPTS
@@ -150,18 +155,21 @@ do
     fi
 done
 
-CURRENT_REVISION=`cat .ubid-revision`
-if [[ $CURRENT_REVISION -lt $LATEST_REVISION ]]
+if [ ${DRYRUN} -eq 0 ]
 then
-   echo "Updating .ubid-revision file..."
-   echo -n $LATEST_REVISION > .ubid-revision
-   svn commit -m "Updating .ubid-revision state file with the latest revision from the UnboundID repository." \
-     $COMMON_GOOGLE_OPTS .ubid-revision
-   if [ $? -ne 0 ]
-   then
-     echo "Failed to update .ubid-revision file"
-     exit 1
-   fi
+  CURRENT_REVISION=`cat .ubid-revision`
+  if [[ $CURRENT_REVISION -lt $LATEST_REVISION ]]
+  then
+     echo "Updating .ubid-revision file..."
+     echo -n $LATEST_REVISION > .ubid-revision
+     svn commit -m "Updating .ubid-revision state file with the latest revision from the UnboundID repository." \
+       $COMMON_GOOGLE_OPTS .ubid-revision
+     if [ $? -ne 0 ]
+     then
+       echo "Failed to update .ubid-revision file"
+       exit 1
+     fi
+  fi
 fi
 
 echo "Finished."
