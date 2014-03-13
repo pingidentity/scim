@@ -3,6 +3,85 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+
+---------- SCIM 1.6.0 ----------
+
+  * Release Date: January 30, 2014
+
+  * This is an upgrade release with some significant enhancements. Users of
+    previous releases are encouraged to upgrade.
+
+  * New Features
+
+    - Added support for SCIM resource versioning. DS-9612
+
+        - As required by the SCIM 1.1 REST API specification, bulk
+          requests using the PUT, PATCH, or DELETE methods must include
+          an operations.version value; existing client code may therefore
+          need to be updated prior to enabling this feature. The server
+          does not enforce the operations.version requirement.
+
+        - Non-bulk modification requests (PUT and PATCH) must also specify
+          the expected resource version via an If-Match header, according to
+          the SCIM specification. However, the server does not enforce this.
+
+        - Added new update(...) and delete(...) methods to SCIMEndpoint to
+          facilitate usage of resource versioning having to explicitly
+          specify an ETag.
+
+        - The LDAP attribute used for ETags is configurable on the server side.
+          Current ETags may be retrieved from the newly added
+          PreconditionFailedException on the client side.
+
+
+  * Resolved Issues
+
+    - Removed logic to automatically add cross-origin response headers
+       when a request contains the Origin header. Issue:DS-10174
+
+    - Fixed an issue where creating a ResourceDescriptor with a common
+      attribute (such as id, meta, or externalId) might result in multiple
+      AttributeDescriptors for those attributes. Issue:DS-10041
+
+    - Fixed an issue where creating a Multi-Valued Attribute Descriptor
+      with the common sub-attributes might result in multiple
+      AttributeDescriptors for those sub-attributes. Issue:DS-10041
+
+    - Fixed an issue where authentication with SCIM would fail because the
+      password provided contained a colon character. Issue:DS-10045
+
+    - Added a requirement to declare all core common attributes and
+      normative sub-attributes when creating a schema. Only declared
+      attributes are available when the schema is marshalled. However,
+      core common and normative attributes are added by the getter methods
+      if they are not declared. This ensures dependent code can reliably
+      retrieve all core attributes. Issue:DS-10124
+      With this change the following apply:
+
+        - The common core schema attributes will always be accessible
+          regardless of whether they were or were not declared when the
+          schema was created.
+
+        - All multi-valued attributes are expected to have sub-attributes. If
+          they are not defined, the normative sub-attributes 'type', 'primary',
+         'operation', and 'display' are still accessible.
+
+        - All multi-valued attributes are expected to be declared as complex.
+          However, the SDK will handle a non-complex multi-valued attribute
+          defined by a schema read from JSON or XML. In this case, the
+          normative 'value' sub-attribute will be accessible.
+
+        - All values of multi-valued attributes are stored as complex values.
+          However, as a convenience, the value of the normative 'value'
+          sub-attribute (if declared) is accessible as a simple value
+          (SCIMAttributeValue.get*Value() method).
+
+        - Fixed an issue where deleting a sub-attribute using the meta.attributes
+          sub-attribute during a PATCH doesn't work. Multi-valued attributes may
+          be deleted with or without specifying the value sub-attribute
+          (phoneNumbers vs phoneNumbers.value).
+
+
 ---------- SCIM 1.5.0 ----------
 
   * Release Date: November 15, 2013
@@ -294,5 +373,5 @@ https://www.unboundid.com/resources/scim
     bundled documentation for a complete description.
 
 ---------------------------------
+Copyright 2011-2014 UnboundID Corp. All Rights Reserved.
 
-Copyright 2011-2013 UnboundID Corp. All Rights Reserved.
