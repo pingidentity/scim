@@ -27,11 +27,14 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.data.Address;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.AuthenticationScheme;
+import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.marshal.Unmarshaller;
+import com.unboundid.scim.marshal.json.JsonUnmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkOperation;
@@ -58,6 +61,7 @@ import com.unboundid.scim.wink.ResourceStats;
 import org.testng.annotations.Test;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1076,6 +1080,90 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(groupEntry.getAttributeValue("cn"), "Engineering");
     assertTrue(groupEntry.getAttributeValue("uniqueMember").
         equalsIgnoreCase(entry.getDN()), entry.toLDIFString());
+  }
+
+
+
+  /**
+   * Tests resource creation through SCIM using custom 'Employee' schema.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPostEmployee() throws Exception
+  {
+    // Use custom resource mapping with descriptions for this test
+    File f = getFile(
+       "scim-ri/src/test/resources/resources-employee-tests.xml");
+    assertTrue(f.exists());
+    SCIMServerConfig config = new SCIMServerConfig();
+    config.setResourcesFile(f);
+    reconfigureTestSuite(config);
+
+    // Get a reference to the in-memory test DS.
+    final InMemoryDirectoryServer testDS = getTestDS();
+    testDS.add(generateDomainEntry("example", "dc=com"));
+    testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+    //Create a new user from JSON with missing schema specification
+    final ResourceDescriptor empResourceDescriptor =
+            getBackendResourceDescriptor("Employees");
+    final Unmarshaller unmarshaller = new JsonUnmarshaller();
+    final SCIMEndpoint<UserResource> empEndpoint = service.getEndpoint(
+            empResourceDescriptor,
+            UserResource.USER_RESOURCE_FACTORY);
+    InputStream testJson;
+    SCIMObject o;
+    UserResource empResource;
+
+    // Try to create the employee with a missing required attribute
+    try
+    {
+      testJson =
+              getResource("/com/unboundid/scim/marshal/spec/employee.json");
+      o = unmarshaller.unmarshal(
+          testJson, empResourceDescriptor,
+          BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
+      assertNotNull(o);
+      empResource = new UserResource(empResourceDescriptor, o);
+      empEndpoint.create(empResource);
+      fail("Should fail load employee resource because of missing core schema");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+
+    // Now try with Implicit Schema Checking
+    try
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY,
+                         "true");
+      testJson =
+              getResource("/com/unboundid/scim/marshal/spec/employee.json");
+      o = unmarshaller.unmarshal(
+          testJson, empResourceDescriptor,
+          BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
+      assertNotNull(o);
+      empResource = new UserResource(empResourceDescriptor, o);
+      empEndpoint.create(empResource);
+    }
+    finally
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY, "");
+    }
+
+    //Verify what is actually in the Directory
+    SearchResultEntry userEntry = testDS.getEntry(
+            "uid=stranger,ou=people,dc=example,dc=com", "*", "+");
+    assertNotNull(userEntry);
+    assertTrue(userEntry.hasObjectClass("person"));
+    assertEquals(userEntry.getAttributeValue("uid"), "stranger");
+    assertTrue(userEntry.getAttributeValue("employeenumber").equals("1234"));
+
+    // Clean Up
+    config.setResourcesFile(getFile("resource/resources.xml"));
+    reconfigureTestSuite(config);
   }
 
 

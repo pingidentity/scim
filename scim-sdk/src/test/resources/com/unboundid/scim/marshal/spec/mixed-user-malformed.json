@@ -1,4 +1,5 @@
 {
+    "schemas":["urn:acme:schemas:1.0"],
     "userName":"babs",
     "name": {
         "formatted":"Ms. Barbara J Jensen III",
@@ -6,5 +7,5 @@
         "givenName":"Barbara"
     },
     "displayName":"Babs Jensen",
-    "employeeNumber":"1"
+    "NonCoreAttribute":"value"
 }

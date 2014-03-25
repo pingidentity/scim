@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Copyright 2011-2014 UnboundID Corp.
+
+  INTENDED FOR INTERNAL TESTING ONLY
+-->
+
+<scim-ldap:resources xmlns:scim-ldap="http://www.unboundid.com/scim-ldap">
+
+  <resource name="Employee" schema="urn:scim:schemas:custom:employee:1.0">
+
+    <description>SCIM resource for employees</description>
+
+    <endpoint>Employees</endpoint>
+
+    <!--
+     ! The following element provides information that is needed to search
+     ! LDAP for User entries. This references the 'userSearchParams' element,
+     ! which is also used in the MembersDerivedAttribute, so that the Group
+     ! resource knows to use these search parameters for its members.
+     !-->
+    <LDAPSearchRef idref="userSearchParams"/>
+
+    <!--
+     ! The following element provides information that is needed to create
+     ! new User resources in LDAP.
+     !-->
+    <LDAPAdd>
+      <!-- The template for the DN of new entries. -->
+      <!-- SCIM or LDAP attributes may be referenced. -->
+      <DNTemplate>uid={uid},ou=people,dc=example,dc=com</DNTemplate>
+
+      <!-- Fixed Values to be inserted after the mapping is done. -->
+      <fixedAttribute ldapAttribute="objectClass" onConflict="merge">
+        <fixedValue>top</fixedValue>
+        <fixedValue>person</fixedValue>
+        <fixedValue>organizationalPerson</fixedValue>
+        <fixedValue>inetOrgPerson</fixedValue>
+      </fixedAttribute>
+    </LDAPAdd>
+
+    <!-- These elements define the SCIM attributes and their LDAP mappings. -->
+    <!-- CUSTOMIZATION:
+         Make employeeNumber clobber the core 'id' attribute and make it
+         readOnly and required for SCIMServerTestCase#testPostUserWithBadSchema
+    -->
+    <attribute name="id"
+               schema="urn:scim:schemas:custom:employee:1.0"
+               readOnly="true" required="true">
+      <description>Numeric or alphanumeric identifier assigned to a person,
+          typically based on order of hire or association with an
+          organization</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="employeeNumber"/>
+      </simple>
+    </attribute>
+
+    <attribute name="userName" schema="urn:scim:schemas:custom:employee:1.0"
+               readOnly="false" required="true">
+      <description>Unique identifier for the User, typically used by the user
+          to directly authenticate to the Service Provider</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="uid"/>
+      </simple>
+    </attribute>
+
+    <attribute name="name" schema="urn:scim:schemas:custom:employee:1.0"
+               readOnly="false" required="false">
+      <description>The components of the User's real name</description>
+      <complex>
+        <subAttribute name="formatted" dataType="string" required="true">
+          <description>The full name, including all middle names, titles,
+              and suffixes as appropriate, formatted for display (e.g. Ms.
+              Barbara Jane Jensen, III.)</description>
+          <mapping ldapAttribute="cn"/>
+        </subAttribute>
+        <subAttribute name="familyName" dataType="string" required="true">
+          <description>The family name of the User, or "Last Name" in most
+              Western languages (e.g. Jensen given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+          <mapping ldapAttribute="sn"/>
+        </subAttribute>
+        <subAttribute name="middleName" dataType="string">
+          <description>The middle name(s) of the User (e.g. Jane given the full
+              name Ms. Barbara Jane Jensen, III.)</description>
+        </subAttribute>
+        <subAttribute name="givenName" dataType="string">
+          <description>The given name of the User, or "First Name" in most
+              Western languages (e.g. Barbara given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+          <mapping ldapAttribute="givenName"/>
+        </subAttribute>
+        <subAttribute name="honorificPrefix" dataType="string">
+          <description>The honorific prefix(es) of the User, or "Title" in most
+              Western languages (e.g. Ms. given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+        </subAttribute>
+        <subAttribute name="honorificSuffix" dataType="string">
+          <description>The honorific suffix(es) of the User, or "Suffix" in most
+              Western languages (e.g. III. given the full name Ms. Barbara
+              Jane Jensen, III.)</description>
+        </subAttribute>
+      </complex>
+    </attribute>
+
+    <attribute name="displayName" schema="urn:scim:schemas:custom:employee:1.0"
+               readOnly="false" required="false">
+      <description>The name of the User, suitable for display to
+          end-users</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="displayName"/>
+      </simple>
+    </attribute>
+  </resource>
+
+  <!--
+   ! The following element provides information that is needed to search
+   ! LDAP for User entries. This is separated out from the User resource so that
+   ! the Group resource can also reference it, in the MembersDerivedAttribute.
+   !-->
+  <LDAPSearch id="userSearchParams">
+    <baseDN>ou=people,dc=example,dc=com</baseDN>
+    <filter>(objectClass=inetOrgPerson)</filter>
+    <!--
+     ! Comment out the following line to map the SCIM Resource ID to DN rather
+     ! than entryUUID.
+     !-->
+    <resourceIDMapping ldapAttribute="entryUUID" createdBy="directory"/>
+  </LDAPSearch>
+
+</scim-ldap:resources>

@@ -151,6 +151,13 @@ public final class SCIMConstants
       "Origin";
 
   /**
+   * The system property to allow implicit schema checking.
+   * This is NOT supported but is provided for migration purposes only.
+   */
+  public static final String IMPLICIT_SCHEMA_CHECKING_PROPERTY =
+          "com.unboundid.scim.implicit-schema-checking";
+
+  /**
    * The character that separates the schema URI from the basic attribute name
    * in a fully qualified attribute name. e.g. urn:scim:schemas:core:1.0:name
    */

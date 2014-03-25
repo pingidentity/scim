@@ -38,6 +38,7 @@ import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.ldap.sdk.schema.Schema;
 import com.unboundid.scim.SCIMTestCase;
 import com.unboundid.scim.ldap.LDAPBackend;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
 import com.unboundid.scim.sdk.SCIMService;
 import com.unboundid.scim.wink.ResourceStats;
@@ -3164,4 +3165,16 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     return scimApplication.getStatsForResource(resourceName);
   }
 
+  /**
+   * Retrieve a resource descriptor from the backend.
+   *
+   * @param endpoint  The name of the endpoint.
+   *
+   * @return  The resource descriptor for provided endpoint.
+   */
+  protected static ResourceDescriptor getBackendResourceDescriptor(
+          String endpoint)
+  {
+    return ldapBackend.getResourceDescriptor(endpoint);
+  }
 }

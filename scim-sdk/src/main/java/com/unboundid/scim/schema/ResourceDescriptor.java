@@ -24,9 +24,12 @@ import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -176,6 +179,55 @@ public class ResourceDescriptor extends BaseResource
   }
 
   /**
+   * Retrieves the schema for a specified attribute name.
+   *
+   * @param name The name of the attribute whose schema is to be found.
+   * @param preferredSchemas an ordered list of schemas to prefer when matching
+   *
+   * @return The schema for the specified attribute or {@code null} if there is
+   *         no such attribute name in any schema.
+   */
+  public String findAttributeSchema(final String name,
+                                    final String... preferredSchemas)
+  {
+    Set<String> matchingSchemas = new HashSet<String>();
+    for (String schema : getAttributeSchemas())
+    {
+      Map<String, AttributeDescriptor> map =
+              attributesCache.get(toLowerCase(schema));
+      if (map!= null && map.keySet().contains(name))
+      {
+        matchingSchemas.add(schema);
+      }
+    }
+    if (matchingSchemas.isEmpty())
+    {
+      // Element does not belong to any known schema
+      return null;
+    }
+    List<String> preferredSchemaList;
+    if (preferredSchemas == null || preferredSchemas.length < 1)
+    {
+      preferredSchemaList = new ArrayList<String>(2);
+      preferredSchemaList.add(getSchema());
+      preferredSchemaList.add(SCIMConstants.SCHEMA_URI_CORE);
+    }
+    else
+    {
+      preferredSchemaList = Arrays.asList(preferredSchemas);
+    }
+    for (String preferredSchema : preferredSchemaList)
+    {
+      if (matchingSchemas.contains(preferredSchema))
+      {
+        return preferredSchema;
+      }
+    }
+    // If no preferred schema was found then just return the first from the list
+    return matchingSchemas.iterator().next();
+  }
+
+  /**
    * Retrieve the name of the resource to be used in any external representation
    * of the resource.
    *
@@ -282,8 +334,9 @@ public class ResourceDescriptor extends BaseResource
    */
   public String getSchema()
   {
-    return getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "schema",
-        AttributeValueResolver.STRING_RESOLVER);
+    return toLowerCase(
+            getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "schema",
+            AttributeValueResolver.STRING_RESOLVER));
   }
 
   /**

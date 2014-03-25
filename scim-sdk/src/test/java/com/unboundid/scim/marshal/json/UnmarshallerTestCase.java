@@ -118,7 +118,20 @@ public class UnmarshallerTestCase extends SCIMTestCase {
         "C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1" +
         "+GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=");
     binaryAttributeValue.getBinaryValue();  // Should not throw.
+  }
 
+
+  /**
+   * Verify that JSON with missing or malformed schema is handled appropriately.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testUnmarshalBadSchema() throws Exception {
+    final ResourceDescriptor userResourceDescriptor =
+        CoreSchema.USER_DESCRIPTOR;
+    final Unmarshaller unmarshaller = new JsonUnmarshaller();
+    InputStream testJson;
     testJson = getResource("/com/unboundid/scim/marshal/spec/mixed-user.json");
     try
     {
@@ -132,5 +145,64 @@ public class UnmarshallerTestCase extends SCIMTestCase {
       //expected
       System.err.println(e.getMessage());
     }
+    testJson =
+      getResource("/com/unboundid/scim/marshal/spec/mixed-user-malformed.json");
+    try
+    {
+      unmarshaller.unmarshal(testJson, userResourceDescriptor,
+              BaseResource.BASE_RESOURCE_FACTORY);
+      fail("Expected JSONUnmarshaller to detect an ambiguous " +
+              "resource representation.");
+    }
+    catch(InvalidResourceException e)
+    {
+      //expected
+      System.err.println(e.getMessage());
+    }
+
+    // Try with implicit schema checking enabled
+    testJson = getResource("/com/unboundid/scim/marshal/spec/mixed-user.json");
+    try
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY,
+                         "true");
+      final SCIMObject o = unmarshaller.unmarshal(
+                    testJson, userResourceDescriptor,
+                    BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
+            assertNotNull(o);
+            SCIMAttribute username =
+                    o.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "userName");
+            assertEquals(username.getValue().getStringValue(), "babs");
+            SCIMAttribute employeeNumber =
+                    o.getAttribute(
+                            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION,
+                            "employeeNumber");
+            assertEquals(employeeNumber.getValue().getStringValue(), "1");
+    }
+    finally
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY, "");
+    }
+    testJson =
+      getResource("/com/unboundid/scim/marshal/spec/mixed-user-malformed.json");
+    try
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY,
+                         "true");
+      unmarshaller.unmarshal(testJson, userResourceDescriptor,
+              BaseResource.BASE_RESOURCE_FACTORY);
+      fail("Expected JSONUnmarshaller to fail because no schema can be found " +
+                   "for attribute.");
+    }
+    catch(InvalidResourceException e)
+    {
+      //expected
+      System.err.println(e.getMessage());
+    }
+    finally
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY, "");
+    }
   }
+
 }

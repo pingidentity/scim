@@ -152,10 +152,18 @@ public class XmlUnmarshaller implements Unmarshaller
       }
 
       String namespaceURI = element.getNamespaceURI();
+      if (namespaceURI == null)
+      {
+        // Try to find the appropriate schema
+        namespaceURI =
+                resourceDescriptor.findAttributeSchema(element.getLocalName(),
+                                                       documentNamespaceURI);
         if (namespaceURI == null)
         {
-          namespaceURI = documentNamespaceURI; // TODO: not sure about this
+          // Fall back to this if we couldn't find it above
+          namespaceURI = documentNamespaceURI;
         }
+      }
 
       final AttributeDescriptor attributeDescriptor =
           resourceDescriptor.getAttribute(namespaceURI, element.getLocalName());

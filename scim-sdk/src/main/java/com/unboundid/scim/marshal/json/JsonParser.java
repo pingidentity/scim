@@ -74,6 +74,8 @@ public class JsonParser
     try
     {
       final SCIMObject scimObject = new SCIMObject();
+      final boolean implicitSchemaChecking = Boolean.getBoolean(
+              SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY);
 
       // The first keyed object ought to be a schemas array, but it may not be
       // present if 1) the attrs are all core and 2) the client decided to omit
@@ -95,6 +97,10 @@ public class JsonParser
       }
 
       final Set<String> schemaSet = new HashSet<String>(schemas.length());
+      if (implicitSchemaChecking)
+      {
+        schemaSet.addAll(resourceDescriptor.getAttributeSchemas());
+      }
       for (int i = 0; i < schemas.length(); i++)
       {
         schemaSet.add(toLowerCase(schemas.getString(i)));
@@ -128,16 +134,30 @@ public class JsonParser
         }
         else
         {
-          if (!schemaSet.contains(SCIMConstants.SCHEMA_URI_CORE))
-          {
-            throw new Exception("'" + SCIMConstants.SCHEMA_URI_CORE +
-                    "' must be declared in the schemas attribute.");
-          }
           final Object jsonAttribute = jsonObject.get(attributeKey);
-          final AttributeDescriptor attributeDescriptor =
-                  resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
-                          attributeKey);
-          scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
+          if (implicitSchemaChecking)
+          {
+            //Try to determine the schema for this attribute
+            final String attributeName = attributeKey;
+            final String schema =
+                    resourceDescriptor.findAttributeSchema(attributeName);
+            final AttributeDescriptor attributeDescriptor =
+                    resourceDescriptor.getAttribute(schema, attributeName);
+            scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
+          }
+          else
+          {
+            if (!schemaSet.contains(SCIMConstants.SCHEMA_URI_CORE))
+            {
+              throw new Exception("'" + SCIMConstants.SCHEMA_URI_CORE +
+                      "' must be declared in the schemas attribute.");
+            }
+            final AttributeDescriptor attributeDescriptor =
+                      resourceDescriptor.getAttribute(
+                              SCIMConstants.SCHEMA_URI_CORE,
+                              attributeKey);
+            scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
+          }
         }
       }
 
