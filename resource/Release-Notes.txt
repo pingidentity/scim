@@ -3,6 +3,13 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.6.1 ----------
+
+  * Release Date: March 25, 2014
+
+  * This release is for targeted customers only.  It provides an undocumented
+    feature to help with migration and is not intended or supported for general
+    release.
 
 ---------- SCIM 1.6.0 ----------
 
