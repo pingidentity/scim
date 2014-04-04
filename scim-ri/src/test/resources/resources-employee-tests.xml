@@ -103,6 +103,15 @@
       </complex>
     </attribute>
 
+    <attribute name="department"
+               schema="urn:scim:schemas:custom:employee:1.0"
+               readOnly="false" required="false">
+      <description>Identifies the name of a department</description>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="departmentNumber"/>
+      </simple>
+    </attribute>
+
     <attribute name="displayName" schema="urn:scim:schemas:custom:employee:1.0"
                readOnly="false" required="false">
       <description>The name of the User, suitable for display to

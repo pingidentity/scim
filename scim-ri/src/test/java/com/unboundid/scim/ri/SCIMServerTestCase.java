@@ -1090,7 +1090,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
    * @throws Exception  If the test fails.
    */
   @Test
-  public void testPostEmployee() throws Exception
+  public void testCustomResource() throws Exception
   {
     // Use custom resource mapping with descriptions for this test
     File f = getFile(
@@ -1146,7 +1146,23 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
           BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
       assertNotNull(o);
       empResource = new UserResource(empResourceDescriptor, o);
-      empEndpoint.create(empResource);
+      empResource = empEndpoint.create(empResource);
+      // Update with PATCH
+      testJson =
+          getResource("/com/unboundid/scim/marshal/spec/meta-user-patch.json");
+      o = unmarshaller.unmarshal(
+          testJson, empResourceDescriptor,
+          BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
+      assertNotNull(o);
+      UserResource empPatch = new UserResource(empResourceDescriptor, o);
+      Diff empDiff = Diff.fromPartialResource(empPatch, false);
+      SearchResultEntry entry =
+                      testDS.getEntry(
+                          "uid=stranger," + userBaseDN, "entryUUID");
+      empResource.setId(entry.getAttributeValue("entryUUID"));
+      empResource = empEndpoint.update(empResource,
+                                       empDiff.getAttributesToUpdate(),
+                                       empDiff.getAttributesToDelete());
     }
     finally
     {

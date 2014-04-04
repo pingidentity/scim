@@ -20,6 +20,7 @@ package com.unboundid.scim.marshal.json;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.schema.AttributeDescriptor;
+import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
@@ -143,6 +144,57 @@ public class JsonParser
                     resourceDescriptor.findAttributeSchema(attributeName);
             final AttributeDescriptor attributeDescriptor =
                     resourceDescriptor.getAttribute(schema, attributeName);
+            if (CoreSchema.META_DESCRIPTOR.equals(attributeDescriptor))
+            {
+              try
+              {
+                // Special implicit schema processing for meta.attributes
+                // which contains the names of the attributes to remove from
+                // the Resource during a PATCH operation.  These each should be
+                // fully qualified with schema urn by the client, but if they
+                // are not we can try to determine the schema here.
+                JSONObject jsonMetaObj = ((JSONObject)jsonAttribute);
+                JSONArray metaAttrs = null;
+                final Iterator keys = jsonMetaObj.keys();
+                while (keys.hasNext())
+                {
+                  final String key = (String) keys.next();
+                  if ("attributes".equals(key.toLowerCase()))
+                  {
+                    Object attrObj = jsonMetaObj.get(key);
+                    if (attrObj instanceof JSONArray)
+                    {
+                      metaAttrs = (JSONArray) attrObj;
+                    }
+                    break;
+                  }
+                }
+                if (metaAttrs != null)
+                {
+                  JSONArray newMetaAttrs = new JSONArray();
+                  for (int i=0; i < metaAttrs.length(); i++)
+                  {
+                    String metaAttr = (String) metaAttrs.get(i);
+                    String metaSchema = resourceDescriptor.findAttributeSchema(
+                            metaAttr);
+                    // The schema returned will be null if attribute value was
+                    // already fully qualified.
+                    if (metaSchema != null)
+                    {
+                      metaAttr = metaSchema +
+                              SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
+                              metaAttr;
+                    }
+                    newMetaAttrs.put(metaAttr);
+                  }
+                  jsonMetaObj.put("attributes", newMetaAttrs);
+                }
+              }
+              catch (Exception ignore)
+              {
+                // Don't fail because of implicit schema checking
+              }
+            }
             scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
           }
           else

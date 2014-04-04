@@ -132,6 +132,7 @@ public class UnmarshallerTestCase extends SCIMTestCase {
         CoreSchema.USER_DESCRIPTOR;
     final Unmarshaller unmarshaller = new JsonUnmarshaller();
     InputStream testJson;
+    // Test unmarshalling a JSON user entry
     testJson = getResource("/com/unboundid/scim/marshal/spec/mixed-user.json");
     try
     {
@@ -198,6 +199,45 @@ public class UnmarshallerTestCase extends SCIMTestCase {
     {
       //expected
       System.err.println(e.getMessage());
+    }
+    finally
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY, "");
+    }
+
+    // Test unmarshalling a JSON user patch with meta data
+    testJson =
+          getResource("/com/unboundid/scim/marshal/spec/meta-user-patch.json");
+    try
+    {
+      unmarshaller.unmarshal(testJson, userResourceDescriptor,
+              BaseResource.BASE_RESOURCE_FACTORY);
+      fail("Expected JSONUnmarshaller to detect an ambiguous " +
+              "resource representation.");
+    }
+    catch(InvalidResourceException e)
+    {
+      //expected
+      System.err.println(e.getMessage());
+    }
+    // Try with implicit schema checking enabled
+    testJson =
+          getResource("/com/unboundid/scim/marshal/spec/meta-user-patch.json");
+    try
+    {
+      System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY,
+                         "true");
+      final SCIMObject o = unmarshaller.unmarshal(
+                    testJson, userResourceDescriptor,
+                    BaseResource.BASE_RESOURCE_FACTORY).getScimObject();
+      assertNotNull(o);
+      SCIMAttribute metaAttr =
+              o.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta");
+      String metaString = metaAttr.toString();
+      assertTrue(metaString.contains("department"));
+      assertTrue(metaString.contains(
+              SCIMConstants.SEPARATOR_CHAR_QUALIFIED_ATTRIBUTE +
+                      "department"));
     }
     finally
     {
