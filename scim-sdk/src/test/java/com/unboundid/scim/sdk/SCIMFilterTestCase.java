@@ -18,10 +18,13 @@
 package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.SCIMTestCase;
+import com.unboundid.scim.schema.AttributeDescriptor;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 
@@ -175,6 +178,59 @@ public class SCIMFilterTestCase
                  SCIMFilterType.OR);
   }
 
+  /**
+   * Test that filters with binary values work when type is eq, sw, or co.
+   */
+  @Test
+  public void testBinaryFilterValue()
+  {
+    AttributeDescriptor testAttr = AttributeDescriptor.createAttribute("test",
+        AttributeDescriptor.DataType.BINARY, null,
+        SCIMConstants.SCHEMA_URI_CORE, false, false, false);
 
+    SCIMAttribute attribute = SCIMAttribute.create(testAttr,
+        SCIMAttributeValue.createBinaryValue("abcdefghijk".getBytes()));
 
+    SimpleValue v = new SimpleValue("abcdefghijk".getBytes());
+    SCIMFilter filter = new SCIMFilter(SCIMFilterType.EQUALITY,
+        AttributePath.parse("test"), v.getStringValue(), true, null);
+
+    assertTrue(attribute.matchesFilter(filter));
+
+    v = new SimpleValue("abcdefgijk".getBytes());
+    filter = new SCIMFilter(SCIMFilterType.EQUALITY,
+        AttributePath.parse("test"), v.getStringValue(), true, null);
+
+    assertFalse(attribute.matchesFilter(filter));
+
+    v = new SimpleValue("abcdef".getBytes());
+        filter = new SCIMFilter(SCIMFilterType.STARTS_WITH,
+            AttributePath.parse("test"), v.getStringValue(), true, null);
+
+        assertTrue(attribute.matchesFilter(filter));
+
+    v = new SimpleValue("bcdef".getBytes());
+    filter = new SCIMFilter(SCIMFilterType.STARTS_WITH,
+        AttributePath.parse("test"), v.getStringValue(), true, null);
+
+    assertFalse(attribute.matchesFilter(filter));
+
+    v = new SimpleValue("abcdef".getBytes());
+        filter = new SCIMFilter(SCIMFilterType.CONTAINS,
+            AttributePath.parse("test"), v.getStringValue(), true, null);
+
+        assertTrue(attribute.matchesFilter(filter));
+
+    v = new SimpleValue("bcdef".getBytes());
+    filter = new SCIMFilter(SCIMFilterType.CONTAINS,
+        AttributePath.parse("test"), v.getStringValue(), true, null);
+
+    assertTrue(attribute.matchesFilter(filter));
+
+    v = new SimpleValue("hijkl".getBytes());
+    filter = new SCIMFilter(SCIMFilterType.CONTAINS,
+        AttributePath.parse("test"), v.getStringValue(), true, null);
+
+    assertFalse(attribute.matchesFilter(filter));
+  }
 }

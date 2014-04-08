@@ -530,7 +530,32 @@ public final class SCIMAttribute
               {
                 byte[] filterValueBytes =
                           DatatypeConverter.parseBase64Binary(filterValue);
-                return Arrays.equals(binValue, filterValueBytes);
+
+                boolean contains = false;
+                for(int i = 0; i < binValue.length; i++)
+                {
+                  if(binValue[i] == filterValueBytes[0])
+                  {
+                    contains = true;
+                    for(int j = 1; j < filterValueBytes.length; j++)
+                    {
+                      if(i+j >= binValue.length ||
+                          binValue[i+j] != filterValueBytes[j])
+                      {
+                        contains = false;
+                        break;
+                      }
+                    }
+
+                    if(contains)
+                    {
+                      break;
+                    }
+
+                  }
+                }
+
+                return contains;
               }
               catch(IllegalArgumentException e)
               {
@@ -562,7 +587,24 @@ public final class SCIMAttribute
             }
             else if(binValue != null)
             {
-              return false;
+              try
+              {
+                byte[] filterValueBytes =
+                          DatatypeConverter.parseBase64Binary(filterValue);
+
+                for(int i = 0; i < filterValueBytes.length; i++)
+                {
+                  if(binValue[i] != filterValueBytes[i])
+                  {
+                    return false;
+                  }
+                }
+                return true;
+              }
+              catch(IllegalArgumentException e)
+              {
+                return false;
+              }
             }
             return false;
           case GREATER_THAN:

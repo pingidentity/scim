@@ -207,10 +207,6 @@ public class ResourceSearchResultListener implements SearchResultListener
       // Don't increment totalResults, since this result is out of scope.
       return;
     }
-    else
-    {
-      totalResults.incrementAndGet();
-    }
 
     try
     {
@@ -226,6 +222,7 @@ public class ResourceSearchResultListener implements SearchResultListener
       if (request.getFilter() == null ||
           scimObject.matchesFilter(request.getFilter()))
       {
+        totalResults.incrementAndGet();
         if (request.getAttributes().allAttributesRequested() ||
                 resourceMapper.getDefaultSchemaURI().equals(
                         "urn:unboundid:schemas:scim:ldap:1.0"))
