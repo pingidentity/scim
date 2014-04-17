@@ -52,14 +52,6 @@ public class ResourceSchemaBackend extends SCIMBackend
    * {@inheritDoc}
    */
   @Override
-  public boolean authenticate(final String userID, final String password) {
-    return false;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public void finalizeBackend() {
     // Nothing to do.
   }

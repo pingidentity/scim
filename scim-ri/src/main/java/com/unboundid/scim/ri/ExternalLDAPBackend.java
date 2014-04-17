@@ -21,14 +21,11 @@ import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.PLAINBindRequest;
-import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
 import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.LDAPRequestInterface;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMException;
 
 import java.util.Map;
@@ -63,37 +60,25 @@ public class ExternalLDAPBackend extends LDAPBackend
 
 
   /**
-   * Perform basic authentication using the provided information.
+   * Perform BIND using the provided information.
    *
-   * @param userID   The user ID to be authenticated.
-   * @param password The user password to be verified.
+   * @param bindRequest The BIND request to process.
    *
    * @return {@code true} if the provided user ID and password are valid.
+   * @throws LDAPException if an error occurs.
    */
-  @Override
-  public boolean authenticate(final String userID, final String password)
+  public BindResult bind(final BindRequest bindRequest) throws LDAPException
   {
+    // TODO: use a connection pool
+    final LDAPConnection connection = ldapExternalServer.getLDAPConnection();
+
     try
     {
-      // TODO: use a connection pool
-      final LDAPConnection connection = ldapExternalServer.getLDAPConnection();
-
-      try
-      {
-        final BindRequest bindRequest =
-            new PLAINBindRequest(getSASLAuthenticationID(userID), password);
-        final BindResult bindResult = connection.bind(bindRequest);
-        return bindResult.getResultCode().equals(ResultCode.SUCCESS);
-      }
-      finally
-      {
-        connection.close();
-      }
+      return connection.bind(bindRequest);
     }
-    catch (final Exception e)
+    finally
     {
-      Debug.debugException(e);
-      return false;
+      connection.close();
     }
   }
 
@@ -111,7 +96,7 @@ public class ExternalLDAPBackend extends LDAPBackend
       return new LDAPRequestInterface(
           ldapExternalServer.getLDAPConnectionPool(),
           new ProxiedAuthorizationV2RequestControl(
-            getSASLAuthenticationID(userID)));
+              BasicAuthenticationFilter.getSASLAuthenticationID(userID)));
     }
     catch (LDAPException e)
     {

@@ -1612,39 +1612,6 @@ public abstract class LDAPBackend
         entityTagAttribute + " is not present in returned entry");
   }
 
-  /**
-   * Retrieve a SASL Authentication ID from a HTTP Basic Authentication user ID.
-   * We need this because the HTTP Authentication user ID can not include the
-   * ':' character.
-   *
-   * @param userID  The HTTP user ID for which a SASL Authentication ID is
-   *                required. It may be {@code null} if the request was not
-   *                authenticated.
-   *
-   * @return  A SASL Authentication ID.
-   */
-  protected String getSASLAuthenticationID(final String userID)
-  {
-    if (userID == null)
-    {
-      return "";
-    }
-
-    // If the user ID can be parsed as a DN then prefix it with "dn:", otherwise
-    // prefix it with "u:".
-    try
-    {
-      final DN dn = new DN(userID);
-
-      return "dn:" + dn.toString();
-    }
-    catch (LDAPException e)
-    {
-      Debug.debugException(Level.FINE, e);
-      return "u:" + userID;
-    }
-  }
-
 
 
   /**

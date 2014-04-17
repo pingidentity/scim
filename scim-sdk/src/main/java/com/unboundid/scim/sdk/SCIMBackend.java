@@ -57,19 +57,6 @@ public abstract class SCIMBackend
 
 
   /**
-   * Perform basic authentication using the provided information.
-   *
-   * @param userID    The user ID to be authenticated.
-   * @param password  The user password to be verified.
-   *
-   * @return {@code true} if the provided user ID and password are valid.
-   */
-  public abstract boolean authenticate(final String userID,
-                                       final String password);
-
-
-
-  /**
    * Retrieve all or selected attributes of a resource.
    *
    * @param request  The Get Resource request.

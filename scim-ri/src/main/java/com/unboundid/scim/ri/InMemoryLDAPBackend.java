@@ -20,14 +20,12 @@ package com.unboundid.scim.ri;
 import com.unboundid.ldap.listener.InMemoryDirectoryServer;
 import com.unboundid.ldap.sdk.BindRequest;
 import com.unboundid.ldap.sdk.BindResult;
-import com.unboundid.ldap.sdk.PLAINBindRequest;
-import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.controls.ProxiedAuthorizationV2RequestControl;
 import com.unboundid.scim.ldap.LDAPBackend;
 import com.unboundid.scim.ldap.LDAPRequestInterface;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMException;
 
 import java.util.Map;
@@ -82,28 +80,16 @@ public class InMemoryLDAPBackend
 
 
   /**
-   * Perform basic authentication using the provided information.
+   * Perform BiND using the provided information.
    *
-   * @param userID   The user ID to be authenticated.
-   * @param password The user password to be verified.
+   * @param bindRequest The BIND request to process.
    *
-   * @return {@code true} if the provided user ID and password are valid.
+   * @return The BindResult.
+   * @throws LDAPException if an error occurs.
    */
-  @Override
-  public boolean authenticate(final String userID, final String password)
+  public BindResult bind(final BindRequest bindRequest) throws LDAPException
   {
-    try
-    {
-      final BindRequest bindRequest =
-          new PLAINBindRequest(getSASLAuthenticationID(userID), password);
-      final BindResult bindResult = ldapServer.bind(bindRequest);
-      return bindResult.getResultCode().equals(ResultCode.SUCCESS);
-    }
-    catch (final Exception e)
-    {
-      Debug.debugException(e);
-      return false;
-    }
+    return ldapServer.bind(bindRequest);
   }
 
 
@@ -118,7 +104,7 @@ public class InMemoryLDAPBackend
     return new LDAPRequestInterface(
         ldapServer,
         new ProxiedAuthorizationV2RequestControl(
-          getSASLAuthenticationID(userID)));
+            BasicAuthenticationFilter.getSASLAuthenticationID(userID)));
   }
 
 

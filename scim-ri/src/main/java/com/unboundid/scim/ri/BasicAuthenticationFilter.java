@@ -18,6 +18,12 @@
 
 package com.unboundid.scim.ri;
 
+import com.unboundid.ldap.sdk.BindRequest;
+import com.unboundid.ldap.sdk.BindResult;
+import com.unboundid.ldap.sdk.DN;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.PLAINBindRequest;
+import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.util.Base64;
@@ -33,7 +39,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
-import java.text.ParseException;
+import java.util.logging.Level;
 
 /**
  * Authenticates an end user via BASIC authentication scheme.
@@ -116,9 +122,9 @@ public class BasicAuthenticationFilter implements Filter
 
   /**
    * Construct a new BasicAuthenticationFilter that uses the provided
-   * SCIMBackend to authenticate users.
+   * SCIMBackend to bind users.
    *
-   * @param scimBackend The backend to use to authenticate users.
+   * @param scimBackend The backend to use to bind users.
    */
   public BasicAuthenticationFilter(final SCIMBackend scimBackend)
   {
@@ -153,6 +159,7 @@ public class BasicAuthenticationFilter implements Filter
 
     String header = httpRequest.getHeader("Authorization");
     String authID = null;
+    BindResult result = null;
     if(header != null)
     {
       String[] authorization = header.split(" ");
@@ -166,27 +173,38 @@ public class BasicAuthenticationFilter implements Filter
           if(credentialsStr != null)
           {
             String[] credentials = credentialsStr.split(":", 2);
-            if(credentials.length == 2)
+            if(credentials.length == 2 &&
+                ((credentials[0].isEmpty() && credentials[1].isEmpty()) ||
+                    (!credentials[0].isEmpty() && !credentials[1].isEmpty())))
             {
-              if (scimBackend.authenticate(credentials[0], credentials[1]))
+              // Either username and password are all empty, or they are all
+              // non-empty.
+              authID = getSASLAuthenticationID(credentials[0]);
+              String password = credentials[1];
+
+              final BindRequest bindRequest =
+                  new PLAINBindRequest(authID, password);
+              if(scimBackend instanceof InMemoryLDAPBackend)
               {
-                authID = credentials[0];
+                result =
+                    ((InMemoryLDAPBackend)scimBackend).bind(bindRequest);
               }
-            }
-            else if(scimBackend.authenticate(credentials[0], ""))
-            {
-              authID = credentials[0];
+              else if(scimBackend instanceof ExternalLDAPBackend)
+              {
+                result =
+                    ((ExternalLDAPBackend)scimBackend).bind(bindRequest);
+              }
             }
           }
         }
-        catch(ParseException pe)
+        catch(Exception pe)
         {
           Debug.debugException(pe);
         }
       }
     }
 
-    if(authID != null)
+    if(result != null && result.getResultCode().equals(ResultCode.SUCCESS))
     {
       httpRequest = new SecurityRequestWrapper(httpRequest, authID);
     }
@@ -196,5 +214,44 @@ public class BasicAuthenticationFilter implements Filter
           "WWW-Authenticate", "Basic realm=SCIM");
     }
     chain.doFilter(httpRequest, response);
+  }
+
+  /**
+   * Retrieve a SASL Authentication ID from a HTTP Basic Authentication user ID.
+   * We need this because the HTTP Authentication user ID can not include the
+   * ':' character.
+   *
+   * @param userID  The HTTP user ID for which a SASL Authentication ID is
+   *                required. It may be {@code null} if the request was not
+   *                authenticated.
+   *
+   * @return  A SASL Authentication ID.
+   */
+  static String getSASLAuthenticationID(final String userID)
+  {
+    if (userID == null || userID.isEmpty())
+    {
+      return "dn:";
+    }
+
+    if(userID.startsWith("dn:") || userID.startsWith("u:"))
+    {
+      // If the user ID is already prefixed, just return.
+      return userID;
+    }
+
+    // If the user ID can be parsed as a DN then prefix it with "dn:", otherwise
+    // prefix it with "u:".
+    try
+    {
+      final DN dn = new DN(userID);
+
+      return "dn:" + dn.toString();
+    }
+    catch (LDAPException e)
+    {
+      Debug.debugException(Level.FINE, e);
+      return "u:" + userID;
+    }
   }
 }
