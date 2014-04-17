@@ -223,7 +223,7 @@
       <dependency>
         <groupId>org.apache.wink</groupId>
         <artifactId>wink-client-apache-httpclient</artifactId>
-        <version>1.3.0</version>
+        <version>1.4</version>
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
