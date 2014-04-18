@@ -3,6 +3,30 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.7.0 ----------
+
+  * Release Date: TBD
+
+  * This release introduces significant changes to the behavior and APIs such
+    that upgrading may cause compatibilities issues with existing applications.
+
+  * New Features
+
+    - Added support for matching SCIM filters with co and sw operations against
+      binary attributes.
+
+    - Removed authentication related methods from the SCIMBackend API.
+      Authentication for SCIM requests is now outside the scope of the SCIM SDK.
+
+    - Attributes defined in the resource mapping file will only be included in
+      the resource schema if it is mapped to an LDAP attribute or is derived
+      from one or more LDAP attributes.
+
+  * Resolved Issues
+
+    - Fixed issue where the number of resources returned from a query maybe less
+      than totalResults.
+
 ---------- SCIM 1.6.2 ----------
 
   * Release Date: April 4th, 2014

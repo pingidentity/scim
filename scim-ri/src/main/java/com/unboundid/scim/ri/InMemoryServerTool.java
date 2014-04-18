@@ -422,6 +422,9 @@ public class InMemoryServerTool
   @Override()
   public ResultCode doToolProcessing()
   {
+    // Enable Debugging
+    Debug.setEnabled(true);
+
     // Create a base configuration for the LDAP server.
     final InMemoryDirectoryServerConfig ldapConfig;
     try

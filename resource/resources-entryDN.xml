@@ -67,12 +67,14 @@
       </simple>
     </attribute>
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="externalId" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>Unique identifier for the Resource as defined by the
           Service Consumer</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
+    -->
 
     <attribute name="name" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
@@ -122,19 +124,23 @@
       </simple>
     </attribute>
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="nickName" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>The casual way to address the user in real life, e.g. "Bob"
           or "Bobby" instead of "Robert"</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
+    -->
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="profileUrl" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>URL to a page representing the User's online
           profile</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
+    -->
 
     <attribute name="title" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
@@ -164,6 +170,7 @@
       </simple>
     </attribute>
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="locale" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>Used to indicate the User's default location for purposes of
@@ -174,20 +181,25 @@
           and country US</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
+    -->
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="timezone" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>The User's time zone in the "Olson" timezone database format;
           e.g.,'America/Los_Angeles'</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
+    -->
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="active" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>A Boolean value indicating the User's administrative
           status</description>
       <simple dataType="boolean"/>
     </attribute>
+    -->
 
     <attribute name="password" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
@@ -254,6 +266,7 @@
       </simpleMultiValued>
     </attribute>
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="ims" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>Instant messaging address for the User</description>
@@ -268,7 +281,9 @@
         <canonicalValue name="yahoo"/>
       </simpleMultiValued>
     </attribute>
+    -->
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="photos" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>URL of photos of the User</description>
@@ -277,6 +292,7 @@
         <canonicalValue name="thumbnail"/>
       </simpleMultiValued>
     </attribute>
+    -->
 
     <attribute name="addresses" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
@@ -341,6 +357,7 @@
       </simpleMultiValued>
     </attribute>
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="entitlements" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>A list of entitlements for the User that represent a thing
@@ -348,13 +365,16 @@
           thing, object or service</description>
       <simpleMultiValued childName="entitlement" dataType="string"/>
     </attribute>
+    -->
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="roles" schema="urn:scim:schemas:core:1.0"
                readOnly="false" required="false">
       <description>A list of roles for the User that collectively represent who
           the User is</description>
       <simpleMultiValued childName="role" dataType="string"/>
     </attribute>
+    -->
 
     <!-- SCIM enterprise extension attribute mappings. -->
 
@@ -369,12 +389,14 @@
       </simple>
     </attribute>
 
+    <!-- Mapping must be defined to use this attribute
     <attribute name="costCenter"
                schema="urn:scim:schemas:extension:enterprise:1.0"
                readOnly="false" required="false">
       <description>Identifies the name of a cost center</description>
       <simple dataType="string" caseExact="false"/>
     </attribute>
+    -->
 
     <attribute name="organization"
                schema="urn:scim:schemas:extension:enterprise:1.0"

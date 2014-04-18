@@ -293,11 +293,10 @@ public class ResourceMapper
           new ArrayList<AttributeMapper>();
       final List<DerivedAttribute> derivedAttributes =
           new ArrayList<DerivedAttribute>();
-      final AttributeDescriptor[] attributeDescriptors =
-          new AttributeDescriptor[resource.getAttribute().size() + 2];
-      attributeDescriptors[0] = CoreSchema.ID_DESCRIPTOR;
-      attributeDescriptors[1] = CoreSchema.META_DESCRIPTOR;
-      int i = 2;
+      final List<AttributeDescriptor> attributeDescriptors =
+         new ArrayList<AttributeDescriptor>(resource.getAttribute().size() + 2);
+      attributeDescriptors.add(CoreSchema.ID_DESCRIPTOR);
+      attributeDescriptors.add(CoreSchema.META_DESCRIPTOR);
       for (final AttributeDefinition attributeDefinition :
           resource.getAttribute())
       {
@@ -312,7 +311,6 @@ public class ResourceMapper
               "specified in a LDAPSearch element.");
         }
 
-        attributeDescriptors[i++] = attributeDescriptor;
         final AttributeMapper m =
             AttributeMapper.create(attributeDefinition, attributeDescriptor,
                                    ldapSchema);
@@ -358,12 +356,29 @@ public class ResourceMapper
           derivedAttribute.initialize(attributeDescriptor);
           derivedAttributes.add(derivedAttribute);
         }
+
+        // Only include the attribute descriptor if there is a mapping or it is
+        // derived.
+        if(m != null || attributeDefinition.getDerivation() != null)
+        {
+          attributeDescriptors.add(attributeDescriptor);
+        }
+        else
+        {
+          Debug.debug(Level.WARNING, DebugType.OTHER,
+              "Definition for attribute " + new AttributePath(
+                  attributeDefinition.getSchema(),
+                  attributeDefinition.getName(), null).toString() +
+                  " skipped because it does not have a mapping or " +
+                  "derivation defined.");
+        }
       }
 
       final ResourceDescriptor resourceDescriptor =
           ResourceDescriptor.create(resource.getName(),
               resource.getDescription(), resource.getSchema(),
-              resource.getEndpoint(), attributeDescriptors);
+              resource.getEndpoint(), attributeDescriptors.toArray(
+              new AttributeDescriptor[attributeDescriptors.size()]));
 
       final ResourceMapper resourceMapper = create(resource.getMapping());
       final LDAPSearchResolver ldapSearchResolver =

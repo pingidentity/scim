@@ -188,7 +188,9 @@
           to be used as a means to specify an initial password when creating
           a new User or to reset an existing User's password. This value will
           never be returned by a Service Provider in any form</description>
-      <simple dataType="string" caseExact="false"/>
+      <simple dataType="string" caseExact="false">
+        <mapping ldapAttribute="userPassword"/>
+      </simple>
     </attribute>
 
     <attribute name="emails" schema="urn:scim:schemas:core:1.0"

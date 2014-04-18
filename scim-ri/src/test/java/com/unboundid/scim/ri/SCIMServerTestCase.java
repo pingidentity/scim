@@ -920,8 +920,30 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
             Manager.MANAGER_RESOLVER).getDisplayName(), "Mr. Manager");
 
-    // Try to create the user with a missing required sub-attribute
+    //TODO: no LDAP schema for Locale
+    //TODO: no LDAP schema for TimeZone
+    // Try to create the user with unmapped attributes locale and timeZone
     long beforeCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
+    try
+    {
+      userEndpoint.create(user);
+      fail("Expected a 400 response when trying to create user with " +
+          "unmapped attributes");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    long afterCount =
+        getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
+
+    user.setLocale(null);
+    user.setTimeZone(null);
+
+    // Try to create the user with a missing required sub-attribute
+    beforeCount =
         getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
     try
     {
@@ -933,7 +955,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     {
       // expected (error code is 400)
     }
-    long afterCount =
+    afterCount =
         getStatsForResource("User").getStat(ResourceStats.POST_BAD_REQUEST);
     assertEquals(beforeCount, afterCount - 1);
 
@@ -1000,12 +1022,6 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertTrue(createTime.after(startTime));
     assertTrue(createTime.before(endTime));
     assertEquals(beforeCount, afterCount - 1);
-
-    //TODO: no LDAP schema for Locale
-    //assertEquals(returnedUser.getLocale(), user.getLocale());
-
-    //TODO: no LDAP schema for TimeZone
-    //assertEquals(returnedUser.getTimeZone(), user.getTimeZone());
 
     assertEquals(returnedUser.getSingularAttributeValue(
             SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
