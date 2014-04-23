@@ -925,8 +925,23 @@ public class SCIMEndpoint<R extends BaseResource>
   {
     URI headerLocation = null;
     String headerEtag = null;
-    List<String> values =
-        response.getHeaders().get(HttpHeaders.LOCATION);
+    List<String> values;
+    if(response.getStatusType() == Response.Status.CREATED ||
+                    response.getStatusType().getFamily() ==
+                        Response.Status.Family.REDIRECTION)
+    {
+      values = response.getHeaders().get(HttpHeaders.LOCATION);
+    }
+    else
+    {
+      values = response.getHeaders().get(HttpHeaders.CONTENT_LOCATION);
+      if(values == null || values.isEmpty())
+      {
+        // Fall back to using Location header to maintain backwards
+        // compatibility.
+        values = response.getHeaders().get(HttpHeaders.LOCATION);
+      }
+    }
     if(values != null && !values.isEmpty())
     {
       headerLocation = URI.create(values.get(0));

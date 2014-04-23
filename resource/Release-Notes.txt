@@ -27,6 +27,10 @@ https://www.unboundid.com/resources/scim
     - Fixed issue where the number of resources returned from a query maybe less
       than totalResults.
 
+    - Use the Content-Location header instead of Location for non-POST
+      responses. The client will only expect a Location header for 201 or 3xx
+      response codes and Content-Location otherwise.
+
 ---------- SCIM 1.6.2 ----------
 
   * Release Date: April 4th, 2014

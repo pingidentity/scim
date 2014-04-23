@@ -162,7 +162,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
             resource);
         application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.GET_OK);
-      responseBuilder.location(resource.getMeta().getLocation());
+      responseBuilder.contentLocation(resource.getMeta().getLocation());
       responseBuilder.tag(resource.getMeta().getVersion());
 
       if(requestContext.getProduceMediaType() ==
@@ -615,7 +615,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       responseBuilder = Response.status(Response.Status.OK);
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         scimResponse);
-      responseBuilder.location(scimResponse.getMeta().getLocation());
+      responseBuilder.contentLocation(scimResponse.getMeta().getLocation());
       responseBuilder.tag(scimResponse.getMeta().getVersion());
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.PUT_OK);
@@ -744,7 +744,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       {
         responseBuilder = Response.status(Response.Status.NO_CONTENT);
       }
-      responseBuilder.location(scimResponse.getMeta().getLocation());
+      responseBuilder.contentLocation(scimResponse.getMeta().getLocation());
       responseBuilder.tag(scimResponse.getMeta().getVersion());
 
       application.getStatsForResource(resourceDescriptor.getName()).
