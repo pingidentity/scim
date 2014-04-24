@@ -494,7 +494,9 @@ public final class Diff<R extends BaseResource>
       }
     }
 
-    scimObject.removeAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta");
+    if (!includeReadOnlyAttributes) {
+      scimObject.removeAttribute(SCIMConstants.SCHEMA_URI_CORE, "meta");
+    }
 
     for(String schema : scimObject.getSchemas())
     {
