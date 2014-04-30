@@ -559,7 +559,7 @@ public abstract class LDAPBackend
           try
           {
             // Map the SCIM filter to an LDAP filter.
-            filter = resourceMapper.toLDAPFilter(scimFilter);
+            filter = resourceMapper.toLDAPFilter(scimFilter, ldapInterface);
           }
           catch(InvalidResourceException ire)
           {

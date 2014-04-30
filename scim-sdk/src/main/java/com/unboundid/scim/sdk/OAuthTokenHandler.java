@@ -42,17 +42,17 @@ import java.security.GeneralSecurityException;
  * enables issuing access tokens valid for a short time period, as well
  * as removing the resource server's need to understand a wide range of
  * authentication schemes. See "OAuth 2.0 Authorization Framework: Bearer
- * Token Usage" (<i>draft-ietf-oauth-v2-bearer-23</i>) for the full
+ * Token Usage" (<i>RFC 6750</i>) for the full
  * specification and details.
  * <BR><BR>
  * TLS security is required to use OAuth 2.0 bearer tokens, as specified in
- * <i>draft-ietf-oauth-v2-bearer-23</i>. A bearer token may be used by any party
+ * <i>RFC 6750</i>. A bearer token may be used by any party
  * in possession of that token (the "bearer"), and thus needs to be protected
  * when transmitted across the network. Implementations of this API should take
  * special care to verify that the token came from a trusted source (using a
  * secret key or some other signing mechanism to prove that the token is
  * authentic). Please read "OAuth 2.0 Threat Model and Security Considerations"
- * (<i>draft-ietf-oauth-v2-threatmodel-07</i>) for a comprehensive list of
+ * (<i>RFC 6819</i>) for a comprehensive list of
  * security threats to consider when working with OAuth bearer tokens.
  * <BR><BR>
  * The OAuthTokenHandler is also responsible for extracting an authorization DN

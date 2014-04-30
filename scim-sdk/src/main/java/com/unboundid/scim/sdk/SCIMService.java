@@ -26,6 +26,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.RestClient;
+import org.apache.wink.client.httpclient.ApacheHttpClientConfig;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URI;
@@ -69,7 +70,7 @@ public class SCIMService
    */
   public SCIMService(final URI baseUrl)
   {
-    this(baseUrl, new ClientConfig());
+    this(baseUrl, createDefaultClientConfig());
   }
 
   /**
@@ -81,8 +82,8 @@ public class SCIMService
    * @param oAuthToken The OAuth token.
    */
   public SCIMService(final URI baseUrl, final OAuthToken oAuthToken) {
-    this(baseUrl, new ClientConfig().handlers(new OAuthSecurityHandler
-      (oAuthToken)));
+    this(baseUrl, createDefaultClientConfig().handlers(new OAuthSecurityHandler
+        (oAuthToken)));
   }
 
   /**
@@ -97,8 +98,8 @@ public class SCIMService
   public SCIMService(final URI baseUrl, final String username,
                      final String password)
   {
-    this(baseUrl, new ClientConfig().handlers(new HttpBasicAuthSecurityHandler
-      (username,password)));
+    this(baseUrl, createDefaultClientConfig().handlers(
+        new HttpBasicAuthSecurityHandler(username, password)));
   }
 
   /**
@@ -403,5 +404,16 @@ public class SCIMService
    */
   public void setOverridePut(final boolean overridePut) {
     this.overrides[0] = overridePut;
+  }
+
+  /**
+   * Create a new ClientConfig with the default settings.
+   *
+   * @return A new ClientConfig with the default settings.
+   */
+  private static ClientConfig createDefaultClientConfig() {
+    ApacheHttpClientConfig config = new ApacheHttpClientConfig();
+    config.setMaxPooledConnections(100);
+    return config;
   }
 }

@@ -385,10 +385,10 @@ public class AuthenticationScheme
         "OAuth 2.0",
         "The OAuth 2.0 Bearer Token Authentication scheme. OAuth enables " +
             "clients to access protected resources by obtaining an access " +
-            "token, which is defined in draft-ietf-oauth-v2-31 as \"a string " +
+            "token, which is defined in RFC 6750 as \"a string " +
             "representing an access authorization issued to the client\", " +
             "rather than using the resource owner's credentials directly.",
-        "http://tools.ietf.org/html/draft-ietf-oauth-v2-bearer-23",
+        "http://tools.ietf.org/html/rfc6750",
         "http://oauth.net/2/",
         "oauth2", primary);
   }

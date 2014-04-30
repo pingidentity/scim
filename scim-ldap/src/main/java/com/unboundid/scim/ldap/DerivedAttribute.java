@@ -20,6 +20,7 @@ package com.unboundid.scim.ldap;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
@@ -27,6 +28,7 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.w3c.dom.Element;
 
@@ -169,6 +171,28 @@ public abstract class DerivedAttribute
    *          the resource.
    */
   public abstract Set<String> getLDAPAttributeTypes();
+
+
+
+  /**
+   * Map the provided SCIM filter to an LDAP filter.
+   *
+   * @param filter  The SCIM filter to be mapped. The filter identifies the
+   *                SCIM attribute that is mapped by this attribute mapper,
+   *                or one of its sub-attributes.
+   * @param ldapInterface  An LDAP interface that may be used to search the DIT.
+   * @param searchResolver The LDAPSearchResolver for resources containing this
+   *                       derived attribute.
+   *
+   * @return  An LDAP filter or <code>null</code>if the SCIM filter could not
+   *          be mapped and will not match anything.
+   * @throws InvalidResourceException if the SCIM filter contains an undefined
+   *                                  attribute.
+   */
+  public abstract Filter toLDAPFilter(final SCIMFilter filter,
+                                      final LDAPRequestInterface ldapInterface,
+                                      final LDAPSearchResolver searchResolver)
+      throws InvalidResourceException;
 
 
 

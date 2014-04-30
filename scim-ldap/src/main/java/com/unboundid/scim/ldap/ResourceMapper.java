@@ -1196,12 +1196,14 @@ public class ResourceMapper
    *
    * @param filter  The SCIM filter to be mapped, or {@code null} if no filter
    *                parameters were provided.
-   *
+   * @param ldapInterface  An optional LDAP interface that can be used to
+   *                       map filters using derived attributes.
    * @return  An LDAP filter or {@code null} if the SCIM filter could not be
    *          mapped and will not match anything.
    * @throws SCIMException  If an error occurs during the mapping.
    */
-  public Filter toLDAPFilter(final SCIMFilter filter)
+  public Filter toLDAPFilter(final SCIMFilter filter,
+                             final LDAPRequestInterface ldapInterface)
       throws SCIMException
   {
     if (filter == null)
@@ -1209,7 +1211,7 @@ public class ResourceMapper
       return searchResolver.getFilter();
     }
 
-    final Filter filterComponent = toLDAPFilterComponent(filter);
+    final Filter filterComponent = toLDAPFilterComponent(filter, ldapInterface);
 
     if (filterComponent == null)
     {
@@ -1518,12 +1520,14 @@ public class ResourceMapper
    * Map a SCIM filter component to an LDAP filter component.
    *
    * @param filter  The SCIM filter component to be mapped.
-   *
+   * @param ldapInterface  An optional LDAP interface that can be used to
+   *                       map filters using derive attributes.
    * @return  The LDAP filter component, or {@code null} if the filter
    *          component could not be mapped and will not match anything.
    * @throws SCIMException  If an error occurs during the mapping.
    */
-  protected Filter toLDAPFilterComponent(final SCIMFilter filter)
+  protected Filter toLDAPFilterComponent(final SCIMFilter filter,
+                                       final LDAPRequestInterface ldapInterface)
       throws SCIMException {
     final SCIMFilterType filterType = filter.getFilterType();
 
@@ -1533,7 +1537,8 @@ public class ResourceMapper
         final List<Filter> andFilterComponents = new ArrayList<Filter>();
         for (SCIMFilter f : filter.getFilterComponents())
         {
-          final Filter filterComponent = toLDAPFilterComponent(f);
+          final Filter filterComponent =
+              toLDAPFilterComponent(f, ldapInterface);
           if (filterComponent != null)
           {
             andFilterComponents.add(filterComponent);
@@ -1550,7 +1555,8 @@ public class ResourceMapper
         final List<Filter> orFilterComponents = new ArrayList<Filter>();
         for (SCIMFilter f : filter.getFilterComponents())
         {
-          final Filter filterComponent = toLDAPFilterComponent(f);
+          final Filter filterComponent =
+              toLDAPFilterComponent(f, ldapInterface);
           if (filterComponent != null)
           {
             orFilterComponents.add(filterComponent);
@@ -1582,14 +1588,31 @@ public class ResourceMapper
         {
           attributeMapper = attributeMappers.get(attributeDescriptor);
         }
+
+        DerivedAttribute derivedAttribute =
+            derivedAttributes.get(attributeDescriptor);
+
+        final List<Filter> filters = new ArrayList<Filter>(2);
         if (attributeMapper != null)
         {
-          return attributeMapper.toLDAPFilter(filter);
+          filters.add(attributeMapper.toLDAPFilter(filter));
         }
-        break;
-    }
+        if(derivedAttribute != null && ldapInterface != null)
+        {
+          filters.add(derivedAttribute.toLDAPFilter(filter, ldapInterface,
+              searchResolver));
+        }
 
-    return null;
+        if (filters.size() == 2)
+        {
+          return Filter.createORFilter(filters);
+        }
+        if (!filters.isEmpty())
+        {
+          return filters.get(0);
+        }
+        return null;
+    }
   }
 
   /**

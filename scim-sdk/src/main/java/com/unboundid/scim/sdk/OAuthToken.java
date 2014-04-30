@@ -19,7 +19,7 @@ package com.unboundid.scim.sdk;
 
 /**
  * This class represents an OAuth token, described by
- * <i>draft-ietf-oauth-v2-bearer-23</i>. This class can be extended by clients
+ * <i>RFC 6750</i>. This class can be extended by clients
  * that need to add extra functionality, such as the ability to extract an
  * expiration date, scope, target audience, etc, from the token. These details
  * are implementation-specific.

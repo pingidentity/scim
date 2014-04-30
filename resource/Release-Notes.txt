@@ -3,7 +3,7 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.7.0 ----------
+---------- SCIM 1.7.1 ----------
 
   * Release Date: TBD
 
@@ -22,6 +22,11 @@ https://www.unboundid.com/resources/scim
       the resource schema if it is mapped to an LDAP attribute or is derived
       from one or more LDAP attributes.
 
+    - Added support for filtering based on the members, groups, or
+      manager.managerId derived attributes with the eq operator. Filtering based
+      on the groups attribute is only supported when the derived attribute
+      argument "haveIsMemberOf" is set to "true".
+
   * Resolved Issues
 
     - Fixed issue where the number of resources returned from a query maybe less
@@ -30,6 +35,9 @@ https://www.unboundid.com/resources/scim
     - Use the Content-Location header instead of Location for non-POST
       responses. The client will only expect a Location header for 201 or 3xx
       response codes and Content-Location otherwise.
+
+    - Use Apache HttpClient by default when creating a SCIMService without a
+      explicitly specifying a ClientConfig.
 
 ---------- SCIM 1.6.2 ----------
 

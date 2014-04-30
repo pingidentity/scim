@@ -407,6 +407,12 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     {
       //expected
     }
+
+    //Verify we can filter by the members attribute
+    Resources<GroupResource> groupResults =
+        endpoint.query("members eq \"" + user.getId() + "\"");
+    assertEquals(groupResults.getTotalResults(), 1);
+    assertEquals(groupResults.iterator().next().getId(), group1.getId());
   }
 
 
@@ -1029,6 +1035,13 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
                  user.getSingularAttributeValue(
                    SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager",
                    Manager.MANAGER_RESOLVER).getManagerId());
+
+    //Verify search by manager works
+    Resources<UserResource> results =
+        userEndpoint.query(SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION +
+        ":manager.managerId eq \"" + manager.getId() + "\"");
+    assertEquals(results.getTotalResults(), 1);
+    assertEquals(results.iterator().next().getId(), returnedUser.getId());
 
     //Verify what is actually in the Directory
     SearchResultEntry entry = testDS.getEntry(

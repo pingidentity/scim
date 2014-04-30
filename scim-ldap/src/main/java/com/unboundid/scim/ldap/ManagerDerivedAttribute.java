@@ -19,13 +19,17 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
+import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SCIMObject;
 
 import java.util.ArrayList;
@@ -46,6 +50,12 @@ import java.util.Set;
  */
 public class ManagerDerivedAttribute extends DerivedAttribute
 {
+
+  /**
+   * The name of the LDAP manager attribute.
+   */
+  public static final String ATTR_MANAGER = "manager";
+
   private AttributeDescriptor descriptor;
 
 
@@ -78,7 +88,7 @@ public class ManagerDerivedAttribute extends DerivedAttribute
   @Override
   public Set<String> getLDAPAttributeTypes()
   {
-    return Collections.singleton("manager");
+    return Collections.singleton(ATTR_MANAGER);
   }
 
 
@@ -92,9 +102,9 @@ public class ManagerDerivedAttribute extends DerivedAttribute
                                        final LDAPSearchResolver searchResolver)
       throws SCIMException
   {
-    if (entry.hasAttribute("manager"))
+    if (entry.hasAttribute(ATTR_MANAGER))
     {
-      final String dn = entry.getAttributeValue("manager");
+      final String dn = entry.getAttributeValue(ATTR_MANAGER);
       final String resourceID = searchResolver.getIdFromDn(ldapInterface, dn);
 
       final List<SCIMAttribute> attributes = new ArrayList<SCIMAttribute>(1);
@@ -138,7 +148,7 @@ public class ManagerDerivedAttribute extends DerivedAttribute
       try
       {
         final String dn = searchResolver.getDnFromId(ldapInterface, resourceID);
-        attributes.add(new Attribute("manager", dn));
+        attributes.add(new Attribute(ATTR_MANAGER, dn));
       }
       catch(ResourceNotFoundException e)
       {
@@ -166,6 +176,64 @@ public class ManagerDerivedAttribute extends DerivedAttribute
       descriptor.getSubAttribute(subAttributeName);
     }
 
-    return Collections.singleton("manager");
+    return Collections.singleton(ATTR_MANAGER);
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Filter toLDAPFilter(final SCIMFilter filter,
+                             final LDAPRequestInterface ldapInterface,
+                             final LDAPSearchResolver userResolver)
+      throws InvalidResourceException
+  {
+    // Only the managerId sub-attribute will ever have a value so filter
+    // must target that sub-attribute.
+    String subAttribute = filter.getFilterAttribute().getSubAttributeName();
+    if(subAttribute == null || !subAttribute.equals("managerId"))
+    {
+      return null;
+    }
+
+    final String ldapAttributeType = ATTR_MANAGER;
+    final SCIMFilterType filterType = filter.getFilterType();
+    final String filterValue = filter.getFilterValue();
+
+    // Determine the DN for this member.
+    try
+    {
+      switch (filterType)
+      {
+        // We don't have to worry about AND and OR filter types since they are
+        // handled earlier by the resource mapper.
+        case EQUALITY:
+        {
+          String dn;
+          try
+          {
+            dn = userResolver.getDnFromId(ldapInterface, filterValue);
+          }
+          catch (ResourceNotFoundException e)
+          {
+            // Value is not a valid user. Will not match anything.
+            return null;
+          }
+          return Filter.createEqualityFilter(ldapAttributeType, dn);
+        }
+
+        default:
+          throw new InvalidResourceException(
+              "Filter type " + filterType + " is not supported for attribute " +
+                  getAttributeDescriptor().getName());
+      }
+    }
+    catch (Exception e)
+    {
+      Debug.debugException(e);
+      throw new InvalidResourceException(e.getMessage());
+    }
   }
 }

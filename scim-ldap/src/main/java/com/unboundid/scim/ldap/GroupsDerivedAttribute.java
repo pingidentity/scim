@@ -32,9 +32,12 @@ import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
+import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.util.StaticUtils;
 
@@ -280,6 +283,70 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   {
     // No implementation required because this attribute is read-only.
     return Collections.emptySet();
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Filter toLDAPFilter(final SCIMFilter filter,
+                             final LDAPRequestInterface ldapInterface,
+                             final LDAPSearchResolver userResolver)
+      throws InvalidResourceException
+  {
+    if (groupResolver == null)
+    {
+      Debug.debug(Level.WARNING, DebugType.OTHER,
+          "Cannot filter by the groups attribute because there are " +
+              "no LDAPSearch parameters");
+      return null;
+    }
+
+    if (!haveIsMemberOf)
+    {
+      throw new InvalidResourceException("Filtering by the groups attribute " +
+          "is not supported because the isMemberOf attribute is not available");
+    }
+
+    final String ldapAttributeType = ATTR_IS_MEMBER_OF;
+    final SCIMFilterType filterType = filter.getFilterType();
+    final String filterValue = filter.getFilterValue();
+
+    // Determine the DN for this member.
+    try
+    {
+      switch (filterType)
+      {
+        // We don't have to worry about AND and OR filter types since they are
+        // handled earlier by the resource mapper.
+        case EQUALITY:
+        {
+          String dn;
+          try
+          {
+            dn = groupResolver.getDnFromId(ldapInterface, filterValue);
+          }
+          catch (ResourceNotFoundException e)
+          {
+            // Value is not a valid group. Will not match anything.
+            return null;
+          }
+          return Filter.createEqualityFilter(ldapAttributeType, dn);
+        }
+
+        default:
+          throw new InvalidResourceException(
+              "Filter type " + filterType + " is not supported for attribute " +
+                  getAttributeDescriptor().getName());
+      }
+    }
+    catch (Exception e)
+    {
+      Debug.debugException(e);
+      throw new InvalidResourceException(e.getMessage());
+    }
   }
 
 

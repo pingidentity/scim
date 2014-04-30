@@ -19,6 +19,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPURL;
 import com.unboundid.ldap.sdk.SearchRequest;
@@ -34,6 +35,8 @@ import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.SCIMFilter;
+import com.unboundid.scim.sdk.SCIMFilterType;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.util.StaticUtils;
 
@@ -424,5 +427,73 @@ public class MembersDerivedAttribute extends DerivedAttribute
     }
 
     return Collections.singleton(ATTR_UNIQUE_MEMBER);
+  }
+
+
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Filter toLDAPFilter(final SCIMFilter filter,
+                             final LDAPRequestInterface ldapInterface,
+                             final LDAPSearchResolver groupResolver)
+      throws InvalidResourceException
+  {
+    final SCIMFilterType filterType = filter.getFilterType();
+    final String filterValue = filter.getFilterValue();
+
+    // Determine the DN for this member.
+    try
+    {
+      switch (filterType)
+      {
+        // We don't have to worry about AND and OR filter types since they are
+        // handled earlier by the resource mapper.
+        case EQUALITY:
+        {
+          String dn = null;
+          if (userResolver != null)
+          {
+            try
+            {
+              dn = userResolver.getDnFromId(ldapInterface, filterValue);
+            }
+            catch (ResourceNotFoundException e)
+            {
+              // That's OK. It might be a group.
+            }
+          }
+
+          if (dn == null)
+          {
+            try
+            {
+              dn = groupResolver.getDnFromId(ldapInterface, filterValue);
+            }
+            catch (ResourceNotFoundException e)
+            {
+              // Value is not a valid user or group. Will not match anything.
+              return null;
+            }
+          }
+          final List<Filter> filters = new ArrayList<Filter>(2);
+          filters.add(Filter.createEqualityFilter(ATTR_MEMBER, dn));
+          filters.add(Filter.createEqualityFilter(ATTR_UNIQUE_MEMBER, dn));
+          filters.add(Filter.createPresenceFilter(ATTR_MEMBER_URL));
+          return Filter.createORFilter(filters);
+        }
+
+        default:
+          throw new InvalidResourceException(
+              "Filter type " + filterType + " is not supported for attribute " +
+                  getAttributeDescriptor().getName());
+      }
+    }
+    catch (Exception e)
+    {
+      Debug.debugException(e);
+      throw new InvalidResourceException(e.getMessage());
+    }
   }
 }
