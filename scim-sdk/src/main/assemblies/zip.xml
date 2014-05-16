@@ -28,6 +28,7 @@
             <includes>
                 <include>3RD_PARTY_LICENSES.txt</include>
             </includes>
+            <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
@@ -39,6 +40,7 @@
             <excludes>
                 <exclude>licenseTable.xml</exclude>
             </excludes>
+            <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
@@ -50,6 +52,9 @@
         <fileSet>
             <outputDirectory>docs/getting-started</outputDirectory>
             <directory>${project.basedir}/src/main/doc/getting-started</directory>
+            <excludes>
+                <exclude>index.html</exclude>
+            </excludes>
             <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>
         </fileSet>
@@ -74,6 +79,11 @@
         <file>
             <outputDirectory>.</outputDirectory>
             <source>${main.basedir}/resource/Release-Notes.txt</source>
+            <fileMode>644</fileMode>
+        </file>
+        <file>
+            <outputDirectory>docs/getting-started</outputDirectory>
+            <source>${project.build.directory}/docs/getting-started/index.html</source>
             <fileMode>644</fileMode>
         </file>
     </files>

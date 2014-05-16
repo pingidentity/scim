@@ -20,17 +20,28 @@
     <artifactId>scim-ri-client</artifactId>
     <packaging>jar</packaging>
     <name>UnboundID SCIM Reference Implementation Client</name>
-    <version>1.7.0</version>
+    <version>1.7.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
+        <scimsdk.version>1.7.1</scimsdk.version>
     </properties>
+
+    <inceptionYear>2011</inceptionYear>
 
     <organization>
         <name>UnboundID Corp.</name>
         <url>http://www.unboundid.com</url>
     </organization>
+
+    <developers>
+      <developer>
+        <id>unboundid</id>
+        <name>UnboundID Corp.</name>
+        <email>support@unboundid.com</email>
+      </developer>
+    </developers>
 
     <build>
         <plugins>
@@ -62,7 +73,7 @@
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
             <artifactId>scim-sdk</artifactId>
-            <version>1.5.0</version>
+            <version>${scimsdk.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.wink</groupId>

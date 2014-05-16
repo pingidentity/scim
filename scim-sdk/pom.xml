@@ -32,6 +32,7 @@
         <build.version>${project.version}</build.version>
         <main.basedir>${project.basedir}/..</main.basedir>
         <filtered.dir>${project.build.genSourceDirectory}/filtered</filtered.dir>
+        <scimsdk.version>1.7.1</scimsdk.version>
     </properties>
 
     <build>
@@ -200,6 +201,32 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <file>${project.basedir}/src/main/doc/getting-started/index.html</file>
+                    <outputFile>
+                        ${project.build.directory}/docs/getting-started/index.html
+                    </outputFile>
+                    <regex>false</regex>
+                    <replacements>
+                        <replacement>
+                            <token>$SCIMSDK_VERSION$</token>
+                            <value>${scimsdk.version}</value>
+                        </replacement>
+                    </replacements>
+                </configuration>
             </plugin>
         </plugins>
     </build>

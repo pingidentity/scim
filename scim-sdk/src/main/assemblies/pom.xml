@@ -19,8 +19,12 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>1.7.0</version>
+    <version>1.7.1</version>
     <packaging>jar</packaging>
+
+    <properties>
+      <scimsdk.version>1.7.1</scimsdk.version>
+    </properties>
 
     <name>UnboundID SCIM SDK</name>
 
@@ -42,19 +46,9 @@
 
     <developers>
       <developer>
-        <id>coulbeck</id>
-        <name>Andy Coulbeck</name>
-        <email>andrew.coulbeck@unboundid.com</email>
-      </developer>
-      <developer>
-        <id>boli</id>
-        <name>Bo Li</name>
-        <email>bo.li@unboundid.com</email>
-      </developer>
-      <developer>
-        <id>tthompson</id>
-        <name>Trevor Thompson</name>
-        <email>trevor.thompson@unboundid.com</email>
+        <id>unboundid</id>
+        <name>UnboundID Corp.</name>
+        <email>support@unboundid.com</email>
       </developer>
     </developers>
 

@@ -26,9 +26,10 @@
         <fileSet>
             <outputDirectory>.</outputDirectory>
             <directory>${project.basedir}/src/main/assemblies</directory>
-            <includes>
-                <include>README.txt</include>
-            </includes>
+            <excludes>
+                <exclude>README.txt</exclude>
+            </excludes>
+            <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
@@ -37,6 +38,7 @@
             <includes>
                 <include>3RD_PARTY_LICENSES.txt</include>
             </includes>
+            <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
@@ -48,6 +50,7 @@
             <excludes>
                 <exclude>licenseTable.xml</exclude>
             </excludes>
+            <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
@@ -118,6 +121,11 @@
         <file>
             <outputDirectory>.</outputDirectory>
             <source>${main.basedir}/resource/Release-Notes.txt</source>
+            <fileMode>644</fileMode>
+        </file>
+        <file>
+            <outputDirectory>.</outputDirectory>
+            <source>${project.build.directory}/README.txt</source>
             <fileMode>644</fileMode>
         </file>
     </files>

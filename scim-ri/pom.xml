@@ -33,6 +33,7 @@
         <ds.bindpw>password</ds.bindpw>
         <main.basedir>${project.basedir}/..</main.basedir>
         <messages.dir>${project.build.genSourceDirectory}/messages</messages.dir>
+        <scimsdk.version>1.7.1</scimsdk.version>
     </properties>
 
     <build>
@@ -155,6 +156,32 @@
                 <configuration>
                     <!-- We don't want to publish this to the Engineering Repo. -->
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <file>${project.basedir}/src/main/assemblies/README.txt</file>
+                    <outputFile>
+                        ${project.build.directory}/README.txt
+                    </outputFile>
+                    <regex>false</regex>
+                    <replacements>
+                        <replacement>
+                            <token>$SCIMSDK_VERSION$</token>
+                            <value>${scimsdk.version}</value>
+                        </replacement>
+                    </replacements>
                 </configuration>
             </plugin>
         </plugins>
