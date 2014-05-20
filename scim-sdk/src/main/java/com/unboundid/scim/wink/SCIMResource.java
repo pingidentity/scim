@@ -479,18 +479,95 @@ public class SCIMResource extends AbstractSCIMResource
   @Path("{userID}.json")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  public Response doDotJsonPut(final InputStream inputStream,
-                               @PathParam("endpoint") final String endpoint,
-                               @PathParam("userID") final String userID,
-                               @Context final HttpServletRequest request,
-                               @Context final SecurityContext securityContext,
-                               @Context final HttpHeaders headers,
-                               @Context final UriInfo uriInfo)
+  public Response doJsonDotJsonPut(final InputStream inputStream,
+                                   @PathParam("endpoint") final String endpoint,
+                                   @PathParam("userID") final String userID,
+                                   @Context final HttpServletRequest request,
+                                   @Context final SecurityContext
+                                       securityContext,
+                                   @Context final HttpHeaders headers,
+                                   @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
         new RequestContext(request, securityContext, headers, uriInfo,
                            MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_JSON_TYPE);
+    return putUser(requestContext,
+        endpoint,
+        userID,
+        inputStream);
+  }
+
+
+
+  /**
+   * Implement the PUT operation consuming XML and where the URL specifies
+   * producing JSON format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param userID           The target user ID.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PUT
+  @Path("{userID}.json")
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doXmlDotJsonPut(final InputStream inputStream,
+                                  @PathParam("endpoint") final String endpoint,
+                                  @PathParam("userID") final String userID,
+                                  @Context final HttpServletRequest request,
+                                  @Context final SecurityContext
+                                      securityContext,
+                                  @Context final HttpHeaders headers,
+                                  @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+        new RequestContext(request, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return putUser(requestContext,
+        endpoint,
+        userID,
+        inputStream);
+  }
+
+
+
+  /**
+   * Implement the PUT operation where the URL specifies XML format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param userID           The target user ID.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PUT
+  @Path("{userID}.xml")
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_XML)
+  public Response doXmlDotXmlPut(final InputStream inputStream,
+                                 @PathParam("endpoint") final String endpoint,
+                                 @PathParam("userID") final String userID,
+                                 @Context final HttpServletRequest request,
+                                 @Context final SecurityContext securityContext,
+                                 @Context final HttpHeaders headers,
+                                 @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+        new RequestContext(request, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_XML_TYPE);
     return putUser(requestContext,
                    endpoint,
                    userID,
@@ -514,19 +591,20 @@ public class SCIMResource extends AbstractSCIMResource
    */
   @PUT
   @Path("{userID}.xml")
-  @Consumes(MediaType.APPLICATION_XML)
+  @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_XML)
-  public Response doDotXmlPut(final InputStream inputStream,
-                              @PathParam("endpoint") final String endpoint,
-                              @PathParam("userID") final String userID,
-                              @Context final HttpServletRequest request,
-                              @Context final SecurityContext securityContext,
-                              @Context final HttpHeaders headers,
-                              @Context final UriInfo uriInfo)
+  public Response doJsonDotXmlPut(final InputStream inputStream,
+                                  @PathParam("endpoint") final String endpoint,
+                                  @PathParam("userID") final String userID,
+                                  @Context final HttpServletRequest request,
+                                  @Context final SecurityContext
+                                      securityContext,
+                                  @Context final HttpHeaders headers,
+                                  @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
         new RequestContext(request, securityContext, headers, uriInfo,
-                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE,
                            MediaType.APPLICATION_XML_TYPE);
     return putUser(requestContext,
                    endpoint,
@@ -768,6 +846,149 @@ public class SCIMResource extends AbstractSCIMResource
                                 @Context final SecurityContext securityContext,
                                 @Context final HttpHeaders headers,
                                 @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(request, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_JSON_TYPE,
+                    MediaType.APPLICATION_XML_TYPE);
+    return patchUser(requestContext, endpoint, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming and producing JSON format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param userID           The target user ID.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}.json")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doJsonDotJsonPatch(final InputStream inputStream,
+                                    @PathParam("endpoint") final String
+                                        endpoint,
+                                    @PathParam("userID") final String userID,
+                                    @Context final HttpServletRequest request,
+                                    @Context final SecurityContext
+                                        securityContext,
+                                    @Context final HttpHeaders headers,
+                                    @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(request, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_JSON_TYPE,
+                    MediaType.APPLICATION_JSON_TYPE);
+    return patchUser(requestContext, endpoint, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming and producing XML format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param userID           The target user ID.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}.xml")
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_XML)
+  public Response doXmlDotXmlPatch(final InputStream inputStream,
+                                  @PathParam("endpoint") final String endpoint,
+                                  @PathParam("userID") final String userID,
+                                  @Context final HttpServletRequest request,
+                                  @Context final SecurityContext
+                                      securityContext,
+                                  @Context final HttpHeaders headers,
+                                  @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(request, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_XML_TYPE,
+                    MediaType.APPLICATION_XML_TYPE);
+    return patchUser(requestContext, endpoint, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming XML format and producing JSON
+   * format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param userID           The target user ID.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}.json")
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doXmlDotJsonPatch(final InputStream inputStream,
+                                   @PathParam("endpoint") final String endpoint,
+                                   @PathParam("userID") final String userID,
+                                   @Context final HttpServletRequest request,
+                                   @Context final SecurityContext
+                                       securityContext,
+                                   @Context final HttpHeaders headers,
+                                   @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+           new RequestContext(request, securityContext, headers, uriInfo,
+                    MediaType.APPLICATION_XML_TYPE,
+                    MediaType.APPLICATION_JSON_TYPE);
+    return patchUser(requestContext, endpoint, userID, inputStream);
+  }
+
+
+
+  /**
+   * Implement the PATCH operation consuming JSON format and producing XML
+   * format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param userID           The target user ID.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @PATCH
+  @Path("{userID}.xml")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_XML)
+  public Response doJsonDotXmlPatch(final InputStream inputStream,
+                                   @PathParam("endpoint") final String endpoint,
+                                   @PathParam("userID") final String userID,
+                                   @Context final HttpServletRequest request,
+                                   @Context final SecurityContext
+                                       securityContext,
+                                   @Context final HttpHeaders headers,
+                                   @Context final UriInfo uriInfo)
   {
     final RequestContext requestContext =
            new RequestContext(request, securityContext, headers, uriInfo,

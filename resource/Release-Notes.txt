@@ -8,7 +8,7 @@ https://www.unboundid.com/resources/scim
   * Release Date: TBD
 
   * This release introduces significant changes to the behavior and APIs such
-    that upgrading may cause compatibilities issues with existing applications.
+    that upgrading may cause compatibility issues with existing applications.
 
   * New Features
 
@@ -27,6 +27,9 @@ https://www.unboundid.com/resources/scim
       on the groups attribute is only supported when the derived attribute
       argument "haveIsMemberOf" is set to "true".
 
+    - Support for using URL suffix (ie. .json or .xml) to specify the desired
+      response data format instead of using the HTTP Accept Header.
+
   * Resolved Issues
 
     - Fixed issue where the number of resources returned from a query maybe less
@@ -38,6 +41,9 @@ https://www.unboundid.com/resources/scim
 
     - Use Apache HttpClient by default when creating a SCIMService without a
       explicitly specifying a ClientConfig.
+
+    - Fixed issue where POST and PATCH operations using a URL suffix results
+      in 405 (Method Not Allowed).
 
 ---------- SCIM 1.6.2 ----------
 

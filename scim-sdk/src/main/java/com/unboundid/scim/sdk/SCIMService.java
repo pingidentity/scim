@@ -48,6 +48,7 @@ public class SCIMService
   private MediaType contentType = MediaType.APPLICATION_JSON_TYPE;
   private final boolean[] overrides = new boolean[3];
   private String userAgent;
+  private boolean useUrlSuffix;
 
   /**
    * Constructs a new SCIMService that is configured from the provided
@@ -401,6 +402,31 @@ public class SCIMService
    */
   public void setOverridePut(final boolean overridePut) {
     this.overrides[0] = overridePut;
+  }
+
+  /**
+   * Whether to use URL suffix to specify the desired response data format
+   * (ie. .json or .xml) instead of using the HTTP Accept Header.
+   *
+   * @return {@code true} to use URL suffix to specify the desired response
+   *         data format or {@code false} to use the HTTP Accept Header.
+   */
+  public boolean isUseUrlSuffix()
+  {
+    return useUrlSuffix;
+  }
+
+  /**
+   * Sets whether to use URL suffix to specify the desired response data format
+   * (ie. .json or .xml) instead of using the HTTP Accept Header.
+   *
+   * @param useUrlSuffix {@code true} to use URL suffix to specify the desired
+   *                     response data format or {@code false} to use the HTTP
+   *                     Accept Header.
+   */
+  public void setUseUrlSuffix(final boolean useUrlSuffix)
+  {
+    this.useUrlSuffix = useUrlSuffix;
   }
 
   /**

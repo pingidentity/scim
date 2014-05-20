@@ -55,6 +55,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +79,7 @@ public class SCIMEndpoint<R extends BaseResource>
   private final MediaType acceptType;
   private final boolean[] overrides = new boolean[3];
   private final RestClient client;
+  private final boolean useUrlSuffix;
 
 
   /**
@@ -103,6 +105,7 @@ public class SCIMEndpoint<R extends BaseResource>
     this.overrides[0] = scimService.isOverridePut();
     this.overrides[1] = scimService.isOverridePatch();
     this.overrides[2] = scimService.isOverrideDelete();
+    this.useUrlSuffix = scimService.isUseUrlSuffix();
 
     if (scimService.getContentType().equals(MediaType.APPLICATION_JSON_TYPE))
     {
@@ -180,8 +183,12 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
     URI uri = uriBuilder.build();
-    org.apache.wink.client.Resource clientResource = client.resource(uri);
-    clientResource.accept(acceptType);
+    org.apache.wink.client.Resource clientResource =
+        client.resource(completeUri(uri));
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
 
@@ -297,8 +304,12 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).build();
-    org.apache.wink.client.Resource clientResource = client.resource(uri);
-    clientResource.accept(acceptType);
+    org.apache.wink.client.Resource clientResource =
+        client.resource(completeUri(uri));
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
     if(scimService.getUserAgent() != null)
@@ -392,8 +403,12 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).build();
-    org.apache.wink.client.Resource clientResource = client.resource(uri);
-    clientResource.accept(acceptType);
+    org.apache.wink.client.Resource clientResource =
+        client.resource(completeUri(uri));
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
     if(scimService.getUserAgent() != null)
@@ -527,8 +542,12 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).path(id).build();
-    org.apache.wink.client.Resource clientResource = client.resource(uri);
-    clientResource.accept(acceptType);
+    org.apache.wink.client.Resource clientResource =
+        client.resource(completeUri(uri));
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
     if(scimService.getUserAgent() != null)
@@ -666,8 +685,12 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
             UriBuilder.fromUri(scimService.getBaseURL()).path(
                     resourceDescriptor.getEndpoint()).path(id).build();
-    org.apache.wink.client.Resource clientResource = client.resource(uri);
-    clientResource.accept(acceptType);
+    org.apache.wink.client.Resource clientResource =
+        client.resource(completeUri(uri));
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
     clientResource.contentType(contentType);
     addAttributesQuery(clientResource, requestedAttributes);
 
@@ -832,8 +855,12 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).path(id).build();
-    org.apache.wink.client.Resource clientResource = client.resource(uri);
-    clientResource.accept(acceptType);
+    org.apache.wink.client.Resource clientResource =
+        client.resource(completeUri(uri));
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
     clientResource.contentType(contentType);
     if(scimService.getUserAgent() != null)
     {
@@ -1027,6 +1054,36 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
     return scimException;
+  }
+
+  /**
+   * Returns the complete resource URI by appending the suffix if necessary.
+   *
+   * @param uri The URI to complete.
+   * @return The completed URI.
+   */
+  private URI completeUri(final URI uri)
+  {
+    URI completedUri = uri;
+    if(useUrlSuffix)
+    {
+      try
+      {
+      if(acceptType == MediaType.APPLICATION_JSON_TYPE)
+      {
+        completedUri = new URI(uri.toString() + ".json");
+      }
+      else if(acceptType == MediaType.APPLICATION_XML_TYPE)
+      {
+        completedUri = new URI(uri.toString() + ".xml");
+      }
+      }
+      catch(URISyntaxException e)
+      {
+        throw new RuntimeException(e);
+      }
+    }
+    return completedUri;
   }
 
   /**

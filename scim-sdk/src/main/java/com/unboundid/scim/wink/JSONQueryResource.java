@@ -20,7 +20,9 @@ package com.unboundid.scim.wink;
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -31,6 +33,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
+
+import java.io.InputStream;
 
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_BASE_ID;
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_FILTER;
@@ -120,4 +124,67 @@ public class JSONQueryResource extends AbstractSCIMResource
 
 
 
+  /**
+   * Implement the POST operation consuming and producing JSON format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doJsonDotJsonPost(final InputStream inputStream,
+                                    @PathParam("endpoint") final String
+                                        endpoint,
+                                    @Context final HttpServletRequest request,
+                                    @Context final SecurityContext
+                                        securityContext,
+                                    @Context final HttpHeaders headers,
+                                    @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+        new RequestContext(request, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_JSON_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return postUser(requestContext, endpoint, inputStream);
+  }
+
+
+
+  /**
+   * Implement the POST operation consuming XML and producing JSON format.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @POST
+  @Consumes(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doXmlDotJsonPost(final InputStream inputStream,
+                                    @PathParam("endpoint") final String
+                                        endpoint,
+                                    @Context final HttpServletRequest request,
+                                    @Context final SecurityContext
+                                        securityContext,
+                                    @Context final HttpHeaders headers,
+                                    @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+        new RequestContext(request, securityContext, headers, uriInfo,
+                           MediaType.APPLICATION_XML_TYPE,
+                           MediaType.APPLICATION_JSON_TYPE);
+    return postUser(requestContext, endpoint, inputStream);
+  }
 }
