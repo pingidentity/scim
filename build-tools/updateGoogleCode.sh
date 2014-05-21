@@ -11,7 +11,7 @@
 #
 function do_merge()
 {
-  svn merge -c $1 $COMMON_UNBOUNDID_OPTS $2 $3
+  svn merge --accept mine-full -c $1 $COMMON_UNBOUNDID_OPTS $2 $3
   if [ $? -ne 0 ]
   then
     echo "Failed to merge change $1 at $2 into $3"
