@@ -102,6 +102,13 @@ do
 
     #Handle SCIM-RI
     do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
+    if [[ "$IDX" = "3546" ]]
+    then
+      echo patch -d. -p0 scim-sdk/src/main/assemblies/zip.xml ../r3546-sdk.patch
+      patch -d. -p0 scim-sdk/src/main/assemblies/zip.xml ../r3546-sdk.patch
+      echo patch -d. -p0 scim-ri/src/main/assemblies/zip.xml ../r3546-ri.patch
+      patch -d. -p0 scim-ri/src/main/assemblies/zip.xml ../r3546-ri.patch
+    fi
 
     #Turn off command checking
     set +e
