@@ -59,6 +59,15 @@
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
+            <outputDirectory>docs/getting-started</outputDirectory>
+            <directory>${project.build.directory}/docs/getting-started</directory>
+            <includes>
+                <include>*.html</include>
+            </includes>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </fileSet>
+        <fileSet>
             <outputDirectory>docs/getting-started/resources</outputDirectory>
             <directory>${main.basedir}/resource</directory>
             <includes>
@@ -79,11 +88,6 @@
         <file>
             <outputDirectory>.</outputDirectory>
             <source>${main.basedir}/resource/Release-Notes.txt</source>
-            <fileMode>644</fileMode>
-        </file>
-        <file>
-            <outputDirectory>docs/getting-started</outputDirectory>
-            <source>${project.build.directory}/docs/getting-started/index.html</source>
             <fileMode>644</fileMode>
         </file>
     </files>

@@ -102,12 +102,10 @@ do
 
     #Handle SCIM-RI
     do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
-    if [[ "$IDX" = "3546" ]]
+    if [[ "$IDX" = "3555" ]]
     then
-      echo patch -d. -p0 scim-sdk/src/main/assemblies/zip.xml ../r3546-sdk.patch
-      patch -d. -p0 scim-sdk/src/main/assemblies/zip.xml ../r3546-sdk.patch
-      echo patch -d. -p0 scim-ri/src/main/assemblies/zip.xml ../r3546-ri.patch
-      patch -d. -p0 scim-ri/src/main/assemblies/zip.xml ../r3546-ri.patch
+      ## Fix checkstyle problems in r3555 with r3562 fixes
+      do_merge 3562 https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
     fi
 
     #Turn off command checking
