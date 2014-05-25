@@ -102,11 +102,6 @@ do
 
     #Handle SCIM-RI
     do_merge $IDX https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
-    if [[ "$IDX" = "3555" ]]
-    then
-      ## Fix checkstyle problems in r3555 with r3562 fixes
-      do_merge 3562 https://svn.unboundid.lab/components/scim/trunk/scim-ri/src scim-ri/src
-    fi
 
     #Turn off command checking
     set +e
