@@ -5,7 +5,7 @@ https://www.unboundid.com/resources/scim
 
 ---------- SCIM 1.7.1 ----------
 
-  * Release Date: TBD
+  * Release Date: June 6th, 2014
 
   * This release introduces significant changes to the behavior and APIs such
     that upgrading may cause compatibility issues with existing applications.
