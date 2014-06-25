@@ -36,7 +36,6 @@ import org.apache.http.UnsupportedHttpVersionException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.RedirectException;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientConfigException;
 import org.apache.wink.client.ClientResponse;
@@ -53,7 +52,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -880,22 +879,32 @@ public class SCIMEndpoint<R extends BaseResource>
       {
         clientResource.header("X-HTTP-Method-Override", "DELETE");
         response = clientResource.post(null);
-      }
-      else
+      } else
       {
         response = clientResource.delete();
       }
-
-      entity = response.getEntity(InputStream.class);
-
       if(response.getStatusType() != Response.Status.OK)
       {
+        entity = response.getEntity(InputStream.class);
         throw createErrorResponseException(response, entity);
+      }
+      else
+      {
+        response.consumeContent();
       }
     }
     catch(SCIMException e)
     {
       throw e;
+    }
+    catch(ClientRuntimeException cre)
+    {
+      // Treat SocketTimeoutException like HTTP 100
+      Throwable rootCause = StaticUtils.getRootCause(cre);
+      if (rootCause == null || !(rootCause instanceof SocketTimeoutException))
+      {
+        throw cre;
+      }
     }
     catch(Exception e)
     {
@@ -1134,15 +1143,7 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     else if(rootCause instanceof IOException)
     {
-      if(rootCause instanceof ConnectException)
-      {
-        return -1;
-      }
-      else if(rootCause instanceof ConnectTimeoutException)
-      {
-        return -1;
-      }
-      else if(rootCause instanceof NoHttpResponseException)
+      if(rootCause instanceof NoHttpResponseException)
       {
         return 503;
       }
