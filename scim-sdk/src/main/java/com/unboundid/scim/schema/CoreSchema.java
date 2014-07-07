@@ -79,7 +79,7 @@ public class CoreSchema
           "attribute", AttributeDescriptor.DataType.STRING,
           "The names of the attributes to remove from the Resource during a " +
               "PATCH operation",
-          SCIMConstants.SCHEMA_URI_CORE, true, false, false, false,
+          SCIMConstants.SCHEMA_URI_CORE, false, false, false,
           AttributeDescriptor.createSubAttribute("value",
             AttributeDescriptor.DataType.STRING,
             "The attribute's significant value",
@@ -628,7 +628,7 @@ public class CoreSchema
       AttributeDescriptor.newAttribute("subAttributes",
           "subAttribute", AttributeDescriptor.DataType.COMPLEX,
           "A list specifying the contained attributes",
-          SCIMConstants.SCHEMA_URI_CORE, true, true, false,
+          SCIMConstants.SCHEMA_URI_CORE, true, false,
           false, ATTRIBUTES_NAME, ATTRIBUTES_TYPE, ATTRIBUTES_MULTIVALUED,
           ATTRIBUTES_MULTIVALUED_CHILD_NAME, ATTRIBUTES_DESCRIPTION,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT,
@@ -639,7 +639,7 @@ public class CoreSchema
           "attribute", AttributeDescriptor.DataType.COMPLEX,
           "A complex type that specifies the set of associated " +
               "Resource attributes", SCIMConstants.SCHEMA_URI_CORE,
-          true, true, true, false, ATTRIBUTES_NAME, ATTRIBUTES_TYPE,
+          true, true, false, ATTRIBUTES_NAME, ATTRIBUTES_TYPE,
           ATTRIBUTES_MULTIVALUED, ATTRIBUTES_MULTIVALUED_CHILD_NAME,
           ATTRIBUTES_DESCRIPTION, ATTRIBUTES_SCHEMA,
           ATTRIBUTES_READ_ONLY, ATTRIBUTES_REQUIRED, ATTRIBUTES_CASE_EXACT,

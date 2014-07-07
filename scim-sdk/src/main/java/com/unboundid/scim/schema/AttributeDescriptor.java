@@ -729,8 +729,8 @@ public final class AttributeDescriptor {
         }
       }
     }
-    return newAttribute(name, null, dataType, description, schema, false,
-        readOnly, required, caseExact, subAttributes);
+    return newAttribute(name, null, dataType, description, schema, readOnly,
+        required, caseExact, subAttributes);
   }
 
   /**
@@ -768,7 +768,7 @@ public final class AttributeDescriptor {
       }
     }
     return newAttribute(name, multiValuedChildName, DataType.COMPLEX,
-        description, schema, true, readOnly, required, caseExact,
+        description, schema, readOnly, required, caseExact,
         subAttributes);
   }
 
@@ -781,7 +781,6 @@ public final class AttributeDescriptor {
    * @param dataType             The attribute's data type.
    * @param description          The attribute's human readable description.
    * @param schema               The attribute's associated schema.
-   * @param multiValued          Whether the attribute is multiValued.
    * @param readOnly             Whether the attribute is mutable.
    * @param required             Whether the attribute is required.
    * @param caseExact            Whether the string attribute is case sensitive.
@@ -792,15 +791,15 @@ public final class AttributeDescriptor {
   static AttributeDescriptor newAttribute(
       final String name, final String multiValuedChildName,
       final DataType dataType, final String description, final String schema,
-      final boolean multiValued, final boolean readOnly, final boolean required,
-      final boolean caseExact, final AttributeDescriptor... subAttributes)
+      final boolean readOnly, final boolean required, final boolean caseExact,
+      final AttributeDescriptor... subAttributes)
   {
     Collection<AttributeDescriptor> subAttrs = null;
     if (subAttributes != null)
     {
       subAttrs = Arrays.asList(subAttributes);
     }
-    return new AttributeDescriptor(name, dataType, multiValued,
+    return new AttributeDescriptor(name, dataType, multiValuedChildName != null,
         multiValuedChildName, description, schema, readOnly, required,
         caseExact, null, subAttrs);
   }
