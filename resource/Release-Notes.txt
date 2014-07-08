@@ -3,6 +3,16 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.7.2 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+    - Fixed issue where where using
+      AttributeDescriptor.createMultiValuedAttribute with a null
+      multiValuedChildName will create a single valued attribute instead.
+
 ---------- SCIM 1.7.1 ----------
 
   * Release Date: June 6th, 2014
