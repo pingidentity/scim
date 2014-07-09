@@ -81,6 +81,38 @@ public class SimpleValue
 
 
   /**
+   * Create a simple integer value.
+   *
+   * @param longValue The integer value, as a Long.
+   */
+  public SimpleValue(final Long longValue)
+  {
+    this.value = longValue.toString();
+  }
+
+
+  /**
+   * Create a simple integer value.
+   *
+   * @param intValue the integer value.
+   */
+  public SimpleValue(final Integer intValue)
+  {
+    this.value = intValue.toString();
+  }
+
+  /**
+   * Create a simple decimal value.
+   *
+   * @param doubleValue The decimal value, as a Double.
+   */
+  public SimpleValue(final Double doubleValue)
+  {
+    this.value = doubleValue.toString();
+  }
+
+
+  /**
    * Create a simple binary value.
    *
    * @param bytes  The binary value.

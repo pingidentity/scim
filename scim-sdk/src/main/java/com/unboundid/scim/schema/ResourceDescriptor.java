@@ -146,6 +146,25 @@ public class ResourceDescriptor extends BaseResource
   }
 
   /**
+   * Retrieves the attribute descriptor for a specified attribute, if the
+   * attribute name is defined.  Similar to <code>getAttribute</code> but
+   * returns null rather than throwing an exception if the attribute is
+   * not defined.
+   * @param schema The attribute descriptor's associated schema URI.
+   * @param name The name of the attribute whose descriptor is to be retrieved.
+   * @return The attribute descriptor for the specified attribute, or null
+   * if the attribute is not defined on the resource.
+   */
+  public AttributeDescriptor findAttribute(final String schema,
+                                           final String name)
+  {
+    initAttributesCache();
+    Map<String, AttributeDescriptor> map =
+        attributesCache.get(toLowerCase(schema));
+    return (map == null) ? null : map.get(toLowerCase(name));
+  }
+
+  /**
    * Retrieves all the attribute descriptors of the provided schema defined
    * in the resource.
    *
@@ -226,6 +245,7 @@ public class ResourceDescriptor extends BaseResource
     // If no preferred schema was found then just return the first from the list
     return matchingSchemas.iterator().next();
   }
+
 
   /**
    * Retrieve the name of the resource to be used in any external representation

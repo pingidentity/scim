@@ -119,6 +119,47 @@ public class SCIMService
         resourceFactory);
   }
 
+
+  /**
+   * Returns a SCIMEndpoint for the specified endpoint.
+   *
+   * @param endpointPath SCIM endpoint relative path, e.g. "Users".
+   * @return SCIMEndpoint that can be used to invoke CRUD operations.
+   * @throws SCIMException for an invalid endpoint path
+   */
+  public SCIMEndpoint<BaseResource> getEndpoint(
+      final String endpointPath) throws SCIMException
+  {
+    return getEndpoint(endpointPath, BaseResource.BASE_RESOURCE_FACTORY);
+  }
+
+
+  /**
+   * Returns a SCIMEndpoint for the specified endpoint.
+   *
+   * @param endpointPath SCIM endpoint relative path, e.g. "Users".
+   * @param resourceFactory The ResourceFactory that should be used to
+   *                        create SCIM resource instances.
+   * @param <R> the type of SCIM resource instances.
+   * @return SCIMEndpoint that can be used to invoke CRUD operations.
+   * @throws SCIMException for an invalid endpoint path.
+   */
+  public <R extends BaseResource> SCIMEndpoint<R> getEndpoint(
+      final String endpointPath,
+      final ResourceFactory<R> resourceFactory)
+      throws SCIMException
+  {
+    ResourceDescriptor descriptor =
+        getResourceDescriptorForEndpoint(endpointPath);
+    if (descriptor == null) {
+      throw new ResourceNotFoundException(
+          "No schema found for endpoint " + endpointPath);
+    }
+    return getEndpoint(descriptor, resourceFactory);
+  }
+
+
+
   /**
    * Returns a SCIMEndpoint for the Users endpoint defined in the core schema.
    *
@@ -202,7 +243,48 @@ public class SCIMService
     return descriptor;
   }
 
+  /**
+   * Retrieves the ResourceDescriptor for the specified endpoint from the
+   * SCIM service provider.
+   *
+   * @param endpoint The name of the SCIM endpoint, e.g. "Users".
+   * @return The ResourceDescriptor for the specified endpoint or
+   *         <code>null</code> if none are found.
+   * @throws SCIMException If the ResourceDescriptor could not be read.
+   */
+  public ResourceDescriptor getResourceDescriptorForEndpoint(
+      final String endpoint)
+      throws SCIMException
+  {
+    final SCIMEndpoint<ResourceDescriptor> schemaEndpoint =
+        getResourceSchemaEndpoint();
+    String filter = "endpoint eq \"" + endpoint + "\"";
 
+    final Resources<ResourceDescriptor> resources =
+        schemaEndpoint.query(filter);
+    if(resources.getTotalResults() == 0)
+    {
+      return null;
+    }
+    if(resources.getTotalResults() > 1)
+    {
+      throw new InvalidResourceException(
+          "The service provider returned multiple resource descriptors " +
+              "for endpoint '" + endpoint);
+    }
+
+    ResourceDescriptor descriptor = resources.iterator().next();
+    if ("urn:unboundid:schemas:scim:ldap:1.0".equalsIgnoreCase(
+        descriptor.getSchema()))
+    {
+      //This is a convenience for when we're talking to the UnboundID Directory
+      //REST API; clients could set this themselves, but we'll do it for them
+      //in this case.
+      descriptor.setStrictMode(false);
+    }
+
+    return descriptor;
+  }
 
   /**
    * Retrieves the Service Provider Config from the SCIM service provider.

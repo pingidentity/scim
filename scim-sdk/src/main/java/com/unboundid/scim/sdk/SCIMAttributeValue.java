@@ -118,6 +118,19 @@ public abstract class SCIMAttributeValue
     return new SimpleSCIMAttributeValue(new SimpleValue(value));
   }
 
+
+  /**
+   * Create a new simple attribute value.
+   * @param simpleValue  The SimpleValue attribute value.
+   * @return  The new Simple attribute.
+   */
+  public static SCIMAttributeValue createSimpleValue(
+      final SimpleValue simpleValue)
+  {
+    return new SimpleSCIMAttributeValue(simpleValue);
+  }
+
+
   /**
    * Retrieves the value of a sub-attribute.
    *
@@ -248,7 +261,7 @@ public abstract class SCIMAttributeValue
    * @return  The simple value, or {@code null} if the attribute value is
    * complex.
    */
-  abstract SimpleValue getValue();
+  public abstract SimpleValue getValue();
 
 
 

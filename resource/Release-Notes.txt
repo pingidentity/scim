@@ -3,9 +3,28 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.7.2 ----------
+---------- SCIM 1.8.0 ----------
 
   * Release Date: TBD
+
+  * This release introduces several new ease-of-use enhancements, particularly
+    for retrieving and setting attributes of resources described by custom
+    schemas (schemas other than the standard SCIM User and Group).
+
+  * New Features
+
+    - Added a new getEndpoint overload to the SCIMService class that bypasses
+      the need to obtain a ResourceDescriptor from the schema endpoint.
+
+    - Added a new ComplexValue type that models arbitrary complex attributes
+      as a Map of sub-attribute name to SimpleValue.  This provides a
+      lower-effort alternative for supporting custom complex attributes, as
+      it does not require writing custom Java beans, Attribute Value Resolvers,
+      or creating BaseResource sub-classes.
+
+    - Added several new APIs to the BaseResource class that utilize the
+      ComplexValue and SimpleValue types to offer a simpler way to set and
+      retrieve resource attributes.
 
   * Resolved Issues
 

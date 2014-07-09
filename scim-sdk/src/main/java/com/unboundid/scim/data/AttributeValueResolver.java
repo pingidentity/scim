@@ -17,11 +17,17 @@
 
 package com.unboundid.scim.data;
 
+import com.unboundid.scim.sdk.ComplexValue;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
+import com.unboundid.scim.sdk.SimpleValue;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Used to resolve SCIM attribute values to Java instances.
@@ -192,4 +198,56 @@ public abstract class AttributeValueResolver<T>
       };
 
 
+  /**
+   * A default <code>AttributeValueResolver</code> for complex SCIM attribute
+   * values. Resolves to/from a <code>ComplexValue</code> instance.
+   */
+  public static final AttributeValueResolver<ComplexValue>
+      COMPLEX_RESOLVER = new AttributeValueResolver<ComplexValue>() {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public ComplexValue toInstance(
+            final SCIMAttributeValue value) {
+
+          ComplexValue complex = new ComplexValue();
+          for (Map.Entry<String,SCIMAttribute> subEntry :
+              value.getAttributes().entrySet())
+          {
+            String subAttrName = subEntry.getKey();
+            SCIMAttribute subAttribute = subEntry.getValue();
+            complex.put(subAttrName, subAttribute.getValue().getValue());
+          }
+          return complex;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SCIMAttributeValue fromInstance(
+            final AttributeDescriptor attributeDescriptor,
+            final ComplexValue complex)
+            throws InvalidResourceException {
+
+          List<SCIMAttribute> subAttributes = new ArrayList<SCIMAttribute>();
+
+          for (Map.Entry<String,SimpleValue> subEntry :
+              complex.entrySet())
+          {
+            String subAttrName = subEntry.getKey();
+            SimpleValue subAttrValue = subEntry.getValue();
+
+            AttributeDescriptor subDescriptor =
+                attributeDescriptor.getSubAttribute(subAttrName);
+
+            subAttributes.add(SCIMAttribute.create(subDescriptor,
+                SCIMAttributeValue.createSimpleValue(subAttrValue)));
+          }
+
+          return SCIMAttributeValue.createComplexValue(subAttributes);
+        }
+      };
 }
