@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <properties>
-      <scimsdk.version>1.7.1</scimsdk.version>
+      <scimsdk.version>1.8.0</scimsdk.version>
     </properties>
 
     <name>UnboundID SCIM SDK</name>
