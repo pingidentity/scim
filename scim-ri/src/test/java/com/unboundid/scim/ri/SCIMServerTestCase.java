@@ -30,6 +30,7 @@ import com.unboundid.scim.data.AuthenticationScheme;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.data.Manager;
+import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
@@ -1399,12 +1400,37 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     // Try to put the user with a missing required attribute
     beforeCount =
         getStatsForResource("User").getStat(ResourceStats.PUT_BAD_REQUEST);
+    final String saveUserName = returnedUser.getUserName();
     returnedUser.setUserName(null);
     try
     {
       userEndpoint.update(returnedUser);
       fail("Expected a 400 response when trying to create user with " +
           "missing required attr");
+    }
+    catch (InvalidResourceException e)
+    {
+      // expected (error code is 400)
+    }
+    afterCount =
+        getStatsForResource("User").getStat(ResourceStats.PUT_BAD_REQUEST);
+    assertEquals(beforeCount, afterCount - 1);
+    returnedUser.setUserName(saveUserName);
+
+    // Try to put the user with a new read-only attribute
+    beforeCount =
+      getStatsForResource("User").getStat(ResourceStats.PUT_BAD_REQUEST);
+    Collection<com.unboundid.scim.data.Entry<String>> groups =
+      new HashSet<com.unboundid.scim.data.Entry<String>>(1);
+    groups.add(
+      new com.unboundid.scim.data.Entry<String>("managers", "work", true)
+    );
+    returnedUser.setGroups(groups);
+    try
+    {
+      userEndpoint.update(returnedUser.getId(), null, returnedUser);
+      fail("Expected a 400 response when trying to modify user by adding " +
+        "a read only attribute");
     }
     catch (InvalidResourceException e)
     {
@@ -1479,9 +1505,34 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     targetUser.setSingularAttributeValue(
         SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "employeeNumber",
         AttributeValueResolver.STRING_RESOLVER, "456");
+    final Meta savedMeta = targetUser.getMeta();
+    targetUser.setMeta(new Meta(null, null, null, null));
 
     //Generate the diff
     Diff<UserResource> diff = Diff.generate(sourceUser, targetUser);
+
+    try
+    {
+      userEndpoint.update(sourceUser, diff.getAttributesToUpdate(),
+        diff.getAttributesToDelete());
+      // TODO: Revisit when DS-11132 is resolved.
+      //fail("Expected 400 response when trying to patch a user by deleting " +
+      //     "read only meta attributes");
+    }
+    catch (InvalidResourceException e)
+    {
+      //expected
+    }
+    finally
+    {
+      sourceUser = getUser("testModifyWithPut");
+    }
+
+    //Regenerate diff
+    targetUser.setMeta(savedMeta);
+    diff = Diff.generate(sourceUser, targetUser);
+    assertTrue(diff.getAttributesToDelete().isEmpty(),
+      "Unexpected attributes in patch delete.");
 
     //Mark the start and end time with a 500ms buffer on either side, because
     //the Directory Server will record the actual modifyTimestamp using the
