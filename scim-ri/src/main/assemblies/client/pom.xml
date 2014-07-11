@@ -25,7 +25,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
-        <scimsdk.version>1.7.1</scimsdk.version>
+        <scimsdk.version>1.8.0</scimsdk.version>
     </properties>
 
     <inceptionYear>2011</inceptionYear>
