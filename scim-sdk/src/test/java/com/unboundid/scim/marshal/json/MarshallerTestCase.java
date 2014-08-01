@@ -31,6 +31,7 @@ import com.unboundid.scim.SCIMTestCase;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -115,6 +116,10 @@ public class MarshallerTestCase
     final Marshaller marshaller = new JsonMarshaller();
     marshaller.marshal(user1, outputStream);
     outputStream.close();
+
+    String marshaledResource = outputStream.toString();
+    assertTrue(marshaledResource.contains("\"schemas\":["));
+
     InputStream inputStream =
         new ByteArrayInputStream(outputStream.toByteArray());
     final Unmarshaller unmarshaller = new JsonUnmarshaller();
@@ -142,5 +147,13 @@ public class MarshallerTestCase
       assertTrue(user2.hasAttribute(SCHEMA_URI_ENTERPRISE_EXTENSION,
                                     attribute));
     }
+
+    // DS-11097: marshall a ResourceDescriptor, should not contain a
+    // "schemas"  property
+    final JsonMarshaller schemaMarshaller = new JsonMarshaller();
+    outputStream = new ByteArrayOutputStream();
+    schemaMarshaller.marshal(CoreSchema.USER_DESCRIPTOR, outputStream);
+    String marshaledDescriptor = outputStream.toString();
+    assertFalse(marshaledDescriptor.contains("\"schemas\":["));
   }
 }

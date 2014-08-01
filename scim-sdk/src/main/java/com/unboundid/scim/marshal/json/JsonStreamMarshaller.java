@@ -36,6 +36,7 @@ package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.marshal.StreamMarshaller;
+import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.Resources;
@@ -121,9 +122,10 @@ public class JsonStreamMarshaller implements StreamMarshaller
   public void marshal(final BaseResource resource)
       throws SCIMException
   {
+    boolean includeSchemas = !(resource instanceof ResourceDescriptor);
     try
     {
-      marshal(resource, true);
+      marshal(resource, includeSchemas);
     }
     catch (JSONException e)
     {
