@@ -77,7 +77,7 @@ public class ResourceDescriptor extends BaseResource
    * attribute name because attribute names are case-insensitive. Likewise,
    * the schema key is lower case because schema URNs are case-insensitive.
    */
-  private Map<String, Map<String, AttributeDescriptor>> attributesCache;
+  private volatile Map<String,Map<String,AttributeDescriptor>> attributesCache;
 
   /**
    * Whether to use "strict mode" when looking up an attribute
@@ -118,10 +118,10 @@ public class ResourceDescriptor extends BaseResource
                                           final String name)
       throws InvalidResourceException
   {
-    initAttributesCache();
+    final Map<String, Map<String, AttributeDescriptor>> attrCache =
+        getAttributesCache();
     AttributeDescriptor attributeDescriptor = null;
-    Map<String, AttributeDescriptor> map =
-        attributesCache.get(toLowerCase(schema));
+    Map<String, AttributeDescriptor> map = attrCache.get(toLowerCase(schema));
     if(map != null)
     {
       attributeDescriptor = map.get(toLowerCase(name));
@@ -158,9 +158,9 @@ public class ResourceDescriptor extends BaseResource
   public AttributeDescriptor findAttribute(final String schema,
                                            final String name)
   {
-    initAttributesCache();
-    Map<String, AttributeDescriptor> map =
-        attributesCache.get(toLowerCase(schema));
+    final Map<String, Map<String, AttributeDescriptor>> attrCache =
+        getAttributesCache();
+    Map<String, AttributeDescriptor> map = attrCache.get(toLowerCase(schema));
     return (map == null) ? null : map.get(toLowerCase(name));
   }
 
@@ -174,9 +174,9 @@ public class ResourceDescriptor extends BaseResource
    */
   public Collection<AttributeDescriptor> getAttributes(final String schema)
   {
-    initAttributesCache();
-    Map<String, AttributeDescriptor> map =
-        attributesCache.get(toLowerCase(schema));
+    final Map<String, Map<String, AttributeDescriptor>> attrCache =
+        getAttributesCache();
+    Map<String, AttributeDescriptor> map = attrCache.get(toLowerCase(schema));
     if(map != null)
     {
       return map.values();
@@ -193,8 +193,7 @@ public class ResourceDescriptor extends BaseResource
    */
   public Set<String> getAttributeSchemas()
   {
-    initAttributesCache();
-    return attributesCache.keySet();
+    return getAttributesCache().keySet();
   }
 
   /**
@@ -209,11 +208,12 @@ public class ResourceDescriptor extends BaseResource
   public String findAttributeSchema(final String name,
                                     final String... preferredSchemas)
   {
+    final Map<String, Map<String, AttributeDescriptor>> attrCache =
+        getAttributesCache();
     Set<String> matchingSchemas = new HashSet<String>();
     for (String schema : getAttributeSchemas())
     {
-      Map<String, AttributeDescriptor> map =
-              attributesCache.get(toLowerCase(schema));
+      Map<String, AttributeDescriptor> map = attrCache.get(toLowerCase(schema));
       if (map!= null && map.keySet().contains(name))
       {
         matchingSchemas.add(schema);
@@ -337,9 +337,7 @@ public class ResourceDescriptor extends BaseResource
       setAttributeValues(SCIMConstants.SCHEMA_URI_CORE,
           "attributes", AttributeDescriptor.ATTRIBUTE_DESCRIPTOR_RESOLVER,
           attributes);
-      synchronized (this) {
-        attributesCache = null;
-      }
+      attributesCache = null;
     } catch (InvalidResourceException e) {
       // This should never happen as these are core attributes...
       throw new RuntimeException(e);
@@ -439,32 +437,44 @@ public class ResourceDescriptor extends BaseResource
   }
 
   /**
-   * Initializes the attributesCache if needed.
+   * Retrieves the attributesCache, using double-checked locking to avoid
+   * synchronization in the common case where the cache is already initialized.
+   *
+   * @return A snapshot of the attributesCache. The cache is regenerated when
+   *         {@link #setAttributes(java.util.Collection)} is called.
    */
-  private void initAttributesCache()
+  private Map<String, Map<String, AttributeDescriptor>> getAttributesCache()
   {
-    synchronized(this)
+    Map<String, Map<String, AttributeDescriptor>> attrCache = attributesCache;
+    if (attrCache == null)
     {
-      if(attributesCache == null)
+      synchronized (this)
       {
-        attributesCache = new HashMap<String,
-            Map<String, AttributeDescriptor>>();
-        for(AttributeDescriptor attributeDescriptor : getAttributes())
+        attrCache = attributesCache;
+        if (attrCache == null)
         {
-          final String lowerCaseSchema =
-              toLowerCase(attributeDescriptor.getSchema());
-          Map<String, AttributeDescriptor> map =
-              attributesCache.get(lowerCaseSchema);
-          if(map == null)
+          attrCache = new HashMap<String,
+              Map<String, AttributeDescriptor>>();
+          for(AttributeDescriptor attributeDescriptor : getAttributes())
           {
-            map = new HashMap<String, AttributeDescriptor>();
-            attributesCache.put(lowerCaseSchema, map);
+            final String lowerCaseSchema =
+                toLowerCase(attributeDescriptor.getSchema());
+            Map<String, AttributeDescriptor> map =
+                attrCache.get(lowerCaseSchema);
+            if(map == null)
+            {
+              map = new HashMap<String, AttributeDescriptor>();
+              attrCache.put(lowerCaseSchema, map);
+            }
+            map.put(toLowerCase(attributeDescriptor.getName()),
+                    attributeDescriptor);
           }
-          map.put(toLowerCase(attributeDescriptor.getName()),
-                  attributeDescriptor);
+
+          attributesCache = attrCache;
         }
       }
     }
+    return attrCache;
   }
 
   /**
