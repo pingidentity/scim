@@ -19,6 +19,8 @@
         <unboundid.serversdk.version>3.2.1.0</unboundid.serversdk.version>
         <main.basedir>${project.basedir}</main.basedir>
         <ignore.test.failures>false</ignore.test.failures>
+        <scimsdk.version>1.8.0</scimsdk.version>
+        <scimsdk.parent.version>${project.version}</scimsdk.parent.version>
     </properties>
 
     <distributionManagement>

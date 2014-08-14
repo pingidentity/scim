@@ -33,7 +33,6 @@
         <ds.bindpw>password</ds.bindpw>
         <main.basedir>${project.basedir}/..</main.basedir>
         <messages.dir>${project.build.genSourceDirectory}/messages</messages.dir>
-        <scimsdk.version>1.8.0</scimsdk.version>
     </properties>
 
     <build>
