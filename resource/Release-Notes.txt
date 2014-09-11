@@ -5,7 +5,7 @@ https://www.unboundid.com/resources/scim
 
 ---------- SCIM 1.8.0 ----------
 
-  * Release Date: TBD
+  * Release Date: September 11th, 2014
 
   * This release introduces several new ease-of-use enhancements, particularly
     for retrieving and setting attributes of resources described by custom

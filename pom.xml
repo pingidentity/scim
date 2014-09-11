@@ -21,6 +21,7 @@
         <ignore.test.failures>false</ignore.test.failures>
         <scimsdk.version>1.8.0</scimsdk.version>
         <scimsdk.parent.version>${project.version}</scimsdk.parent.version>
+        <ldapsdk.version>2.3.6-se</ldapsdk.version>
     </properties>
 
     <distributionManagement>

@@ -191,7 +191,7 @@
         <dependency>
             <groupId>com.unboundid.product</groupId>
             <artifactId>ldapsdk</artifactId>
-            <version>2.3.6-se</version>
+            <version>${ldapsdk.version}</version>
         </dependency>
         <dependency>
             <groupId>com.unboundid.product.scim</groupId>
