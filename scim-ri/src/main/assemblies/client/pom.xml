@@ -20,11 +20,12 @@
     <artifactId>scim-ri-client</artifactId>
     <packaging>jar</packaging>
     <name>UnboundID SCIM Reference Implementation Client</name>
-    <version>${scimsdk.version}</version>
+    <version>1.8.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
+        <scimsdk.version>1.8.0</scimsdk.version>
     </properties>
 
     <inceptionYear>2011</inceptionYear>

@@ -19,8 +19,12 @@
 
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>${scimsdk.version}</version>
+    <version>1.8.0</version>
     <packaging>jar</packaging>
+
+    <properties>
+      <scimsdk.version>1.8.0</scimsdk.version>
+    </properties>
 
     <name>UnboundID SCIM SDK</name>
 
