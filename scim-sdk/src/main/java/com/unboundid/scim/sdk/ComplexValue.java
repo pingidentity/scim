@@ -26,6 +26,7 @@ import java.util.HashMap;
  */
 public class ComplexValue
     extends HashMap<String,SimpleValue> {
+  private static final long serialVersionUID = -2270345354493263396L;
 
 
   /**
