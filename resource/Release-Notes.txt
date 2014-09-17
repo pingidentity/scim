@@ -3,6 +3,15 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.8.1 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+    - Fixed issue where using PATCH to delete values of a multi-valued attribute
+      defined with an attribute mapping transformation may not always work.
+
 ---------- SCIM 1.8.0 ----------
 
   * Release Date: September 11th, 2014

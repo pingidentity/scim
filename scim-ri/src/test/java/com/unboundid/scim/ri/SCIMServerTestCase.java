@@ -1607,7 +1607,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
         "givenname: Test",
         "sn: User",
         "telephoneNumber: 512-123-4567",
-        "homePhone: 972-987-6543",
+        "homePhone: +1 561 877 3318",
         "mail: testEmail.1@example.com",
         "mail: testEmail.2@example.com",
         "displayName: Test User");
@@ -1679,7 +1679,7 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     //Verify that existing attributes did not get touched
     assertEquals(entry.getAttributeValue("telephoneNumber"), "512-123-4567");
-    assertEquals(entry.getAttributeValue("homePhone"), "972-987-6543");
+    assertEquals(entry.getAttributeValue("homePhone"), "+1 561 877 3318");
     assertEquals(entry.getAttributeValues("mail").length, 2);
 
     String[] attrsToGet = { "userName", "title", "userType",
@@ -1765,17 +1765,41 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(beforeCount, afterCount - 1);
 
     //Try a more complex patch, where we simultaneously delete a few attributes
-    //and update a few more. Specifically, we are going to delete the phone
-    //numbers completely and also remove one of the name attributes and replace
+    //and update a few more. Specifically, we are going to delete one of the
+    //phone numbers and also remove one of the name attributes and replace
     //it with another.
     attrsToUpdate.clear();
 
     List<String> attrsToDelete = Collections.unmodifiableList(
-        asList("phoneNumbers.value", "name.givenName", "displayName",
+        asList("name.givenName", "displayName",
            SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION + ":manager"));
 
     SCIMAttributeValue value =
-            SCIMAttributeValue.createStringValue("testEmail.1@example.com");
+            SCIMAttributeValue.createStringValue("tel:+1-561-877-3318");
+    SCIMAttribute phone1Value = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "phoneNumbers").getSubAttribute("value"), value);
+
+    value = SCIMAttributeValue.createStringValue("home");
+    SCIMAttribute phoneNumberType = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "phoneNumbers").getSubAttribute("type"), value);
+
+    value = SCIMAttributeValue.createStringValue("delete");
+    SCIMAttribute phoneNumber1Operation = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+                 "phoneNumbers").getSubAttribute("operation"), value);
+
+    SCIMAttributeValue phoneNumber1 = SCIMAttributeValue.createComplexValue(
+        phone1Value, phoneNumberType, phoneNumber1Operation);
+
+    SCIMAttribute phoneNumbers = SCIMAttribute.create(
+         CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+           "phoneNumbers"), phoneNumber1);
+
+    attrsToUpdate.add(phoneNumbers);
+
+    value = SCIMAttributeValue.createStringValue("testEmail.1@example.com");
     SCIMAttribute email1Value = SCIMAttribute.create(
          CoreSchema.USER_DESCRIPTOR.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
                  "emails").getSubAttribute("value"), value);
@@ -1841,10 +1865,10 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(entry.getAttributeValue("sn"), "PatchedUser");
     assertEquals(entry.getAttributeValue("title"), "Chief of Operations");
     assertEquals(entry.getAttributeValue("employeeNumber"), "456");
+    assertEquals(entry.getAttributeValue("telephoneNumber"), "512-123-4567");
     assertEquals(testDS.bind(entry.getDN(), "anotherPassword").getResultCode(),
         ResultCode.SUCCESS);
 
-    assertFalse(entry.hasAttribute("telephoneNumber"));
     assertFalse(entry.hasAttribute("homePhone"));
     assertFalse(entry.hasAttribute("givenname"));
     assertFalse(entry.hasAttribute("displayName"));
