@@ -20,11 +20,13 @@ package com.unboundid.scim.marshal;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.BulkConfig;
 import com.unboundid.scim.data.ResourceFactory;
+import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.ListResponse;
 
 import java.io.File;
 import java.io.InputStream;
@@ -76,6 +78,37 @@ public interface Unmarshaller {
       final ResourceDescriptor resourceDescriptor,
       final ResourceFactory<R> resourceFactory)
       throws InvalidResourceException;
+
+  /**
+   * Reads a SCIM query streamed response from an input stream.
+   *
+   * @param <R> The type of resource instance.
+   * @param inputStream  The input stream containing the SCIM object to be read.
+   * @param resourceDescriptor The descriptor of the SCIM resource to be read.
+   * @param resourceFactory The resource factory to use to create the resource
+   *                        instance.
+   *
+   * @return The SCIM query response that was read.
+   *
+   * @throws InvalidResourceException If an error occurred.
+   */
+  <R extends BaseResource> ListResponse<R> unmarshalListResponse(
+      final InputStream inputStream,
+      final ResourceDescriptor resourceDescriptor,
+      final ResourceFactory<R> resourceFactory)
+      throws InvalidResourceException;
+
+  /**
+   * Reads a SCIM 2.0-style query request from an input stream.
+   *
+   * @param inputStream The input stream containing the SCIM object to be read.
+   * @return The SCIM QueryRequest object that was read.
+   * @throws InvalidResourceException if an error occurred.
+   */
+  QueryRequest unmarshalQueryRequest(
+      final InputStream inputStream)
+    throws InvalidResourceException;
+
 
   /**
    * Reads a SCIM error response from an input stream.

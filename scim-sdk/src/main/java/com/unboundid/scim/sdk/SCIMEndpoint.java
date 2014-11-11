@@ -20,6 +20,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.StreamedQueryRequest;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.marshal.json.JsonMarshaller;
@@ -383,6 +384,116 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     }
   }
+
+
+  /**
+   * Retrieve resource instances using the UnboundID SCIM extension for
+   * streamed query.
+   * <p/>
+   * Using this form of query will result in better performance when
+   * querying against a large candidate result set.  However this query
+   * does not support sorting of results or random access into the result
+   * set (i.e. specification of a start index).
+   * <p/>
+   * The return from this method includes both a page of resource instances
+   * and a resume token that can be used to retrieve the next page of results.
+   * An empty resume token indicates that there are no more results.
+   * The number of resources returned may be less than the requested page size,
+   * even when there is a non-empty resume token.
+   * <p>
+   * Example usage:
+   * </p>
+   * <pre>
+   *   StreamedQueryRequest request = new StreamedQueryRequest(
+   *         filter, attributes, pageSize);
+   *   ListResponse<BaseResource> response;
+   *   do
+   *   {
+   *     response = endpoint.streamedQuery(request);
+   *     for (BaseResource b : response)
+   *     {
+   *       // do something with the resource
+   *     }
+   *   }
+   *   while (request.hasMoreResults(response));
+   *
+   * </pre>
+   * @param request StreamedQueryRequest object specifying the query parameters.
+   * @return A single page of resource instances that match the provided
+   *  filter.
+   * @throws SCIMException if an error occurs.
+   */
+  public ListResponse<R> streamedQuery(
+      final StreamedQueryRequest request)
+      throws SCIMException
+  {
+    URI uri =
+        UriBuilder.fromUri(scimService.getBaseURL()).path(
+            resourceDescriptor.getEndpoint()).path("/.search").build();
+    org.apache.wink.client.Resource clientResource =
+        client.resource(uri);
+    if(!useUrlSuffix)
+    {
+      clientResource.accept(acceptType);
+    }
+    clientResource.contentType(contentType);
+
+    StreamingOutput requestStream = new StreamingOutput()
+    {
+      public void write(final OutputStream outputStream)
+          throws IOException, WebApplicationException
+      {
+        try {
+          marshaller.marshal(request, outputStream);
+        }
+        catch (Exception e)
+        {
+          throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
+        }
+      }
+    };
+
+    InputStream entity = null;
+    try
+    {
+      ClientResponse response = clientResource.post(requestStream);
+      entity = response.getEntity(InputStream.class);
+
+      if(response.getStatusType() == Response.Status.OK)
+      {
+        return unmarshaller.unmarshalListResponse(entity,
+            resourceDescriptor, resourceFactory);
+      }
+      else
+      {
+        throw createErrorResponseException(response, entity);
+      }
+    }
+    catch(SCIMException e)
+    {
+      throw e;
+    }
+    catch(Exception e)
+    {
+      throw SCIMException.createException(getStatusCode(e),
+          getExceptionMessage(e), e);
+    }
+    finally
+    {
+      try {
+        if (entity != null)
+        {
+          entity.close();
+        }
+      } catch (IOException e)
+      {
+        // Lets just log this and ignore.
+        Debug.debugException(e);
+      }
+    }
+  }
+
+
 
   /**
    * Create the specified resource instance at the service provider and return
@@ -1064,6 +1175,9 @@ public class SCIMEndpoint<R extends BaseResource>
 
     return scimException;
   }
+
+
+
 
   /**
    * Returns the complete resource URI by appending the suffix if necessary.

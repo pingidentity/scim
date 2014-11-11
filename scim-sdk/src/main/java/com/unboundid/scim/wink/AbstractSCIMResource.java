@@ -18,6 +18,8 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.QueryRequest;
+import com.unboundid.scim.data.StreamedQueryRequest;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.marshal.json.JsonUnmarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
@@ -48,6 +50,10 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.sdk.SCIMRequest;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.UnauthorizedException;
+import com.unboundid.scim.sdk.UnsupportedOperationException;
+import com.unboundid.scim.sdk.ListResponse;
+import com.unboundid.scim.sdk.GetStreamedResourcesRequest;
+
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -241,24 +247,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           new SCIMQueryAttributes(resourceDescriptor, attributes);
 
       // Parse the filter parameters.
-      final SCIMFilter filter;
-      if (filterString != null && !filterString.isEmpty())
-      {
-        if(resourceDescriptor.getSchema().equalsIgnoreCase(
-                "urn:unboundid:schemas:scim:ldap:1.0"))
-        {
-          filter = SCIMFilter.parse(
-                  filterString, resourceDescriptor.getSchema());
-        }
-        else
-        {
-          filter = SCIMFilter.parse(filterString);
-        }
-      }
-      else
-      {
-        filter = null;
-      }
+      final SCIMFilter filter = parseFilter(filterString, resourceDescriptor);
 
       // Parse the sort parameters.
       final SortParameters sortParameters;
@@ -405,6 +394,122 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     return responseBuilder.build();
   }
 
+
+  /**
+   * Process a SCIM 2.0 query requested using POST.
+   * @param requestContext  The request context.
+   * @param endpoint        The endpoint requested.
+   * @param inputStream     The content to be consumed.
+   * @return  The response to the operation.
+   */
+  Response queryPost(final RequestContext requestContext,
+                     final String endpoint,
+                     final InputStream inputStream)
+  {
+    SCIMBackend backend;
+    ResourceDescriptor resourceDescriptor = null;
+    Response.ResponseBuilder responseBuilder;
+    try
+    {
+      backend = getBackend(endpoint);
+      resourceDescriptor = backend.getResourceDescriptor(endpoint);
+      if(resourceDescriptor == null)
+      {
+        throw new ResourceNotFoundException(
+            endpoint + " is not a valid resource endpoint");
+      }
+      String authID = requestContext.getAuthID();
+      if(authID == null && tokenHandler == null)
+      {
+        throw new UnauthorizedException("Invalid credentials");
+      }
+
+      // parse the request.  Only JSON is supported.
+      QueryRequest query =
+          new JsonUnmarshaller().unmarshalQueryRequest(inputStream);
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.POST_CONTENT_JSON);
+
+      // parse filter parameters
+      final SCIMFilter filter = parseFilter(query.getFilter(),
+          resourceDescriptor);
+
+      ListResponse<BaseResource> response = null;
+      if (query.getSchemas().contains(
+          StreamedQueryRequest.STREAMED_SEARCH_REQUEST_SCHEMA))
+      {
+        // UnboundID extension for streamed query
+        GetStreamedResourcesRequest streamedQueryRequest =
+            new GetStreamedResourcesRequest(
+              requestContext.getUriInfo().getBaseUri(),
+              authID, resourceDescriptor, filter, null, null,
+              query.getSortParameters(), query.getPageParameters(),
+              new SCIMQueryAttributes(query.getAttributes(),
+                  resourceDescriptor),
+              (String)query.getExtensionAttribute(
+                  StreamedQueryRequest.STREAMED_SEARCH_REQUEST_SCHEMA,
+                  StreamedQueryRequest.RESUME_TOKEN_ATTRIBUTE));
+
+        ListResultListener resultListener = new ListResultListener();
+        backend.getStreamedResources(streamedQueryRequest, resultListener);
+
+        response = new ListResponse<BaseResource>(
+            resultListener.getResources(),
+            resultListener.getTotalResults());
+
+        if (resultListener.getResumeToken() != null)
+        {
+          response.setExtensionAttribute(
+              StreamedQueryRequest.STREAMED_SEARCH_REQUEST_SCHEMA,
+              StreamedQueryRequest.RESUME_TOKEN_ATTRIBUTE,
+              resultListener.getResumeToken());
+        }
+      }
+      else
+      {
+        // TODO: support standard 2.0 query
+        /*
+        GetResourcesRequest queryRequest =
+            new GetResourcesRequest(
+                requestContext.getUriInfo().getBaseUri(),
+                authID, resourceDescriptor, filter, null, null,
+                query.getSortParameters(), query.getPageParameters(),
+                new SCIMQueryAttributes(resourceDescriptor,
+                    query.getAttributes()));
+
+        Resources resources = backend.getResources(queryRequest);
+        response = new ListResponse(resources, resources.getTotalResults());
+        */
+        throw new UnsupportedOperationException(
+            "Standard SCIM 2.0 Query not supported");
+      }
+
+      // Build the response.
+      responseBuilder =
+          Response.status(Response.Status.OK);
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+          response);
+
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.QUERY_OK);
+
+      application.getStatsForResource(resourceDescriptor.getName()).
+          incrementStat(ResourceStats.QUERY_RESPONSE_JSON);
+    }
+    catch(SCIMException e)
+    {
+      responseBuilder =
+          Response.status(e.getStatusCode());
+      setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
+          e);
+      if(resourceDescriptor != null)
+      {
+        application.getStatsForResource(resourceDescriptor.getName()).
+            incrementStat("query-" + e.getStatusCode());
+      }
+    }
+    return responseBuilder.build();
+  }
 
 
   /**
@@ -1112,5 +1217,34 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
           e);
     }
     return responseBuilder;
+  }
+
+  /**
+   * Parse a filter string.
+   * @param filterString          The SCIM filter string.
+   * @param resourceDescriptor    ResourceDescriptor for resource being
+   *                              queried.
+   * @return                      SCIMFilter object.
+   * @throws SCIMException        If filter string violates SCIM syntax.
+   */
+  private SCIMFilter parseFilter(
+      final String filterString,
+      final ResourceDescriptor resourceDescriptor) throws SCIMException
+  {
+    SCIMFilter filter = null;
+    if (filterString != null && !filterString.isEmpty())
+    {
+      if(resourceDescriptor.getSchema().equalsIgnoreCase(
+          "urn:unboundid:schemas:scim:ldap:1.0"))
+      {
+        filter = SCIMFilter.parse(
+            filterString, resourceDescriptor.getSchema());
+      }
+      else
+      {
+        filter = SCIMFilter.parse(filterString);
+      }
+    }
+    return filter;
   }
 }

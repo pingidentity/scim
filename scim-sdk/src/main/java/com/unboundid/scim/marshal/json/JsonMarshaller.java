@@ -18,8 +18,10 @@
 package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
 
@@ -77,6 +79,44 @@ public class JsonMarshaller implements Marshaller
   }
 
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void marshal(final ListResponse<? extends BaseResource> response,
+                      final OutputStream outputStream)
+      throws SCIMException
+  {
+    final JsonStreamMarshaller jsonStreamMarshaller =
+        new JsonStreamMarshaller(outputStream);
+    try
+    {
+      jsonStreamMarshaller.marshal(response);
+    }
+    finally
+    {
+      jsonStreamMarshaller.close();
+    }
+  }
+
+
+  @Override
+  public void marshal(
+      final QueryRequest request,
+      final OutputStream outputStream)
+      throws SCIMException
+  {
+    final JsonStreamMarshaller jsonStreamMarshaller =
+        new JsonStreamMarshaller(outputStream);
+    try
+    {
+      jsonStreamMarshaller.marshal(request);
+    }
+    finally
+    {
+      jsonStreamMarshaller.close();
+    }
+  }
 
   /**
    * {@inheritDoc}

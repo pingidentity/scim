@@ -37,6 +37,7 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.controls.AssertionRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
@@ -73,10 +74,12 @@ import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
+import com.unboundid.scim.sdk.GetStreamedResourcesRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.UnsupportedOperationException;
+import com.unboundid.scim.sdk.StreamedResultListener;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.Validator;
 
@@ -438,113 +441,65 @@ public abstract class LDAPBackend
     {
       final SCIMFilter scimFilter = request.getFilter();
 
-      final Set<String> requestAttributeSet =
-          resourceMapper.toLDAPAttributeTypes(request.getAttributes());
-      requestAttributeSet.addAll(getLastModAttributes());
-      requestAttributeSet.add("objectclass");
-      if(supportsVersioning())
-      {
-        requestAttributeSet.add(entityTagAttribute);
-      }
+      final Set<String> requestAttributeSet = getRequestAttributeSet(
+          request, resourceMapper);
 
       final int maxResults = getConfig().getMaxResults();
+
       final LDAPRequestInterface ldapInterface =
           getLDAPRequestInterface(request.getAuthenticatedUserID());
+
       final ResourceSearchResultListener resultListener =
           new ResourceSearchResultListener(this, request, ldapInterface,
                                            maxResults);
-      SearchRequest searchRequest = null;
-      if (scimFilter != null)
+
+      Set<DN> searchBaseDNs = getSearchBaseDNs(request,
+          resourceMapper, ldapInterface);
+
+      SearchScope searchScope = null;
+      final Filter filter;
+      SearchRequest searchRequest;
+      final String[] requestAttributes;
+
+      if (isOptimizedIdSearch(scimFilter, resourceMapper))
       {
-        if (resourceMapper.idMapsToDn())
-        {
-          if (scimFilter.getFilterType() == SCIMFilterType.EQUALITY)
-          {
-            final AttributePath path = scimFilter.getFilterAttribute();
-            if (path.getAttributeSchema().equalsIgnoreCase(SCHEMA_URI_CORE) &&
-                path.getAttributeName().equalsIgnoreCase("id"))
-            {
-              final String[] requestAttributes =
-                  new String[requestAttributeSet.size()];
-              requestAttributeSet.toArray(requestAttributes);
-
-              searchRequest =
-                  new SearchRequest(resultListener, scimFilter.getFilterValue(),
-                                    SearchScope.BASE,
-                                    Filter.createPresenceFilter("objectclass"),
-                                    requestAttributes);
-            }
-          }
-        }
-      }
-
-      Set<DN> searchBaseDNs;
-      if (request.getBaseID() != null)
-      {
-        Entry baseEntry = resourceMapper.getEntryWithoutAttrs(
-            ldapInterface, request.getBaseID());
-
-        //Make sure the requested base ID maps to an entry that is within the
-        //configured base DN(s) for this resource type.
-        boolean isAllowed = false;
-        if (baseEntry != null)
-        {
-          for (DN baseDN : resourceMapper.getSearchBaseDNs())
-          {
-            if (baseDN.isAncestorOf(baseEntry.getParsedDN(), true))
-            {
-              isAllowed = true;
-              break;
-            }
-          }
-        }
-
-        if (!isAllowed)
-        {
-          throw new InvalidResourceException("The specified base-id does not " +
-                      "exist under any of the configured branches of the DIT.");
-        }
-        else
-        {
-          searchBaseDNs = Collections.singleton(baseEntry.getParsedDN());
-        }
+        requestAttributes = new String[requestAttributeSet.size()];
+        requestAttributeSet.toArray(requestAttributes);
+        searchRequest =
+            new SearchRequest(resultListener, scimFilter.getFilterValue(),
+                SearchScope.BASE,
+                Filter.createPresenceFilter("objectclass"),
+                requestAttributes);
+        filter = null;
       }
       else
       {
-        searchBaseDNs = resourceMapper.getSearchBaseDNs();
-      }
+        searchRequest = null;
+        try
+        {
+          // Map the SCIM filter to an LDAP filter.
+          filter = resourceMapper.toLDAPFilter(scimFilter, ldapInterface);
+        }
+        catch (InvalidResourceException ire)
+        {
+          throw new InvalidResourceException("Invalid filter: " +
+              ire.getLocalizedMessage(), ire);
+        }
+        if (filter == null)
+        {
+          // Match nothing... Just return an empty resources set.
+          List<BaseResource> emptyList = Collections.emptyList();
+          return new Resources<BaseResource>(emptyList);
+        }
 
-      SearchScope searchScope;
-      if (request.getSearchScope() != null)
-      {
-        if (SearchScope.BASE.getName().equalsIgnoreCase(
-                    request.getSearchScope()))
-        {
-          searchScope = SearchScope.BASE;
-        }
-        else if (SearchScope.ONE.getName().equalsIgnoreCase(
-                    request.getSearchScope()))
-        {
-          searchScope = SearchScope.ONE;
-        }
-        else if (SearchScope.SUB.getName().equalsIgnoreCase(
-                    request.getSearchScope()))
-        {
-          searchScope = SearchScope.SUB;
-        }
-        else if ("subordinate".equalsIgnoreCase(request.getSearchScope()))
-        {
-          searchScope = SearchScope.SUBORDINATE_SUBTREE;
-        }
-        else
-        {
-          throw new InvalidResourceException("Search scope '" +
-                  request.getSearchScope() + "' is not supported.");
-        }
-      }
-      else
-      {
-        searchScope = SearchScope.SUB;
+        // The LDAP filter results will still need to be filtered using the
+        // SCIM filter, so we need to request all the filter attributes.
+        addFilterAttributes(requestAttributeSet, filter);
+
+        requestAttributes = new String[requestAttributeSet.size()];
+        requestAttributeSet.toArray(requestAttributes);
+
+        searchScope = getSearchScope(request);
       }
 
       SearchResult searchResult = null;
@@ -555,33 +510,6 @@ public abstract class LDAPBackend
       {
         if (searchRequest == null)
         {
-          final Filter filter;
-          try
-          {
-            // Map the SCIM filter to an LDAP filter.
-            filter = resourceMapper.toLDAPFilter(scimFilter, ldapInterface);
-          }
-          catch(InvalidResourceException ire)
-          {
-            throw new InvalidResourceException("Invalid filter: " +
-                    ire.getLocalizedMessage(), ire);
-          }
-
-          if(filter == null)
-          {
-            // Match nothing... Just return an empty resources set.
-            List<BaseResource> emptyList = Collections.emptyList();
-            return new Resources<BaseResource>(emptyList);
-          }
-
-          // The LDAP filter results will still need to be filtered using the
-          // SCIM filter, so we need to request all the filter attributes.
-          addFilterAttributes(requestAttributeSet, filter);
-
-          final String[] requestAttributes =
-                  new String[requestAttributeSet.size()];
-          requestAttributeSet.toArray(requestAttributes);
-
           searchRequest = new SearchRequest(resultListener, baseDN.toString(),
                                     searchScope, filter, requestAttributes);
         }
@@ -719,6 +647,165 @@ public abstract class LDAPBackend
       throw ResourceMapper.toSCIMException(e);
     }
   }
+
+
+
+  @Override
+  public void getStreamedResources(
+      final GetStreamedResourcesRequest request,
+      final StreamedResultListener listener)
+      throws SCIMException
+  {
+    final ResourceMapper resourceMapper =
+        getResourceMapper(request.getResourceDescriptor());
+    if (!supportsSimplePagedResultsControl() ||
+        resourceMapper == null ||
+        !resourceMapper.supportsQuery())
+    {
+      throw new UnsupportedOperationException(
+          "The requested operation is not supported on resource end-point '" +
+              request.getResourceDescriptor().getEndpoint() + "'");
+    }
+
+    int pageSize = request.getPageParameters().getCount();
+    final int maxResults = getConfig().getMaxResults();
+    if (pageSize > maxResults)
+    {
+      pageSize = maxResults;
+    }
+
+    try
+    {
+      final SCIMFilter scimFilter = request.getFilter();
+
+      final Set<String> requestAttributeSet = getRequestAttributeSet(
+          request, resourceMapper);
+
+      final LDAPRequestInterface ldapInterface =
+          getLDAPRequestInterface(request.getAuthenticatedUserID());
+
+      final StreamingSearchResultListener ldapListener =
+          new StreamingSearchResultListener(this, request, ldapInterface,
+              listener);
+
+      Set<DN> searchBaseDNs = getSearchBaseDNs(request, resourceMapper,
+          ldapInterface);
+
+      SearchScope searchScope = null;
+      final Filter filter;
+      SearchRequest searchRequest;
+      final String[] requestAttributes;
+
+      if (isOptimizedIdSearch(scimFilter, resourceMapper))
+      {
+        requestAttributes = new String[requestAttributeSet.size()];
+        requestAttributeSet.toArray(requestAttributes);
+        searchRequest =
+            new SearchRequest(ldapListener, scimFilter.getFilterValue(),
+                SearchScope.BASE,
+                Filter.createPresenceFilter("objectclass"),
+                requestAttributes);
+        filter = null;
+      }
+      else
+      {
+        searchRequest = null;
+        try
+        {
+          // Map the SCIM filter to an LDAP filter.
+          filter = resourceMapper.toLDAPFilter(scimFilter, ldapInterface);
+        }
+        catch (InvalidResourceException ire)
+        {
+          throw new InvalidResourceException("Invalid filter: " +
+              ire.getLocalizedMessage(), ire);
+        }
+        if (filter == null)
+        {
+          // Matches nothing...
+          return;
+        }
+
+        // The LDAP filter results will still need to be filtered using the
+        // SCIM filter, so we need to request all the filter attributes.
+        addFilterAttributes(requestAttributeSet, filter);
+
+        requestAttributes = new String[requestAttributeSet.size()];
+        requestAttributeSet.toArray(requestAttributes);
+
+        searchScope = getSearchScope(request);
+      }
+
+      SearchResult searchResult;
+
+      for (DN baseDN : searchBaseDNs)
+      {
+        if (searchRequest == null)
+        {
+          searchRequest = new SearchRequest(ldapListener, baseDN.toString(),
+              searchScope, filter, requestAttributes);
+        }
+
+        // always use SimplePagedResultsControl
+        ASN1OctetString ldapCookie =
+            request.getResumeToken() == null ? null :
+            new ASN1OctetString(request.getResumeToken());
+
+        searchRequest.addControl(new SimplePagedResultsControl(
+            pageSize,ldapCookie, true));
+
+        // Include any controls that are needed by derived attributes.
+        final List<Control> controls = new ArrayList<Control>();
+        resourceMapper.addSearchControls(controls, request.getAttributes());
+        searchRequest.addControls(
+            controls.toArray(new Control[controls.size()]));
+
+        // Invoke the search operation.
+        try
+        {
+          searchResult = ldapInterface.search(searchRequest);
+          SimplePagedResultsControl responseControl =
+              SimplePagedResultsControl.get(searchResult);
+          Validator.ensureNotNull(responseControl);
+          listener.setResumeToken(responseControl.getCookie().stringValue());
+          listener.setTotalResults(responseControl.getSize());
+        }
+        catch(LDAPSearchException e)
+        {
+          if(e.getResultCode().equals(ResultCode.SIZE_LIMIT_EXCEEDED))
+          {
+            searchResult = e.getSearchResult();
+            if (searchResult == null)
+            {
+              throw e;
+            }
+          }
+          else
+          {
+            throw e;
+          }
+        }
+
+        if (searchRequest.getScope() == SearchScope.BASE ||
+            ldapListener.getTotalResults() >= pageSize)
+        {
+          break;
+        }
+        else
+        {
+          searchRequest = null;
+        }
+      }
+    }
+    catch (LDAPException e)
+    {
+      Debug.debugException(e);
+      throw ResourceMapper.toSCIMException(e);
+    }
+
+  }
+
+
 
 
 
@@ -1924,4 +2011,149 @@ public abstract class LDAPBackend
     }
   }
 
+
+  /**
+   * Get the set of attributes to request for the given search request and
+   * attribute mapper.
+   * @param request             The search request.
+   * @param resourceMapper      The resource mapper in use.
+   * @return                    Set of attribute names.
+   */
+  protected Set<String> getRequestAttributeSet(
+      final GetResourcesRequest request,
+      final ResourceMapper resourceMapper)
+  {
+    final Set<String> requestAttributeSet =
+        resourceMapper.toLDAPAttributeTypes(request.getAttributes());
+    requestAttributeSet.addAll(getLastModAttributes());
+    requestAttributeSet.add("objectclass");
+    if (supportsVersioning())
+    {
+      requestAttributeSet.add(entityTagAttribute);
+    }
+    return requestAttributeSet;
+  }
+
+
+  /**
+   * Determine whether a query can be done using an optimized LDAP search.
+   * @param scimFilter      The SCIM filter for the query request.
+   * @param resourceMapper  The resource mapper in use.
+   * @return true if query is based on ID with an Id-to-DN mapping
+   */
+  protected boolean isOptimizedIdSearch(
+      final SCIMFilter scimFilter,
+      final ResourceMapper resourceMapper)
+  {
+    if (scimFilter != null &&
+        scimFilter.getFilterType() == SCIMFilterType.EQUALITY &&
+        resourceMapper.idMapsToDn())
+    {
+      final AttributePath path = scimFilter.getFilterAttribute();
+      return path.getAttributeSchema().equalsIgnoreCase(SCHEMA_URI_CORE) &&
+          path.getAttributeName().equalsIgnoreCase("id");
+    }
+    return false;
+  }
+
+
+  /**
+   * Get the search base DNs for the specified search request and
+   * resource mapper.
+   * @param request         The search request.
+   * @param resourceMapper  The resource mapper in use.
+   * @param ldapInterface   The LDAPRequestInterface in use.
+   * @return A set of base DNs to search over.
+   * @throws SCIMException if a SCIM error occurs.
+   * @throws LDAPException if an LDAP error occurs.
+   */
+  protected Set<DN> getSearchBaseDNs(
+      final GetResourcesRequest request,
+      final ResourceMapper resourceMapper,
+      final LDAPRequestInterface ldapInterface)
+      throws SCIMException, LDAPException
+  {
+    Set<DN> searchBaseDNs;
+    if (request.getBaseID() != null)
+    {
+      Entry baseEntry = resourceMapper.getEntryWithoutAttrs(
+          ldapInterface, request.getBaseID());
+
+      //Make sure the requested base ID maps to an entry that is within the
+      //configured base DN(s) for this resource type.
+      boolean isAllowed = false;
+      if (baseEntry != null)
+      {
+        for (DN baseDN : resourceMapper.getSearchBaseDNs())
+        {
+          if (baseDN.isAncestorOf(baseEntry.getParsedDN(), true))
+          {
+            isAllowed = true;
+            break;
+          }
+        }
+      }
+
+      if (!isAllowed)
+      {
+        throw new InvalidResourceException("The specified base-id does not " +
+            "exist under any of the configured branches of the DIT.");
+      }
+      else
+      {
+        searchBaseDNs = Collections.singleton(baseEntry.getParsedDN());
+      }
+    }
+    else
+    {
+      searchBaseDNs = resourceMapper.getSearchBaseDNs();
+    }
+    return searchBaseDNs;
+  }
+
+
+  /**
+   * Get the LDAP search scope to use for the SCIM search request.
+   * @param request   The search request.
+   * @return LDAP search scope to use.
+   * @throws InvalidResourceException if the requested search scope is not
+   * supported.
+   */
+  protected SearchScope getSearchScope(final GetResourcesRequest request)
+      throws InvalidResourceException
+  {
+    SearchScope searchScope;
+    if (request.getSearchScope() != null)
+    {
+      if (SearchScope.BASE.getName().equalsIgnoreCase(
+          request.getSearchScope()))
+      {
+        searchScope = SearchScope.BASE;
+      }
+      else if (SearchScope.ONE.getName().equalsIgnoreCase(
+          request.getSearchScope()))
+      {
+        searchScope = SearchScope.ONE;
+      }
+      else if (SearchScope.SUB.getName().equalsIgnoreCase(
+          request.getSearchScope()))
+      {
+        searchScope = SearchScope.SUB;
+      }
+      else if ("subordinate".equalsIgnoreCase(request.getSearchScope()))
+      {
+        searchScope = SearchScope.SUBORDINATE_SUBTREE;
+      }
+      else
+      {
+        throw new InvalidResourceException("Search scope '" +
+            request.getSearchScope() + "' is not supported.");
+      }
+    }
+    else
+    {
+      searchScope = SearchScope.SUB;
+    }
+    return searchScope;
+  }
 }

@@ -21,9 +21,11 @@ import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.ResourceDescriptor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,7 +48,6 @@ public class SCIMQueryAttributes
   private final Map<AttributeDescriptor,Set<AttributeDescriptor>> descriptors;
 
 
-
   /**
    * Create a new instance of query attributes from their string representation.
    *
@@ -64,88 +65,59 @@ public class SCIMQueryAttributes
                              final String attributes)
       throws InvalidResourceException
   {
-    descriptors =
+    descriptors  =
         new HashMap<AttributeDescriptor, Set<AttributeDescriptor>>();
 
     if (attributes == null)
     {
       allAttributesRequested = true;
     }
-    else
-    {
+    else {
       allAttributesRequested = false;
-      if (!attributes.isEmpty())
+
+      List<String> attributeList;
+      if (attributes.isEmpty())
       {
-        final String[] paths = attributes.split(",");
-        if (paths.length > 0)
-        {
-          for (final String a : paths)
-          {
-            final AttributePath path;
-            if (resourceDescriptor.getSchema().equalsIgnoreCase(
-                    "urn:unboundid:schemas:scim:ldap:1.0"))
-            {
-              path = AttributePath.parse(a, resourceDescriptor.getSchema());
-            }
-            else
-            {
-              path = AttributePath.parse(a);
-            }
-
-            final AttributeDescriptor attributeDescriptor =
-                resourceDescriptor.getAttribute(path.getAttributeSchema(),
-                                                path.getAttributeName());
-
-            Set<AttributeDescriptor> subAttributes =
-                descriptors.get(attributeDescriptor);
-            if (subAttributes == null)
-            {
-              subAttributes = new HashSet<AttributeDescriptor>();
-              if (path.getSubAttributeName() != null)
-              {
-                subAttributes.add(
-                    attributeDescriptor.getSubAttribute(
-                        path.getSubAttributeName()));
-              }
-              descriptors.put(attributeDescriptor, subAttributes);
-            }
-            else
-            {
-              if (!subAttributes.isEmpty())
-              {
-                if (path.getSubAttributeName() != null)
-                {
-                  subAttributes.add(
-                      attributeDescriptor.getSubAttribute(
-                          path.getSubAttributeName()));
-                }
-                else
-                {
-                  subAttributes.clear();
-                }
-              }
-            }
-          }
-        }
+        attributeList = Collections.emptyList();
       }
-
-      final AttributeDescriptor id =
-          resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "id");
-      if (!descriptors.containsKey(id))
+      else
       {
-        descriptors.put(id, new HashSet<AttributeDescriptor>());
+        attributeList = Arrays.asList(attributes.split(","));
       }
-
-      final AttributeDescriptor meta =
-          resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
-                                          "meta");
-      if (!descriptors.containsKey(meta))
-      {
-        descriptors.put(meta, new HashSet<AttributeDescriptor>());
-      }
+      initializeDescriptors(resourceDescriptor, attributeList);
     }
   }
 
+
+  /**
+   * Create a new instance of query attributes from their string representation.
+   *
+   * @param resourceDescriptor  The resource descriptor for the SCIM endpoint.
+   * @param attributes     The attributes query parameter specifying the set of
+   *                       attributes or sub-attributes requested, or null if
+   *                       all attributes and sub-attributes are requested. The
+   *                       attributes must be qualified by their
+   *                       schema URI if they are not in the core schema.
+   *
+   * @throws InvalidResourceException  If one of the specified attributes does
+   *                                   not exist.
+   */
+  public SCIMQueryAttributes(final List<String> attributes,
+                             final ResourceDescriptor resourceDescriptor)
+      throws InvalidResourceException
+  {
+    descriptors  =
+        new HashMap<AttributeDescriptor, Set<AttributeDescriptor>>();
+
+    if (attributes == null)
+    {
+      allAttributesRequested = true;
+    }
+    else {
+      allAttributesRequested = false;
+      initializeDescriptors(resourceDescriptor, attributes);
+    }
+  }
 
 
   /**
@@ -386,5 +358,82 @@ public class SCIMQueryAttributes
     sb.append(", descriptors=").append(descriptors);
     sb.append('}');
     return sb.toString();
+  }
+
+
+  /**
+   * Common code to initialize attribute descriptors for all requested
+   * attributes.
+   * @param resourceDescriptor  The resource descriptor for the SCIM endpoint.
+   * @param attributes          List of requested attributes.
+   * @throws InvalidResourceException  If one of the specified attributes does
+   *                                   not exist.
+   */
+  private void initializeDescriptors(
+      final ResourceDescriptor resourceDescriptor,
+      final List<String> attributes) throws InvalidResourceException
+  {
+    for (final String a : attributes)
+    {
+      final AttributePath path;
+      if (resourceDescriptor.getSchema().equalsIgnoreCase(
+          "urn:unboundid:schemas:scim:ldap:1.0"))
+      {
+        path = AttributePath.parse(a, resourceDescriptor.getSchema());
+      }
+      else
+      {
+        path = AttributePath.parse(a);
+      }
+
+      final AttributeDescriptor attributeDescriptor =
+          resourceDescriptor.getAttribute(path.getAttributeSchema(),
+              path.getAttributeName());
+
+      Set<AttributeDescriptor> subAttributes =
+          descriptors.get(attributeDescriptor);
+      if (subAttributes == null)
+      {
+        subAttributes = new HashSet<AttributeDescriptor>();
+        if (path.getSubAttributeName() != null)
+        {
+          subAttributes.add(
+              attributeDescriptor.getSubAttribute(
+                  path.getSubAttributeName()));
+        }
+        descriptors.put(attributeDescriptor, subAttributes);
+      }
+      else
+      {
+        if (!subAttributes.isEmpty())
+        {
+          if (path.getSubAttributeName() != null)
+          {
+            subAttributes.add(
+                attributeDescriptor.getSubAttribute(
+                    path.getSubAttributeName()));
+          }
+          else
+          {
+            subAttributes.clear();
+          }
+        }
+      }
+    }
+
+    final AttributeDescriptor id =
+        resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE, "id");
+    if (!descriptors.containsKey(id))
+    {
+      descriptors.put(id, new HashSet<AttributeDescriptor>());
+    }
+
+    final AttributeDescriptor meta =
+        resourceDescriptor.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
+            "meta");
+    if (!descriptors.containsKey(meta))
+    {
+      descriptors.put(meta, new HashSet<AttributeDescriptor>());
+    }
   }
 }

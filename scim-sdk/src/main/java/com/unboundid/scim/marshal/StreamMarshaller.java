@@ -36,9 +36,11 @@ package com.unboundid.scim.marshal;
 
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.ListResponse;
 
 import java.util.List;
 import java.util.Set;
@@ -72,6 +74,24 @@ public interface StreamMarshaller
    */
   void marshal(Resources<? extends BaseResource> response)
     throws SCIMException;
+
+  /**
+   * Write a SCIM 2.0 list response.
+   *
+   * @param response        The SCIM response to be written.
+   * @throws SCIMException  If the data could not be written.
+   */
+  void marshal(final ListResponse<? extends BaseResource> response)
+    throws SCIMException;
+
+  /**
+   * Write a SCIM 2.0 query request.
+   *
+   * @param request           The SCIM query request.
+   * @throws SCIMException    If the data could not be written.
+   */
+  void marshal(final QueryRequest request)
+      throws SCIMException;
 
   /**
    * Write a SCIM error response.

@@ -18,15 +18,17 @@
 package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.marshal.StreamMarshaller;
-import com.unboundid.scim.sdk.BulkOperation;
-import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.Resources;
-import com.unboundid.scim.sdk.SCIMAttribute;
-import com.unboundid.scim.sdk.SCIMAttributeValue;
-import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.ServerErrorException;
+import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.SCIMConstants;
+import com.unboundid.scim.sdk.Resources;
+import com.unboundid.scim.sdk.BulkOperation;
+import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.StaticUtils;
 
 import javax.xml.XMLConstants;
@@ -260,6 +262,24 @@ public class XmlStreamMarshaller implements StreamMarshaller
     }
   }
 
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final ListResponse<? extends BaseResource> response)
+      throws SCIMException
+  {
+    throw new UnsupportedOperationException();
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final QueryRequest request) throws SCIMException
+  {
+    throw new UnsupportedOperationException();
+  }
 
 
   /**

@@ -28,7 +28,7 @@ import java.net.URI;
  * This class represents a SCIM Get Resources request to retrieve selected
  * resources.
  */
-public final class GetResourcesRequest extends ResourceReturningRequest
+public class GetResourcesRequest extends ResourceReturningRequest
 {
   /**
    * The filter parameters of the request.

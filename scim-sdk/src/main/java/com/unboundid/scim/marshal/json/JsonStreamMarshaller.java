@@ -35,10 +35,12 @@
 package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.marshal.StreamMarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkOperation;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -54,6 +56,7 @@ import java.io.OutputStreamWriter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -261,6 +264,143 @@ public class JsonStreamMarshaller implements StreamMarshaller
       Debug.debugException(e);
       throw new ServerErrorException(
           "Cannot write resources response: " + e.getMessage());
+    }
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final ListResponse<? extends BaseResource> response)
+      throws SCIMException
+  {
+    try
+    {
+      jsonWriter.object();
+      // Write the schemas.
+      jsonWriter.key(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME);
+      jsonWriter.array();
+      for (final String schemaURI : response.getSchemas())
+      {
+        jsonWriter.value(schemaURI);
+      }
+      jsonWriter.endArray();
+
+      jsonWriter.key("totalResults");
+      jsonWriter.value(response.getTotalResults());
+
+      jsonWriter.key("itemsPerPage");
+      jsonWriter.value(response.getItemsPerPage());
+
+      if (response.getStartIndex() > 0)
+      {
+        jsonWriter.key("startIndex");
+        jsonWriter.value(response.getStartIndex());
+      }
+
+      // write any extension attributes
+      for (final String schema : response.getSchemas())
+      {
+        Map<String,Object> schemaAttributes =
+            response.getExtensionAttributes(schema);
+        if (schemaAttributes != null && schemaAttributes.size() > 0)
+        {
+          jsonWriter.key(schema);
+          jsonWriter.value(schemaAttributes);
+        }
+      }
+
+      // Write the resources.
+      jsonWriter.key("Resources");
+      jsonWriter.array();
+      for (final BaseResource resource : response)
+      {
+        marshal(resource, true);
+      }
+      jsonWriter.endArray();
+
+      jsonWriter.endObject();
+    }
+    catch (JSONException e)
+    {
+      Debug.debugException(e);
+      throw new ServerErrorException(
+          "Cannot write resources response: " + e.getMessage());
+    }
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public void marshal(final QueryRequest request)
+    throws SCIMException
+  {
+    try
+    {
+      jsonWriter.object();
+      jsonWriter.key(SCIMConstants.SCHEMAS_ATTRIBUTE_NAME);
+      jsonWriter.array();
+      for (final String schema : request.getSchemas())
+      {
+        jsonWriter.value(schema);
+      }
+      jsonWriter.endArray();
+
+      if (request.getAttributes() != null)
+      {
+        jsonWriter.key(SCIMConstants.QUERY_PARAMETER_ATTRIBUTES);
+        jsonWriter.array();
+        for (String attribute : request.getAttributes())
+        {
+          jsonWriter.value(attribute);
+        }
+        jsonWriter.endArray();
+      }
+
+      if (request.getFilter() != null)
+      {
+        jsonWriter.key(SCIMConstants.QUERY_PARAMETER_FILTER);
+        jsonWriter.value(request.getFilter());
+      }
+
+      if (request.getPageParameters() != null)
+      {
+        jsonWriter.key(SCIMConstants.QUERY_PARAMETER_PAGE_SIZE);
+        jsonWriter.value(request.getPageParameters().getCount());
+
+        jsonWriter.key(SCIMConstants.QUERY_PARAMETER_PAGE_START_INDEX);
+        jsonWriter.value(request.getPageParameters().getStartIndex());
+      }
+
+      if (request.getSortParameters() != null)
+      {
+        jsonWriter.key(SCIMConstants.QUERY_PARAMETER_SORT_BY);
+        jsonWriter.value(request.getSortParameters().getSortBy());
+
+        jsonWriter.key(SCIMConstants.QUERY_PARAMETER_SORT_ORDER);
+        jsonWriter.value(request.getSortParameters().getSortOrder());
+      }
+
+      // write any extension attributes
+      for (final String schema : request.getSchemas())
+      {
+        Map<String,Object> schemaAttributes =
+            request.getExtensionAttributes(schema);
+        if (schemaAttributes != null && schemaAttributes.size() > 0)
+        {
+          jsonWriter.key(schema);
+          jsonWriter.value(schemaAttributes);
+        }
+      }
+
+      jsonWriter.endObject();
+    }
+    catch (JSONException e)
+    {
+      Debug.debugException(e);
+      throw new ServerErrorException(
+          "Cannot write streamed query request: " + e.getMessage());
     }
   }
 

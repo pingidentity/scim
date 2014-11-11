@@ -19,6 +19,7 @@ package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.BulkConfig;
+import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.AttributeDescriptor;
@@ -26,6 +27,7 @@ import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
@@ -247,6 +249,7 @@ public class XmlUnmarshaller implements Unmarshaller
     return new Resources<R>(objects, totalResults, startIndex);
   }
 
+
   /**
    * {@inheritDoc}
    */
@@ -385,6 +388,34 @@ public class XmlUnmarshaller implements Unmarshaller
   }
 
 
+  /**
+   * Not available with XML.
+   * {@inheritDoc}
+   */
+  @Override
+  public <R extends BaseResource> ListResponse<R>
+  unmarshalListResponse(
+      final InputStream inputStream,
+      final ResourceDescriptor resourceDescriptor,
+      final ResourceFactory<R> resourceFactory)
+      throws InvalidResourceException
+  {
+    throw new UnsupportedOperationException();
+  }
+
+
+
+  /**
+   * Not available with XML.
+   * {@inheritDoc}
+   */
+  @Override
+  public QueryRequest unmarshalQueryRequest(
+      final InputStream inputStream)
+      throws InvalidResourceException
+  {
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * Parse a simple attribute from its representation as a DOM node.

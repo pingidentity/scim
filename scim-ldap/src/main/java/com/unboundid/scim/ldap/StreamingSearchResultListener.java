@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2014 UnboundID Corp.
+ * Copyright 2014 UnboundID Corp.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License (GPLv2 only)
@@ -15,6 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
+
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.SearchResultEntry;
@@ -22,69 +23,47 @@ import com.unboundid.ldap.sdk.SearchResultListener;
 import com.unboundid.ldap.sdk.SearchResultReference;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.GetResourcesRequest;
+import com.unboundid.scim.sdk.GetStreamedResourcesRequest;
 import com.unboundid.scim.sdk.SCIMException;
+import com.unboundid.scim.sdk.StreamedResultListener;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * This class provides a search result listener to retrieve SCIM objects.
+ * An LDAP SearchResultListener implementation that maps LDAP to SCIM and
+ * then streams the results to an upstream SCIM SearchResultListener.
  */
-public class ResourceSearchResultListener extends SCIMSearchResultListener
+public class StreamingSearchResultListener extends SCIMSearchResultListener
     implements SearchResultListener
 {
-  /**
-   * The serial version ID required for this serializable class.
-   */
-  private static final long serialVersionUID = -2028867840959235911L;
 
-  /**
-   * The SCIM objects to be returned.
-   */
-  private final List<BaseResource> resources;
-
-
-  /**
-   * The maximum number of resources that may be returned.
-   */
-  private final int maxResults;
-
-  /**
-   * The total number of resources that were actually returned from the
-   * LDAP search (this may be more than we are allowed to return to the
-   * SCIM client).
-   */
+  private StreamedResultListener upstreamListener;
   private final AtomicInteger totalResults;
 
-
-
   /**
-   * Create a new search result listener to retrieve SCIM objects.
+   * Create a new StreamingSearchResultListener.
    *
    * @param backend        The LDAP backend that is processing the SCIM request.
    * @param request        The request that is being processed.
    * @param ldapInterface  An LDAP interface that can be used to
    *                       derive attributes from other entries.
-   * @param maxResults     The maximum number of resources that may be returned.
+   * @param upstreamListener  upstream listener that is to receive
+   *                          SCIM resource objects.
    *
-   * @throws SCIMException  Should never be thrown.
+   * @throws com.unboundid.scim.sdk.SCIMException  Should never be thrown.
    */
-  public ResourceSearchResultListener(final LDAPBackend backend,
-                                      final GetResourcesRequest request,
-                                      final LDAPRequestInterface ldapInterface,
-                                      final int maxResults)
+  public StreamingSearchResultListener(
+      final LDAPBackend backend,
+      final GetStreamedResourcesRequest request,
+      final LDAPRequestInterface ldapInterface,
+      final StreamedResultListener upstreamListener)
       throws SCIMException
   {
     super(backend, request, ldapInterface);
-    this.resources      = new ArrayList<BaseResource>();
-    this.maxResults     = maxResults;
-    this.totalResults   = new AtomicInteger();
+    this.upstreamListener = upstreamListener;
+    this.totalResults = new AtomicInteger();
   }
-
-
 
   /**
    * Indicates that the provided search result entry has been returned by the
@@ -95,19 +74,13 @@ public class ResourceSearchResultListener extends SCIMSearchResultListener
    */
   public void searchEntryReturned(final SearchResultEntry searchEntry)
   {
-    if (resources.size() >= maxResults)
-    {
-      totalResults.incrementAndGet();
-      return;
-    }
-
     try
     {
       BaseResource resource = getResourceForSearchResultEntry(searchEntry);
       if (resource != null)
       {
         totalResults.incrementAndGet();
-        resources.add(resource);
+        upstreamListener.handleResult(resource);
       }
     }
     catch (SCIMException e)
@@ -116,8 +89,6 @@ public class ResourceSearchResultListener extends SCIMSearchResultListener
       // TODO: We should find a way to get this exception back to LDAPBackend.
     }
   }
-
-
 
   /**
    * Indicates that the provided search result reference has been returned by
@@ -132,21 +103,8 @@ public class ResourceSearchResultListener extends SCIMSearchResultListener
     // No implementation currently required.
   }
 
-
-
   /**
-   * Retrieve the SCIM objects to be returned.
-   *
-   * @return  The SCIM objects to be returned.
-   */
-  public List<BaseResource> getResources()
-  {
-    return resources;
-  }
-
-
-  /**
-   * Retrieve the total number of LDAP entries that were returned from the
+   * Retrieve the total number of LDAP entries that have been returned from the
    * search.
    *
    * @return  The number of LDAP entries returned.

@@ -427,6 +427,38 @@ public class SCIMResource extends AbstractSCIMResource
   }
 
 
+  /**
+   * Implement the SCIM 2.0 query POST operation.
+   *
+   * @param inputStream      The content to be consumed.
+   * @param endpoint         The resource endpoint.
+   * @param request          The current HTTP servlet request.
+   * @param securityContext  The security context for the request.
+   * @param headers          The request headers.
+   * @param uriInfo          The URI info for the request.
+   *
+   * @return  The response to the request.
+   */
+  @POST
+  @Path("/.search")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response doQueryPost(final InputStream inputStream,
+                               @PathParam("endpoint") final String endpoint,
+                               @Context final HttpServletRequest request,
+                               @Context final SecurityContext securityContext,
+                               @Context final HttpHeaders headers,
+                               @Context final UriInfo uriInfo)
+  {
+    final RequestContext requestContext =
+        new RequestContext(request, securityContext, headers, uriInfo,
+            MediaType.APPLICATION_JSON_TYPE,
+            MediaType.APPLICATION_JSON_TYPE);
+
+    return queryPost(requestContext, endpoint, inputStream);
+  }
+
+
 
   /**
    * Implement the PUT operation consuming and producing JSON format.

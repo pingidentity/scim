@@ -174,10 +174,25 @@ public class ResourceSchemaBackend extends SCIMBackend
             "allowed on the Resource Schema");
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Collection<ResourceDescriptor> getResourceDescriptors()
   {
     return Collections.singleton(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void getStreamedResources(
+      final GetStreamedResourcesRequest request,
+      final StreamedResultListener listener) throws SCIMException
+  {
+    throw new UnsupportedOperationException(
+        "Streamed Query not supported on Schema endpoint");
   }
 
   /**
