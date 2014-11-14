@@ -545,6 +545,7 @@ public class InMemoryServerTool
     backend.setSupportsPostReadRequestControl(true);
     backend.setSupportsVLVRequestControl(true);
     backend.setSupportsSimplePagedResultsControl(true);
+    backend.setSupportsPermissiveModifyRequestControl(true);
     backend.setEntityTagAttribute("modifyTimestamp");
 
     final SCIMApplication application =

@@ -39,6 +39,7 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.controls.AssertionRequestControl;
+import com.unboundid.ldap.sdk.controls.PermissiveModifyRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadResponseControl;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
@@ -141,6 +142,12 @@ public abstract class LDAPBackend
    * Request Control.
    */
   private boolean supportsSimplePagesResultsControl = false;
+
+  /**
+   * Flag to indicate whether this backend supports the Permissive Modify
+   * Request Control.
+   */
+  private boolean supportsPermissiveModifyRequestControl = false;
 
   /**
    * The attribute whose value to use as the entity tag.
@@ -258,6 +265,32 @@ public abstract class LDAPBackend
   public boolean supportsSimplePagedResultsControl()
   {
     return this.supportsSimplePagesResultsControl;
+  }
+
+
+
+  /**
+   * Configures this LDAPBackend to use or not use the
+   * PermissiveModifyRequestControl.
+   *
+   * @param supported {@code true} if the control is supported, {@code false} if
+   *                  not.
+   */
+  public void setSupportsPermissiveModifyRequestControl(final boolean supported)
+  {
+    this.supportsPermissiveModifyRequestControl = supported;
+  }
+
+
+
+  /**
+   * Determines if this LDAPBackend supports the PermissiveModifyRequestControl.
+   *
+   * @return {@code true} if the control is supported, {@code false} otherwise.
+   */
+  public boolean isSupportsPermissiveModifyRequestControl()
+  {
+    return this.supportsPermissiveModifyRequestControl;
   }
 
 
@@ -1183,6 +1216,11 @@ public abstract class LDAPBackend
           {
             modifyRequest.addControl(assertionRequestControl);
           }
+          if (supportsPermissiveModifyRequestControl)
+          {
+            modifyRequest.addControl(
+                new PermissiveModifyRequestControl(true));
+          }
 
           final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
           c = getPostReadResponseControl(modifyResult);
@@ -1423,6 +1461,11 @@ public abstract class LDAPBackend
           if(assertionRequestControl != null)
           {
             modifyRequest.addControl(assertionRequestControl);
+          }
+          if (supportsPermissiveModifyRequestControl)
+          {
+            modifyRequest.addControl(
+                new PermissiveModifyRequestControl(true));
           }
           final LDAPResult modifyResult = ldapInterface.modify(modifyRequest);
           c = getPostReadResponseControl(modifyResult);

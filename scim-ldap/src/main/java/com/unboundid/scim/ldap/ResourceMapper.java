@@ -69,6 +69,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1051,10 +1052,7 @@ public class ResourceMapper
     SCIMAttribute meta = scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
                                         CoreSchema.META_DESCRIPTOR.getName());
 
-    Entry modifiedEntry = currentEntry.duplicate();
-
-    final Set<String> attrsToDiff =
-            new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    List<Modification> mods = new LinkedList<Modification>();
 
     if (meta != null)
     {
@@ -1083,7 +1081,6 @@ public class ResourceMapper
         }
 
         Set<String> ldapAttributes = toLDAPAttributeTypes(scimAttributes);
-        attrsToDiff.addAll(ldapAttributes);
 
         if (Debug.debugEnabled())
         {
@@ -1093,17 +1090,14 @@ public class ResourceMapper
 
         for (String attr : ldapAttributes)
         {
-          modifiedEntry.removeAttribute(attr);
+          mods.add(new Modification(currentEntry.hasAttribute(attr) ?
+              ModificationType.DELETE : ModificationType.REPLACE, attr));
         }
       }
 
       scimObject.removeAttribute(SCIMConstants.SCHEMA_URI_CORE,
               CoreSchema.META_DESCRIPTOR.getName());
     }
-
-    final List<Attribute> ldapAttrsToDelete = new ArrayList<Attribute>();
-    final List<Attribute> ldapAttrsToAdd = new ArrayList<Attribute>();
-    final SCIMObject attrsToReplace = new SCIMObject();
 
     Set<String> schemas = scimObject.getSchemas();
     for (String schema : schemas)
@@ -1127,8 +1121,14 @@ public class ResourceMapper
                 SCIMAttribute attrToDelete =
                      SCIMAttribute.create(attr.getAttributeDescriptor(), value);
                 tempObject.setAttribute(attrToDelete);
-                ldapAttrsToDelete.addAll(
-                        toLDAPAttributes(tempObject, ldapInterface));
+                for(Attribute attribute :
+                    toLDAPAttributes(tempObject, ldapInterface))
+                {
+                  mods.add(new Modification(currentEntry.hasAttribute(
+                      attribute.getName()) ?
+                      ModificationType.DELETE : ModificationType.REPLACE,
+                      attribute.getName(), attribute.getRawValues()));
+                }
                 continue;
               }
             }
@@ -1138,51 +1138,26 @@ public class ResourceMapper
             SCIMAttribute attrToAdd =
                     SCIMAttribute.create(attr.getAttributeDescriptor(), value);
             tempObject.setAttribute(attrToAdd);
-            ldapAttrsToAdd.addAll(
-                    toLDAPAttributes(tempObject, ldapInterface));
+            for(Attribute attribute :
+                toLDAPAttributes(tempObject, ldapInterface))
+            {
+              mods.add(new Modification(ModificationType.ADD,
+                  attribute.getName(), attribute.getRawValues()));
+            }
           }
         }
         else
         {
           //The attr is single-valued, so just replace it on the newObject.
-          attrsToReplace.setAttribute(attr);
+          SCIMObject tempObject = new SCIMObject();
+          tempObject.setAttribute(attr);
+          for(Attribute attribute :
+              toLDAPAttributes(tempObject, ldapInterface))
+          {
+            mods.add(new Modification(ModificationType.REPLACE,
+                attribute.getName(), attribute.getRawValues()));
+          }
         }
-      }
-    }
-
-    //Replace any singular attributes that were specified.
-    final List<Attribute> ldapAttrsToReplace  =
-            toLDAPAttributes(attrsToReplace, ldapInterface);
-    for (Attribute attr : ldapAttrsToReplace)
-    {
-      modifiedEntry.setAttribute(attr);
-      attrsToDiff.add(attr.getName());
-    }
-
-    //Remove any specific values from multi-valued attributes.
-    for (Attribute attr : ldapAttrsToDelete)
-    {
-      modifiedEntry.removeAttributeValues(attr.getName(),
-                                          attr.getValueByteArrays());
-      attrsToDiff.add(attr.getName());
-    }
-
-    //Merge in any specific value to multi-valued attributes.
-    for (Attribute attr : ldapAttrsToAdd)
-    {
-      modifiedEntry.addAttribute(attr);
-      attrsToDiff.add(attr.getName());
-    }
-
-    List<Modification> mods =
-            Entry.diff(currentEntry, modifiedEntry, false, false,
-                    attrsToDiff.toArray(new String[attrsToDiff.size()]));
-
-    for (String attr : attrsToDiff)
-    {
-      if (!currentEntry.hasAttribute(attr) && !modifiedEntry.hasAttribute(attr))
-      {
-        mods.add(new Modification(ModificationType.REPLACE, attr));
       }
     }
 

@@ -224,6 +224,7 @@ public abstract class SCIMRITestCase extends SCIMTestCase
     ldapBackend.setSupportsPostReadRequestControl(true);
     ldapBackend.setSupportsVLVRequestControl(true);
     ldapBackend.setSupportsSimplePagedResultsControl(true);
+    ldapBackend.setSupportsPermissiveModifyRequestControl(true);
     ldapBackend.setEntityTagAttribute("modifyTimestamp");
 
     scimApplication = testSS.registerBackend("/", ldapBackend);
