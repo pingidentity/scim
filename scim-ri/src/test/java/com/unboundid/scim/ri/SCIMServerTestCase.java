@@ -1661,7 +1661,8 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
           scimObject.getAttribute(
               SCIMConstants.SCHEMA_URI_ENTERPRISE_EXTENSION, "manager"));
 
-    user = userEndpoint.update(user, attrsToUpdate, null);
+    user = userEndpoint.update(user, attrsToUpdate,
+        Collections.singletonList("password"));
 
     //Verify the contents of the entry in the Directory
     SearchResultEntry entry = testDS.getEntry(

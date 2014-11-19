@@ -15,6 +15,12 @@ https://www.unboundid.com/resources/scim
       conform to SCIM spec when adding existing values or deleting non-existent
       values.
 
+    - Fixed issue where TelephoneNumberTransformation does not preserve the
+      original number format. It is now guaranteed to not add, modify, or
+      remove any digits during transformation. The defaultCountry and ldapFormat
+      arguments are no longer applicable to the transformation and will be
+      ignored if specified.
+
 ---------- SCIM 1.8.0 ----------
 
   * Release Date: September 11th, 2014

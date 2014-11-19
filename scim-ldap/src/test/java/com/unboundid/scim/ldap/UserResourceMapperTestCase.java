@@ -135,9 +135,9 @@ public class UserResourceMapperTestCase
     assertTrue(entry.hasAttributeValue("l", "Hollywood"));
     assertTrue(entry.hasAttributeValue("st", "CA"));
     assertTrue(entry.hasAttributeValue("postalCode", "91608"));
-    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 800-864-8377"));
-    assertTrue(entry.hasAttributeValue("mobile", "+1 818-123-4567"));
-    assertTrue(entry.hasAttributeValue("pager", "+1 324-231-4567"));
+    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 800 864 8377"));
+    assertTrue(entry.hasAttributeValue("mobile", "+1 818 123 4567"));
+    assertTrue(entry.hasAttributeValue("pager", "+1 324 231 4567"));
     final SCIMObject user2 = new SCIMObject();
     for (final SCIMAttribute a :
         mapper.toSCIMAttributes(
@@ -194,7 +194,7 @@ public class UserResourceMapperTestCase
     assertTrue(entry.hasAttributeValue("l", "Sioux City"));
     assertTrue(entry.hasAttributeValue("st", "IL"));
     assertTrue(entry.hasAttributeValue("postalCode", "24769"));
-    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 319-805-3070"));
+    assertTrue(entry.hasAttributeValue("telephoneNumber", "+1 319 805 3070"));
     // This number is not a valid number so it shouldn't be reformatted.
     assertTrue(entry.hasAttributeValue("homePhone", "+1 003 490 8631"));
   }
@@ -321,23 +321,23 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getComponents()[0].getAttributeName(),
         "pager");
     assertEquals(filter.getComponents()[0].getAssertionValue(),
-        "+1 512-456-7890 ext. 123");
+        "+1 512 456 7890 ext. 123");
     assertEquals(filter.getComponents()[1].getAttributeName(),
         "telephoneNumber");
     assertEquals(filter.getComponents()[1].getAssertionValue(),
-        "+1 512-456-7890 ext. 123");
+        "+1 512 456 7890 ext. 123");
     assertEquals(filter.getComponents()[2].getAttributeName(),
         "homePhone");
     assertEquals(filter.getComponents()[2].getAssertionValue(),
-        "+1 512-456-7890 ext. 123");
+        "+1 512 456 7890 ext. 123");
     assertEquals(filter.getComponents()[3].getAttributeName(),
         "facsimileTelephoneNumber");
     assertEquals(filter.getComponents()[3].getAssertionValue(),
-        "+1 512-456-7890 ext. 123");
+        "+1 512 456 7890 ext. 123");
     assertEquals(filter.getComponents()[4].getAttributeName(),
         "mobile");
     assertEquals(filter.getComponents()[4].getAssertionValue(),
-        "+1 512-456-7890 ext. 123");
+        "+1 512 456 7890 ext. 123");
 
     try
     {

@@ -1090,8 +1090,7 @@ public class ResourceMapper
 
         for (String attr : ldapAttributes)
         {
-          mods.add(new Modification(currentEntry.hasAttribute(attr) ?
-              ModificationType.DELETE : ModificationType.REPLACE, attr));
+          mods.add(new Modification(ModificationType.DELETE, attr));
         }
       }
 
@@ -1124,9 +1123,7 @@ public class ResourceMapper
                 for(Attribute attribute :
                     toLDAPAttributes(tempObject, ldapInterface))
                 {
-                  mods.add(new Modification(currentEntry.hasAttribute(
-                      attribute.getName()) ?
-                      ModificationType.DELETE : ModificationType.REPLACE,
+                  mods.add(new Modification(ModificationType.DELETE,
                       attribute.getName(), attribute.getRawValues()));
                 }
                 continue;
