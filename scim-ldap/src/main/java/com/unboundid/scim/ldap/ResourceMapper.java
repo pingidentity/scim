@@ -1052,7 +1052,9 @@ public class ResourceMapper
     SCIMAttribute meta = scimObject.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
                                         CoreSchema.META_DESCRIPTOR.getName());
 
-    List<Modification> mods = new LinkedList<Modification>();
+    HashMap<String, Modification> deletedAttrs =
+        new HashMap<String, Modification>();
+    LinkedList<Modification> mods = new LinkedList<Modification>();
 
     if (meta != null)
     {
@@ -1090,7 +1092,8 @@ public class ResourceMapper
 
         for (String attr : ldapAttributes)
         {
-          mods.add(new Modification(ModificationType.DELETE, attr));
+          deletedAttrs.put(attr.toLowerCase(),
+              new Modification(ModificationType.DELETE, attr));
         }
       }
 
@@ -1123,8 +1126,14 @@ public class ResourceMapper
                 for(Attribute attribute :
                     toLDAPAttributes(tempObject, ldapInterface))
                 {
-                  mods.add(new Modification(ModificationType.DELETE,
-                      attribute.getName(), attribute.getRawValues()));
+                  String attrName = attribute.getName();
+                  if(!deletedAttrs.containsKey(attrName.toLowerCase()))
+                  {
+                    // All values may be deleted already, in which case we
+                    // don't need to add another value specific delete mod.
+                    mods.add(new Modification(ModificationType.DELETE,
+                        attrName, attribute.getRawValues()));
+                  }
                 }
                 continue;
               }
@@ -1138,8 +1147,18 @@ public class ResourceMapper
             for(Attribute attribute :
                 toLDAPAttributes(tempObject, ldapInterface))
             {
-              mods.add(new Modification(ModificationType.ADD,
-                  attribute.getName(), attribute.getRawValues()));
+              String attrName = attribute.getName();
+              if(deletedAttrs.remove(attrName.toLowerCase()) == null)
+              {
+                mods.add(new Modification(ModificationType.ADD,
+                    attrName, attribute.getRawValues()));
+              }
+              else
+              {
+                // Replace the delete/add with a single replace mod.
+                mods.add(new Modification(ModificationType.REPLACE,
+                    attrName, attribute.getRawValues()));
+              }
             }
           }
         }
@@ -1151,13 +1170,17 @@ public class ResourceMapper
           for(Attribute attribute :
               toLDAPAttributes(tempObject, ldapInterface))
           {
+            String attrName = attribute.getName();
+            deletedAttrs.remove(attrName.toLowerCase());
             mods.add(new Modification(ModificationType.REPLACE,
-                attribute.getName(), attribute.getRawValues()));
+                attrName, attribute.getRawValues()));
+
           }
         }
       }
     }
 
+    mods.addAll(0, deletedAttrs.values());
     return mods;
   }
 
