@@ -1,5 +1,5 @@
 @echo off
-REM Copyright 2011-2014 UnboundID Corp.
+REM Copyright 2011-2015 UnboundID Corp.
 REM All Rights Reserved.
 
 setlocal ENABLEDELAYEDEXPANSION
