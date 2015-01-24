@@ -5,7 +5,7 @@ https://www.unboundid.com/resources/scim
 
 ---------- SCIM 1.8.1 ----------
 
-  * Release Date: TBD
+  * Release Date: January 23rd, 2014
 
   * Resolved Issues
 
@@ -20,6 +20,13 @@ https://www.unboundid.com/resources/scim
       remove any digits during transformation. The defaultCountry and ldapFormat
       arguments are no longer applicable to the transformation and will be
       ignored if specified.
+
+    - Fixed issue where replacing all values of an attribute with a PATCH
+      operation by specifying the attribute in meta.attributes and the new
+      values results in two LDAP modify operations with add and delete change
+      types.
+
+    - Updated to Jetty 8.1.16.v20140903 for the reference SCIM server.
 
 ---------- SCIM 1.8.0 ----------
 
