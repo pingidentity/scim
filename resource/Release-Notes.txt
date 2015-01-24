@@ -3,6 +3,14 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.8.2 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+   -
+
 ---------- SCIM 1.8.1 ----------
 
   * Release Date: January 23rd, 2014
