@@ -186,9 +186,7 @@ public class SimpleValue
    */
   public Date getDateValue()
   {
-    final Calendar calendar = DatatypeConverter.parseDateTime((String)value);
-    calendar.setTimeZone(utcTimeZone);
-    return calendar.getTime();
+    return DatatypeConverter.parseDateTime((String)value).getTime();
   }
 
 

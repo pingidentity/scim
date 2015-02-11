@@ -285,6 +285,40 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getAssertionValue(), "test");
 
     filter = mapper.toLDAPFilter(
+      SCIMFilter.parse("name.familyName ge " +
+        "\"2015-02-06T09:37:57.969-07:00\""), null);
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_GREATER_OR_EQUAL);
+    assertEquals(filter.getAttributeName(), "sn");
+    assertEquals(filter.getAssertionValue(), "2015-02-06T09:37:57.969-07:00");
+
+    filter = mapper.toLDAPFilter(
+      SCIMFilter.parse("name.familyName ge \"2015-02-06\""), null);
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = filter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_GREATER_OR_EQUAL);
+    assertEquals(filter.getAttributeName(), "sn");
+    assertEquals(filter.getAssertionValue(), "2015-02-06");
+
+    filter = mapper.toLDAPFilter(
+      SCIMFilter.parse("meta.lastModified lt " +
+        "\"2015-02-06T09:37:57.969-07:00\""), null);
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
+    andFilter = filter.getComponents()[0];
+    assertEquals(andFilter.getFilterType(), Filter.FILTER_TYPE_AND);
+    filter = andFilter.getComponents()[0];
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_LESS_OR_EQUAL);
+    assertEquals(filter.getAttributeName(), "modifyTimestamp");
+    assertEquals(filter.getAssertionValue(), "20150206163757.969Z");
+    notFilter = andFilter.getComponents()[1];
+    assertEquals(notFilter.getFilterType(), Filter.FILTER_TYPE_NOT);
+    filter = notFilter.getNOTComponent();
+    assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_EQUALITY);
+    assertEquals(filter.getAttributeName(), "modifyTimestamp");
+    assertEquals(filter.getAssertionValue(), "20150206163757.969Z");
+
+    filter = mapper.toLDAPFilter(
         SCIMFilter.parse("name.familyName ge \"test\""), null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];

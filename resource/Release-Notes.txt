@@ -9,7 +9,9 @@ https://www.unboundid.com/resources/scim
 
   * Resolved Issues
 
-   -
+    - Fixed an issue where SCIM filter processing may not handle date literals
+      properly when converting to an LDAP filter. This may have produced
+      incorrect search results with date-based filtering.
 
 ---------- SCIM 1.8.1 ----------
 
