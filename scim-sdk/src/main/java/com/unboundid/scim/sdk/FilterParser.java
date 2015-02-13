@@ -355,11 +355,11 @@ public class FilterParser
       throw new IllegalArgumentException(msg);
     }
 
-    final Object filterValue;
+    final String filterValueString;
     if (!filterType.equals(SCIMFilterType.PRESENCE))
     {
-      filterValue = readValue();
-      if (filterValue == null)
+      filterValueString = readValue();
+      if (filterValueString == null)
       {
         final String msg = String.format(
             "End of input at position %d while expecting a value for " +
@@ -369,14 +369,12 @@ public class FilterParser
     }
     else
     {
-      filterValue = null;
+      filterValueString = null;
     }
 
     return new SCIMFilter(
-        filterType, filterAttribute,
-        filterValue != null ? filterValue.toString() : null,
-        (filterValue != null) && (filterValue instanceof String),
-        null);
+        filterType, filterAttribute, filterValueString,
+        (filterValueString != null), null);
   }
 
 
@@ -573,17 +571,16 @@ public class FilterParser
 
 
   /**
-   * Read a value at the current position. A value can be a number, or a
-   * boolean value (the words true or false), or a string value in double
+   * Read a value at the current position. A value can be a number, a datetime
+   * or a boolean value (the words true or false), or a string value in double
    * quotes, using the same syntax as for JSON values. Whitespace before and
    * after the value is consumed. The start of the value is saved in
    * {@code markPos}.
    *
-   * @return A Boolean, Double, Integer, Long or String representing the value
-   *         at the current position, or {@code null} if the end of the input
-   *         has already been reached.
+   * @return A String representing the value at the current position, or
+   *         {@code null} if the end of the input has already been reached.
    */
-  public Object readValue()
+  public String readValue()
   {
     skipWhitespace();
     markPos = currentPos;
@@ -788,7 +785,6 @@ public class FilterParser
       final String s = filterString.substring(markPos, currentPos);
       skipWhitespace();
       final Object value = JSONObject.stringToValue(s);
-
       if (value.equals(JSONObject.NULL) || value instanceof String)
       {
         final String msg = String.format(
@@ -796,7 +792,7 @@ public class FilterParser
         throw new IllegalArgumentException(msg);
       }
 
-      return value;
+      return s;
     }
   }
 

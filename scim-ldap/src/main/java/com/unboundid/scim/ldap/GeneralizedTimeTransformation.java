@@ -84,7 +84,8 @@ public class GeneralizedTimeTransformation extends Transformation
     switch (descriptor.getDataType())
     {
       case DATETIME:
-        final Date date = value.getDateValue();
+        final Date date = new SimpleValue(value.getStringValue())
+          .getDateValue();
         return new ASN1OctetString(StaticUtils.encodeGeneralizedTime(date));
 
       case STRING:

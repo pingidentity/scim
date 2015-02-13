@@ -43,6 +43,9 @@ public class DefaultTransformation extends Transformation
         return SCIMAttributeValue.createBinaryValue(byteString.getValue());
 
       case DATETIME:
+        throw new IllegalArgumentException(
+          "The default transformation can not be used on " +
+            descriptor.getDataType() + " data");
       case STRING:
       case BOOLEAN:
       case DECIMAL:
@@ -67,6 +70,9 @@ public class DefaultTransformation extends Transformation
         return new ASN1OctetString(value.getBinaryValue());
 
       case DATETIME:
+        throw new IllegalArgumentException(
+          "The default transformation can not be used on " +
+            descriptor.getDataType() + " data");
       case STRING:
       case BOOLEAN:
       case DECIMAL:
