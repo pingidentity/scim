@@ -191,11 +191,11 @@ public abstract class SCIMRequest
 
   /**
    * Evaluate request preconditions for a resource that does not currently
-   * exist. The primary use of this method is to support the {@link <a
-   * href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.24">
-   * If-Match: *</a>} and {@link <a
-   * href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.26">
-   * If-None-Match: *</a>} preconditions.
+   * exist. The primary use of this method is to support the &lt;a
+   * href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.24"&gt;
+   * If-Match: *&lt;/a&gt; and &lt;a
+   * href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.26"&gt;
+   * If-None-Match: *&lt;/a&gt; preconditions.
    *
    * @param exception The ResourceNotFoundException that would've been thrown
    *                  if the preconditions are met.

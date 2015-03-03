@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  * This class is used to construct DN and attribute values from a template value
  * that allows portions of the DN and entry attributes to be included in the
  * constructed attribute value / DN.
- * <p/>
+ * <p>
  * This class is based on the UnboundID Sync Server implementation.
  */
 public final class ConstructedValue
