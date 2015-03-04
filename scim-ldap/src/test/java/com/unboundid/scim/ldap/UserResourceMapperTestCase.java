@@ -352,26 +352,17 @@ public class UserResourceMapperTestCase
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
     assertEquals(filter.getComponents().length, 5);
-    assertEquals(filter.getComponents()[0].getAttributeName(),
-        "pager");
-    assertEquals(filter.getComponents()[0].getAssertionValue(),
-        "+1 512 456 7890 ext. 123");
-    assertEquals(filter.getComponents()[1].getAttributeName(),
-        "telephoneNumber");
-    assertEquals(filter.getComponents()[1].getAssertionValue(),
-        "+1 512 456 7890 ext. 123");
-    assertEquals(filter.getComponents()[2].getAttributeName(),
-        "homePhone");
-    assertEquals(filter.getComponents()[2].getAssertionValue(),
-        "+1 512 456 7890 ext. 123");
-    assertEquals(filter.getComponents()[3].getAttributeName(),
-        "facsimileTelephoneNumber");
-    assertEquals(filter.getComponents()[3].getAssertionValue(),
-        "+1 512 456 7890 ext. 123");
-    assertEquals(filter.getComponents()[4].getAttributeName(),
-        "mobile");
-    assertEquals(filter.getComponents()[4].getAssertionValue(),
-        "+1 512 456 7890 ext. 123");
+    Filter[] components = filter.getComponents();
+    assertFilterComponentAttributeNameAndAssertionValue(components, "pager",
+      "+1 512 456 7890 ext. 123");
+    assertFilterComponentAttributeNameAndAssertionValue(components, "telephoneNumber",
+      "+1 512 456 7890 ext. 123");
+    assertFilterComponentAttributeNameAndAssertionValue(components, "homePhone",
+      "+1 512 456 7890 ext. 123");
+    assertFilterComponentAttributeNameAndAssertionValue(components, "facsimileTelephoneNumber",
+      "+1 512 456 7890 ext. 123");
+    assertFilterComponentAttributeNameAndAssertionValue(components, "mobile",
+      "+1 512 456 7890 ext. 123");
 
     try
     {
@@ -390,12 +381,11 @@ public class UserResourceMapperTestCase
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
     assertEquals(filter.getComponents().length, 2);
-    assertEquals(filter.getComponents()[0].getAttributeName(),
-        "postalAddress");
-    assertEquals(filter.getComponents()[0].getAssertionValue(), "test");
-    assertEquals(filter.getComponents()[1].getAttributeName(),
-        "homePostalAddress");
-    assertEquals(filter.getComponents()[1].getAssertionValue(), "test");
+    components = filter.getComponents();
+    assertFilterComponentAttributeNameAndAssertionValue(components, "postalAddress",
+      "test");
+    assertFilterComponentAttributeNameAndAssertionValue(components, "homePostalAddress",
+      "test");
 
     filter = mapper.toLDAPFilter(SCIMFilter.parse(
             "name.formatted eq \"test\" and userName eq \"test\""), null);
@@ -426,6 +416,26 @@ public class UserResourceMapperTestCase
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
     assertEquals(filter.getComponents().length, 1);
+  }
+
+  private void assertFilterComponentAttributeNameAndAssertionValue(
+    final Filter[] components,
+    final String attributeName,
+    final String assertionValue)
+  {
+    boolean found = false;
+    for (final Filter f : components)
+    {
+      if (f.getAttributeName().equals(attributeName))
+      {
+        found = true;
+        assertEquals(f.getAssertionValue(), assertionValue);
+      }
+    }
+    if (!found)
+    {
+      fail(attributeName + " not found");
+    }
   }
 
   /**
