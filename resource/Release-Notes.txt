@@ -13,6 +13,9 @@ https://www.unboundid.com/resources/scim
       properly when converting to an LDAP filter. This may have produced
       incorrect search results with date-based filtering.
 
+    - Fixed an issue where SCIM requests made using the Simple Paged Results
+      control did not return a correct totalResults value.
+
 ---------- SCIM 1.8.1 ----------
 
   * Release Date: January 23rd, 2014

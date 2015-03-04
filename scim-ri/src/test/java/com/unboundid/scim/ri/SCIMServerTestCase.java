@@ -2455,6 +2455,70 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
 
   /**
+   * Provides test coverage for pagination without using VLV search controls.
+   *
+   * @throws Exception  If the test fails.
+   */
+  @Test
+  public void testPaginationWithOnlySimplePagedResultsControl() throws Exception
+  {
+    // Disable using the VLV control
+    SCIMServerConfig scimServerConfig = new SCIMServerConfig();
+    scimServerConfig.setVLVRequestControlSupported(false);
+    scimServerConfig.setSimplePagedResultsControlSupported(true);
+    reconfigureTestSuite(scimServerConfig);
+
+    try
+    {
+      // Get a reference to the in-memory test DS.
+      final InMemoryDirectoryServer testDS = getTestDS();
+      testDS.add(generateDomainEntry("example", "dc=com"));
+      testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
+
+      // Create some users.
+      final Set<String> userDNs = new HashSet<String>();
+      final long NUM_USERS = 1002;
+      for (int i = 0; i < NUM_USERS; i++)
+      {
+        final String uid = "paginationUser." + i;
+        testDS.add(
+            generateUserEntry(
+                    uid, userBaseDN, "Test", "User", "password",
+                    new Attribute("employeeNumber", String.valueOf(i))));
+        userDNs.add("uid=" + uid + "," + userBaseDN);
+      }
+
+      // Get customized User Endpoint
+      final ResourceDescriptor customUserDescriptor =
+              getBackendResourceDescriptor("Users");
+      final SCIMEndpoint<UserResource> userEndpoint = service.getEndpoint(
+              customUserDescriptor,
+              UserResource.USER_RESOURCE_FACTORY);
+
+      // Fetch one page to verify only the page size is returned, and that the
+      // total results matches the number of entries.
+      int pageSize = 10;
+      int startIndex = 1;
+      final Resources<UserResource> resources =
+          userEndpoint.query("userName sw \"paginationUser\"", null,
+                             new PageParameters(startIndex, pageSize));
+      assertEquals(resources.getTotalResults(), NUM_USERS);
+      assertEquals(resources.getStartIndex(), startIndex);
+      assertEquals(resources.getItemsPerPage(), pageSize);
+    }
+    finally
+    {
+      // Clean up SCIM Server Config
+      scimServerConfig = new SCIMServerConfig();
+      scimServerConfig.setVLVRequestControlSupported(true);
+      scimServerConfig.setSimplePagedResultsControlSupported(true);
+      reconfigureTestSuite(scimServerConfig);
+    }
+  }
+
+
+
+  /**
    * Tests the maxResults configuration setting.
    *
    * @throws Exception If the test fails.
@@ -2474,24 +2538,29 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     config.setMaxResults(maxResults);
     reconfigureTestSuite(config);
 
-    // Create some users.
-    final long NUM_USERS = 10;
-    for (int i = 0; i < NUM_USERS; i++)
+    try
     {
-      final String uid = "maxResultsUser." + i;
-      testDS.add(
-          generateUserEntry(uid, userBaseDN, "Test", "User", "password"));
+      // Create some users.
+      final long NUM_USERS = 10;
+      for (int i = 0; i < NUM_USERS; i++)
+      {
+        final String uid = "maxResultsUser." + i;
+        testDS.add(
+            generateUserEntry(uid, userBaseDN, "Test", "User", "password"));
+      }
+
+      // Try to fetch more users than can be returned.
+      final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
+      final Resources<UserResource> resources = userEndpoint.query(null);
+      assertEquals(resources.getItemsPerPage(), maxResults);
+      assertEquals(resources.getTotalResults(), NUM_USERS);
     }
-
-    // Try to fetch more users than can be returned.
-    final SCIMEndpoint<UserResource> userEndpoint = service.getUserEndpoint();
-    final Resources<UserResource> resources = userEndpoint.query(null);
-    assertEquals(resources.getItemsPerPage(), maxResults);
-    assertEquals(resources.getTotalResults(), maxResults);
-
-    //Clean up
-    config.setMaxResults(Integer.MAX_VALUE);
-    reconfigureTestSuite(config);
+    finally
+    {
+      //Clean up
+      config.setMaxResults(Integer.MAX_VALUE);
+      reconfigureTestSuite(config);
+    }
   }
 
 

@@ -598,6 +598,8 @@ public abstract class LDAPBackend
           else if (supportsSimplePagesResultsControl)
           {
             //Fall back to using the SimplePagedResults control (if available)
+            //This will essentially, only limit the number of entries returned
+            //since we are not propagating the cookie between searches.
             searchRequest.addControl(
                     new SimplePagedResultsControl(numLeftToReturn));
           }
@@ -662,11 +664,20 @@ public abstract class LDAPBackend
 
       final VirtualListViewResponseControl vlvResponseControl =
                   getVLVResponseControl(searchResult);
+      final SimplePagedResultsControl simplePagedResultsResponseControl =
+              SimplePagedResultsControl.get(searchResult);
 
       if (vlvResponseControl != null)
       {
         return new Resources<BaseResource>(scimObjects,
                       vlvResponseControl.getContentCount(), startIndex);
+      }
+      else if (simplePagedResultsResponseControl != null)
+      {
+        // We are only using the control here for an estimate of the total size
+        return new Resources<BaseResource>(scimObjects,
+                      simplePagedResultsResponseControl.getSize(),
+                      startIndex);
       }
       else
       {
@@ -1711,27 +1722,49 @@ public abstract class LDAPBackend
   private static VirtualListViewResponseControl getVLVResponseControl(
       final SearchResult result) throws LDAPException
   {
+    int numResponseControlsFound = 0;
+    VirtualListViewResponseControl returnControl = null;
     if (result == null)
     {
       return null;
     }
+    for (Control c : result.getResponseControls())
+    {
+      VirtualListViewResponseControl vlvrc;
+      if (c == null)
+      {
+        continue;
+      }
+      if (!c.getOID().equals(
+              VirtualListViewResponseControl.VIRTUAL_LIST_VIEW_RESPONSE_OID))
+      {
+        continue;
+      }
 
-    final Control c = result.getResponseControl(
-        VirtualListViewResponseControl.VIRTUAL_LIST_VIEW_RESPONSE_OID);
-    if (c == null)
-    {
-      return null;
-    }
+      numResponseControlsFound++;
 
-    if (c instanceof VirtualListViewResponseControl)
-    {
-      return (VirtualListViewResponseControl) c;
+      if (c instanceof VirtualListViewResponseControl) {
+        vlvrc = (VirtualListViewResponseControl) c;
+      } else {
+        vlvrc = new VirtualListViewResponseControl(c.getOID(), c.isCritical(),
+                                                  c.getValue());
+      }
+      if (vlvrc.getContentCount() > 0 || numResponseControlsFound == 1)
+      {
+        // Don't return an empty VLV response unless it's the only one
+        returnControl = vlvrc;
+      }
     }
-    else
+    if (numResponseControlsFound > 1)
     {
-      return new VirtualListViewResponseControl(c.getOID(), c.isCritical(),
-          c.getValue());
+      // This should not happen in a "good" environment
+      Debug.debug(Level.SEVERE, DebugType.OTHER,
+            "Error: LDAP result contained multiple VLV response controls. " +
+            "This could be the result of a SCIM request with paging " +
+            "parameters that is fulfilled by a server that does not properly " +
+            "support VLV controls");
     }
+    return returnControl;
   }
 
 

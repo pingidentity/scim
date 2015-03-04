@@ -77,6 +77,16 @@ public class SCIMServerConfig
    */
   private int maxResults = Integer.MAX_VALUE;
 
+  /**
+   * Whether to use the VLVRequestControl.
+   */
+  private boolean supportsVLVRequestControl = true;
+
+  /**
+   * Whether to use the SimplePagedResultsControl.
+   */
+  private boolean supportsSimplePagedResultsControl = true;
+
 
   /**
    * Create a new server config with default information.
@@ -304,5 +314,47 @@ public class SCIMServerConfig
   public void setMaxResults(final int maxResults)
   {
     this.maxResults = maxResults;
+  }
+
+
+
+  /**
+   * Determine if the VLVRequestControl should be supported.
+   * @return  true if it is supported.
+   */
+  public boolean isVLVRequestControlSupported() {
+    return supportsVLVRequestControl;
+  }
+
+
+
+  /**
+   * Set if the VLVRequestControl should be supported.
+   * @param  supportsVLVRequestControl is true if it is supported.
+   */
+  public void setVLVRequestControlSupported(
+          final boolean supportsVLVRequestControl) {
+    this.supportsVLVRequestControl = supportsVLVRequestControl;
+  }
+
+
+
+  /**
+   * Determine if the SimplePagedResultsControl should be supported.
+   * @return  true if it is supported.
+   */
+  public boolean isSimplePagedResultsControlSupported() {
+    return supportsSimplePagedResultsControl;
+  }
+
+
+
+  /**
+   * Determine if the SimplePagedResultsControl should be supported.
+   * @param  supportsSimplePagedResultsControl is true if it is supported.
+   */
+  public void setSimplePagedResultsControlSupported(
+          final boolean supportsSimplePagedResultsControl) {
+    this.supportsSimplePagedResultsControl = supportsSimplePagedResultsControl;
   }
 }
