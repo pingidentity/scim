@@ -355,12 +355,12 @@ public class UserResourceMapperTestCase
     Filter[] components = filter.getComponents();
     assertFilterComponentAttributeNameAndAssertionValue(components, "pager",
       "+1 512 456 7890 ext. 123");
-    assertFilterComponentAttributeNameAndAssertionValue(components, "telephoneNumber",
-      "+1 512 456 7890 ext. 123");
+    assertFilterComponentAttributeNameAndAssertionValue(components,
+      "telephoneNumber", "+1 512 456 7890 ext. 123");
     assertFilterComponentAttributeNameAndAssertionValue(components, "homePhone",
       "+1 512 456 7890 ext. 123");
-    assertFilterComponentAttributeNameAndAssertionValue(components, "facsimileTelephoneNumber",
-      "+1 512 456 7890 ext. 123");
+    assertFilterComponentAttributeNameAndAssertionValue(components,
+      "facsimileTelephoneNumber", "+1 512 456 7890 ext. 123");
     assertFilterComponentAttributeNameAndAssertionValue(components, "mobile",
       "+1 512 456 7890 ext. 123");
 
@@ -382,10 +382,10 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
     assertEquals(filter.getComponents().length, 2);
     components = filter.getComponents();
-    assertFilterComponentAttributeNameAndAssertionValue(components, "postalAddress",
-      "test");
-    assertFilterComponentAttributeNameAndAssertionValue(components, "homePostalAddress",
-      "test");
+    assertFilterComponentAttributeNameAndAssertionValue(components,
+      "postalAddress", "test");
+    assertFilterComponentAttributeNameAndAssertionValue(components,
+      "homePostalAddress", "test");
 
     filter = mapper.toLDAPFilter(SCIMFilter.parse(
             "name.formatted eq \"test\" and userName eq \"test\""), null);
@@ -418,6 +418,13 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getComponents().length, 1);
   }
 
+  /**
+   * Performs an assert on filter component attribute name and assertion value.
+   *
+   * @param components      Filter array of component attributes
+   * @param attributeName   attribute name to check assertion
+   * @param assertionValue  assertion value to enforce for attribute
+   */
   private void assertFilterComponentAttributeNameAndAssertionValue(
     final Filter[] components,
     final String attributeName,
