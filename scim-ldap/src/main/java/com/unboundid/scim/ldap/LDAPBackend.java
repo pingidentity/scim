@@ -675,9 +675,12 @@ public abstract class LDAPBackend
       else if (simplePagedResultsResponseControl != null)
       {
         // We are only using the control here for an estimate of the total size
-        return new Resources<BaseResource>(scimObjects,
-                      simplePagedResultsResponseControl.getSize(),
-                      startIndex);
+        // and only if it actually reveals more than the resultListener
+        int totalResults = Math.max(
+                simplePagedResultsResponseControl.getSize(),
+                resultListener.getTotalResults());
+        return new Resources<BaseResource>(
+                scimObjects, totalResults, startIndex);
       }
       else
       {
