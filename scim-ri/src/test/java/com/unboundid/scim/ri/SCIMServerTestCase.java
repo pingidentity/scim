@@ -67,9 +67,9 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -84,6 +84,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.ws.rs.core.MediaType;
+import javax.xml.bind.DatatypeConverter;
 
 import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import static com.unboundid.scim.sdk.SCIMConstants.
@@ -2219,10 +2220,6 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     testDS.add(generateDomainEntry("example", "dc=com"));
     testDS.add(generateOrgUnitEntry("people", "dc=example,dc=com"));
 
-    final SimpleDateFormat formatter =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-    formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
     long halfwayTime = 0;
 
     // Create some users.
@@ -2319,7 +2316,9 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
 
     //Test 'gt' (greater than)
     Date halfwayDate = new Date(halfwayTime);
-    String formattedTime = formatter.format(halfwayDate);
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTime(halfwayDate);
+    String formattedTime = DatatypeConverter.printDateTime(calendar);
     results = userEndpoint.query("userName sw \"filterUser\" and " +
                                  "meta.created gt \"" + formattedTime + "\"");
     assertEquals(results.getTotalResults(), 5);

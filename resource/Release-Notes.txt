@@ -6,8 +6,14 @@ https://www.unboundid.com/resources/scim
 ---------- SCIM 1.8.1 ----------
 
   * Release Date: January 23rd, 2014
+  
+  * Updated: March 18th, 2015
 
   * Resolved Issues
+
+    - Fixed an issue where SCIM filter processing may not handle date literals
+      properly when converting to an LDAP filter. This may have produced
+      incorrect search results with date-based filtering.
 
     - Fixed issue where using PATCH to delete values of a multi-valued attribute
       defined with an attribute mapping transformation may not always work. LDAP
