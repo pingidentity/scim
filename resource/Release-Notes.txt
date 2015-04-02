@@ -16,6 +16,10 @@ https://www.unboundid.com/resources/scim
     - Fixed an issue where SCIM requests made using the Simple Paged Results
       control did not return a correct totalResults value.
 
+    - Added a method enabling the retrieval of only schema-declared
+      sub-attributes from a complex attribute descriptor.  This method does
+      not include auto-generated normative attributes in the response.
+
 ---------- SCIM 1.8.1 ----------
 
   * Release Date: January 23rd, 2014

@@ -513,6 +513,20 @@ public final class AttributeDescriptor {
   }
 
   /**
+   * Retrieves the set of descriptors for subordinate attributes of a
+   * complex attribute.  This method does  not return normative
+   * sub-attributes that were not declared in the schema.
+   *
+   * @return The set of descriptors for subordinate attributes of a complex
+   *         attribute, or {@code null} if the attribute is not a complex
+   *         attribute.
+   */
+  public Collection<AttributeDescriptor> getDeclaredSubAttributes()
+  {
+    return subAttributes == null ? null : subAttributes.values();
+  }
+
+  /**
    * Retrieves the attribute descriptor for a specified subordinate attribute
    * of a complex attribute.
    *
