@@ -3,6 +3,23 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.8.2 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+    - Fixed an issue where SCIM filter processing may not handle date literals
+      properly when converting to an LDAP filter. This may have produced
+      incorrect search results with date-based filtering.
+
+    - Fixed an issue where SCIM requests made using the Simple Paged Results
+      control did not return a correct totalResults value.
+
+    - Added a method enabling the retrieval of only schema-declared
+      sub-attributes from a complex attribute descriptor.  This method does
+      not include auto-generated normative attributes in the response.
+
 ---------- SCIM 1.8.1 ----------
 
   * Release Date: January 23rd, 2014

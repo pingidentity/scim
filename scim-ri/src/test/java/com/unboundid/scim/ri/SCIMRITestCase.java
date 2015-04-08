@@ -222,8 +222,10 @@ public abstract class SCIMRITestCase extends SCIMTestCase
                                           ldapConfig);
     ldapBackend.getConfig().setMaxResults(ssConfig.getMaxResults());
     ldapBackend.setSupportsPostReadRequestControl(true);
-    ldapBackend.setSupportsVLVRequestControl(true);
-    ldapBackend.setSupportsSimplePagedResultsControl(true);
+    ldapBackend.setSupportsVLVRequestControl(
+            ssConfig.isVLVRequestControlSupported());
+    ldapBackend.setSupportsSimplePagedResultsControl(
+            ssConfig.isSimplePagedResultsControlSupported());
     ldapBackend.setSupportsPermissiveModifyRequestControl(true);
     ldapBackend.setEntityTagAttribute("modifyTimestamp");
 

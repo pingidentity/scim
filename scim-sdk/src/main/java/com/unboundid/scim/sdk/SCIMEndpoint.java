@@ -389,12 +389,12 @@ public class SCIMEndpoint<R extends BaseResource>
   /**
    * Retrieve resource instances using the UnboundID SCIM extension for
    * streamed query.
-   * <p/>
+   * <p>
    * Using this form of query will result in better performance when
    * querying against a large candidate result set.  However this query
    * does not support sorting of results or random access into the result
    * set (i.e. specification of a start index).
-   * <p/>
+   * <p>
    * The return from this method includes both a page of resource instances
    * and a resume token that can be used to retrieve the next page of results.
    * An empty resume token indicates that there are no more results.
@@ -406,7 +406,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * <pre>
    *   StreamedQueryRequest request = new StreamedQueryRequest(
    *         filter, attributes, pageSize);
-   *   ListResponse<BaseResource> response;
+   *   ListResponse&lt;BaseResource&gt; response;
    *   do
    *   {
    *     response = endpoint.streamedQuery(request);

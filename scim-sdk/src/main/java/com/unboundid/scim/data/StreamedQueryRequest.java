@@ -30,7 +30,7 @@ import java.util.List;
  * POST.  This extension is intended to be used for queries across a
  * large set of potential results, as it does not require the full result set
  * to be held in memory or processed as a whole.
- * <p/>
+ * <p>
  * StreamedQuery does not support sorting or random access into the result set.
  * As a result it only supports setting page size, not start index.
  */
