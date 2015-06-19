@@ -3,13 +3,15 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.8.3 ----------
+---------- SCIM 1.8.4 ----------
 
   * Release Date: TBD
 
   * Resolved Issues
- 
-    - 
+
+    - Switch from Wink to Jersey as the JAX-RS implementation.
+
+    - Update SCIM to use version 4.5 of the Apache HttpClient libraries.
 
 ---------- SCIM 1.8.2 ----------
 
