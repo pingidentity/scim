@@ -48,6 +48,114 @@
         <VERSION>3.1</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:asm-license:txt:license:1.0</LICENSE_COORDINATES>
       </LICENSE>
-     </LICENSES>
+      <LICENSE index="8">
+        <GROUPID>org.apache.httpcomponents</GROUPID>
+        <ARTIFACTID>httpclient</ARTIFACTID>
+        <VERSION>4.5</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="9">
+        <GROUPID>org.apache.httpcomponents</GROUPID>
+        <ARTIFACTID>httpcore</ARTIFACTID>
+        <VERSION>4.4.1</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="10">
+        <GROUPID>org.glassfish.jersey.core</GROUPID>
+        <ARTIFACTID>jersey-client</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="11">
+        <GROUPID>javax.ws.rs</GROUPID>
+        <ARTIFACTID>javax.ws.rs-api</ARTIFACTID>
+        <VERSION>2.0.1</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="12">
+        <GROUPID>org.glassfish.jersey.core</GROUPID>
+        <ARTIFACTID>jersey-common</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="13">
+        <GROUPID>org.glassfish.jersey.bundles.repackaged</GROUPID>
+        <ARTIFACTID>jersey-guava</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="14">
+        <GROUPID>org.glassfish.hk2</GROUPID>
+        <ARTIFACTID>osgi-resource-locator</ARTIFACTID>
+        <VERSION>1.0.1</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="15">
+        <GROUPID>org.glassfish.hk2</GROUPID>
+        <ARTIFACTID>hk2-api</ARTIFACTID>
+        <VERSION>2.4.0-b10</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="16">
+        <GROUPID>org.glassfish.hk2</GROUPID>
+        <ARTIFACTID>hk2-utils</ARTIFACTID>
+        <VERSION>2.4.0-b10</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="17">
+        <GROUPID>org.glassfish.hk2.external</GROUPID>
+        <ARTIFACTID>aopalliance-repackaged</ARTIFACTID>
+        <VERSION>2.4.0-b10</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="18">
+        <GROUPID>org.glassfish.hk2.external</GROUPID>
+        <ARTIFACTID>javax.inject</ARTIFACTID>
+        <VERSION>2.4.0-b10</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="19">
+        <GROUPID>org.glassfish.hk2</GROUPID>
+        <ARTIFACTID>hk2-locator</ARTIFACTID>
+        <VERSION>2.4.0-b10</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="20">
+        <GROUPID>org.javassist</GROUPID>
+        <ARTIFACTID>javassist</ARTIFACTID>
+        <VERSION>3.18.1-GA</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:mozilla-public-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="21">
+        <GROUPID>org.glassfish.jersey.core</GROUPID>
+        <ARTIFACTID>jersey-server</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="22">
+        <GROUPID>org.glassfish.jersey.media</GROUPID>
+        <ARTIFACTID>jersey-media-jaxb</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="23">
+        <GROUPID>javax.annotation</GROUPID>
+        <ARTIFACTID>javax.annotation-api</ARTIFACTID>
+        <VERSION>1.2</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="24">
+        <GROUPID>org.glassfish.jersey.connectors</GROUPID>
+        <ARTIFACTID>jersey-apache-connector</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="25">
+        <GROUPID>org.glassfish.jersey.containers</GROUPID>
+        <ARTIFACTID>jersey-container-servlet-core</ARTIFACTID>
+        <VERSION>2.17</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+    </LICENSES>
   </SCHEME>
 </SCHEMES>

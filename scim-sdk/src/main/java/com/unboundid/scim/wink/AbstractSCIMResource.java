@@ -169,7 +169,9 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
         application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.GET_OK);
       responseBuilder.contentLocation(resource.getMeta().getLocation());
-      responseBuilder.tag(resource.getMeta().getVersion());
+      // cant use responsebuilder.tag ... it will quote the
+      // already quoted string
+      responseBuilder.header(HttpHeaders.ETAG, resource.getMeta().getVersion());
 
       if(requestContext.getProduceMediaType() ==
           MediaType.APPLICATION_JSON_TYPE)
@@ -600,7 +602,9 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
           resource);
       responseBuilder.location(resource.getMeta().getLocation());
-      responseBuilder.tag(resource.getMeta().getVersion());
+      // cant use responsebuilder.tag ... it will quote the already
+      // quoted string
+      responseBuilder.header(HttpHeaders.ETAG, resource.getMeta().getVersion());
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.POST_OK);
       if(requestContext.getProduceMediaType() ==
@@ -721,7 +725,10 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
                         scimResponse);
       responseBuilder.contentLocation(scimResponse.getMeta().getLocation());
-      responseBuilder.tag(scimResponse.getMeta().getVersion());
+      // cant use responsebuilder.tag ... it will quote the already
+      // quoted string
+      responseBuilder.header(HttpHeaders.ETAG,
+          scimResponse.getMeta().getVersion());
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.PUT_OK);
       if(requestContext.getProduceMediaType() ==
@@ -850,7 +857,10 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
         responseBuilder = Response.status(Response.Status.NO_CONTENT);
       }
       responseBuilder.contentLocation(scimResponse.getMeta().getLocation());
-      responseBuilder.tag(scimResponse.getMeta().getVersion());
+      // cant use responsebuilder.tag ... it will quote the already
+      // quoted string
+      responseBuilder.header(HttpHeaders.ETAG,
+          scimResponse.getMeta().getVersion());
 
       application.getStatsForResource(resourceDescriptor.getName()).
           incrementStat(ResourceStats.PATCH_OK);
@@ -1205,13 +1215,19 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
         Response.status(e.getStatusCode());
     if(e instanceof NotModifiedException)
     {
-      responseBuilder.tag(((NotModifiedException)e).getVersion());
+      // cant use responsebuilder.tag ... it will quote the already
+      // quoted string
+      responseBuilder.header(HttpHeaders.ETAG,
+          ((NotModifiedException) e).getVersion());
     }
     else
     {
       if(e instanceof PreconditionFailedException)
       {
-        responseBuilder.tag(((PreconditionFailedException)e).getVersion());
+        // cant use responsebuilder.tag ... it will quote the already
+        // quoted string
+        responseBuilder.header(HttpHeaders.ETAG,
+            ((PreconditionFailedException) e).getVersion());
       }
       setResponseEntity(responseBuilder, requestContext.getProduceMediaType(),
           e);

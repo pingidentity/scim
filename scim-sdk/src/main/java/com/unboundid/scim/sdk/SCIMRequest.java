@@ -321,6 +321,11 @@ public abstract class SCIMRequest
       versions = new ArrayList<EntityTag>(valueTokens.length);
       for(String token : valueTokens)
       {
+        if(token.equals("*"))
+        {
+          return Collections.emptyList();
+        }
+
         EntityTag tag;
         try
         {
@@ -330,14 +335,7 @@ public abstract class SCIMRequest
         {
           throw new InvalidResourceException(e.getMessage(), e);
         }
-        if(tag.getValue().equals("*"))
-        {
-          return Collections.emptyList();
-        }
-        else
-        {
-          versions.add(tag);
-        }
+        versions.add(tag);
       }
     }
 

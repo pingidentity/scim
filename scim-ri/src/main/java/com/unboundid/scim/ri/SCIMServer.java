@@ -23,8 +23,6 @@ import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.ldap.ResourceMapper;
 import com.unboundid.util.StaticUtils;
-import org.apache.wink.server.internal.DeploymentConfiguration;
-import org.apache.wink.server.internal.servlet.RestServlet;
 import org.eclipse.jetty.http.ssl.SslContextFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -40,8 +38,8 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.glassfish.jersey.servlet.ServletContainer;
 
-import javax.ws.rs.core.Application;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -273,22 +271,14 @@ public class SCIMServer
           new FilterHolder(new BasicAuthenticationFilter(backend));
       contextHandler.addFilter(filterHolder, "/*", null);
 
-      // JAX-RS implementation using Apache Wink.
+      ServletContainer servletContainer = new ServletContainer(application);
       final ServletHolder winkServletHolder =
-          new ServletHolder(new RestServlet()
-          {
-            @Override
-            protected Application getApplication(
-                final DeploymentConfiguration configuration)
-                throws ClassNotFoundException, InstantiationException,
-                IllegalAccessException
-            {
-              return application;
-            }
-          });
+          new ServletHolder(servletContainer);
       winkServletHolder.setInitOrder(1);
       winkServletHolder.setInitParameter("propertiesLocation",
           "com/unboundid/scim/wink/wink-scim.properties");
+
+
       contextHandler.addServlet(winkServletHolder, "/*");
       // For now, v1 is the only supported API version.
       contextHandler.addServlet(winkServletHolder, "/v1/*");

@@ -21,10 +21,8 @@ import org.apache.wink.client.ClientRequest;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.handlers.ClientHandler;
 import org.apache.wink.client.handlers.HandlerContext;
-import org.apache.wink.common.http.HttpStatus;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 
@@ -65,24 +63,11 @@ public class HttpBasicAuthSecurityHandler implements ClientHandler
    * @param context The provided handler chain.
    * @return Client Response that may indicate success or failure.
    * @throws Exception Thrown if error handling authentication.
-   */
+    */
   public ClientResponse handle(final ClientRequest request,
                                final HandlerContext context) throws Exception
   {
-    ClientResponse response = context.doChain(request);
-    if (response.getStatusCode() == HttpStatus.UNAUTHORIZED.getCode())
-    {
-      InputStream is = response.getEntity(InputStream.class);
-      if(is != null) {
-        // Throw away any entity content.
-        is.close();
-      }
-      request.getHeaders().putSingle("Authorization", this.encodedCredentials);
-      return context.doChain(request);
-    }
-    else
-    {
-      return response;
-    }
+    request.getHeaders().putSingle("Authorization", this.encodedCredentials);
+    return null;
   }
 }

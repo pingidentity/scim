@@ -64,6 +64,18 @@ public class SCIMService
   }
 
   /**
+   * Constructs a new SCIMService from a url and a hersey client config.
+   * @param baseUrl The SCIM Service Provider URL.
+  * @param clientConfig The client config object.
+   */
+  public SCIMService(final URI baseUrl,
+    final org.glassfish.jersey.client.ClientConfig clientConfig)
+  {
+    this.baseURL = baseUrl;
+    this.client = new RestClient(clientConfig);
+  }
+
+  /**
    * Constructs a new SCIMService.
    *
    * @param baseUrl The SCIM Service Provider URL.

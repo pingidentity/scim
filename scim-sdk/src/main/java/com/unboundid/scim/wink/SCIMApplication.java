@@ -32,16 +32,15 @@ import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import org.apache.wink.common.WinkApplication;
+import org.glassfish.jersey.server.filter.HttpMethodOverrideFilter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 
@@ -52,7 +51,6 @@ import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
  */
 public class SCIMApplication extends WinkApplication
 {
-  private final Set<Object> instances;
   private final Map<String,ResourceStats> resourceStats;
   private final SCIMBackend backend;
   private final boolean supportsOAuth;
@@ -75,24 +73,24 @@ public class SCIMApplication extends WinkApplication
       final SCIMBackend backend,
       final OAuthTokenHandler tokenHandler)
   {
-    instances = new HashSet<Object>();
+    register(new RootResource(this));
+    register(new MonitorResource(this));
 
-    instances.add(new RootResource(this));
-    instances.add(new MonitorResource(this));
-
-    instances.add(new ServiceProviderConfigResource(this));
-    instances.add(new XMLServiceProviderConfigResource(this));
-    instances.add(new JSONServiceProviderConfigResource(this));
+    register(new ServiceProviderConfigResource(this));
+    register(new XMLServiceProviderConfigResource(this));
+    register(new JSONServiceProviderConfigResource(this));
 
     // The Bulk operation endpoint.
-    instances.add(new BulkResource(this, tokenHandler));
-    instances.add(new JSONBulkResource(this, tokenHandler));
-    instances.add(new XMLBulkResource(this, tokenHandler));
+    register(new BulkResource(this, tokenHandler));
+    register(new JSONBulkResource(this, tokenHandler));
+    register(new XMLBulkResource(this, tokenHandler));
 
-    instances.add(new SCIMResource(this, tokenHandler));
-    instances.add(new XMLQueryResource(this, tokenHandler));
-    instances.add(new JSONQueryResource(this, tokenHandler));
+    register(new SCIMResource(this, tokenHandler));
+    register(new XMLQueryResource(this, tokenHandler));
+    register(new JSONQueryResource(this, tokenHandler));
 
+
+    register(new HttpMethodOverrideFilter());
     this.resourceStats = new HashMap<String, ResourceStats>();
     this.backend = backend;
 
@@ -105,15 +103,6 @@ public class SCIMApplication extends WinkApplication
       supportsOAuth = false;
     }
   }
-
-
-
-  @Override
-  public Set<Object> getInstances()
-  {
-    return instances;
-  }
-
 
   /**
    * Retrieves the statistics for the resources being served by this

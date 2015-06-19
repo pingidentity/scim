@@ -52,6 +52,6 @@ public class OAuthSecurityHandler implements ClientHandler
                                final HandlerContext context) throws Exception
   {
     request.getHeaders().putSingle("Authorization", this.authorizationHeader);
-    return context.doChain(request);
+    return null;
   }
 }

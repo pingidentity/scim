@@ -268,7 +268,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @return The resource instances that match the provided filter.
    * @throws SCIMException If an error occurs.
    */
-  public Resources<R> query(final String filter,
+  public Resources<R>  query(final String filter,
                             final SortParameters sortParameters,
                             final PageParameters pageParameters,
                             final String... requestedAttributes)
