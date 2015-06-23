@@ -92,8 +92,7 @@ public class Resource
    */
   public Resource cookie(final String cookie)
   {
-    //DAN this is probably wrong.
-    this.cookie = new Cookie("unNamedCookie", cookie);
+    this.cookie = Cookie.valueOf(cookie);
     return this;
   }
 
