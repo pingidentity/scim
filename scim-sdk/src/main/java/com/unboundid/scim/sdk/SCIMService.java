@@ -24,11 +24,19 @@ import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
-import org.apache.wink.client.ClientConfig;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.wink.client.RestClient;
-import org.apache.wink.client.httpclient.ApacheHttpClientConfig;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
+import org.glassfish.jersey.client.ClientConfig;
 
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
@@ -49,19 +57,6 @@ public class SCIMService
   private final boolean[] overrides = new boolean[3];
   private String userAgent;
   private boolean useUrlSuffix;
-
-  /**
-   * Constructs a new SCIMService that is configured from the provided
-   * <code>org.apache.wink.client.ClientConfig</code> instance.
-   *
-   * @param baseUrl The SCIM Service Provider URL.
-   * @param clientConfig The configuration to use.
-   */
-  public SCIMService(final URI baseUrl, final ClientConfig clientConfig)
-  {
-    this.baseURL = baseUrl;
-    this.client = new RestClient(clientConfig);
-  }
 
   /**
    * Constructs a new SCIMService from a url and a hersey client config.
@@ -93,8 +88,25 @@ public class SCIMService
    * @param oAuthToken The OAuth token.
    */
   public SCIMService(final URI baseUrl, final OAuthToken oAuthToken) {
-    this(baseUrl, createDefaultClientConfig().handlers(new OAuthSecurityHandler
-        (oAuthToken)));
+    this(baseUrl, createDefaultClientConfig().register(
+        new ClientRequestFilter()
+        {
+          public void filter(final ClientRequestContext clientRequestContext)
+              throws IOException
+          {
+            try
+            {
+              clientRequestContext.getHeaders().add(
+                  "Authorization", oAuthToken.getFormattedValue());
+            }
+            catch (Exception ex)
+            {
+              throw new RuntimeException(
+                  "Unable to add authorization handler", ex);
+            }
+          }
+        }
+    ));
   }
 
   /**
@@ -108,8 +120,10 @@ public class SCIMService
   public SCIMService(final URI baseUrl, final String username,
                      final String password)
   {
-    this(baseUrl, createDefaultClientConfig().handlers(
-        new HttpBasicAuthSecurityHandler(username, password)));
+    this(baseUrl, createDefaultClientConfig().
+        property(ApacheClientProperties.CREDENTIALS_PROVIDER,
+            createBasicCredentialsProvider(username, password)).
+        property(ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, true));
   }
 
   /**
@@ -310,7 +324,7 @@ public class SCIMService
   {
     final SCIMEndpoint<ServiceProviderConfig> endpoint =
         getEndpoint(CoreSchema.SERVICE_PROVIDER_CONFIG_SCHEMA_DESCRIPTOR,
-                ServiceProviderConfig.SERVICE_PROVIDER_CONFIG_RESOURCE_FACTORY);
+            ServiceProviderConfig.SERVICE_PROVIDER_CONFIG_RESOURCE_FACTORY);
 
     // The ServiceProviderConfig is a special case where there is only a
     // single resource at the endpoint, so the id is not specified.
@@ -529,8 +543,32 @@ public class SCIMService
    * @return A new ClientConfig with the default settings.
    */
   private static ClientConfig createDefaultClientConfig() {
-    ApacheHttpClientConfig config = new ApacheHttpClientConfig();
-    config.setMaxPooledConnections(100);
-    return config;
+    final PoolingHttpClientConnectionManager mgr =
+        new PoolingHttpClientConnectionManager();
+    mgr.setMaxTotal(100);
+    mgr.setDefaultMaxPerRoute(100);
+
+    ClientConfig jerseyConfig = new ClientConfig();
+    ApacheConnectorProvider connectorProvider = new ApacheConnectorProvider();
+    jerseyConfig.connectorProvider(connectorProvider);
+    return jerseyConfig;
+  }
+
+  /**
+   * Create a new BasicCredentialsProvider with the provided credentials.
+   *
+   * @param username The username.
+   * @param password The password.
+   * @return A new BasicCredentialsProvider.
+   */
+  private static BasicCredentialsProvider createBasicCredentialsProvider(
+      final String username, final String password)
+  {
+    BasicCredentialsProvider provider = new BasicCredentialsProvider();
+    provider.setCredentials(
+        AuthScope.ANY,
+        new UsernamePasswordCredentials(username, password)
+    );
+    return provider;
   }
 }

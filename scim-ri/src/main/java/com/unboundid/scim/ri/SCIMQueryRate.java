@@ -22,7 +22,6 @@ import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
-import com.unboundid.scim.sdk.PreemptiveAuthInterceptor;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.SCIMEndpoint;
 import com.unboundid.scim.sdk.SCIMException;
@@ -47,29 +46,26 @@ import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import com.unboundid.util.ssl.TrustStoreTrustManager;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.params.CoreProtocolPNames;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HttpContext;
-import org.apache.wink.client.httpclient.ApacheHttpClientConfig;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
+import org.glassfish.jersey.client.ClientConfig;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -734,17 +730,6 @@ public class SCIMQueryRate
 
 
     // We will use Apache's HttpClient library for this tool.
-    final HttpParams params = new BasicHttpParams();
-    DefaultHttpClient.setDefaultHttpParams(params);
-    params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 30000);
-    params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000);
-    params.setBooleanParameter(CoreConnectionPNames.SO_REUSEADDR, true);
-    params.setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, true);
-    params.setBooleanParameter(
-            CoreConnectionPNames.STALE_CONNECTION_CHECK, false);
-    params.setParameter(
-            ClientPNames.COOKIE_POLICY, CookiePolicy.IGNORE_COOKIES);
-
     SSLUtil sslUtil;
     try
     {
@@ -757,15 +742,18 @@ public class SCIMQueryRate
       return e.getResultCode();
     }
 
-    final SchemeRegistry schemeRegistry = new SchemeRegistry();
+    RegistryBuilder<ConnectionSocketFactory> registryBuilder =
+        RegistryBuilder.create();
     final String schemeName;
     if (sslUtil != null)
     {
-      final SSLSocketFactory socketFactory;
       try
       {
-        socketFactory = new SSLSocketFactory(sslUtil.createSSLContext("TLS"),
-            SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+        SSLConnectionSocketFactory sslConnectionSocketFactory =
+            new SSLConnectionSocketFactory(sslUtil.createSSLContext("TLS"),
+                new NoopHostnameVerifier());
+        schemeName = "https";
+        registryBuilder.register(schemeName, sslConnectionSocketFactory);
       }
       catch (GeneralSecurityException e)
       {
@@ -774,28 +762,38 @@ public class SCIMQueryRate
             getExceptionMessage(e)));
         return ResultCode.LOCAL_ERROR;
       }
-      schemeName = "https";
-      final Scheme scheme = new Scheme(schemeName, 443, socketFactory);
-      schemeRegistry.register(scheme);
     }
     else
     {
       schemeName = "http";
-      final Scheme scheme = new Scheme(
-              schemeName, 80, PlainSocketFactory.getSocketFactory());
-      schemeRegistry.register(scheme);
+      registryBuilder.register(schemeName, new PlainConnectionSocketFactory());
     }
+    final Registry<ConnectionSocketFactory> socketFactoryRegistry =
+        registryBuilder.build();
 
-    final PoolingClientConnectionManager mgr =
-          new PoolingClientConnectionManager(schemeRegistry);
+    RequestConfig requestConfig = RequestConfig.custom()
+        .setConnectionRequestTimeout(30000)
+        .setExpectContinueEnabled(true).build();
+
+    SocketConfig socketConfig = SocketConfig.custom()
+        .setSoTimeout(30000)
+        .setSoReuseAddress(true)
+        .build();
+
+    final PoolingHttpClientConnectionManager mgr =
+        new PoolingHttpClientConnectionManager(socketFactoryRegistry);
     mgr.setMaxTotal(numThreads.getValue());
     mgr.setDefaultMaxPerRoute(numThreads.getValue());
+    mgr.setDefaultSocketConfig(socketConfig);
+    mgr.setValidateAfterInactivity(-1);
 
-    final DefaultHttpClient httpClient = new DefaultHttpClient(mgr, params);
+    ClientConfig jerseyConfig = new ClientConfig();
 
-    final ApacheHttpClientConfig clientConfig =
-          new ApacheHttpClientConfig(httpClient);
-    clientConfig.setBypassHostnameVerification(true);
+    jerseyConfig.property(ApacheClientProperties.CONNECTION_MANAGER, mgr);
+    jerseyConfig.property(ApacheClientProperties.REQUEST_CONFIG, requestConfig);
+    ApacheConnectorProvider connectorProvider = new ApacheConnectorProvider();
+    jerseyConfig.connectorProvider(connectorProvider);
+
     if (authID.isPresent())
     {
       try
@@ -814,11 +812,16 @@ public class SCIMQueryRate
           password = null;
         }
 
-        final Credentials credentials = new UsernamePasswordCredentials(
-                authID.getValue(), password);
-        httpClient.getCredentialsProvider().setCredentials(
-                new AuthScope(host.getValue(), port.getValue()), credentials);
-        httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
+        BasicCredentialsProvider provider = new BasicCredentialsProvider();
+        provider.setCredentials(
+            new AuthScope(host.getValue(), port.getValue()),
+            new UsernamePasswordCredentials(authID.getValue(), password)
+        );
+
+        jerseyConfig.property(
+            ApacheClientProperties.CREDENTIALS_PROVIDER, provider);
+        jerseyConfig.property(
+            ApacheClientProperties.PREEMPTIVE_BASIC_AUTHENTICATION, true);
       }
       catch (IOException e)
       {
@@ -829,17 +832,25 @@ public class SCIMQueryRate
     }
     else if (bearerToken.isPresent())
     {
-      httpClient.addRequestInterceptor(new HttpRequestInterceptor()
-      {
-        @Override
-        public void process(final HttpRequest httpRequest,
-                            final HttpContext httpContext)
-                throws HttpException, IOException
-        {
-          httpRequest.setHeader("Authorization",
-                  "Bearer " + bearerToken.getValue());
-        }
-      });
+      jerseyConfig.register(
+          new ClientRequestFilter()
+          {
+            public void filter(final ClientRequestContext clientRequestContext)
+                throws IOException
+            {
+              try
+              {
+                clientRequestContext.getHeaders().add(
+                    "Authorization", bearerToken.getValue());
+              }
+              catch (Exception ex)
+              {
+                throw new RuntimeException(
+                    "Unable to add authorization handler", ex);
+              }
+            }
+          }
+      );
     }
 
     // Create the SCIM client to use for the queries.
@@ -864,7 +875,7 @@ public class SCIMQueryRate
       err(ERR_QUERY_TOOL_CANNOT_CREATE_URL.get(e.getMessage()));
       return ResultCode.OTHER;
     }
-    final SCIMService service = new SCIMService(uri, clientConfig);
+    final SCIMService service = new SCIMService(uri, jerseyConfig);
 
     if (xmlFormat.isPresent())
     {

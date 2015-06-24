@@ -19,11 +19,7 @@ package org.apache.wink.client;
 
 import org.glassfish.jersey.client.JerseyClientBuilder;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -41,41 +37,6 @@ public class RestClient
   public RestClient(final org.glassfish.jersey.client.ClientConfig clientConfig)
   {
     client = JerseyClientBuilder.newClient(clientConfig);
-  }
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
-   * @param clientConfig Wink compatibility layer class - see Wink docs.
-   */
-  public RestClient(final ClientConfig clientConfig)
-  {
-    client = ClientBuilder.newClient(clientConfig.getConfiguration());
-  }
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
-   * @param clientConfig Wink compatibility layer class - see Wink docs.
-   * @param sslContext Wink compatibility layer class - see Wink docs.
-   */
-  public RestClient(final ClientConfig clientConfig,
-                    final SSLContext sslContext)
-  {
-    ClientBuilder clientBuilder = JerseyClientBuilder.newBuilder();
-    clientBuilder.withConfig(clientConfig.getConfiguration());
-    if(sslContext != null)
-    {
-      clientBuilder.sslContext(sslContext);
-      //DAN: fix this
-      clientBuilder.hostnameVerifier(new HostnameVerifier()
-      {
-        public boolean verify(final String s, final SSLSession sslSession)
-        {
-          return true;
-        }
-      });
-    }
-
-    client = clientBuilder.build();
   }
 
   /**
