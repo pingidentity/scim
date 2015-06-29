@@ -841,7 +841,7 @@ public class SCIMQueryRate
               try
               {
                 clientRequestContext.getHeaders().add(
-                    "Authorization", bearerToken.getValue());
+                    "Authorization", "Bearer " + bearerToken.getValue());
               }
               catch (Exception ex)
               {
