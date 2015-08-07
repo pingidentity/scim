@@ -41,7 +41,7 @@
 
     <organization>
       <name>UnboundID Corp.</name>
-      <url>http://www.unboundid.com</url>
+      <url>https://www.unboundid.com</url>
     </organization>
 
     <developers>
@@ -98,8 +98,8 @@
     </dependencies>
 
     <scm>
-      <url>http://code.google.com/p/scimsdk/source/browse</url>
-      <connection>scm:svn:http://scimsdk.googlecode.com/svn/trunk</connection>
+      <url>https://github.com/UnboundID/scim</url>
+      <connection>scm:git:https://github.com/UnboundID/scim</connection>
     </scm>
 
 </project>
