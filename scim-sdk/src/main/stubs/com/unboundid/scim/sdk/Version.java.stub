@@ -76,21 +76,20 @@ public final class Version
 
 
   /**
-   * The Subversion path associated with the build root directory from which
-   * this build of the SCIM SDK was generated.  It may be an absolute local
-   * filesystem path if the Subversion path isn't available at build time.
-   * For this build, the value is "@SVN_PATH@".
+   * The branch used for this build of the SCIM SDK.  It may be {@code null}
+   * if the branch isn't available at build time.  For this build, the value
+   * is @SCM_BRANCH@.
    */
-  public static final String REPOSITORY_PATH = "@SVN_PATH@";
+  public static final String BRANCH = "@SCM_BRANCH@";
 
 
 
   /**
-   * The source revision number from which this build of the SCIM SDK was
-   * generated.  It may be -1 if the Subversion revision isn't available at
-   * build time.  For this build, the value is @SVN_REVISION@.
+   * The source revision string from which this build of the SCIM SDK was
+   * generated.  It may be {@code null} if the source control revision isn't
+   * available at build time.  For this build, the value is @SCM_REVISION@.
    */
-  public static final long REVISION_NUMBER = @SVN_REVISION@;
+  public static final String REVISION_ID = "@SCM_REVISION@";
 
 
 
@@ -155,8 +154,8 @@ public final class Version
     versionLines.add("Short Name:            " + SHORT_NAME);
     versionLines.add("Version:               " + VERSION);
     versionLines.add("Build Timestamp:       " + BUILD_TIMESTAMP);
-    versionLines.add("Repository Path:       " + REPOSITORY_PATH);
-    versionLines.add("Revision Number:       " + REVISION_NUMBER);
+    versionLines.add("Branch:                " + BRANCH);
+    versionLines.add("Revision ID:           " + REVISION_ID);
 
     return Collections.unmodifiableList(versionLines);
   }
