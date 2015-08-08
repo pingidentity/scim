@@ -76,15 +76,6 @@ public final class Version
 
 
   /**
-   * The branch used for this build of the SCIM SDK.  It may be {@code null}
-   * if the branch isn't available at build time.  For this build, the value
-   * is @SCM_BRANCH@.
-   */
-  public static final String BRANCH = "@SCM_BRANCH@";
-
-
-
-  /**
    * The source revision string from which this build of the SCIM SDK was
    * generated.  It may be {@code null} if the source control revision isn't
    * available at build time.  For this build, the value is @SCM_REVISION@.
@@ -154,7 +145,6 @@ public final class Version
     versionLines.add("Short Name:            " + SHORT_NAME);
     versionLines.add("Version:               " + VERSION);
     versionLines.add("Build Timestamp:       " + BUILD_TIMESTAMP);
-    versionLines.add("Branch:                " + BRANCH);
     versionLines.add("Revision ID:           " + REVISION_ID);
 
     return Collections.unmodifiableList(versionLines);
