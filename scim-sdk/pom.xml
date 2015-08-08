@@ -63,8 +63,8 @@
                                         <filter token="SHORT_NAME" value="${build.product.short.name}" />
                                         <filter token="VERSION" value="${build.version}" />
                                         <filter token="BUILD_TIMESTAMP" value="${scim.build.timestamp}" />
-                                        <filter token="SVN_PATH" value="${build.svn.repository}/${build.svn.path}" />
-                                        <filter token="SVN_REVISION" value="${build.svn.revision}" />
+                                        <filter token="SCM_BRANCH" value="${buildScmBranch}" />
+                                        <filter token="SCM_REVISION" value="${buildNumber}" />
                                     </filterset>
                                 </copy>
                             </target>

@@ -98,7 +98,7 @@ public class MonitorResource
     writer.key("build");
     writer.value(Version.BUILD_TIMESTAMP);
     writer.key("revision");
-    writer.value(Version.REVISION_NUMBER);
+    writer.value(Version.REVISION_ID);
 
     writer.key("resources");
     writer.array();
