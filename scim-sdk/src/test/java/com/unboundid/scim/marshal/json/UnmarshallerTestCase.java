@@ -18,6 +18,7 @@
 package com.unboundid.scim.marshal.json;
 
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
@@ -29,6 +30,7 @@ import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.SCIMTestCase;
 import org.testng.annotations.Test;
 
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import static org.testng.Assert.*;
 
 import java.io.InputStream;
@@ -118,6 +120,18 @@ public class UnmarshallerTestCase extends SCIMTestCase {
         "C4+dx8oU6Za+4NJXUjlL5CvV6BEYb1+QAEJwitTVvxB/A67g42/vzgAtoRUeDov1" +
         "+GFiBZ+GNF/cAYKcMtGcrs2i97ZkJMo=");
     binaryAttributeValue.getBinaryValue();  // Should not throw.
+
+    assertFalse(o.hasAttribute(SCHEMA_URI_CORE, "title"));
+    assertFalse(o.hasAttribute(SCHEMA_URI_CORE, "ims"));
+    SCIMAttribute phoneNumbers =
+            o.getAttribute(SCHEMA_URI_CORE, "phoneNumbers");
+    assertNotNull(phoneNumbers);
+    assertEquals(phoneNumbers.getValues().length, 2);
+
+    UserResource user = new UserResource(CoreSchema.USER_DESCRIPTOR, o);
+    assertNotNull(user.getName());
+    assertNotNull(user.getName().getFamilyName());
+    assertNull(user.getName().getMiddleName());
   }
 
 

@@ -466,49 +466,44 @@ public class SCIMObject
           continue;
         }
 
-        if(attributeDescriptor.isRequired())
+        SCIMAttribute attribute =
+            getAttribute(schema, attributeDescriptor.getName());
+        if(attributeDescriptor.isRequired() && attribute == null)
         {
-          if(!hasAttribute(schema, attributeDescriptor.getName()))
-          {
-            throw new InvalidResourceException("Attribute '" +
-                schema + ":" + attributeDescriptor.getName() +
-                "' is required");
-          }
+          throw new InvalidResourceException("Attribute '" +
+              schema + ":" + attributeDescriptor.getName() +
+              "' is required");
         }
-        else
+
+        Collection<AttributeDescriptor> subAttributes =
+            attributeDescriptor.getSubAttributes();
+        if(subAttributes != null && attribute != null)
         {
-          Collection<AttributeDescriptor> subAttributes =
-              attributeDescriptor.getSubAttributes();
-          SCIMAttribute attribute =
-              getAttribute(schema, attributeDescriptor.getName());
-          if(subAttributes != null && attribute != null)
+          // Make sure all required sub-attributes are present as well
+          for(AttributeDescriptor subAttribute : subAttributes)
           {
-            // Make sure all required sub-attributes are present as well
-            for(AttributeDescriptor subAttribute : subAttributes)
+            if(subAttribute.isRequired())
             {
-              if(subAttribute.isRequired())
+              if(attributeDescriptor.isMultiValued())
               {
-                if(attributeDescriptor.isMultiValued())
+                for(SCIMAttributeValue value : attribute.getValues())
                 {
-                  for(SCIMAttributeValue value : attribute.getValues())
-                  {
-                    if(!value.hasAttribute(subAttribute.getName()))
-                    {
-                      throw new InvalidResourceException("Sub-Attribute '" +
-                          schema + ":" + attributeDescriptor.getName() + "." +
-                          subAttribute.getName() + "' is required for all " +
-                          "values of the multi-valued attribute");
-                    }
-                  }
-                }
-                else
-                {
-                  if(!attribute.getValue().hasAttribute(subAttribute.getName()))
+                  if(!value.hasAttribute(subAttribute.getName()))
                   {
                     throw new InvalidResourceException("Sub-Attribute '" +
                         schema + ":" + attributeDescriptor.getName() + "." +
-                        subAttribute.getName() + "' is required");
+                        subAttribute.getName() + "' is required for all " +
+                        "values of the multi-valued attribute");
                   }
+                }
+              }
+              else
+              {
+                if(!attribute.getValue().hasAttribute(subAttribute.getName()))
+                {
+                  throw new InvalidResourceException("Sub-Attribute '" +
+                      schema + ":" + attributeDescriptor.getName() + "." +
+                      subAttribute.getName() + "' is required");
                 }
               }
             }

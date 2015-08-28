@@ -3,9 +3,10 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+
 ---------- SCIM 1.8.2 ----------
 
-  * Release Date: TBD
+  * Release Date: April 8th, 2015
 
   * Resolved Issues
 
@@ -19,6 +20,10 @@ https://www.unboundid.com/resources/scim
     - Added a method enabling the retrieval of only schema-declared
       sub-attributes from a complex attribute descriptor.  This method does
       not include auto-generated normative attributes in the response.
+      
+    - Fixed an issue where an attempt to give a required attribute a value
+      missing a required sub-attribute would not be rejected.
+
 
 ---------- SCIM 1.8.1 ----------
 
