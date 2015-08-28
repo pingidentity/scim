@@ -13,6 +13,13 @@ https://www.unboundid.com/resources/scim
 
     - Update SCIM to use version 4.5 of the Apache HttpClient libraries.
 
+    - Fixed an issue where null JSON values were converted to "null" strings.
+      The JSON parser has been updated to ignore null attribute values, and
+      to ignore attribute arrays without any non-null values.
+
+    - Fixed an issue where an attempt to give a required attribute a value
+      missing a required sub-attribute would not be rejected.
+
 ---------- SCIM 1.8.2 ----------
 
   * Release Date: April 14th, 2015

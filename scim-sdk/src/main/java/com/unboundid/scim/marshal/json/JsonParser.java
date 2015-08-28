@@ -129,8 +129,11 @@ public class JsonParser
             final AttributeDescriptor attributeDescriptor =
                    resourceDescriptor.getAttribute(attributeKey, attributeName);
             final Object jsonAttribute = schemaAttrs.get(attributeName);
-            scimObject.addAttribute(
-                    create(attributeDescriptor, jsonAttribute));
+            final SCIMAttribute a = create(attributeDescriptor, jsonAttribute);
+            if (a != null)
+            {
+              scimObject.addAttribute(a);
+            }
           }
         }
         else
@@ -195,7 +198,11 @@ public class JsonParser
                 // Don't fail because of implicit schema checking
               }
             }
-            scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
+            final SCIMAttribute a = create(attributeDescriptor, jsonAttribute);
+            if (a != null)
+            {
+              scimObject.addAttribute(a);
+            }
           }
           else
           {
@@ -208,7 +215,11 @@ public class JsonParser
                       resourceDescriptor.getAttribute(
                               SCIMConstants.SCHEMA_URI_CORE,
                               attributeKey);
-            scimObject.addAttribute(create(attributeDescriptor, jsonAttribute));
+            final SCIMAttribute a = create(attributeDescriptor, jsonAttribute);
+            if (a != null)
+            {
+              scimObject.addAttribute(a);
+            }
           }
         }
       }
@@ -245,19 +256,20 @@ public class JsonParser
 
 
   /**
-   * Parse a multi-valued attribute from its representation as a JSON Object.
+   * Parse a multi-valued attribute from its representation as a JSON Array.
    *
-   * @param jsonAttribute       The JSON object representing the attribute.
+   * @param jsonAttribute       The JSON array representing the attribute.
    * @param attributeDescriptor The attribute descriptor.
    *
-   * @return The parsed attribute.
+   * @return The parsed attribute, or {@code null} if there are no non-null
+   *         values in the array.
    *
    * @throws JSONException Thrown if error creating multi-valued attribute.
    * @throws InvalidResourceException if a schema error occurs.
    */
-  protected SCIMAttribute createMutiValuedAttribute(
-      final JSONArray jsonAttribute,
-      final AttributeDescriptor attributeDescriptor)
+  protected SCIMAttribute createMultiValuedAttribute(
+          final JSONArray jsonAttribute,
+          final AttributeDescriptor attributeDescriptor)
       throws JSONException, InvalidResourceException
   {
     final List<SCIMAttributeValue> values =
@@ -266,6 +278,11 @@ public class JsonParser
     for (int i = 0; i < jsonAttribute.length(); i++)
     {
       Object o = jsonAttribute.get(i);
+      if (o.equals(JSONObject.NULL))
+      {
+        continue;
+      }
+
       SCIMAttributeValue value;
       if(o instanceof JSONObject)
       {
@@ -281,6 +298,12 @@ public class JsonParser
       }
       values.add(value);
     }
+
+    if (values.isEmpty())
+    {
+      return null;
+    }
+
     SCIMAttributeValue[] vals =
         new SCIMAttributeValue[values.size()];
     vals = values.toArray(vals);
@@ -315,19 +338,25 @@ public class JsonParser
           attributeDescriptor.getSubAttribute(key);
       if (subAttribute != null)
       {
-        SCIMAttribute childAttr;
+        SCIMAttribute childAttr = null;
         // Allow multi-valued sub-attribute as the resource schema needs this.
         if (subAttribute.isMultiValued())
         {
           final JSONArray o = jsonAttribute.getJSONArray(key);
-          childAttr = createMutiValuedAttribute(o, subAttribute);
+          childAttr = createMultiValuedAttribute(o, subAttribute);
         }
         else
         {
           final Object o = jsonAttribute.get(key);
-          childAttr = createSimpleAttribute(o, subAttribute);
+          if (!o.equals(JSONObject.NULL))
+          {
+            childAttr = createSimpleAttribute(o, subAttribute);
+          }
         }
-        complexAttrs.add(childAttr);
+        if (childAttr != null)
+        {
+          complexAttrs.add(childAttr);
+        }
       }
     }
 
@@ -342,7 +371,7 @@ public class JsonParser
    * @param descriptor     The attribute descriptor.
    * @param jsonAttribute  The JSON object representing the attribute.
    *
-   * @return  The created SCIM attribute.
+   * @return  The created SCIM attribute, or {@code null} if the value is null.
    *
    * @throws JSONException If the JSON object is not valid.
    * @throws InvalidResourceException If a schema error occurs.
@@ -351,6 +380,11 @@ public class JsonParser
       final AttributeDescriptor descriptor, final Object jsonAttribute)
       throws JSONException, InvalidResourceException
   {
+    if (jsonAttribute.equals(JSONObject.NULL))
+    {
+      return null;
+    }
+
     if (descriptor.isMultiValued())
     {
       JSONArray jsonArray;
@@ -365,7 +399,7 @@ public class JsonParser
         jsonArray = new JSONArray(s);
       }
 
-      return createMutiValuedAttribute(jsonArray, descriptor);
+      return createMultiValuedAttribute(jsonArray, descriptor);
     }
     else if (descriptor.getDataType() == AttributeDescriptor.DataType.COMPLEX)
     {
