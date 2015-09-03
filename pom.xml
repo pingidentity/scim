@@ -120,9 +120,6 @@
                 </plugin>
                 <plugin>
                   <artifactId>maven-surefire-plugin</artifactId>
-<!--
-                  <version>2.18.1</version>
--->
                   <version>2.9</version>
                 </plugin>
                 <plugin>
@@ -280,6 +277,28 @@
                     <metrics>class:90,method:90,line:70</metrics>
                     <sort>+name,+line</sort>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.4.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-no-snapshots</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireReleaseDeps>
+                                    <message>No Snapshots Allowed!</message>
+                                    <onlyWhenRelease>true</onlyWhenRelease>
+                                </requireReleaseDeps>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
