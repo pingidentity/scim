@@ -736,7 +736,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * specified, those attributes will be removed from the resource before the
    * {@code attributesToUpdate} are merged into the resource.
    *
-   * @param resource The to update.
+   * @param resource The resource to update.
    * @param attributesToUpdate The list of attributes (and their new values) to
    *                           update on the resource.
    * @param attributesToDelete The list of attributes to delete on the resource.

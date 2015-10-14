@@ -466,6 +466,11 @@ public class SCIMObject
           continue;
         }
 
+        if (attributeDescriptor.isReadOnly())
+        {
+          continue;
+        }
+
         SCIMAttribute attribute =
             getAttribute(schema, attributeDescriptor.getName());
         if(attributeDescriptor.isRequired() && attribute == null)
