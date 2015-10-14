@@ -47,7 +47,6 @@ import com.unboundid.ldap.sdk.controls.SimplePagedResultsControl;
 import com.unboundid.ldap.sdk.controls.SortKey;
 import com.unboundid.ldap.sdk.controls.VirtualListViewRequestControl;
 import com.unboundid.ldap.sdk.controls.VirtualListViewResponseControl;
-import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.schema.AttributeDescriptor;
@@ -55,13 +54,13 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.DebugType;
+import com.unboundid.scim.sdk.Diff;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.PatchResourceRequest;
 import com.unboundid.scim.sdk.ResourceNotFoundException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMBackend;
-import com.unboundid.scim.sdk.SCIMConstants;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.SCIMQueryAttributes;
@@ -1334,6 +1333,25 @@ public abstract class LDAPBackend
         throw e;
       }
 
+      //Make sure all the required attributes are present after the patch
+      //has been applied.
+      final List<SCIMAttribute> attributes =
+          mapper.toSCIMAttributes(
+              currentEntry,
+              new SCIMQueryAttributes(request.getResourceDescriptor(), null),
+              ldapInterface);
+
+      final SCIMObject currentObject = new SCIMObject();
+      for (final SCIMAttribute a : attributes)
+      {
+        Validator.ensureTrue(currentObject.addAttribute(a));
+      }
+
+      final BaseResource currentResource =
+          new BaseResource(
+              request.getResourceDescriptor(), currentObject);
+      checkRequiredAttributes(request, currentResource);
+
       EntityTag currentEtag = null;
       if(supportsVersioning())
       {
@@ -1359,12 +1377,6 @@ public abstract class LDAPBackend
 
       if(!mods.isEmpty())
       {
-        if(getConfig().isCheckSchema())
-        {
-          // Make sure the patch wouldn't cause any schema violations.
-          checkSchemaForPatch(request, currentEntry, mapper, ldapInterface);
-        }
-
         // Look for any modifications that will affect the mapped entry's RDN
         // and split them up.
         modifiedEntry = currentEntry.duplicate();
@@ -1888,138 +1900,32 @@ public abstract class LDAPBackend
 
 
   /**
-   * This method makes sure the PATCH request will not cause any schema
-   * violations after it is applied to the resource.
+   * Make sure a PATCH will not remove any required attributes.
    *
-   * @param request The PATCH request.
-   * @param currentEntry The current corresponding LDAP entry.
-   * @param mapper The ResourceMapper in use.
-   * @param ldapInterface The LDAPRequestInterface in use.
-   * @throws SCIMException If any potential schema violations are found or if
-   *                       there was an error during the determination.
+   * @param request          The PATCH request.
+   * @param currentResource  The current contents of the resource.
+   *
+   * @throws SCIMException  If the PATCH would remove a required attribute.
    */
-  protected static void checkSchemaForPatch(
-      final PatchResourceRequest request, final SearchResultEntry currentEntry,
-      final ResourceMapper mapper, final LDAPRequestInterface ldapInterface)
+  private void checkRequiredAttributes(final PatchResourceRequest request,
+                                       final BaseResource currentResource)
       throws SCIMException
   {
-    SCIMObject patch = request.getResourceObject();
-    ResourceDescriptor resourceDescriptor = request.getResourceDescriptor();
-    SCIMAttribute meta = patch.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
-        CoreSchema.META_DESCRIPTOR.getName());
-
-    if (meta != null)
+    if (getConfig().isCheckSchema())
     {
-      SCIMAttributeValue value = meta.getValue();
-      SCIMAttribute attributesAttr = value.getAttribute("attributes");
-      if (attributesAttr != null)
-      {
-        // Make sure required attributes are not being removed
-        for (SCIMAttributeValue val : attributesAttr.getValues())
-        {
-          AttributePath attributePath;
-          if (val.isComplex())
-          {
-            attributePath = AttributePath.parse(
-                val.getSubAttributeValue("value",
-                    AttributeValueResolver.STRING_RESOLVER),
-                    mapper.getDefaultSchemaURI());
-          }
-          else
-          {
-            attributePath = AttributePath.parse(val.getStringValue(),
-                                                mapper.getDefaultSchemaURI());
-          }
-
-          AttributeDescriptor attributeToRemove =
-              resourceDescriptor.getAttribute(
-                  attributePath.getAttributeSchema(),
-                  attributePath.getAttributeName());
-          if(attributePath.getSubAttributeName() != null)
-          {
-            attributeToRemove = attributeToRemove.getSubAttribute(
-                attributePath.getSubAttributeName());
-          }
-
-          if(attributeToRemove.isRequired() || attributeToRemove.isReadOnly())
-          {
-            String subMessage;
-            if (attributeToRemove.isRequired() &&
-                attributeToRemove.isReadOnly())
-            {
-              subMessage = "required and read only";
-            }
-            else
-            {
-              subMessage = attributeToRemove.isRequired() ?
-                "required" : "read only";
-            }
-            throw new InvalidResourceException(
-              String.format("Attribute '%s' may not be removed because it " +
-                "is %s", attributePath.toString(), subMessage));
-          }
-        }
-      }
-    }
-
-
-    for (String schema : patch.getSchemas())
-    {
-      for (SCIMAttribute attr : patch.getAttributes(schema))
-      {
-        AttributeDescriptor descriptor = attr.getAttributeDescriptor();
-        if(descriptor.isRequired() && descriptor.isMultiValued())
-        {
-          int valuesDeleted = 0;
-          // The attr is multi-valued, so see if it the patch will delete
-          // all values of a required multi-valued attribute.
-          for (SCIMAttributeValue value : attr.getValues())
-          {
-            if(value.isComplex())
-            {
-              String operation = value.getSubAttributeValue(
-                  "operation", AttributeValueResolver.STRING_RESOLVER);
-              if (!"delete".equalsIgnoreCase(operation))
-              {
-                // At least one value is being added so this attribute should
-                // never be empty
-                valuesDeleted = 0;
-                break;
-              }
-              else
-              {
-                if (descriptor.isReadOnly())
-                {
-                  throw new InvalidResourceException("Multi-valued " +
-                    "attribute ' " + schema + ":" +
-                    attr.getAttributeDescriptor().getName() + "' may not be " +
-                    "removed because it is read only");
-                }
-                valuesDeleted++;
-              }
-            }
-          }
-          if(valuesDeleted > 0)
-          {
-            // The patch only contained delete operations. Make sure not all
-            // of the current values are being deleted.
-            List<SCIMAttribute> currentAttribute = mapper.toSCIMAttributes(
-                currentEntry, new SCIMQueryAttributes(
-                Collections.singletonMap(attr.getAttributeDescriptor(),
-                    Collections.<AttributeDescriptor>emptySet())),
-                ldapInterface);
-            if(!currentAttribute.isEmpty() &&
-                currentAttribute.get(0).getValues().length <= valuesDeleted)
-            {
-              throw new InvalidResourceException("Multi-valued attribute '" +
-                  schema + ":" + attr.getAttributeDescriptor().getName() +
-                  "' is required and must have at least one value");
-            }
-          }
-        }
-      }
+      final BaseResource partialResource =
+          new BaseResource(request.getResourceDescriptor(),
+                           request.getResourceObject());
+      final Diff<BaseResource> diff =
+          Diff.fromPartialResource(partialResource, false);
+      final BaseResource patchedResource =
+          diff.apply(currentResource, BaseResource.BASE_RESOURCE_FACTORY);
+      patchedResource.getScimObject().checkSchema(
+          request.getResourceDescriptor(), true);
     }
   }
+
+
 
   /**
    * Checks for changes to scim objects through read-only attributes.

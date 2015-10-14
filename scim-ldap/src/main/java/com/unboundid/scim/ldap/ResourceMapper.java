@@ -1096,9 +1096,6 @@ public class ResourceMapper
               new Modification(ModificationType.DELETE, attr));
         }
       }
-
-      scimObject.removeAttribute(SCIMConstants.SCHEMA_URI_CORE,
-              CoreSchema.META_DESCRIPTOR.getName());
     }
 
     Set<String> schemas = scimObject.getSchemas();
@@ -1107,6 +1104,14 @@ public class ResourceMapper
       Collection<SCIMAttribute> attributes = scimObject.getAttributes(schema);
       for (SCIMAttribute attr : attributes)
       {
+        // Skip the meta attribute.
+        if (schema.equals(SCIMConstants.SCHEMA_URI_CORE) &&
+            attr.getName().equalsIgnoreCase(
+                CoreSchema.META_DESCRIPTOR.getName()))
+        {
+          continue;
+        }
+
         if(attr.getAttributeDescriptor().isMultiValued())
         {
           //The attr is multi-valued, so merge it into the current value
