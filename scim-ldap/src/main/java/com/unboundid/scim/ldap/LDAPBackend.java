@@ -37,7 +37,6 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
-import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.controls.AssertionRequestControl;
 import com.unboundid.ldap.sdk.controls.PermissiveModifyRequestControl;
 import com.unboundid.ldap.sdk.controls.PostReadRequestControl;
@@ -74,12 +73,10 @@ import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.GetResourceRequest;
 import com.unboundid.scim.sdk.GetResourcesRequest;
-import com.unboundid.scim.sdk.GetStreamedResourcesRequest;
 import com.unboundid.scim.sdk.PostResourceRequest;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.PutResourceRequest;
 import com.unboundid.scim.sdk.UnsupportedOperationException;
-import com.unboundid.scim.sdk.StreamedResultListener;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.Validator;
 
@@ -693,165 +690,6 @@ public abstract class LDAPBackend
       throw ResourceMapper.toSCIMException(e);
     }
   }
-
-
-
-  @Override
-  public void getStreamedResources(
-      final GetStreamedResourcesRequest request,
-      final StreamedResultListener listener)
-      throws SCIMException
-  {
-    final ResourceMapper resourceMapper =
-        getResourceMapper(request.getResourceDescriptor());
-    if (!supportsSimplePagedResultsControl() ||
-        resourceMapper == null ||
-        !resourceMapper.supportsQuery())
-    {
-      throw new UnsupportedOperationException(
-          "The requested operation is not supported on resource end-point '" +
-              request.getResourceDescriptor().getEndpoint() + "'");
-    }
-
-    int pageSize = request.getPageParameters().getCount();
-    final int maxResults = getConfig().getMaxResults();
-    if (pageSize > maxResults)
-    {
-      pageSize = maxResults;
-    }
-
-    try
-    {
-      final SCIMFilter scimFilter = request.getFilter();
-
-      final Set<String> requestAttributeSet = getRequestAttributeSet(
-          request, resourceMapper);
-
-      final LDAPRequestInterface ldapInterface =
-          getLDAPRequestInterface(request.getAuthenticatedUserID());
-
-      final StreamingSearchResultListener ldapListener =
-          new StreamingSearchResultListener(this, request, ldapInterface,
-              listener);
-
-      Set<DN> searchBaseDNs = getSearchBaseDNs(request, resourceMapper,
-          ldapInterface);
-
-      SearchScope searchScope = null;
-      final Filter filter;
-      SearchRequest searchRequest;
-      final String[] requestAttributes;
-
-      if (isOptimizedIdSearch(scimFilter, resourceMapper))
-      {
-        requestAttributes = new String[requestAttributeSet.size()];
-        requestAttributeSet.toArray(requestAttributes);
-        searchRequest =
-            new SearchRequest(ldapListener, scimFilter.getFilterValue(),
-                SearchScope.BASE,
-                Filter.createPresenceFilter("objectclass"),
-                requestAttributes);
-        filter = null;
-      }
-      else
-      {
-        searchRequest = null;
-        try
-        {
-          // Map the SCIM filter to an LDAP filter.
-          filter = resourceMapper.toLDAPFilter(scimFilter, ldapInterface);
-        }
-        catch (InvalidResourceException ire)
-        {
-          throw new InvalidResourceException("Invalid filter: " +
-              ire.getLocalizedMessage(), ire);
-        }
-        if (filter == null)
-        {
-          // Matches nothing...
-          return;
-        }
-
-        // The LDAP filter results will still need to be filtered using the
-        // SCIM filter, so we need to request all the filter attributes.
-        addFilterAttributes(requestAttributeSet, filter);
-
-        requestAttributes = new String[requestAttributeSet.size()];
-        requestAttributeSet.toArray(requestAttributes);
-
-        searchScope = getSearchScope(request);
-      }
-
-      SearchResult searchResult;
-
-      for (DN baseDN : searchBaseDNs)
-      {
-        if (searchRequest == null)
-        {
-          searchRequest = new SearchRequest(ldapListener, baseDN.toString(),
-              searchScope, filter, requestAttributes);
-        }
-
-        // always use SimplePagedResultsControl
-        ASN1OctetString ldapCookie =
-            request.getResumeToken() == null ? null :
-            new ASN1OctetString(request.getResumeToken());
-
-        searchRequest.addControl(new SimplePagedResultsControl(
-            pageSize,ldapCookie, true));
-
-        // Include any controls that are needed by derived attributes.
-        final List<Control> controls = new ArrayList<Control>();
-        resourceMapper.addSearchControls(controls, request.getAttributes());
-        searchRequest.addControls(
-            controls.toArray(new Control[controls.size()]));
-
-        // Invoke the search operation.
-        try
-        {
-          searchResult = ldapInterface.search(searchRequest);
-          SimplePagedResultsControl responseControl =
-              SimplePagedResultsControl.get(searchResult);
-          Validator.ensureNotNull(responseControl);
-          listener.setResumeToken(responseControl.getCookie().stringValue());
-          listener.setTotalResults(responseControl.getSize());
-        }
-        catch(LDAPSearchException e)
-        {
-          if(e.getResultCode().equals(ResultCode.SIZE_LIMIT_EXCEEDED))
-          {
-            searchResult = e.getSearchResult();
-            if (searchResult == null)
-            {
-              throw e;
-            }
-          }
-          else
-          {
-            throw e;
-          }
-        }
-
-        if (searchRequest.getScope() == SearchScope.BASE ||
-            ldapListener.getTotalResults() >= pageSize)
-        {
-          break;
-        }
-        else
-        {
-          searchRequest = null;
-        }
-      }
-    }
-    catch (LDAPException e)
-    {
-      Debug.debugException(e);
-      throw ResourceMapper.toSCIMException(e);
-    }
-
-  }
-
-
 
 
 

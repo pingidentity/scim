@@ -18,9 +18,7 @@
 package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
-import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.marshal.Marshaller;
-import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.BulkOperation;
@@ -117,28 +115,4 @@ public class XmlMarshaller implements Marshaller
     }
   }
 
-
-  /**
-   * Not available with XML.
-   * {@inheritDoc}
-   */
-  @Override
-  public void marshal(final QueryRequest request,
-                      final OutputStream outputStream) throws SCIMException {
-    throw new UnsupportedOperationException();
-
-  }
-
-
-  /**
-   * Not available with XML.
-   * {@inheritDoc}
-   */
-  @Override
-  public void marshal(final ListResponse<? extends BaseResource> response,
-                      final OutputStream outputStream)
-      throws SCIMException
-  {
-    throw new UnsupportedOperationException();
-  }
 }
