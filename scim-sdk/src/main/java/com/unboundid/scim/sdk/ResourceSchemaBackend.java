@@ -183,17 +183,6 @@ public class ResourceSchemaBackend extends SCIMBackend
     return Collections.singleton(CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void getStreamedResources(
-      final GetStreamedResourcesRequest request,
-      final StreamedResultListener listener) throws SCIMException
-  {
-    throw new UnsupportedOperationException(
-        "Streamed Query not supported on Schema endpoint");
-  }
 
   /**
    * Make a copy of the ResourceDescriptor and set the id and meta attributes

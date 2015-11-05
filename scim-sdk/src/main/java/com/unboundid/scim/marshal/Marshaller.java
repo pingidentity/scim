@@ -19,9 +19,7 @@ package com.unboundid.scim.marshal;
 
 
 import com.unboundid.scim.data.BaseResource;
-import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.sdk.BulkOperation;
-import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
 
@@ -62,29 +60,6 @@ public interface Marshaller
                OutputStream outputStream)
     throws SCIMException;
 
-  /**
-   * Write a SCIM streamed listing response to an output stream.
-   *
-   * @param response       The SCIM response to be written.
-   * @param outputStream   The output stream to which the SCIM response should
-   *                        be written.
-   *
-   * @throws SCIMException  If the data could not be written.
-   */
-  void marshal(ListResponse<? extends BaseResource> response,
-               OutputStream outputStream)
-    throws SCIMException;
-
-  /**
-   * Write a SCIM 2.0-style query request to an output stream.
-   *
-   * @param request         The SCIM query request to be written.
-   * @param outputStream    The output stream to which the SCIM query
-   *                        request should be written.
-   * @throws SCIMException  If the data could not be written.
-   */
-  void marshal(QueryRequest request, OutputStream outputStream)
-    throws SCIMException;
 
   /**
    * Write a SCIM error response to an output stream.

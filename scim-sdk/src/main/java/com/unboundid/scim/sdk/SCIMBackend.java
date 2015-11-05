@@ -142,19 +142,6 @@ public abstract class SCIMBackend
 
 
   /**
-   * Retrieve selected resources using the UnboundID streamed query
-   * SCIM extension.
-   * @param request  The Get Streamed Resources request.
-   * @param listener Listener object to receive results.
-   *
-   * @throws SCIMException if an error occurs while processing the request.
-   */
-  public abstract void getStreamedResources(
-      final GetStreamedResourcesRequest request,
-      final StreamedResultListener listener) throws SCIMException;
-
-
-  /**
    * Retrieves whether this backend supports sorting.
    *
    * @return {@code true} if sorting is supported or {@code false} otherwise.

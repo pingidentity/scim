@@ -33,7 +33,6 @@ import com.unboundid.scim.data.Manager;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.Name;
 import com.unboundid.scim.data.ServiceProviderConfig;
-import com.unboundid.scim.data.StreamedQueryRequest;
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.marshal.json.JsonUnmarshaller;
@@ -59,7 +58,6 @@ import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.PageParameters;
 import com.unboundid.scim.sdk.Status;
 import com.unboundid.scim.sdk.UnauthorizedException;
-import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.wink.ResourceStats;
 
 import org.testng.annotations.Test;
@@ -83,7 +81,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.ws.rs.core.MediaType;
 import javax.xml.bind.DatatypeConverter;
 
 import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
@@ -2435,21 +2432,6 @@ public abstract class SCIMServerTestCase extends SCIMRITestCase
     assertEquals(resources.getTotalResults(), NUM_GROUPS);
     assertEquals(resources.getItemsPerPage(), 0);
     assertEquals(resources.getStartIndex(), startIndex);
-
-    // JSON-JSON only: test streamed query
-    if (service.getContentType().equals(MediaType.APPLICATION_JSON_TYPE) &&
-        service.getAcceptType().equals(MediaType.APPLICATION_JSON_TYPE))
-    {
-      StreamedQueryRequest request = new StreamedQueryRequest(null, null, 7);
-      ListResponse<UserResource> response = userEndpoint.streamedQuery(request);
-      assertEquals(response.getItemsPerPage(), 7);
-      assertEquals(response.getTotalResults(), 10);
-      assertTrue(request.hasMoreResults(response));
-      response = userEndpoint.streamedQuery(request);
-
-      assertEquals(response.getItemsPerPage(), 3);
-      assertFalse(request.hasMoreResults(response));
-    }
   }
 
 

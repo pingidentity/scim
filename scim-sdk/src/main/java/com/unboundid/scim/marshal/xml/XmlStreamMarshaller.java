@@ -18,9 +18,7 @@
 package com.unboundid.scim.marshal.xml;
 
 import com.unboundid.scim.data.BaseResource;
-import com.unboundid.scim.data.QueryRequest;
 import com.unboundid.scim.marshal.StreamMarshaller;
-import com.unboundid.scim.sdk.ListResponse;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.Debug;
@@ -260,25 +258,6 @@ public class XmlStreamMarshaller implements StreamMarshaller
       throw new ServerErrorException(
           "Cannot write resources: " + e.getMessage());
     }
-  }
-
-
-  /**
-   * {@inheritDoc}
-   */
-  public void marshal(final ListResponse<? extends BaseResource> response)
-      throws SCIMException
-  {
-    throw new UnsupportedOperationException();
-  }
-
-
-  /**
-   * {@inheritDoc}
-   */
-  public void marshal(final QueryRequest request) throws SCIMException
-  {
-    throw new UnsupportedOperationException();
   }
 
 
