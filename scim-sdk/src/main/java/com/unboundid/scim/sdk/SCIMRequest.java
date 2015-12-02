@@ -321,6 +321,8 @@ public abstract class SCIMRequest
       versions = new ArrayList<EntityTag>(valueTokens.length);
       for(String token : valueTokens)
       {
+        token = token.trim();
+
         if(token.equals("*"))
         {
           return Collections.emptyList();
