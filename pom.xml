@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.8.8-SNAPSHOT</version>
+    <version>1.8.8</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
