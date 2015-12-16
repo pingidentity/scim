@@ -3,22 +3,34 @@ UnboundID SCIM SDK and Reference Implementation Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.8.4 ----------
+---------- SCIM 1.8.9 ----------
 
-  * Release Date: TBD
+  * Release Date: December 16th, 2015
 
   * Resolved Issues
 
-    - Switch from Wink to Jersey as the JAX-RS implementation.
+    - Fixed an issue where multivalued If-Match or If-None-Match headers
+      could not be parsed.
 
-    - Update SCIM to use version 4.5 of the Apache HttpClient libraries.
+    - Removed streaming query implementation.
 
-    - Fixed an issue where null JSON values were converted to "null" strings.
-      The JSON parser has been updated to ignore null attribute values, and
+    - Fixed the schema check for required attributes in the LDAP backend
+      implementation of the PATCH operation.
+
+    - Fixed an issue where null JSON values were converted to null strings.
+      The JSON parser has been updated to ignore null attribute values, and 
       to ignore attribute arrays without any non-null values.
 
-    - Fixed an issue where an attempt to give a required attribute a value
+    - Fixed an issue where an attempt to give a required attribute a value that was
       missing a required sub-attribute would not be rejected.
+
+    - Updated SCIMQueryRate and ClientExample to use the new Apache
+      HTTPClient 4.5 APIs.
+
+    - Switched from Wink to Jersey as the JAX-RS implementation.
+
+    - Updated SCIM to use version 4.5 of the Apache HttpClient libraries.
+
 
 ---------- SCIM 1.8.2 ----------
 
