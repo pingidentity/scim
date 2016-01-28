@@ -1,6 +1,6 @@
 # SCIM 1.1 SDK for Java
 
-This is UnboundID's open source Java SDK for the 1.1 version of the SCIM specification. Use it to create client applications which communicate with the UnboundID Data Store and any 3rd party SCIM 1.1-compliant service provider. 
+This is UnboundID's open source Java SDK for the 1.1 version of the SCIM specification. Use it to create client applications that communicate with the UnboundID Data Store and any 3rd party SCIM 1.1-compliant service provider. 
 
 ## About SCIM 1.1
 
@@ -56,7 +56,7 @@ public class Client {
 <dependency>
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>1.8.9</version>
+    <version>1.8.11</version>
 </dependency>
 ```
 

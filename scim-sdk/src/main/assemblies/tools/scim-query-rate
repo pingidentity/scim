@@ -1,5 +1,4 @@
 #!/bin/sh
-
 # Copyright 2011-2016 UnboundID Corp.
 # All Rights Reserved.
 #
@@ -32,5 +31,5 @@ done
 
 "${JAVA_CMD}" ${JAVA_ARGS} \
      -cp "${CLASSPATH}" \
-     com.unboundid.scim.ri.InMemoryServerTool "${@}"
+     com.unboundid.scim.tools.SCIMQueryRate "${@}"
 

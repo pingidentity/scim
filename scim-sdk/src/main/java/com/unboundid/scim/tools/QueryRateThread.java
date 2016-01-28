@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri;
+package com.unboundid.scim.tools;
 
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.scim.data.BaseResource;

@@ -59,6 +59,33 @@
             <fileMode>644</fileMode>
         </fileSet>
         <fileSet>
+            <outputDirectory>tools</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/tools</directory>
+            <excludes>
+                <exclude>*/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>tools/bat</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/tools</directory>
+            <includes>
+                <include>*.bat</include>
+            </includes>
+            <lineEnding>crlf</lineEnding>
+            <directoryMode>755</directoryMode>
+            <fileMode>755</fileMode>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>tools/bin</outputDirectory>
+            <directory>${project.basedir}/src/main/assemblies/tools</directory>
+            <excludes>
+                <exclude>*.bat</exclude>
+            </excludes>
+            <lineEnding>lf</lineEnding>
+            <directoryMode>755</directoryMode>
+            <fileMode>755</fileMode>
+        </fileSet>
+        <fileSet>
             <outputDirectory>docs/getting-started</outputDirectory>
             <directory>${project.build.directory}/docs/getting-started</directory>
             <includes>
@@ -94,6 +121,12 @@
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <directoryMode>755</directoryMode>
+            <fileMode>644</fileMode>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>tools/lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <directoryMode>755</directoryMode>
             <fileMode>644</fileMode>

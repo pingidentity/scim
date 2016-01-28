@@ -8,10 +8,8 @@
 <optional comments to QA etc. here>
 ===END-INTERNAL-COMMENT===
 
-JiraIssue:SCIM-<Jira Issue ID>
+JiraIssue:DS-<Jira Issue ID>
 
 SalesforceCaseNumber:<SF case number>
 
 Product:scim-sdk
-Product:scim-ri
-Product:scim-extension

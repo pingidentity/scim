@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package com.unboundid.scim.ri;
+package com.unboundid.scim.tools;
 
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.ResultCode;
@@ -84,7 +84,7 @@ import java.util.logging.ConsoleHandler;
 
 import static com.unboundid.scim.sdk.Debug.debugException;
 import static com.unboundid.util.StaticUtils.NO_STRINGS;
-import static com.unboundid.scim.ri.RIMessages.*;
+import static com.unboundid.scim.tools.ToolMessages.*;
 import static com.unboundid.util.StaticUtils.getExceptionMessage;
 
 /**

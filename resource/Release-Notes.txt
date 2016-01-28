@@ -1,7 +1,20 @@
-UnboundID SCIM SDK and Reference Implementation Release Notes
+UnboundID SCIM SDK Release Notes
 
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
+  
+
+---------- SCIM 1.8.11 ----------
+
+  * Release Date: January 28, 2016
+
+  * Resolved Issues
+
+    - Relocated scim-query-rate tool into the scim-sdk project.
+
+    - Removed SCIM reference implementation (scim-ri), which is no longer
+      supported.
+
 
 ---------- SCIM 1.8.9 ----------
 
