@@ -22,10 +22,6 @@
     <version>1.8.12-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <properties>
-      <scimsdk.version>1.8.4</scimsdk.version>
-    </properties>
-
     <name>UnboundID SCIM SDK</name>
 
     <description>

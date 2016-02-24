@@ -32,7 +32,7 @@
         <build.version>${project.version}</build.version>
         <main.basedir>${project.basedir}/..</main.basedir>
         <filtered.dir>${project.build.genSourceDirectory}/filtered</filtered.dir>
-        <scimsdk.doc.version>${scimsdk.version}</scimsdk.doc.version>
+        <scimsdk.version>${project.version}</scimsdk.version>
         <messages.dir>${project.build.genSourceDirectory}/messages</messages.dir>
     </properties>
 
@@ -238,7 +238,7 @@
                     <replacements>
                         <replacement>
                             <token>$SCIMSDK_VERSION$</token>
-                            <value>${scimsdk.doc.version}</value>
+                            <value>${scimsdk.version}</value>
                         </replacement>
                     </replacements>
                 </configuration>
