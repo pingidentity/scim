@@ -9,7 +9,7 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.8.2-next</version>
+    <version>1.8.2.2</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
@@ -19,7 +19,7 @@
         <unboundid.serversdk.version>3.2.1.0</unboundid.serversdk.version>
         <main.basedir>${project.basedir}</main.basedir>
         <ignore.test.failures>false</ignore.test.failures>
-        <scimsdk.version>1.8.1</scimsdk.version>
+        <scimsdk.version>1.8.2.2</scimsdk.version>
         <scimsdk.parent.version>${project.version}</scimsdk.parent.version>
         <ldapsdk.version>2.3.6-se</ldapsdk.version>
     </properties>
