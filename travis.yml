@@ -1,0 +1,6 @@
+language: java
+script: mvn -P UnboundID install
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+  - openjdk6
