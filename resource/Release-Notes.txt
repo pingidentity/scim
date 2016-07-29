@@ -4,6 +4,14 @@ For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
 
+---------- SCIM 1.8.13 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+    -
+
 ---------- SCIM 1.8.12 ----------
 
   * Release Date: July 29, 2016
