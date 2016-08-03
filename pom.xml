@@ -16,10 +16,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compileSource>1.6</compileSource>
         <project.build.genSourceDirectory>${project.build.directory}/generated-sources</project.build.genSourceDirectory>
-        <unboundid.serversdk.version>3.2.1.0</unboundid.serversdk.version>
         <main.basedir>${project.basedir}</main.basedir>
         <ignore.test.failures>false</ignore.test.failures>
-        <ldapsdk.version>2.3.6-se</ldapsdk.version>
+        <ldapsdk.version>3.1.1-se</ldapsdk.version>
     </properties>
 
     <profiles>

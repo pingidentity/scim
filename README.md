@@ -56,7 +56,7 @@ public class Client {
 <dependency>
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>1.8.11</version>
+    <version>1.8.13</version>
 </dependency>
 ```
 
