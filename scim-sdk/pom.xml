@@ -18,7 +18,7 @@
     <parent>
         <artifactId>scim-parent</artifactId>
         <groupId>com.unboundid.product.scim</groupId>
-        <version>1.8.13-SNAPSHOT</version>
+        <version>1.8.13</version>
     </parent>
     <artifactId>scim-sdk</artifactId>
     <packaging>jar</packaging>
