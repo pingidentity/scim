@@ -1,3 +1,5 @@
+[![Javadocs](http://javadoc.io/badge/com.unboundid.product.scim/scim-sdk.svg)](http://javadoc.io/doc/com.unboundid.product.scim/scim-sdk)
+
 # SCIM 1.1 SDK for Java
 
 This is UnboundID's open source Java SDK for the 1.1 version of the SCIM specification. Use it to create client applications that communicate with the UnboundID Data Store and any 3rd party SCIM 1.1-compliant service provider. 
