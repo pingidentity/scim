@@ -6,7 +6,7 @@ https://www.unboundid.com/resources/scim
 
 ---------- SCIM 1.8.13 ----------
 
-  * Release Date: August 3, 2016
+  * Release Date: August 4, 2016
 
   * Resolved Issues
 
@@ -14,6 +14,9 @@ https://www.unboundid.com/resources/scim
       added.
 
     - Updated to use UnboundID LDAP SDK v3.1.1.
+
+    - Addressed an issue where repeated SCIMEndpoint requests could hang when the
+      underyling Response object was not closed properly.
 
 ---------- SCIM 1.8.12 ----------
 

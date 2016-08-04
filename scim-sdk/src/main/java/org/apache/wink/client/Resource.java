@@ -188,19 +188,6 @@ public class Resource
 
   /**
    *  Wink compatibility layer class - see Wink docs.
-   * @param classType Wink compatibility layer class - see Wink docs.
-   * @param entity Wink compatibility layer class - see Wink docs.
-   * @param <T> Wink compatibility layer class - see Wink docs.
-   * @return Wink compatibility layer class - see Wink docs.
-   */
-  public <T> T post(final Class<T> classType, final Object entity)
-  {
-    ClientResponse response = post(entity);
-    return response.getEntity(classType);
-  }
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
    * @param entity Wink compatibility layer class - see Wink docs.
    * @return Wink compatibility layer class - see Wink docs.
    * @throws ClientWebException Wink compatibility layer class - see Wink docs.

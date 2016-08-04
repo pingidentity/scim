@@ -163,11 +163,10 @@ public class BulkEndpoint
     };
 
     ClientResponse response = null;
-    InputStream entity = null;
     try
     {
       response = clientResource.post(output);
-      entity = response.getEntity(InputStream.class);
+      InputStream entity = response.getEntity(InputStream.class);
 
       if(response.getStatusType() == Response.Status.OK)
       {
@@ -191,17 +190,9 @@ public class BulkEndpoint
     }
     finally
     {
-      try
+      if (response != null)
       {
-        if (entity != null)
-        {
-          entity.close();
-        }
-      }
-      catch (IOException e)
-      {
-        // Let's just log this and ignore.
-        Debug.debugException(e);
+        response.close();
       }
     }
   }

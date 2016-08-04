@@ -201,11 +201,11 @@ public class SCIMEndpoint<R extends BaseResource>
       clientResource.header(HttpHeaders.IF_NONE_MATCH, etag);
     }
 
-    InputStream entity = null;
+    ClientResponse response = null;
     try
     {
-      ClientResponse response = clientResource.get();
-      entity = response.getEntity(InputStream.class);
+      response = clientResource.get();
+      InputStream entity = response.getEntity(InputStream.class);
 
       if(response.getStatusType() == Response.Status.OK)
       {
@@ -230,13 +230,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     finally
     {
-      try {
-        if (entity != null) {
-          entity.close();
-        }
-      } catch (IOException e) {
-        // Lets just log this and ignore.
-        Debug.debugException(e);
+      if (response != null) {
+        response.close();
       }
     }
   }
@@ -346,11 +341,11 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     }
 
-    InputStream entity = null;
+    ClientResponse response = null;
     try
     {
-      ClientResponse response = clientResource.get();
-      entity = response.getEntity(InputStream.class);
+      response = clientResource.get();
+      InputStream entity = response.getEntity(InputStream.class);
 
       if(response.getStatusType() == Response.Status.OK)
       {
@@ -373,13 +368,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     finally
     {
-      try {
-        if (entity != null) {
-          entity.close();
-        }
-      } catch (IOException e) {
-        // Lets just log this and ignore.
-        Debug.debugException(e);
+      if (response != null) {
+        response.close();
       }
     }
   }
@@ -428,11 +418,11 @@ public class SCIMEndpoint<R extends BaseResource>
     };
 
 
-    InputStream entity = null;
+    ClientResponse response = null;
     try
     {
-      ClientResponse response = clientResource.post(output);
-      entity = response.getEntity(InputStream.class);
+      response = clientResource.post(output);
+      InputStream entity = response.getEntity(InputStream.class);
 
       if(response.getStatusType() == Response.Status.CREATED)
       {
@@ -457,13 +447,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     finally
     {
-      try {
-        if (entity != null) {
-          entity.close();
-        }
-      } catch (IOException e) {
-        // Lets just log this and ignore.
-        Debug.debugException(e);
+      if (response != null) {
+        response.close();
       }
     }
   }
@@ -570,10 +555,9 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     };
 
-    InputStream entity = null;
+    ClientResponse response = null;
     try
     {
-      ClientResponse response;
       if(overrides[0])
       {
         clientResource.header("X-HTTP-Method-Override", "PUT");
@@ -584,7 +568,7 @@ public class SCIMEndpoint<R extends BaseResource>
         response = clientResource.put(output);
       }
 
-      entity = response.getEntity(InputStream.class);
+      InputStream entity = response.getEntity(InputStream.class);
 
       if(response.getStatusType() == Response.Status.OK)
       {
@@ -609,13 +593,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     finally
     {
-      try {
-        if (entity != null) {
-          entity.close();
-        }
-      } catch (IOException e) {
-        // Lets just log this and ignore.
-        Debug.debugException(e);
+      if (response != null) {
+        response.close();
       }
     }
   }
@@ -719,10 +698,9 @@ public class SCIMEndpoint<R extends BaseResource>
       }
     };
 
-    InputStream entity = null;
+    ClientResponse response = null;
     try
     {
-      ClientResponse response;
       if(overrides[1])
       {
         clientResource.header("X-HTTP-Method-Override", "PATCH");
@@ -745,7 +723,7 @@ public class SCIMEndpoint<R extends BaseResource>
         }
       }
 
-      entity = response.getEntity(InputStream.class);
+      InputStream entity = response.getEntity(InputStream.class);
 
       if(response.getStatusType() == Response.Status.OK)
       {
@@ -779,12 +757,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     finally
     {
-      try {
-        if (entity != null) {
-          entity.close();
-        }
-      } catch (IOException e) {
-        Debug.debugException(e);
+      if (response != null) {
+        response.close();
       }
     }
   }
@@ -872,10 +846,9 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
 
-    InputStream entity = null;
+    ClientResponse response = null;
     try
     {
-      ClientResponse response;
       if(overrides[2])
       {
         clientResource.header("X-HTTP-Method-Override", "DELETE");
@@ -886,7 +859,7 @@ public class SCIMEndpoint<R extends BaseResource>
       }
       if(response.getStatusType() != Response.Status.OK)
       {
-        entity = response.getEntity(InputStream.class);
+        InputStream entity = response.getEntity(InputStream.class);
         throw createErrorResponseException(response, entity);
       }
       else
@@ -914,13 +887,8 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     finally
     {
-      try {
-        if (entity != null) {
-          entity.close();
-        }
-      } catch (IOException e) {
-        // Lets just log this and ignore.
-        Debug.debugException(e);
+      if (response != null) {
+        response.close();
       }
     }
   }

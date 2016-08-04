@@ -133,4 +133,17 @@ public class ClientResponse
   {
     return response.getStringHeaders();
   }
+
+  /**
+   * Wink compatibility layer class.
+   * This method provides a way to close the private Response member for this
+   * ClientResponse.
+   */
+  public void close()
+  {
+    if (response != null)
+    {
+      response.close();
+    }
+  }
 }
