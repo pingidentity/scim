@@ -56,18 +56,7 @@ public class ResourceDescriptor extends BaseResource
     public ResourceDescriptor createResource(
         final ResourceDescriptor resourceDescriptor,
         final SCIMObject scimObject) {
-      ResourceDescriptor rd =
-              new ResourceDescriptor(resourceDescriptor, scimObject);
-
-      if (scimObject.getSchemas().contains(
-              "urn:unboundid:schemas:scim:ldap:1.0"))
-      {
-        //This is a convenience for when we're talking to the UnboundID
-        //Directory REST API; clients could set this themselves, but we'll do
-        //it for them in this case.
-        rd.setStrictMode(false);
-      }
-      return rd;
+      return new ResourceDescriptor(resourceDescriptor, scimObject);
     }
   };
 
@@ -81,9 +70,10 @@ public class ResourceDescriptor extends BaseResource
 
   /**
    * Whether to use "strict mode" when looking up an attribute
-   * that doesn't exist in the attributesCache.
+   * that doesn't exist in the attributesCache. Changed to false for better
+   * interoperability with SCIM implementations.
    */
-  private boolean strictMode = true;
+  private boolean strictMode = false;
 
   /**
    * Constructs a new ResourceDescriptor from a existing SCIMObject.

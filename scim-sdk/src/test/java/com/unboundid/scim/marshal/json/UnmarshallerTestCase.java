@@ -200,10 +200,12 @@ public class UnmarshallerTestCase extends SCIMTestCase {
     }
     testJson =
       getResource("/com/unboundid/scim/marshal/spec/mixed-user-malformed.json");
+    boolean saveStrictMode = userResourceDescriptor.isStrictMode();
     try
     {
       System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY,
                          "true");
+      userResourceDescriptor.setStrictMode(true);
       unmarshaller.unmarshal(testJson, userResourceDescriptor,
               BaseResource.BASE_RESOURCE_FACTORY);
       fail("Expected JSONUnmarshaller to fail because no schema can be found " +
@@ -217,6 +219,7 @@ public class UnmarshallerTestCase extends SCIMTestCase {
     finally
     {
       System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY, "");
+      userResourceDescriptor.setStrictMode(saveStrictMode);
     }
 
     // Test unmarshalling a JSON user patch with meta data

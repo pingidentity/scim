@@ -3,6 +3,18 @@ UnboundID SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.8.14 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+    - Updated the SCIM SDK to allow custom Users and Groups endpoint names and
+      resource descriptor names if an implementation uses custom identifiers.
+      Also changed the default strict mode for resource descriptors to allow for
+      unknown core attributes and custom schema. Attribute descriptors in the
+      CoreSchema class are now marked with public accessibility to make them
+      easier to reference in resource subclasses.
 
 ---------- SCIM 1.8.13 ----------
 

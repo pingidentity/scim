@@ -40,6 +40,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
+import static com.unboundid.scim.schema.CoreSchema
+                 .createCustomGroupResourceDescriptor;
+import static com.unboundid.scim.schema.CoreSchema
+                 .createCustomUserResourceDescriptor;
 
 
 /**
@@ -197,6 +201,26 @@ public class SCIMService
         CoreSchema.USER_DESCRIPTOR, UserResource.USER_RESOURCE_FACTORY);
   }
 
+
+
+  /**
+   * Returns a SCIMEndpoint for the Users endpoint defined in the core schema
+   * with a custom user resource name and users endpoint name.
+   *
+   * @param userResourceName   Provide a custom user resource name.
+   * @param usersEndpointName  Provide a custom users endpoint name.
+   * @return The SCIMEndpoint for the Users endpoint defined in the core schema.
+   */
+  public SCIMEndpoint<UserResource> getUserEndpoint(
+    final String userResourceName, final String usersEndpointName)
+  {
+    return new SCIMEndpoint<UserResource>(this, client,
+      createCustomUserResourceDescriptor(userResourceName, usersEndpointName),
+      UserResource.USER_RESOURCE_FACTORY);
+  }
+
+
+
   /**
    * Returns a SCIMEndpoint for the Groups endpoint defined in the core schema.
    *
@@ -208,6 +232,27 @@ public class SCIMService
     return new SCIMEndpoint<GroupResource>(this, client,
         CoreSchema.GROUP_DESCRIPTOR, GroupResource.GROUP_RESOURCE_FACTORY);
   }
+
+
+
+  /**
+   * Returns a SCIMEndpoint for the Groups endpoint defined in the core schema
+   * with a custom group resource name and groups endpoint name.
+   *
+   * @param groupResourceName   Provide a custom group resource name.
+   * @param groupsEndpointName  Provide a custom groups endpoint name.
+   * @return The SCIMEndpoint for the Groups endpoint defined in the
+   *         core schema.
+   */
+  public SCIMEndpoint<GroupResource> getGroupEndpoint(
+    final String groupResourceName, final String groupsEndpointName)
+  {
+    return new SCIMEndpoint<GroupResource>(this, client,
+      createCustomGroupResourceDescriptor(groupResourceName,
+      groupsEndpointName), GroupResource.GROUP_RESOURCE_FACTORY);
+  }
+
+
 
   /**
    * Returns a SCIMEndpoint for the Schemas endpoint. This endpoint allows for
@@ -257,14 +302,7 @@ public class SCIMService
     }
 
     ResourceDescriptor descriptor = resources.iterator().next();
-    if ("urn:unboundid:schemas:scim:ldap:1.0".equalsIgnoreCase(
-            descriptor.getSchema()))
-    {
-      //This is a convenience for when we're talking to the UnboundID Directory
-      //REST API; clients could set this themselves, but we'll do it for them
-      //in this case.
-      descriptor.setStrictMode(false);
-    }
+    descriptor.setStrictMode(false);
 
     return descriptor;
   }
@@ -300,14 +338,7 @@ public class SCIMService
     }
 
     ResourceDescriptor descriptor = resources.iterator().next();
-    if ("urn:unboundid:schemas:scim:ldap:1.0".equalsIgnoreCase(
-        descriptor.getSchema()))
-    {
-      //This is a convenience for when we're talking to the UnboundID Directory
-      //REST API; clients could set this themselves, but we'll do it for them
-      //in this case.
-      descriptor.setStrictMode(false);
-    }
+    descriptor.setStrictMode(false);
 
     return descriptor;
   }
