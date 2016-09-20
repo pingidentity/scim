@@ -117,7 +117,18 @@ public class ComplexValue
    * @param name sub-attribute name.
    * @param value sub-attribute value.
    */
+  @Deprecated
   public void puDateValue(final String name, final Date value) {
+    put(name, new SimpleValue(value));
+  }
+
+  /**
+   * Set the value of a Date-valued sub-attribute.  This method can be used
+   * for attributes of the SCIM type 'DateTime'.
+   * @param name sub-attribute name.
+   * @param value sub-attribute value.
+   */
+  public void putDateValue(final String name, final Date value) {
     put(name, new SimpleValue(value));
   }
 
