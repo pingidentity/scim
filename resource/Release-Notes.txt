@@ -3,12 +3,23 @@ UnboundID SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.8.14 ----------
+---------- SCIM 1.8.15 ----------
 
   * Release Date: TBD
 
   * Resolved Issues
 
+    -
+
+---------- SCIM 1.8.14 ----------
+
+  * Release Date: September 27, 2016
+
+  * Resolved Issues
+
+    - Fixed a typo in putDateValue method name of the ComplexValue class. The
+      former puDateValue method has been deprecated.
+      
     - Updated the SCIM SDK to allow custom Users and Groups endpoint names and
       resource descriptor names if an implementation uses custom identifiers.
       Also changed the default strict mode for resource descriptors to allow for
