@@ -55,6 +55,8 @@ public class Client {
 
 ### Maven coordinates
 
+Check Maven Central for the latest available version of the SCIM 1.1 SDK.
+
 ```xml
 <dependency>
     <groupId>com.unboundid.product.scim</groupId>
