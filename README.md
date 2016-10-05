@@ -1,3 +1,4 @@
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.unboundid.product.scim/scim-sdk/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.unboundid.product.scim/scim-sdk)
 [![Javadocs](http://javadoc.io/badge/com.unboundid.product.scim/scim-sdk.svg)](http://javadoc.io/doc/com.unboundid.product.scim/scim-sdk)
 
 # SCIM 1.1 SDK for Java
@@ -58,7 +59,7 @@ public class Client {
 <dependency>
     <groupId>com.unboundid.product.scim</groupId>
     <artifactId>scim-sdk</artifactId>
-    <version>1.8.14</version>
+    <version>VERSION</version>
 </dependency>
 ```
 
