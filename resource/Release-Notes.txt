@@ -9,7 +9,9 @@ https://www.unboundid.com/resources/scim
 
   * Resolved Issues
 
-    -
+    - Skipped javadoc generation when building with Java 8. Javadocs generation
+    fails due to changes introduced in Java 8 SE - as a result, javadocs may be 
+    missing specifically when building with this version.
 
 ---------- SCIM 1.8.14 ----------
 
