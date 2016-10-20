@@ -306,8 +306,8 @@
         <version>4.5</version>
       </dependency>
       <dependency>
-        <groupId>com.unboundid.product</groupId>
-        <artifactId>ldapsdk</artifactId>
+        <groupId>com.unboundid</groupId>
+        <artifactId>unboundid-ldapsdk</artifactId>
         <version>${ldapsdk.version}</version>
       </dependency>
     </dependencies>

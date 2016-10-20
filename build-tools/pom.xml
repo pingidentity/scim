@@ -28,6 +28,23 @@
       <main.basedir>${project.basedir}/..</main.basedir>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>UnboundID</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.unboundid.build</groupId>
+                        <artifactId>osslicense-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+    
     <build>
         <plugins>
             <plugin>
@@ -40,13 +57,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.unboundid.build</groupId>
-                <artifactId>osslicense-maven-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

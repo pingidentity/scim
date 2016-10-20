@@ -197,8 +197,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.unboundid.product</groupId>
-            <artifactId>ldapsdk</artifactId>
+            <groupId>com.unboundid</groupId>
+            <artifactId>unboundid-ldapsdk</artifactId>
             <version>${ldapsdk.version}</version>
         </dependency>
         <dependency>
