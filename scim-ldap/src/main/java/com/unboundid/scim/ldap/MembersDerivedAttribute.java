@@ -21,6 +21,7 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPSearchException;
 import com.unboundid.ldap.sdk.LDAPURL;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
@@ -79,6 +80,11 @@ public class MembersDerivedAttribute extends DerivedAttribute
   public static final String ATTR_MEMBER_URL = "memberURL";
 
   /**
+   * The name of the LDAP objectclass attribute.
+   */
+  public static final String ATTR_OBJECTCLASS = "objectclass";
+
+    /**
    * The name of the LDAP groupOfNames object class.
    */
   public static final String OC_GROUP_OF_NAMES = "groupOfNames";
@@ -119,6 +125,12 @@ public class MembersDerivedAttribute extends DerivedAttribute
     ldapAttributeTypes.add(ATTR_UNIQUE_MEMBER);
     ldapAttributeTypes.add(ATTR_MEMBER_URL);
   }
+
+  /**
+   * A presence filter for objectclass.
+   */
+  private static final Filter OBJECTCLASS_PRESENCE_FILTER =
+    Filter.createPresenceFilter(ATTR_OBJECTCLASS);
 
 
   @Override
@@ -178,7 +190,16 @@ public class MembersDerivedAttribute extends DerivedAttribute
                 new SearchRequest(ldapURL.getBaseDN().toString(),
                                   SearchScope.SUB, ldapURL.getFilter(),
                                   attrsToGet);
-            SearchResult searchResult = ldapInterface.search(searchRequest);
+            final SearchResult searchResult;
+            try
+            {
+              searchResult = ldapInterface.search(searchRequest);
+            }
+            catch (final LDAPSearchException lse)
+            {
+              Debug.debugException(lse);
+              continue;
+            }
 
             if (searchResult.getEntryCount() > 0)
             {
@@ -208,8 +229,17 @@ public class MembersDerivedAttribute extends DerivedAttribute
           {
             final SearchRequest searchRequest =
                 new SearchRequest(memberDN, SearchScope.BASE,
-                                  "(objectclass=*)", attrsToGet);
-            SearchResult searchResult = ldapInterface.search(searchRequest);
+                                  OBJECTCLASS_PRESENCE_FILTER, attrsToGet);
+            final SearchResult searchResult;
+            try
+            {
+              searchResult = ldapInterface.search(searchRequest);
+            }
+            catch (final LDAPSearchException lse)
+            {
+              Debug.debugException(lse);
+              continue;
+            }
 
             if(searchResult.getEntryCount() == 1)
             {

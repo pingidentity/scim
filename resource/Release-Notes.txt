@@ -5,13 +5,16 @@ https://www.unboundid.com/resources/scim
 
 ---------- SCIM 1.8.15 ----------
 
-  * Release Date: TBD
+  * Release Date: November 7, 2016
 
   * Resolved Issues
 
+   -  Updated cases where filtered and paged SCIM searches for groups with
+      missing members were not returned.
+
     - Skipped javadoc generation when building with Java 8. Javadocs generation
-      fails due to changes introduced in Java 8 SE - as a result, javadocs may be 
-      missing specifically when building with this version.
+      fails due to changes introduced in Java 8 SE - as a result, javadocs may
+      be missing specifically when building with this version.
 
     - Addressed issue #12, in which build failed from external networks.
       Updated build-tools module with an UnboundID profile to hold 
@@ -46,8 +49,8 @@ https://www.unboundid.com/resources/scim
 
     - Updated to use UnboundID LDAP SDK v3.1.1.
 
-    - Addressed an issue where repeated SCIMEndpoint requests could hang when the
-      underyling Response object was not closed properly.
+    - Addressed an issue where repeated SCIMEndpoint requests could hang when
+      the underlying Response object was not closed properly.
 
 ---------- SCIM 1.8.12 ----------
 
