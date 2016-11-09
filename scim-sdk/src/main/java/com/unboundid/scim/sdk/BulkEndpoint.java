@@ -24,9 +24,9 @@ import com.unboundid.scim.marshal.json.JsonMarshaller;
 import com.unboundid.scim.marshal.json.JsonUnmarshaller;
 import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
-import org.apache.wink.client.ClientResponse;
-import org.apache.wink.client.Resource;
-import org.apache.wink.client.RestClient;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientResponse;
+import com.unboundid.scim.facade.org.apache.wink.client.Resource;
+import com.unboundid.scim.facade.org.apache.wink.client.RestClient;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;

@@ -17,10 +17,10 @@
 
 package com.unboundid.scim.sdk;
 
-import org.apache.wink.client.ClientRequest;
-import org.apache.wink.client.ClientResponse;
-import org.apache.wink.client.handlers.ClientHandler;
-import org.apache.wink.client.handlers.HandlerContext;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientRequest;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientResponse;
+import com.unboundid.scim.facade.org.apache.wink.client.handlers.ClientHandler;
+import com.unboundid.scim.facade.org.apache.wink.client.handlers.HandlerContext;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;

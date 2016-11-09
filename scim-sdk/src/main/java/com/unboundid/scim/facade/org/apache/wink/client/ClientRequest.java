@@ -15,31 +15,42 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.server.internal.servlet;
+package com.unboundid.scim.facade.org.apache.wink.client;
 
-import org.apache.wink.server.internal.DeploymentConfiguration;
-
-import javax.servlet.http.HttpServlet;
-import javax.ws.rs.core.Application;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.core.MultivaluedMap;
 
 /**
  *  Wink compatibility layer class - see Wink docs.
  */
-public abstract class RestServlet extends HttpServlet
+public class ClientRequest
 {
+  private ClientRequestContext clientRequestContext;
+
   /**
    *  Wink compatibility layer class - see Wink docs.
-   * @param configuration Wink compatibility layer class - see Wink docs.
-   * @return Wink compatibility layer class - see Wink docs.
-   * @throws ClassNotFoundException Wink compatibility layer class
-   * - see Wink docs.
-   * @throws InstantiationException Wink compatibility layer class
-   * - see Wink docs.
-   * @throws IllegalAccessException Wink compatibility layer class
-   * - see Wink docs.
+   * @param clientRequestContext Wink compatibility layer class - see Wink docs.
    */
-  protected abstract Application getApplication(
-      DeploymentConfiguration configuration)
-      throws ClassNotFoundException, InstantiationException,
-      IllegalAccessException;
+  ClientRequest(final ClientRequestContext clientRequestContext)
+  {
+    this.clientRequestContext = clientRequestContext;
+  }
+
+  /**
+   *  Wink compatibility layer class - see Wink docs.
+   * @return Wink compatibility layer class - see Wink docs.
+   */
+  public MultivaluedMap<String, Object> getHeaders()
+  {
+    return clientRequestContext.getHeaders();
+  }
+
+  /**
+   *  Wink compatibility layer class - see Wink docs.
+   * @return Wink compatibility layer class - see Wink docs.
+   */
+  public ClientRequestContext getClientRequestContext()
+  {
+    return clientRequestContext;
+  }
 }

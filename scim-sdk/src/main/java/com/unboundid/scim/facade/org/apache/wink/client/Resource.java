@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.client;
+package com.unboundid.scim.facade.org.apache.wink.client;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;

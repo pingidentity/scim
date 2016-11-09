@@ -15,42 +15,23 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.client;
+package com.unboundid.scim.facade.org.apache.wink.client.handlers;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.core.MultivaluedMap;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientRequest;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientResponse;
 
 /**
  *  Wink compatibility layer class - see Wink docs.
  */
-public class ClientRequest
+public interface ClientHandler
 {
-  private ClientRequestContext clientRequestContext;
-
   /**
    *  Wink compatibility layer class - see Wink docs.
-   * @param clientRequestContext Wink compatibility layer class - see Wink docs.
-   */
-  ClientRequest(final ClientRequestContext clientRequestContext)
-  {
-    this.clientRequestContext = clientRequestContext;
-  }
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
+   * @param request Wink compatibility layer class - see Wink docs.
+   * @param context Wink compatibility layer class - see Wink docs.
    * @return Wink compatibility layer class - see Wink docs.
+   * @throws Exception Wink compatibility layer class - see Wink docs.
    */
-  public MultivaluedMap<String, Object> getHeaders()
-  {
-    return clientRequestContext.getHeaders();
-  }
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
-   * @return Wink compatibility layer class - see Wink docs.
-   */
-  public ClientRequestContext getClientRequestContext()
-  {
-    return clientRequestContext;
-  }
+  ClientResponse handle(final ClientRequest request,
+                               final HandlerContext context) throws Exception;
 }

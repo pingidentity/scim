@@ -15,10 +15,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.common;
+package com.unboundid.scim.facade.org.apache.wink.server.internal;
 
-import org.glassfish.jersey.server.ResourceConfig;
-
-public class WinkApplication extends ResourceConfig
+public class DeploymentConfiguration
 {
 }

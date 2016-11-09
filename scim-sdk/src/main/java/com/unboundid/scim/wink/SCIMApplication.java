@@ -31,7 +31,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.sdk.SCIMBackend;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
-import org.apache.wink.common.WinkApplication;
+import com.unboundid.scim.facade.org.apache.wink.common.WinkApplication;
 import org.glassfish.jersey.server.filter.HttpMethodOverrideFilter;
 
 import java.io.File;

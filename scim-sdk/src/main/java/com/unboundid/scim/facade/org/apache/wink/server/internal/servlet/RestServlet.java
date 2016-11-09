@@ -15,23 +15,32 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.client.handlers;
+package com.unboundid.scim.facade.org.apache.wink.server.internal.servlet;
 
-import org.apache.wink.client.ClientRequest;
-import org.apache.wink.client.ClientResponse;
+import com.unboundid.scim.facade.org.apache.wink.server.internal.
+    DeploymentConfiguration;
+
+import javax.servlet.http.HttpServlet;
+import javax.ws.rs.core.Application;
 
 /**
  *  Wink compatibility layer class - see Wink docs.
  */
-public interface ClientHandler
+public abstract class RestServlet extends HttpServlet
 {
   /**
    *  Wink compatibility layer class - see Wink docs.
-   * @param request Wink compatibility layer class - see Wink docs.
-   * @param context Wink compatibility layer class - see Wink docs.
+   * @param configuration Wink compatibility layer class - see Wink docs.
    * @return Wink compatibility layer class - see Wink docs.
-   * @throws Exception Wink compatibility layer class - see Wink docs.
+   * @throws ClassNotFoundException Wink compatibility layer class
+   * - see Wink docs.
+   * @throws InstantiationException Wink compatibility layer class
+   * - see Wink docs.
+   * @throws IllegalAccessException Wink compatibility layer class
+   * - see Wink docs.
    */
-  ClientResponse handle(final ClientRequest request,
-                               final HandlerContext context) throws Exception;
+  protected abstract Application getApplication(
+      DeploymentConfiguration configuration)
+      throws ClassNotFoundException, InstantiationException,
+      IllegalAccessException;
 }

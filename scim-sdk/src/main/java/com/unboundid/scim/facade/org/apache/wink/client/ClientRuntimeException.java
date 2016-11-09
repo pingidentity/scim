@@ -15,8 +15,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.client.handlers;
+package com.unboundid.scim.facade.org.apache.wink.client;
 
-public class HandlerContext
+public class ClientRuntimeException extends RuntimeException
 {
 }

@@ -20,6 +20,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.data.ResourceFactory;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.facade.org.apache.wink.client.Resource;
 import com.unboundid.scim.marshal.Marshaller;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.marshal.json.JsonMarshaller;
@@ -36,12 +37,13 @@ import org.apache.http.UnsupportedHttpVersionException;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.RedirectException;
-import org.apache.wink.client.ClientAuthenticationException;
-import org.apache.wink.client.ClientConfigException;
-import org.apache.wink.client.ClientResponse;
-import org.apache.wink.client.ClientRuntimeException;
-import org.apache.wink.client.ClientWebException;
-import org.apache.wink.client.RestClient;
+import com.unboundid.scim.facade.org.apache.wink.client.
+    ClientAuthenticationException;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientConfigException;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientResponse;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientRuntimeException;
+import com.unboundid.scim.facade.org.apache.wink.client.ClientWebException;
+import com.unboundid.scim.facade.org.apache.wink.client.RestClient;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
@@ -182,7 +184,7 @@ public class SCIMEndpoint<R extends BaseResource>
     }
 
     URI uri = uriBuilder.build();
-    org.apache.wink.client.Resource clientResource =
+    Resource clientResource =
         client.resource(completeUri(uri));
     if(!useUrlSuffix)
     {
@@ -298,7 +300,7 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).build();
-    org.apache.wink.client.Resource clientResource =
+    Resource clientResource =
         client.resource(completeUri(uri));
     if(!useUrlSuffix)
     {
@@ -393,7 +395,7 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).build();
-    org.apache.wink.client.Resource clientResource =
+    Resource clientResource =
         client.resource(completeUri(uri));
     if(!useUrlSuffix)
     {
@@ -527,7 +529,7 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).path(id).build();
-    org.apache.wink.client.Resource clientResource =
+    Resource clientResource =
         client.resource(completeUri(uri));
     if(!useUrlSuffix)
     {
@@ -664,7 +666,7 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
             UriBuilder.fromUri(scimService.getBaseURL()).path(
                     resourceDescriptor.getEndpoint()).path(id).build();
-    org.apache.wink.client.Resource clientResource =
+    Resource clientResource =
         client.resource(completeUri(uri));
     if(!useUrlSuffix)
     {
@@ -829,7 +831,7 @@ public class SCIMEndpoint<R extends BaseResource>
     URI uri =
         UriBuilder.fromUri(scimService.getBaseURL()).path(
             resourceDescriptor.getEndpoint()).path(id).build();
-    org.apache.wink.client.Resource clientResource =
+    Resource clientResource =
         client.resource(completeUri(uri));
     if(!useUrlSuffix)
     {
@@ -900,7 +902,7 @@ public class SCIMEndpoint<R extends BaseResource>
    * @param requestedAttributes The SCIM attributes to request.
    */
   private void addAttributesQuery(
-      final org.apache.wink.client.Resource clientResource,
+      final Resource clientResource,
       final String... requestedAttributes)
   {
     if(requestedAttributes != null && requestedAttributes.length > 0)

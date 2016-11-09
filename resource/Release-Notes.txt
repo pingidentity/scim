@@ -3,6 +3,15 @@ UnboundID SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.8.16 ----------
+
+  * Release Date: ???
+
+  * Resolved Issues
+
+    -  Repackaged Apache Wink / Jersey wrapper classes to avoid classpath 
+       conflicts when using Apache Wink.
+
 ---------- SCIM 1.8.15 ----------
 
   * Release Date: November 7, 2016

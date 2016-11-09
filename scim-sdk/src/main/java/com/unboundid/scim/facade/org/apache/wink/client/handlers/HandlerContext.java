@@ -15,31 +15,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.client;
+package com.unboundid.scim.facade.org.apache.wink.client.handlers;
 
-/**
- *  Wink compatibility layer class - see Wink docs.
- */
-public class ClientWebException extends ClientRuntimeException
+public class HandlerContext
 {
-  private final ClientResponse response;
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
-   * @param response Wink compatibility layer class - see Wink docs.
-   */
-  public ClientWebException(final ClientResponse response)
-  {
-    this.response = response;
-  }
-
-  /**
-   *  Wink compatibility layer class - see Wink docs.
-   * @return Wink compatibility layer class - see Wink docs.
-   */
-  public ClientResponse getResponse()
-  {
-    return response;
-  }
-
 }

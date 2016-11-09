@@ -15,8 +15,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.server.internal;
+package com.unboundid.scim.facade.org.apache.wink.client;
 
-public class DeploymentConfiguration
+public class ClientConfigException extends ClientRuntimeException
 {
 }

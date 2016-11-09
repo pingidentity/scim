@@ -15,7 +15,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>.
  */
 
-package org.apache.wink.common.http;
+package com.unboundid.scim.facade.org.apache.wink.common.http;
 
 import javax.ws.rs.core.Response;
 
