@@ -63,7 +63,7 @@ public class SCIMService
   private boolean useUrlSuffix;
 
   /**
-   * Constructs a new SCIMService from a url and a hersey client config.
+   * Constructs a new SCIMService from a url and a jersey client config.
    * @param baseUrl The SCIM Service Provider URL.
   * @param clientConfig The client config object.
    */
