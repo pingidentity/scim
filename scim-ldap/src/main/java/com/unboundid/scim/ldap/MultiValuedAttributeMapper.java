@@ -349,7 +349,8 @@ public class MultiValuedAttributeMapper extends AttributeMapper
     {
       // Make sure the sub-attribute is defined
       getAttributeDescriptor().getSubAttribute(subAttributeName);
-      return null; //sort by nothing
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy() + " because it has no mapping");
     }
 
     final AttributeTransformation attributeTransformation =

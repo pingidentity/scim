@@ -137,8 +137,7 @@ public abstract class AttributeMapper
    * used as a sort key when the SCIM attribute type has been specified in
    * sort parameters.
    *
-   * @return  The mapped server side sort request control or {@code null} if
-   *          the SCIM attribute type cannot be mapped.
+   * @return  The mapped server side sort request control.
    * @param sortParameters The SCIM sort parameters to be mapped.
    * @throws InvalidResourceException if the SCIM attribute cannot be used in
    *                                  sort parameters.

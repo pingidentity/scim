@@ -27,6 +27,7 @@ import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.ModificationType;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchResultEntry;
+import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
 import com.unboundid.scim.schema.CoreSchema;
@@ -1279,10 +1280,19 @@ public class ResourceMapper
 
     if (attributeMapper == null)
     {
-      return null;
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy());
     }
 
-    return attributeMapper.toLDAPSortControl(sortParameters);
+    final ServerSideSortRequestControl c =
+        attributeMapper.toLDAPSortControl(sortParameters);
+    if (c == null)
+    {
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy());
+    }
+
+    return new ServerSideSortRequestControl(true, c.getSortKeys());
   }
 
 

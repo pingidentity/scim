@@ -9,8 +9,14 @@ https://www.unboundid.com/resources/scim
 
   * Resolved Issues
 
-    -  Repackaged Apache Wink / Jersey wrapper classes to avoid classpath 
+    -  Repackaged Apache Wink / Jersey wrapper classes to avoid classpath
        conflicts when using Apache Wink.
+
+    -  Changed search processing to reject searches specifying a sortBy
+       parameter that cannot be processed, rather than processing the
+       search as if the parameter had not been present.
+
+    -  Treat sub-attribute names case insensitively in the sortBy parameter.
 
 ---------- SCIM 1.8.15 ----------
 
@@ -26,7 +32,7 @@ https://www.unboundid.com/resources/scim
       be missing specifically when building with this version.
 
     - Addressed issue #12, in which build failed from external networks.
-      Updated build-tools module with an UnboundID profile to hold 
+      Updated build-tools module with an UnboundID profile to hold
       osslicense-maven-plugin configuration, and changed LDAP SDK dependency
       to com.unboundid:unboundid-ldapsdk:3.2.0.
 
@@ -39,7 +45,7 @@ https://www.unboundid.com/resources/scim
 
     - Fixed a typo in putDateValue method name of the ComplexValue class. The
       former puDateValue method has been deprecated.
-      
+
     - Updated the SCIM SDK to allow custom Users and Groups endpoint names and
       resource descriptor names if an implementation uses custom identifiers.
       Also changed the default strict mode for resource descriptors to allow for
@@ -68,7 +74,7 @@ https://www.unboundid.com/resources/scim
   * Resolved Issues
 
     - Added package-level README files.
-  
+
 
 ---------- SCIM 1.8.11 ----------
 
@@ -97,7 +103,7 @@ https://www.unboundid.com/resources/scim
       implementation of the PATCH operation.
 
     - Fixed an issue where null JSON values were converted to null strings.
-      The JSON parser has been updated to ignore null attribute values, and 
+      The JSON parser has been updated to ignore null attribute values, and
       to ignore attribute arrays without any non-null values.
 
     - Fixed an issue where an attempt to give a required attribute a value that was

@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
+
 
 
 /**
@@ -82,7 +84,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
     ldapAttributeTypes = new HashSet<String>();
     for (final SubAttributeTransformation t : transformations)
     {
-      map.put(t.getSubAttribute(), t);
+      map.put(toLowerCase(t.getSubAttribute()), t);
       ldapAttributeTypes.add(t.getAttributeTransformation().getLdapAttribute());
     }
   }
@@ -117,7 +119,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
       }
 
       final SubAttributeTransformation subAttributeTransformation =
-                                              map.get(subAttributeName);
+          map.get(toLowerCase(subAttributeName));
       if(subAttributeTransformation == null)
       {
        // Make sure the sub-attribute is defined.
@@ -191,7 +193,7 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
     }
 
     final SubAttributeTransformation subAttributeTransformation =
-        map.get(subAttributeName);
+        map.get(toLowerCase(subAttributeName));
     if(subAttributeTransformation == null)
     {
       // Make sure the sub-attribute is defined.
@@ -222,12 +224,13 @@ public class ComplexSingularAttributeMapper extends AttributeMapper
     }
 
     final SubAttributeTransformation subAttributeTransformation =
-        map.get(subAttributeName);
+        map.get(toLowerCase(subAttributeName));
     if(subAttributeTransformation == null)
     {
       // Make sure the sub-attribute is defined.
       getAttributeDescriptor().getSubAttribute(subAttributeName);
-      return null; //sort by nothing
+      throw new InvalidResourceException("Cannot sort by attribute " +
+          sortParameters.getSortBy() + " because it has no mapping");
     }
 
     final AttributeTransformation attributeTransformation =

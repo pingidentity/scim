@@ -520,9 +520,17 @@ public class UserResourceMapperTestCase
       // Expected.
     }
 
-    control = mapper.toLDAPSortControl(
-        new SortParameters("name.middleName", "ascending"));
-    assertNull(control);
+    try
+    {
+      mapper.toLDAPSortControl(new SortParameters("name.middleName",
+                                                  "ascending"));
+      fail("sortBy=name.middleName should cause an exception to be thrown " +
+           "because it is not mapped");
+    }
+    catch (InvalidResourceException e)
+    {
+      // Expected.
+    }
 
     control = mapper.toLDAPSortControl(
         new SortParameters("addresses.locality", "ascending"));

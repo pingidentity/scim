@@ -57,7 +57,8 @@ public class PasswordAttributeMapper extends SimpleAttributeMapper
       final SortParameters sortParameters) throws InvalidResourceException
   {
     // Can't sort on password as it will never have a value.
-    return null;
+    throw new InvalidResourceException("Cannot sort by attribute " +
+        sortParameters.getSortBy());
   }
 
   @Override
