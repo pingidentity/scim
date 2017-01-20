@@ -20,6 +20,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.scim.data.BaseResource;
+import com.unboundid.scim.data.Meta;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.GetResourcesRequest;
 import com.unboundid.scim.sdk.InvalidResourceException;
@@ -30,6 +31,13 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.unboundid.scim.schema.CoreSchema.*;
+import static com.unboundid.scim.sdk.SCIMConstants.ATTR_NAME_DEBUG_SEARCH;
+import static com.unboundid.scim.sdk.SCIMConstants.ENTRY_ID_DEBUG_SEARCH;
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_UBID_LDAP;
+
+
 
 /**
  * Base class for scim-ldap search result listeners.
@@ -162,6 +170,34 @@ public abstract class SCIMSearchResultListener {
 
 
   /**
+   * Convert a debugSearch result entry into a SCIM resource.
+   * @param searchEntry  The search result entry.
+   * @return   A SCIM resource.
+   */
+  private BaseResource debugSearchEntryToResource(
+      final SearchResultEntry searchEntry)
+  {
+    final SCIMObject scimObject = new SCIMObject();
+    final BaseResource resource =
+        new BaseResource(request.getResourceDescriptor(), scimObject);
+    resource.setId(ENTRY_ID_DEBUG_SEARCH);
+    final Meta meta = new Meta(null, null, null, null);
+
+    final String[] debugSearchValues =
+        searchEntry.getAttributeValues(ATTR_NAME_DEBUG_SEARCH);
+    if (debugSearchValues != null)
+    {
+      meta.setDiagnosticInfo(debugSearchValues);
+    }
+
+    resource.setMeta(meta);
+
+    return resource;
+  }
+
+
+
+  /**
    * Convert an LDAP search result entry into a SCIM Resource.
    *
    * @param searchEntry The search result entry that has been returned by the
@@ -175,6 +211,12 @@ public abstract class SCIMSearchResultListener {
   protected BaseResource getResourceForSearchResultEntry(
       final SearchResultEntry searchEntry) throws SCIMException
   {
+    if (attributes.isDebugSearchIndex() &&
+        searchEntry.getDN().equalsIgnoreCase("cn=debugSearch"))
+    {
+      return debugSearchEntryToResource(searchEntry);
+    }
+
     if (!resourceMapper.isDnInScope(searchEntry.getDN()))
     {
       return null;
@@ -194,7 +236,7 @@ public abstract class SCIMSearchResultListener {
     {
       if (request.getAttributes().allAttributesRequested() ||
           resourceMapper.getDefaultSchemaURI().equals(
-              "urn:unboundid:schemas:scim:ldap:1.0"))
+              SCHEMA_URI_UBID_LDAP))
       {
         //If we are using the Identity Access API, the paring was already
         //done inside the LDAPResourceMapper.toSCIMAttributes() method.

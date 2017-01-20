@@ -59,6 +59,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_ATTRIBUTES;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_SCHEMAS;
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_UBID_LDAP;
+
 
 
 /**
@@ -1129,7 +1131,7 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
     if (filterString != null && !filterString.isEmpty())
     {
       if(resourceDescriptor.getSchema().equalsIgnoreCase(
-          "urn:unboundid:schemas:scim:ldap:1.0"))
+          SCHEMA_URI_UBID_LDAP))
       {
         filter = SCIMFilter.parse(
             filterString, resourceDescriptor.getSchema());

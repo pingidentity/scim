@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.unboundid.scim.sdk.SCIMConstants.META_SUBATTR_DIAGNOSTIC_INFO;
 import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
 
 /**
@@ -96,6 +97,18 @@ public class CoreSchema
             "The attribute's significant value",
             SCIMConstants.SCHEMA_URI_CORE, false, true, false));
 
+  /** Diagnostic info Meta attribute. */
+  public static final AttributeDescriptor META_DIAGNOSTIC_INFO =
+      AttributeDescriptor.newAttribute(
+          META_SUBATTR_DIAGNOSTIC_INFO,
+          META_SUBATTR_DIAGNOSTIC_INFO, AttributeDescriptor.DataType.STRING,
+          "Diagnostic information associated with the resource",
+          SCIMConstants.SCHEMA_URI_CORE, true, true, false, false,
+          AttributeDescriptor.createSubAttribute("value",
+            AttributeDescriptor.DataType.STRING,
+            "The attribute's significant value",
+            SCIMConstants.SCHEMA_URI_CORE, false, true, false));
+
   /** Meta attribute. */
   public static final AttributeDescriptor META =
       AttributeDescriptor.createAttribute("meta",
@@ -103,7 +116,7 @@ public class CoreSchema
           "A complex type containing metadata about the resource",
           SCIMConstants.SCHEMA_URI_CORE, false, false, false,
           META_CREATED, META_LAST_MODIFIED, META_LOCATION, META_VERSION,
-          META_ATTRIBUTES);
+          META_ATTRIBUTES, META_DIAGNOSTIC_INFO);
 
   //// 6.  SCIM User Schema ////
   //// 6.1.  Singular Attributes ////

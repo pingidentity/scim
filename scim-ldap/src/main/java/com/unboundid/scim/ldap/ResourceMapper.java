@@ -744,6 +744,11 @@ public class ResourceMapper
 
     searchResolver.addIdAttribute(ldapAttributes);
 
+    if (queryAttributes.isDebugSearchIndex())
+    {
+      ldapAttributes.add("debugsearchindex");
+    }
+
     return ldapAttributes;
   }
 

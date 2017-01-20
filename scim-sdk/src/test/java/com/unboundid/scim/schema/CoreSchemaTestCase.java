@@ -55,7 +55,7 @@ public class CoreSchemaTestCase extends SCIMTestCase
 
     assertEquals(rd.getAttributes().size(), 3);
     assertEquals(rd.getAttribute(SCIMConstants.SCHEMA_URI_CORE,
-        CoreSchema.META_DESCRIPTOR.getName()).getSubAttributes().size(), 5);
+        CoreSchema.META_DESCRIPTOR.getName()).getSubAttributes().size(), 6);
   }
 
   /**

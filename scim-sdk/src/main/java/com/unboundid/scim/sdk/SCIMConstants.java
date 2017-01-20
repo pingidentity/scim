@@ -57,11 +57,34 @@ public final class SCIMConstants
       "urn:scim:schemas:extension:enterprise:1.0";
 
   /**
+   * The URI of the UnboundID LDAP schema.
+   */
+  public static final String SCHEMA_URI_UBID_LDAP =
+      "urn:unboundid:schemas:scim:ldap:1.0";
+
+  /**
    * The resource name for the Service Provider Configuration in the core
    * schema.
    */
   public static final String RESOURCE_NAME_SERVICE_PROVIDER_CONFIG =
       "ServiceProviderConfig";
+
+  /**
+   * The name of the Diagnostic Info meta sub-attribute
+   * (this is non-standard SCIM).
+   */
+  public static final String META_SUBATTR_DIAGNOSTIC_INFO =
+      "__diagnostic_info";
+
+  /**
+   * The ID of the Debug Search Index resource.
+   */
+  public static final String ENTRY_ID_DEBUG_SEARCH = "debugSearch";
+
+  /**
+   * The name of the Debug Search Index attribute.
+   */
+  public static final String ATTR_NAME_DEBUG_SEARCH = "debugSearchIndex";
 
   /**
    * The resource name for the Group resource in the core schema.

@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_UBID_LDAP;
+
 
 
 /**
@@ -41,6 +43,11 @@ public class SCIMQueryAttributes
    * Indicates whether all attributes and sub-attributes are requested.
    */
   private final boolean allAttributesRequested;
+
+  /**
+   * Indicates whether debugsearchindex was requested.
+   */
+  private boolean debugSearchIndex = false;
 
   /**
    * The set of attributes and sub-attributes explicitly requested.
@@ -137,6 +144,25 @@ public class SCIMQueryAttributes
 
 
   /**
+   * Create a new set of query attributes from the provided information.
+   *
+   * @param descriptors         The set of attributes and sub-attributes
+   *                            explicitly requested, or {@code null} if all
+   *                            attributes are requested.
+   * @param debugSearchIndex    Indicates whether debugsearchindex is requested.
+   */
+  private SCIMQueryAttributes(
+      final Map<AttributeDescriptor,Set<AttributeDescriptor>> descriptors,
+      final boolean debugSearchIndex)
+  {
+    this.allAttributesRequested = (descriptors == null);
+    this.descriptors = descriptors;
+    this.debugSearchIndex = debugSearchIndex;
+  }
+
+
+
+  /**
    * Determine whether all attributes and sub-attributes are requested by
    * these query attributes.
    *
@@ -146,6 +172,20 @@ public class SCIMQueryAttributes
   public boolean allAttributesRequested()
   {
     return allAttributesRequested;
+  }
+
+
+
+  /**
+   * Determine whether debugsearchindex is requested by
+   * these query attributes.
+   *
+   * @return  {@code true} if debugsearchindex is requested,
+   *          and {@code false} otherwise.
+   */
+  public boolean isDebugSearchIndex()
+  {
+    return debugSearchIndex;
   }
 
 
@@ -341,7 +381,8 @@ public class SCIMQueryAttributes
       }
     }
 
-    return new SCIMQueryAttributes(merged);
+    return new SCIMQueryAttributes(
+        merged, this.debugSearchIndex || that.debugSearchIndex);
   }
 
 
@@ -352,13 +393,14 @@ public class SCIMQueryAttributes
   @Override
   public String toString()
   {
-    final StringBuilder sb = new StringBuilder();
-    sb.append("SCIMQueryAttributes");
-    sb.append("{allAttributesRequested=").append(allAttributesRequested);
+    final StringBuilder sb = new StringBuilder("SCIMQueryAttributes{");
+    sb.append("allAttributesRequested=").append(allAttributesRequested);
+    sb.append(", debugSearchIndex=").append(debugSearchIndex);
     sb.append(", descriptors=").append(descriptors);
     sb.append('}');
     return sb.toString();
   }
+
 
 
   /**
@@ -375,9 +417,15 @@ public class SCIMQueryAttributes
   {
     for (final String a : attributes)
     {
+      if (a.equalsIgnoreCase("debugsearchindex"))
+      {
+        debugSearchIndex = true;
+        continue;
+      }
+
       final AttributePath path;
       if (resourceDescriptor.getSchema().equalsIgnoreCase(
-          "urn:unboundid:schemas:scim:ldap:1.0"))
+          SCHEMA_URI_UBID_LDAP))
       {
         path = AttributePath.parse(a, resourceDescriptor.getSchema());
       }

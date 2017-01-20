@@ -45,7 +45,7 @@ public class Meta
         public Meta toInstance(final SCIMAttributeValue value) {
           String l = value.getSubAttributeValue("location",
               STRING_RESOLVER);
-          return new Meta(
+          Meta meta = new Meta(
               value.getSubAttributeValue("created",
                   DATE_RESOLVER),
               value.getSubAttributeValue("lastModified",
@@ -53,6 +53,15 @@ public class Meta
               l == null ? null : URI.create(l),
               value.getSubAttributeValue("version",
                   STRING_RESOLVER));
+          Collection<String> diagInfoValues =
+              value.getSubAttributeValues("__diagnostic_info",
+                                          STRING_RESOLVER);
+          if (diagInfoValues != null)
+          {
+            meta.setDiagnosticInfo(
+                diagInfoValues.toArray(new String[diagInfoValues.size()]));
+          }
+          return meta;
         }
 
         /**
@@ -98,6 +107,21 @@ public class Meta
                 subAttributeDescriptor,
                 SCIMAttributeValue.createStringValue(value.version)));
           }
+          if(value.diagnosticInfo != null && value.diagnosticInfo.length > 0)
+          {
+            SCIMAttributeValue[] diagInfoValues =
+                new SCIMAttributeValue[value.diagnosticInfo.length];
+            for (int i = 0; i < value.diagnosticInfo.length; i++)
+            {
+              diagInfoValues[i] =
+                  SCIMAttributeValue.createStringValue(value.diagnosticInfo[i]);
+            }
+            AttributeDescriptor subAttributeDescriptor =
+                attributeDescriptor.getSubAttribute("__diagnostic_info");
+            attributes.add(SCIMAttribute.create(
+                subAttributeDescriptor,
+                diagInfoValues));
+          }
 
           return SCIMAttributeValue.createComplexValue(attributes);
         }
@@ -107,6 +131,7 @@ public class Meta
   private Date lastModified;
   private URI location;
   private String version;
+  private String[] diagnosticInfo;
 
   /**
    * Create an instance of the SCIM meta attribute.
@@ -124,6 +149,7 @@ public class Meta
     this.lastModified = lastModified;
     this.location = location;
     this.version = version;
+    this.diagnosticInfo = new String[0];
   }
 
   /**
@@ -200,6 +226,26 @@ public class Meta
    */
   public void setVersion(final String version) {
     this.version = version;
+  }
+
+  /**
+   * Retrieves the diagnostic information.
+   *
+   * @return The diagnostic information.
+   */
+  public String[] getDiagnosticInfo()
+  {
+    return diagnosticInfo;
+  }
+
+  /**
+   * Sets the diagnostic information.
+   *
+   * @param diagnosticInfo   The diagnostic information.
+   */
+  public void setDiagnosticInfo(final String[] diagnosticInfo)
+  {
+    this.diagnosticInfo = diagnosticInfo;
   }
 
   /**
