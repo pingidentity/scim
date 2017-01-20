@@ -7,6 +7,12 @@ https://www.unboundid.com/resources/scim
 
   * Release Date: ???
 
+  * New Features
+
+    -  Clients can obtain diagnostic information about how the
+       Directory Server processes a search query, by specifying
+       attributes=debugsearchindex as a query parameter.
+
   * Resolved Issues
 
     -  Repackaged Apache Wink / Jersey wrapper classes to avoid classpath
