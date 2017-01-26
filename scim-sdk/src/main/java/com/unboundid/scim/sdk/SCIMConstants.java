@@ -162,6 +162,24 @@ public final class SCIMConstants
   public static final String QUERY_PARAMETER_PAGE_START_INDEX = "startIndex";
 
   /**
+   * The HTTP query parameter used in a URI to sort by a SCIM attribute
+   * (parameter name in lower case).
+   */
+  public static final String QUERY_PARAMETER_SORT_BY_LC = "sortby";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the sort order
+   * (parameter name in lower case).
+   */
+  public static final String QUERY_PARAMETER_SORT_ORDER_LC = "sortorder";
+
+  /**
+   * The HTTP query parameter used in a URI to specify the starting index
+   * for page results (parameter name in lower case).
+   */
+  public static final String QUERY_PARAMETER_PAGE_START_INDEX_LC = "startindex";
+
+  /**
    * The HTTP query parameter used in a URI to specify the maximum size of
    * a page of results.
    */

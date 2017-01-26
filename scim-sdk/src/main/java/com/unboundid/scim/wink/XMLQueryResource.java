@@ -36,14 +36,7 @@ import javax.ws.rs.core.UriInfo;
 
 import java.io.InputStream;
 
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_BASE_ID;
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_FILTER;
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_PAGE_SIZE;
-import static com.unboundid.scim.sdk.SCIMConstants.
-    QUERY_PARAMETER_PAGE_START_INDEX;
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SCOPE;
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_BY;
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_SORT_ORDER;
+import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 
@@ -104,11 +97,11 @@ public class XMLQueryResource extends AbstractSCIMResource
                            final String baseID,
                            @QueryParam(QUERY_PARAMETER_SCOPE)
                            final String searchScope,
-                           @QueryParam(QUERY_PARAMETER_SORT_BY)
+                           @QueryParam(QUERY_PARAMETER_SORT_BY_LC)
                            final String sortBy,
-                           @QueryParam(QUERY_PARAMETER_SORT_ORDER)
+                           @QueryParam(QUERY_PARAMETER_SORT_ORDER_LC)
                            final String sortOrder,
-                           @QueryParam(QUERY_PARAMETER_PAGE_START_INDEX)
+                           @QueryParam(QUERY_PARAMETER_PAGE_START_INDEX_LC)
                            final String pageStartIndex,
                            @QueryParam(QUERY_PARAMETER_PAGE_SIZE)
                            final String pageSize)

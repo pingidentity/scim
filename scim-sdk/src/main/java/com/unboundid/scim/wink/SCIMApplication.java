@@ -91,6 +91,8 @@ public class SCIMApplication extends WinkApplication
 
 
     register(new HttpMethodOverrideFilter());
+    register(new RequestParamFilter());
+
     this.resourceStats = new HashMap<String, ResourceStats>();
     this.backend = backend;
 

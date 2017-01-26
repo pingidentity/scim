@@ -9,20 +9,23 @@ https://www.unboundid.com/resources/scim
 
   * New Features
 
-    -  Clients can obtain diagnostic information about how the
-       Directory Server processes a search query, by specifying
-       attributes=debugsearchindex as a query parameter.
+    - Clients can obtain diagnostic information about how the
+      Directory Server processes a search query, by specifying
+      attributes=debugsearchindex as a query parameter.
 
   * Resolved Issues
 
-    -  Repackaged Apache Wink / Jersey wrapper classes to avoid classpath
-       conflicts when using Apache Wink.
+    - Repackaged Apache Wink / Jersey wrapper classes to avoid classpath
+      conflicts when using Apache Wink.
 
-    -  Changed search processing to reject searches specifying a sortBy
-       parameter that cannot be processed, rather than processing the
-       search as if the parameter had not been present.
+    - Changed search processing to reject searches specifying a sortBy
+      parameter that cannot be processed, rather than processing the
+      search as if the parameter had not been present.
 
-    -  Treat sub-attribute names case insensitively in the sortBy parameter.
+    - Updated server-side resource implementations to treat query parameters
+      (such as sortBy, sortOrder, startIndex) case-insensitively.
+
+    - Treat sub-attribute names case insensitively in the sortBy parameter.
 
 ---------- SCIM 1.8.15 ----------
 
@@ -30,7 +33,7 @@ https://www.unboundid.com/resources/scim
 
   * Resolved Issues
 
-   -  Updated cases where filtered and paged SCIM searches for groups with
+    - Updated cases where filtered and paged SCIM searches for groups with
       missing members were not returned.
 
     - Skipped javadoc generation when building with Java 8. Javadocs generation

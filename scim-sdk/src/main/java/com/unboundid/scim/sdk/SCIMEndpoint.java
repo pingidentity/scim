@@ -60,6 +60,9 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
+import static com.unboundid.scim.sdk.SCIMConstants.*;
+
+
 
 /**
  * This class represents a SCIM endpoint (ie. Users, Groups, etc.) and handles
@@ -314,24 +317,25 @@ public class SCIMEndpoint<R extends BaseResource>
     }
     if(filter != null)
     {
-      clientResource.queryParam("filter", filter);
+      clientResource.queryParam(QUERY_PARAMETER_FILTER, filter);
     }
     if(sortParameters != null)
     {
-      clientResource.queryParam("sortBy",
+      clientResource.queryParam(QUERY_PARAMETER_SORT_BY,
           sortParameters.getSortBy().toString());
       if(!sortParameters.isAscendingOrder())
       {
-        clientResource.queryParam("sortOrder", sortParameters.getSortOrder());
+        clientResource.queryParam(QUERY_PARAMETER_SORT_ORDER,
+                                  sortParameters.getSortOrder());
       }
     }
     if(pageParameters != null)
     {
-      clientResource.queryParam("startIndex",
+      clientResource.queryParam(QUERY_PARAMETER_PAGE_START_INDEX,
           String.valueOf(pageParameters.getStartIndex()));
       if (pageParameters.getCount() > 0)
       {
-        clientResource.queryParam("count",
+        clientResource.queryParam(QUERY_PARAMETER_PAGE_SIZE,
                                   String.valueOf(pageParameters.getCount()));
       }
     }

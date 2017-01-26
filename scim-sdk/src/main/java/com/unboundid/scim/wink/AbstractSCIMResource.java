@@ -24,6 +24,7 @@ import com.unboundid.scim.marshal.xml.XmlUnmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.AttributePath;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.DeleteResourceRequest;
 import com.unboundid.scim.sdk.ForbiddenException;
 import com.unboundid.scim.sdk.GetResourceRequest;
@@ -52,14 +53,18 @@ import com.unboundid.scim.sdk.UnauthorizedException;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
-import static com.unboundid.scim.sdk.SCIMConstants.QUERY_PARAMETER_ATTRIBUTES;
-import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_ENDPOINT_SCHEMAS;
-import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_UBID_LDAP;
+import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 
@@ -70,6 +75,37 @@ import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_UBID_LDAP;
 public abstract class AbstractSCIMResource extends AbstractStaticResource
 {
   private final SCIMApplication application;
+
+  /**
+   * The set of request parameters supported by search requests, all in lower
+   * case.
+   */
+  private static final Set<String> SEARCH_REQUEST_PARAMS;
+  static
+  {
+    final Set<String> params = new TreeSet<String>();
+    params.add(QUERY_PARAMETER_ATTRIBUTES);
+    params.add(QUERY_PARAMETER_FILTER);
+    params.add(QUERY_PARAMETER_BASE_ID);
+    params.add(QUERY_PARAMETER_SCOPE);
+    params.add(QUERY_PARAMETER_SORT_BY_LC);
+    params.add(QUERY_PARAMETER_SORT_ORDER_LC);
+    params.add(QUERY_PARAMETER_PAGE_START_INDEX_LC);
+    params.add(QUERY_PARAMETER_PAGE_SIZE);
+    SEARCH_REQUEST_PARAMS = Collections.unmodifiableSet(params);
+  }
+
+  /**
+   * The set of request parameters supported by any request, all in lower
+   * case.
+   */
+  private static final Set<String> COMMON_REQUEST_PARAMS;
+  static
+  {
+    final Set<String> params = new TreeSet<String>();
+    params.add(QUERY_PARAMETER_ATTRIBUTES);
+    COMMON_REQUEST_PARAMS = Collections.unmodifiableSet(params);
+  }
 
   /**
    * The OAuth 2.0 bearer token handler. This may be null.
@@ -108,6 +144,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
   Response getUser(final RequestContext requestContext,
                    final String endpoint, final String userID)
   {
+    logIgnoredQueryParams(requestContext, COMMON_REQUEST_PARAMS);
+
     SCIMBackend backend;
     ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
@@ -223,6 +261,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
                               final String pageStartIndex,
                               final String pageSize)
   {
+    logIgnoredQueryParams(requestContext, SEARCH_REQUEST_PARAMS);
+
     SCIMBackend backend;
     ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
@@ -407,6 +447,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
                     final String endpoint,
                     final InputStream inputStream)
   {
+    logIgnoredQueryParams(requestContext, COMMON_REQUEST_PARAMS);
+
     SCIMBackend backend;
     ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
@@ -529,6 +571,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
                    final String userID,
                    final InputStream inputStream)
   {
+    logIgnoredQueryParams(requestContext, COMMON_REQUEST_PARAMS);
+
     SCIMBackend backend;
     ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
@@ -653,6 +697,8 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
                      final String userID,
                      final InputStream inputStream)
   {
+    logIgnoredQueryParams(requestContext, COMMON_REQUEST_PARAMS);
+
     SCIMBackend backend;
     ResourceDescriptor resourceDescriptor = null;
     Response.ResponseBuilder responseBuilder;
@@ -1142,5 +1188,43 @@ public abstract class AbstractSCIMResource extends AbstractStaticResource
       }
     }
     return filter;
+  }
+
+
+
+  /**
+   * Log the names of any query parameters provided in the request that we
+   * won't even look at.
+   *
+   * @param requestContext   The request context.
+   * @param supportedParams  The supported request parameters, where names
+   *                         must be in lower case.
+   */
+  private void logIgnoredQueryParams(
+      final RequestContext requestContext, final Set<String> supportedParams)
+  {
+    if (Debug.debugEnabled(DebugType.OTHER))
+    {
+      final Set<String> ignoredParams = new HashSet<String>();
+      final MultivaluedMap<String, String> map =
+          requestContext.getUriInfo().getQueryParameters();
+      for (String param : map.keySet())
+      {
+        if (!supportedParams.contains(param.toLowerCase()))
+        {
+          ignoredParams.add(param);
+        }
+      }
+
+      if (!ignoredParams.isEmpty())
+      {
+        Debug.debug(
+            Level.WARNING, DebugType.OTHER,
+            String.format(
+                "These request parameters were ignored: %s. " +
+                "Supported request parameters are: %s",
+                ignoredParams, supportedParams));
+      }
+    }
   }
 }
