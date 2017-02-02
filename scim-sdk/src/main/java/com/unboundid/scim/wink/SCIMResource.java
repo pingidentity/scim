@@ -32,10 +32,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Variant;
 import java.io.InputStream;
+import java.util.List;
 
 import static com.unboundid.scim.sdk.SCIMConstants.*;
 
@@ -64,10 +67,11 @@ public class SCIMResource extends AbstractSCIMResource
 
 
   /**
-   * Implement the GET query operation producing JSON format.
+   * Implement the GET query operation producing JSON or XML format.
    *
    * @param endpoint         The resource endpoint.
-   * @param request          The current HTTP servlet request.
+   * @param request          The current request.
+   * @param httpRequest      The current HTTP servlet request.
    * @param securityContext  The security context of the current request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -83,9 +87,10 @@ public class SCIMResource extends AbstractSCIMResource
    * @return  The response to the request.
    */
   @GET
-  @Produces(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   public Response doJsonGet(@PathParam("endpoint") final String endpoint,
-                            @Context final HttpServletRequest request,
+                            @Context final Request request,
+                            @Context final HttpServletRequest httpRequest,
                             @Context final SecurityContext securityContext,
                             @Context final HttpHeaders headers,
                             @Context final UriInfo uriInfo,
@@ -104,62 +109,23 @@ public class SCIMResource extends AbstractSCIMResource
                             @QueryParam(QUERY_PARAMETER_PAGE_SIZE)
                             final String pageSize)
   {
+    // We want to reliably produce JSON when the Accept header doesn't indicate
+    // a preference between JSON and XML. We can't get that behavior from Jersey
+    // using one method which @Produces JSON and another which @Produces XML.
+    final List<Variant> responseVariants = Variant
+            .mediaTypes(
+                MediaType.valueOf(MediaType.APPLICATION_JSON),
+                MediaType.valueOf(MediaType.APPLICATION_XML))
+            .add().build();
+    final Variant variant = request.selectVariant(responseVariants);
+    final MediaType mediaType = (variant != null) ?
+                                variant.getMediaType() :
+                                MediaType.APPLICATION_JSON_TYPE;
+
     final RequestContext requestContext =
-        new RequestContext(request, securityContext, headers, uriInfo,
-                           MediaType.APPLICATION_JSON_TYPE,
-                           MediaType.APPLICATION_JSON_TYPE);
-
-    return getUsers(requestContext, endpoint, filterString, baseID, searchScope,
-                    sortBy, sortOrder, pageStartIndex, pageSize);
-  }
-
-
-
-  /**
-   * Implement the GET query operation producing XML format.
-   *
-   * @param endpoint         The resource endpoint.
-   * @param request          The current HTTP servlet request.
-   * @param securityContext  The security context of the current request.
-   * @param headers          The request headers.
-   * @param uriInfo          The URI info for the request.
-   * @param filterString     The filter query parameter, or {@code null}.
-   * @param baseID           The SCIM resource ID of the search base entry,
-   *                         or {@code null}.
-   * @param searchScope      The LDAP search scope to use, or {@code null}.
-   * @param sortBy           The sortBy query parameter, or {@code null}.
-   * @param sortOrder        The sortOrder query parameter, or {@code null}.
-   * @param pageStartIndex   The startIndex query parameter, or {@code null}.
-   * @param pageSize         The count query parameter, or {@code null}.
-   *
-   * @return  The response to the request.
-   */
-  @GET
-  @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlGet(@PathParam("endpoint") final String endpoint,
-                           @Context final HttpServletRequest request,
-                           @Context final SecurityContext securityContext,
-                           @Context final HttpHeaders headers,
-                           @Context final UriInfo uriInfo,
-                           @QueryParam(QUERY_PARAMETER_FILTER)
-                           final String filterString,
-                           @QueryParam(QUERY_PARAMETER_BASE_ID)
-                           final String baseID,
-                           @QueryParam(QUERY_PARAMETER_SCOPE)
-                           final String searchScope,
-                           @QueryParam(QUERY_PARAMETER_SORT_BY_LC)
-                           final String sortBy,
-                           @QueryParam(QUERY_PARAMETER_SORT_ORDER_LC)
-                           final String sortOrder,
-                           @QueryParam(QUERY_PARAMETER_PAGE_START_INDEX_LC)
-                           final String pageStartIndex,
-                           @QueryParam(QUERY_PARAMETER_PAGE_SIZE)
-                           final String pageSize)
-  {
-    final RequestContext requestContext =
-        new RequestContext(request, securityContext, headers, uriInfo,
-                           MediaType.APPLICATION_XML_TYPE,
-                           MediaType.APPLICATION_XML_TYPE);
+        new RequestContext(httpRequest, securityContext, headers, uriInfo,
+                           mediaType,
+                           mediaType);
 
     return getUsers(requestContext, endpoint, filterString, baseID, searchScope,
                     sortBy, sortOrder, pageStartIndex, pageSize);
@@ -169,11 +135,12 @@ public class SCIMResource extends AbstractSCIMResource
 
   /**
    * Implement the GET operation on a specified user resource producing
-   * JSON format.
+   * JSON or XML format.
    *
    * @param endpoint         The resource endpoint.
    * @param userID           The requested user ID.
-   * @param request          The current HTTP servlet request.
+   * @param request          The current request.
+   * @param httpRequest      The current HTTP servlet request.
    * @param securityContext  The security context for the request.
    * @param headers          The request headers.
    * @param uriInfo          The URI info for the request.
@@ -182,50 +149,33 @@ public class SCIMResource extends AbstractSCIMResource
    */
   @GET
   @Path("{userID}")
-  @Produces(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
   public Response doJsonGet(@PathParam("endpoint") final String endpoint,
                             @PathParam("userID") final String userID,
-                            @Context final HttpServletRequest request,
+                            @Context final Request request,
+                            @Context final HttpServletRequest httpRequest,
                             @Context final SecurityContext securityContext,
                             @Context final HttpHeaders headers,
                             @Context final UriInfo uriInfo)
   {
+    // We want to reliably produce JSON when the Accept header doesn't indicate
+    // a preference between JSON and XML. We can't get that behavior from Jersey
+    // using one method which @Produces JSON and another which @Produces XML.
+    final List<Variant> responseVariants = Variant
+            .mediaTypes(
+                MediaType.valueOf(MediaType.APPLICATION_JSON),
+                MediaType.valueOf(MediaType.APPLICATION_XML))
+            .add().build();
+    final Variant variant = request.selectVariant(responseVariants);
+    final MediaType mediaType = (variant != null) ?
+                                variant.getMediaType() :
+                                MediaType.APPLICATION_JSON_TYPE;
+
     final RequestContext requestContext =
-        new RequestContext(request, securityContext, headers, uriInfo,
-                           MediaType.APPLICATION_JSON_TYPE,
-                           MediaType.APPLICATION_JSON_TYPE);
-    return getUser(requestContext, endpoint, userID);
-  }
+        new RequestContext(httpRequest, securityContext, headers, uriInfo,
+                           mediaType,
+                           mediaType);
 
-
-
-  /**
-   * Implement the GET operation on a specified user resource producing
-   * XML format.
-   *
-   * @param endpoint         The resource endpoint.
-   * @param userID           The requested user ID.
-   * @param request          The current HTTP servlet request.
-   * @param securityContext  The security context for the request.
-   * @param headers          The request headers.
-   * @param uriInfo          The URI info for the request.
-   *
-   * @return  The response to the request.
-   */
-  @GET
-  @Path("{userID}")
-  @Produces(MediaType.APPLICATION_XML)
-  public Response doXmlGet(@PathParam("endpoint") final String endpoint,
-                           @PathParam("userID") final String userID,
-                           @Context final HttpServletRequest request,
-                           @Context final SecurityContext securityContext,
-                           @Context final HttpHeaders headers,
-                           @Context final UriInfo uriInfo)
-  {
-    final RequestContext requestContext =
-        new RequestContext(request, securityContext, headers, uriInfo,
-                           MediaType.APPLICATION_XML_TYPE,
-                           MediaType.APPLICATION_XML_TYPE);
     return getUser(requestContext, endpoint, userID);
   }
 

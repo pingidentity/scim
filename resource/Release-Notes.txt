@@ -27,6 +27,10 @@ https://www.unboundid.com/resources/scim
 
     - Treat sub-attribute names case insensitively in the sortBy parameter.
 
+    - Reliably produce JSON rather than XML in response to a GET operation
+      if an Accept header is not present, or when an Accept header provided
+      by the client does not indicate a preference between JSON and XML.
+
 ---------- SCIM 1.8.15 ----------
 
   * Release Date: November 7, 2016
