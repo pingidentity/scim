@@ -5,7 +5,7 @@ https://www.unboundid.com/resources/scim
 
 ---------- SCIM 1.8.16 ----------
 
-  * Release Date: ???
+  * Release Date: February 13, 2017
 
   * New Features
 
