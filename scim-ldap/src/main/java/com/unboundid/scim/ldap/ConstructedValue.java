@@ -199,6 +199,7 @@ public final class ConstructedValue
 
 
 
+
   /**
    * Construct a value from the provided entry.
    *
@@ -365,7 +366,7 @@ public final class ConstructedValue
                           "is required", attributeName, values.length));
       }
 
-      return values[0];
+      return getDNValue(values[0]);
     }
 
 
@@ -579,7 +580,59 @@ public final class ConstructedValue
     }
   }
 
+
+
+  /**
+   * Ensures that the given valueString is properly escaped for use as a DN.
+   * NOTE, this code was taken from the LDAP sdk.  It could not be used
+   * directly, but was modified for use here.  It was taken from the RDN
+   * class.
+   *
+   * @param valueString the string value of an attriubte to be used in a DN.
+   * @return the properly escaped attribute value as a string.
+   */
+  private static String getDNValue(final String valueString) {
+    int length = valueString.length();
+    StringBuilder buffer = new StringBuilder(length);
+
+    for(int i = 0; i < length; ++i) {
+      char c = valueString.charAt(i);
+      switch(c) {
+        case ' ':
+          if(i != 0 && i + 1 != length &&
+              (i + 1 >= length || valueString.charAt(i + 1) != 32)) {
+            buffer.append(' ');
+          } else {
+            buffer.append("\\ ");
+          }
+          break;
+        case '\"':
+        case '#':
+        case '+':
+        case ',':
+        case ';':
+        case '<':
+        case '=':
+        case '>':
+        case '\\':
+          buffer.append('\\');
+          buffer.append(c);
+          break;
+        default:
+          if(c >= 32 && c <= 126) {
+            buffer.append(c);
+          } else {
+            StaticUtils.hexEncode(c, buffer);
+          }
+      }
+    }
+
+    return buffer.toString();
+  }
+
+
   // TODO: it might be nice for the Chunks to be aware of the attribute that
   // we're constructing a value for.  Maybe they could be non-static inner
   // classes.
+
 }

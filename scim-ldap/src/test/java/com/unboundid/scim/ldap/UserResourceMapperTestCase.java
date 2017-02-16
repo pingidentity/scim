@@ -19,6 +19,7 @@ package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Control;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.controls.ServerSideSortRequestControl;
@@ -34,6 +35,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.SCIMAttribute;
+import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMFilter;
 import com.unboundid.scim.sdk.SCIMObject;
@@ -41,7 +43,9 @@ import com.unboundid.scim.sdk.SCIMQueryAttributes;
 import com.unboundid.scim.SCIMTestCase;
 import static com.unboundid.scim.sdk.SCIMConstants.RESOURCE_NAME_USER;
 
+import com.unboundid.scim.sdk.SimpleValue;
 import com.unboundid.scim.sdk.SortParameters;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static com.unboundid.util.LDAPTestUtils.generateUserEntry;
@@ -248,7 +252,49 @@ public class UserResourceMapperTestCase
   }
 
 
+  /**
+   * Data provider for testing DN escaping.
+   *
+   * @return data for the DN escape test.
+   */
+  @DataProvider(name = "dnEscapeTestProvider")
+  public Object[][] dnEscapeTestProvider()
+  {
+     Object[][] params = new Object[][] {
+         {"some+user@somewhere.com",
+           "uid=some\\+user@somewhere.com,ou=people,dc=example,dc=com"},
+         {"some,<>user@somewhere.com",
+           "uid=some\\,\\<\\>user@somewhere.com,ou=people,dc=example,dc=com"},
+         {"some\";\\user@somewhere.com",
+           "uid=some\\\"\\;\\\\user@somewhere.com,ou=people,dc=example,dc=com"}
+     };
+    return params;
+  }
 
+
+
+  /**
+   * Verify that dn's get properly escaped during mapping.
+   * @param username the username of the ldap entry.
+   * @param expectedDN a string representing the DN that is expected
+   *                   for the entry.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test(dataProvider = "dnEscapeTestProvider")
+  public void testDNEscaping(String username, String expectedDN)
+      throws Exception
+  {
+    final ResourceMapper mapper = getUserResourceMapper();
+    SCIMObject scimObject = new SCIMObject();
+    scimObject.setAttribute(SCIMAttribute.create(CoreSchema.USER_NAME,
+        SCIMAttributeValue.createSimpleValue(
+            new SimpleValue(username))));
+    Entry entry = mapper.toLDAPEntry(scimObject);
+    String entryDNString = entry.getDN().toString();
+    Assert.assertEquals(DN.compare(entryDNString, expectedDN), 0,
+        "Entry DN:" + entryDNString + " expectedDN:" + expectedDN);
+  }
   /**
    * Verify that filter mapping is working correctly.
    *

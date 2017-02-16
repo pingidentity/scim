@@ -3,6 +3,17 @@ UnboundID SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
+---------- SCIM 1.?.?? ----------
+
+  * Release Date: ???
+
+  * New Features
+
+    - Added code to escape special characters in SCIM values when 
+      they are mapped to a DN in LDAP.
+
+  * Resolved Issues
+
 ---------- SCIM 1.8.16 ----------
 
   * Release Date: February 13, 2017
