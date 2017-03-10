@@ -355,11 +355,11 @@ public class FilterParser
       throw new IllegalArgumentException(msg);
     }
 
-    final String filterValueString;
+    final Object filterValue;
     if (!filterType.equals(SCIMFilterType.PRESENCE))
     {
-      filterValueString = readValue();
-      if (filterValueString == null)
+      filterValue = readValue();
+      if (filterValue == null)
       {
         final String msg = String.format(
             "End of input at position %d while expecting a value for " +
@@ -369,12 +369,15 @@ public class FilterParser
     }
     else
     {
-      filterValueString = null;
+      filterValue = null;
     }
-
+    final String filterValueString = (filterValue != null) ?
+        filterValue.toString() : null;
     return new SCIMFilter(
-        filterType, filterAttribute, filterValueString,
-        (filterValueString != null), null);
+        filterType, filterAttribute,
+        filterValueString,
+        (filterValue != null) && (filterValue instanceof String),
+        null);
   }
 
 
@@ -577,10 +580,10 @@ public class FilterParser
    * after the value is consumed. The start of the value is saved in
    * {@code markPos}.
    *
-   * @return A String representing the value at the current position, or
+   * @return An Object representing the value at the current position, or
    *         {@code null} if the end of the input has already been reached.
    */
-  public String readValue()
+  public Object readValue()
   {
     skipWhitespace();
     markPos = currentPos;
@@ -792,7 +795,7 @@ public class FilterParser
         throw new IllegalArgumentException(msg);
       }
 
-      return s;
+      return value;
     }
   }
 

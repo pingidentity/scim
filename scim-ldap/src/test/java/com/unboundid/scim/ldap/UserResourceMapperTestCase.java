@@ -52,6 +52,7 @@ import static com.unboundid.util.LDAPTestUtils.generateUserEntry;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -306,16 +307,18 @@ public class UserResourceMapperTestCase
   {
     final ResourceMapper mapper = getUserResourceMapper();
 
-    Filter filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("userName eq \"test\""), null);
+    SCIMFilter scimFilter = SCIMFilter.parse("userName eq \"test\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    Filter filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_EQUALITY);
     assertEquals(filter.getAttributeName(), "uid");
     assertEquals(filter.getAssertionValue(), "test");
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("name.formatted lt \"test\""), null);
+    scimFilter = SCIMFilter.parse("name.formatted lt \"test\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     Filter andFilter = filter.getComponents()[0];
     assertEquals(andFilter.getFilterType(), Filter.FILTER_TYPE_AND);
@@ -330,26 +333,31 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getAttributeName(), "cn");
     assertEquals(filter.getAssertionValue(), "test");
 
-    filter = mapper.toLDAPFilter(
-      SCIMFilter.parse("name.familyName ge " +
-        "\"2015-02-06T09:37:57.969-07:00\""), null);
+
+    scimFilter =
+      SCIMFilter.parse("name.familyName ge \"2015-02-06T09:37:57.969-07:00\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_GREATER_OR_EQUAL);
     assertEquals(filter.getAttributeName(), "sn");
     assertEquals(filter.getAssertionValue(), "2015-02-06T09:37:57.969-07:00");
 
-    filter = mapper.toLDAPFilter(
-      SCIMFilter.parse("name.familyName ge \"2015-02-06\""), null);
+    scimFilter =
+      SCIMFilter.parse("name.familyName ge \"2015-02-06\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_GREATER_OR_EQUAL);
     assertEquals(filter.getAttributeName(), "sn");
     assertEquals(filter.getAssertionValue(), "2015-02-06");
 
-    filter = mapper.toLDAPFilter(
-      SCIMFilter.parse("meta.lastModified lt " +
-        "\"2015-02-06T09:37:57.969-07:00\""), null);
+    scimFilter = SCIMFilter.parse("meta.lastModified lt " +
+        "\"2015-02-06T09:37:57.969-07:00\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     andFilter = filter.getComponents()[0];
     assertEquals(andFilter.getFilterType(), Filter.FILTER_TYPE_AND);
@@ -364,8 +372,10 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getAttributeName(), "modifyTimestamp");
     assertEquals(filter.getAssertionValue(), "20150206163757.969Z");
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("name.familyName ge \"test\""), null);
+    scimFilter =
+      SCIMFilter.parse("name.familyName ge \"test\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_GREATER_OR_EQUAL);
@@ -373,27 +383,33 @@ public class UserResourceMapperTestCase
     assertEquals(filter.getAssertionValue(), "test");
 
     // No mapping for name.middleName so we should get match nothing
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("name.middleName eq \"test\""), null);
+    scimFilter =
+      SCIMFilter.parse("name.middleName eq \"test\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertNull(filter);
-
-    filter = mapper.toLDAPFilter(SCIMFilter.parse("name.givenName pr"), null);
+    scimFilter = SCIMFilter.parse("name.givenName pr");
+    assertFalse(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_PRESENCE);
     assertEquals(filter.getAttributeName(), "givenName");
     assertNull(filter.getAssertionValue());
 
-    filter = mapper.toLDAPFilter(SCIMFilter.parse("emails eq \"test\""), null);
+    scimFilter = SCIMFilter.parse("emails eq \"test\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_EQUALITY);
     assertEquals(filter.getAttributeName(), "mail");
     assertEquals(filter.getAssertionValue(), "test");
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("phoneNumbers eq \"tel:+1-512-456-7890;ext=123\""),
-        null);
+    scimFilter =
+      SCIMFilter.parse("phoneNumbers eq \"tel:+1-512-456-7890;ext=123\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
@@ -412,7 +428,9 @@ public class UserResourceMapperTestCase
 
     try
     {
-      mapper.toLDAPFilter(SCIMFilter.parse("addresses eq \"test\""), null);
+      scimFilter = SCIMFilter.parse("addresses eq \"test\"");
+      assertTrue(scimFilter.isQuoteFilterValue());
+      mapper.toLDAPFilter(scimFilter, null);
       fail("The complex filter attribute 'addresses' without a sub-attribute " +
            "should cause an exception to be thrown");
     }
@@ -421,8 +439,10 @@ public class UserResourceMapperTestCase
       // Expected.
     }
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("addresses.formatted eq \"test\""), null);
+    scimFilter =
+      SCIMFilter.parse("addresses.formatted eq \"test\"");
+    assertTrue(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
@@ -433,16 +453,19 @@ public class UserResourceMapperTestCase
     assertFilterComponentAttributeNameAndAssertionValue(components,
       "homePostalAddress", "test");
 
-    filter = mapper.toLDAPFilter(SCIMFilter.parse(
-            "name.formatted eq \"test\" and userName eq \"test\""), null);
+    scimFilter = SCIMFilter.parse(
+      "name.formatted eq \"test\" and userName eq \"test\"");
+    assertFalse(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     assertEquals(filter.getComponents().length, 2);
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse("name.formatted eq \"test\" or userName eq \"test\""),
-        null);
+    scimFilter =
+      SCIMFilter.parse("name.formatted eq \"test\" or userName eq \"test\"");
+    assertFalse(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
@@ -450,14 +473,16 @@ public class UserResourceMapperTestCase
 
     // Attributes in the filter w/o mapping and results in match nothing should
     // be correctly short-circuited when there is an AND
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse(
-            "name.middleName eq \"test\" and userName eq \"test\""), null);
+    scimFilter = SCIMFilter.parse(
+        "name.middleName eq \"test\" and userName eq \"test\"");
+    assertFalse(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertNull(filter);
 
-    filter = mapper.toLDAPFilter(
-        SCIMFilter.parse(
-            "name.middleName eq \"test\" or userName eq \"test\""), null);
+    scimFilter = SCIMFilter.parse(
+      "name.middleName eq \"test\" or userName eq \"test\"");
+    assertFalse(scimFilter.isQuoteFilterValue());
+    filter = mapper.toLDAPFilter(scimFilter, null);
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_AND);
     filter = filter.getComponents()[0];
     assertEquals(filter.getFilterType(), Filter.FILTER_TYPE_OR);
