@@ -558,7 +558,8 @@ public abstract class LDAPBackend
           {
             try
             {
-              Control control = resourceMapper.toLDAPSortControl(sortParameters);
+              Control control = resourceMapper.toLDAPSortControl(
+                  sortParameters);
               if (control != null)
               {
                 searchRequest.addControl(control);
@@ -572,7 +573,8 @@ public abstract class LDAPBackend
           }
 
           final PageParameters pageParameters = request.getPageParameters();
-          int numLeftToReturn = totalToReturn - resultListener.getTotalResults();
+          int numLeftToReturn =
+              totalToReturn - resultListener.getTotalResults();
           if (pageParameters != null)
           {
             if (pageParameters.getCount() > 0)
@@ -598,7 +600,8 @@ public abstract class LDAPBackend
                   ServerSideSortRequestControl.SERVER_SIDE_SORT_REQUEST_OID))
               {
                 searchRequest.addControl(
-                    new ServerSideSortRequestControl(new SortKey("uid"))); //TODO
+                    new ServerSideSortRequestControl(
+                        new SortKey("uid"))); //TODO
               }
             }
             else if (supportsSimplePagesResultsControl)
@@ -681,8 +684,8 @@ public abstract class LDAPBackend
         }
         else if (simplePagedResultsResponseControl != null)
         {
-          // We are only using the control here for an estimate of the total size
-          // and only if it actually reveals more than the resultListener
+          // We are only using the control here for an estimate of the total
+          // size and only if it actually reveals more than the resultListener
           int totalResults = Math.max(
               simplePagedResultsResponseControl.getSize(),
               resultListener.getTotalResults());
@@ -752,7 +755,8 @@ public abstract class LDAPBackend
         {
           throw new UnsupportedOperationException(
               "The '" + request.getResourceDescriptor().getName() +
-                  "' resource definition does not support creation of resources");
+                  "' resource definition does not support creation of " +
+                  "resources");
         }
 
         final LDAPRequestInterface ldapInterface =
@@ -1015,8 +1019,8 @@ public abstract class LDAPBackend
               rdnAttrValues.add(mod.getValues()[0]);
 
               // The modification will affect the RDN so we need to first apply
-              // the mods in memory and reconstruct the DN. We will set the DN to
-              // null first so Entry.applyModifications wouldn't throw any
+              // the mods in memory and reconstruct the DN. We will set the DN
+              // to null first so Entry.applyModifications wouldn't throw any
               // exceptions about affecting the RDN.
               DN parentDN = modifiedEntry.getParentDN();
               modifiedEntry.setDN("");
@@ -1117,7 +1121,8 @@ public abstract class LDAPBackend
         else
         {
           // No modifications necessary (the mod set is empty).
-          // Fetch the entry again, this time with the required return attributes.
+          // Fetch the entry again, this time with the required return
+          // attributes.
           returnEntry =
               mapper.getReturnEntry(ldapInterface, resourceID,
                   request.getAttributes(),
@@ -1275,8 +1280,8 @@ public abstract class LDAPBackend
               rdnAttrValues.add(mod.getValues()[0]);
 
               // The modification will affect the RDN so we need to first apply
-              // the mods in memory and reconstruct the DN. We will set the DN to
-              // null first so Entry.applyModifications wouldn't throw any
+              // the mods in memory and reconstruct the DN. We will set the DN
+              // to null first so Entry.applyModifications wouldn't throw any
               // exceptions about affecting the RDN.
               DN parentDN = modifiedEntry.getParentDN();
               modifiedEntry.setDN("");
@@ -1321,9 +1326,9 @@ public abstract class LDAPBackend
                 new ModifyDNRequest(currentEntry.getDN(),
                     modifiedEntry.getRDN().toString(), true);
 
-            // If there are no other mods left AND we need to return the resource,
-            // then we need to include the PostReadRequestControl now since we
-            // won't be performing a modify operation later.
+            // If there are no other mods left AND we need to return the
+            // resource, then we need to include the PostReadRequestControl now
+            // since we won't be performing a modify operation later.
             if (mods.isEmpty() && supportsPostReadRequestControl)
             {
               modifyDNRequest.addControl(
@@ -1382,7 +1387,8 @@ public abstract class LDAPBackend
         else
         {
           // No modifications were necessary (the mod set was empty).
-          // Fetch the entry again, this time with the required return attributes.
+          // Fetch the entry again, this time with the required return
+          // attributes.
           returnEntry = mapper.getReturnEntry(ldapInterface, resourceID,
               request.getAttributes(),
               requestAttributes);
