@@ -19,6 +19,17 @@ https://www.unboundid.com/resources/scim
 
   * Resolved Issues
 
+---------- SCIM 1.8.17-SNAPSHOT ----------
+
+  * Release Date: TBD
+
+  * New Features
+
+  * Resolved Issues
+
+    - Addressed an issue in SCIM filter processing where the parser may evaluate
+      compound statements as a quoted value.
+
 ---------- SCIM 1.8.16 ----------
 
   * Release Date: February 13, 2017
