@@ -44,8 +44,12 @@ import com.unboundid.util.StaticUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -64,11 +68,25 @@ import java.util.logging.Level;
  */
 public class GroupsDerivedAttribute extends DerivedAttribute
 {
+
   /**
    * The name of the argument that indicates whether the backend DS provides
    * the isMemberOf attribute.
    */
   private static final String HAVE_ISMEMBEROF = "haveIsMemberOf";
+
+  /**
+   * The name of the argument that indicates whether the backend DS provides
+   * the isDirectMemberOf attribute.
+   */
+  private static final String HAVE_ISDIRECTMEMBEROF = "haveIsDirectMemberOf";
+
+  /**
+   * The name of the argument that indicates whether to cache group data
+   * during an HTTP request, and how much data to cache. Values less than one
+   * will prevent group caching.
+   */
+  private static final String MAX_GROUPS_CACHED = "maxGroupsCached";
 
   /**
    * The name of the LDAP cn attribute.
@@ -84,6 +102,11 @@ public class GroupsDerivedAttribute extends DerivedAttribute
    * The name of the LDAP isMemberOf attribute.
    */
   private static final String ATTR_IS_MEMBER_OF = "isMemberOf";
+
+  /**
+   * The name of the LDAP isDirectMemberOf attribute.
+   */
+  private static final String ATTR_IS_DIRECT_MEMBER_OF = "isDirectMemberOf";
 
   /**
    * The name of the LDAP member attribute.
@@ -122,6 +145,26 @@ public class GroupsDerivedAttribute extends DerivedAttribute
   private static final String INDIRECT_GROUP = "indirect";
 
   /**
+   * The set of LDAP attribute types needed in the entry representing the
+   * resource.
+   */
+  private static final Set<String> LDAP_ATTR_TYPES;
+
+  static
+  {
+    HashSet<String> attrTypes = new HashSet<String>();
+    attrTypes.add(ATTR_IS_MEMBER_OF);
+    attrTypes.add(ATTR_IS_DIRECT_MEMBER_OF);
+    LDAP_ATTR_TYPES = Collections.unmodifiableSet(attrTypes);
+  }
+
+  /**
+   * The per-request group caches.
+   */
+  private static final ThreadLocal<Map<DN, SearchResultEntry>> GROUP_CACHES =
+      new ThreadLocal<Map<DN, SearchResultEntry>>();
+
+  /**
    * The attribute descriptor for the derived attribute.
    */
   private AttributeDescriptor descriptor;
@@ -137,12 +180,22 @@ public class GroupsDerivedAttribute extends DerivedAttribute
    */
   private boolean haveIsMemberOf;
 
+  /**
+   * Indicates whether the backend DS provides the isDirectMemberOf attribute.
+   */
+  private boolean haveIsDirectMemberOf;
+
+  /**
+   * Indicates how many groups to cache per request.
+   */
+  private int groupsToCachePerRequest;
+
 
 
   @Override
   public Set<String> getLDAPAttributeTypes()
   {
-    return Collections.singleton(ATTR_IS_MEMBER_OF);
+    return LDAP_ATTR_TYPES;
   }
 
 
@@ -183,34 +236,76 @@ public class GroupsDerivedAttribute extends DerivedAttribute
             // Make sure the group is scoped within the base DN.
             if (groupResolver.isDnInScope(dnString))
             {
-              // Retrieve the group entry and passing in the search param filter
-              // if available.
-              SearchRequest searchRequest =
-                  new SearchRequest(dnString, SearchScope.BASE,
-                                    groupResolver.getFilterString(),
-                                    attrsToGet);
-              searchRequest.setSizeLimit(1);
-              SearchResultEntry groupEntry =
-                  ldapInterface.searchForEntry(searchRequest);
+              SearchRequest searchRequest;
+              SearchResultEntry groupEntry = null;
+              Map<DN, SearchResultEntry> groupCache =
+                  GROUP_CACHES.get();
+              DN groupDN = new DN(dnString);
+              if (groupsToCachePerRequest > 0)
+              {
+                if (groupCache == null)
+                {
+                  groupCache = new LinkedHashMap<DN, SearchResultEntry>();
+                  GROUP_CACHES.set(groupCache);
+                }
+                else
+                {
+                  groupEntry = groupCache.get(groupDN);
+                }
+              }
 
-              if(groupEntry != null)
+              if (groupEntry == null)
+              {
+                // Retrieve the group entry and pass in the search param filter
+                // if available.
+                searchRequest =
+                    new SearchRequest(dnString, SearchScope.BASE,
+                        groupResolver.getFilterString(),
+                        attrsToGet);
+                searchRequest.setSizeLimit(1);
+                groupEntry = ldapInterface.searchForEntry(searchRequest);
+
+                if (groupEntry != null && groupCache != null)
+                {
+                  groupCache.put(groupDN, groupEntry);
+
+                  if (groupCache.size() > groupsToCachePerRequest)
+                  {
+                    // We have cached too many groups for this request, so we
+                    // remove the oldest group from the cache.
+                    Iterator<DN> it = groupCache.keySet().iterator();
+                    it.next();
+                    it.remove();
+                  }
+                }
+              }
+
+              if (groupEntry != null)
               {
                 // This group is considered direct iff it is a non-virtual
                 // static group and the entry is listed as a member or
                 // uniqueMember of this group (i.e. it's not nested).
                 boolean isDirect = false;
-                if(!groupEntry.hasObjectClass(OC_GROUP_OF_URLS) &&
-                   !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
+                if (haveIsDirectMemberOf)
                 {
-                  // Make sure the entry DN is listed as a member or
-                  // uniqueMember.
-                  searchRequest =
-                      new SearchRequest(dnString, SearchScope.BASE,
-                                        groupsFilter(entry.getDN(), false),
-                                        "1.1");
-                  searchRequest.setSizeLimit(1);
-                  isDirect =
-                      ldapInterface.searchForEntry(searchRequest) != null;
+                  isDirect = entry.hasAttributeValue(
+                      ATTR_IS_DIRECT_MEMBER_OF, dnString);
+                }
+                else
+                {
+                  if(!groupEntry.hasObjectClass(OC_GROUP_OF_URLS) &&
+                     !groupEntry.hasObjectClass(OC_VIRTUAL_STATIC_GROUP))
+                  {
+                    // Make sure the entry DN is listed as a member or
+                    // uniqueMember.
+                    searchRequest =
+                        new SearchRequest(dnString, SearchScope.BASE,
+                            groupsFilter(entry.getDN(), false),
+                            "1.1");
+                    searchRequest.setSizeLimit(1);
+                    isDirect =
+                        ldapInterface.searchForEntry(searchRequest) != null;
+                  }
                 }
                 final String resourceID =
                     groupResolver.getIdFromEntry(groupEntry);
@@ -369,6 +464,27 @@ public class GroupsDerivedAttribute extends DerivedAttribute
     if (o != null)
     {
       haveIsMemberOf = Boolean.valueOf(o.toString());
+    }
+
+    haveIsDirectMemberOf = false;
+    o = getArguments().get(HAVE_ISDIRECTMEMBEROF);
+    if (o != null)
+    {
+      haveIsDirectMemberOf = Boolean.valueOf(o.toString());
+    }
+
+    groupsToCachePerRequest = 0;
+    o = getArguments().get(MAX_GROUPS_CACHED);
+    if (o != null)
+    {
+      try
+      {
+        groupsToCachePerRequest = Integer.valueOf(o.toString());
+      }
+      catch (NumberFormatException nfe)
+      {
+        Debug.debugException(nfe);
+      }
     }
   }
 
@@ -550,5 +666,13 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                 isDirect ? DIRECT_GROUP : INDIRECT_GROUP)));
 
     return SCIMAttributeValue.createComplexValue(subAttributes);
+  }
+
+  /**
+   * Clear the cache.
+   */
+  static void clearRequestCache()
+  {
+    GROUP_CACHES.remove();
   }
 }

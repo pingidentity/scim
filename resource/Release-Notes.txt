@@ -12,6 +12,11 @@ https://www.unboundid.com/resources/scim
     - Added code to escape special characters in SCIM values when 
       they are mapped to a DN in LDAP.
 
+    - Updated the User groups and Group members attributes to cache data that
+      could be repeated. Also, updated the User groups attribute to be able to
+      take advantage of the "isDirectMemberOf" attribute on LDAP servers that
+      support it.
+
   * Resolved Issues
 
 ---------- SCIM 1.8.16 ----------

@@ -340,6 +340,8 @@
       <derivation javaClass="com.unboundid.scim.ldap.GroupsDerivedAttribute">
         <LDAPSearchRef idref="groupSearchParams"/>
         <haveIsMemberOf>false</haveIsMemberOf>
+        <haveIsDirectMemberOf>false</haveIsDirectMemberOf>
+        <maxGroupsCached>1000</maxGroupsCached>
       </derivation>
       <simpleMultiValued childName="group" dataType="string">
         <canonicalValue name="direct"/>
@@ -477,6 +479,7 @@
       <description>A list of members of the Group</description>
       <derivation javaClass="com.unboundid.scim.ldap.MembersDerivedAttribute">
         <LDAPSearchRef idref="userSearchParams"/>
+        <maxMembersCached>1000</maxMembersCached>
       </derivation>
       <simpleMultiValued childName="member" dataType="string">
         <canonicalValue name="User"/>

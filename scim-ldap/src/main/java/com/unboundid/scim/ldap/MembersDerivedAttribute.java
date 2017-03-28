@@ -18,6 +18,7 @@
 package com.unboundid.scim.ldap;
 
 import com.unboundid.ldap.sdk.Attribute;
+import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -45,7 +46,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -64,6 +68,20 @@ import java.util.logging.Level;
  */
 public class MembersDerivedAttribute extends DerivedAttribute
 {
+
+  /**
+   * The name of the argument that indicates whether to cache member data
+   * during an HTTP request, and how much data to cache. Values less than one
+   * will prevent member caching.
+   */
+  private static final String MAX_MEMBERS_CACHED = "maxMembersCached";
+
+  /**
+   * The per-request member caches.
+   */
+  private static final ThreadLocal<Map<DN, SCIMAttributeValue>> MEMBER_CACHES =
+      new ThreadLocal<Map<DN, SCIMAttributeValue>>();
+
   /**
    * The name of the LDAP member attribute.
    */
@@ -84,7 +102,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
    */
   public static final String ATTR_OBJECTCLASS = "objectclass";
 
-    /**
+  /**
    * The name of the LDAP groupOfNames object class.
    */
   public static final String OC_GROUP_OF_NAMES = "groupOfNames";
@@ -114,6 +132,11 @@ public class MembersDerivedAttribute extends DerivedAttribute
    * members which are part of this attribute.
    */
   protected LDAPSearchResolver userResolver;
+
+  /**
+   * Indicates how many members to cache per request.
+   */
+  private int membersToCachePerRequest;
 
   /**
    * The set of LDAP attribute types needed in the group entry.
@@ -221,15 +244,36 @@ public class MembersDerivedAttribute extends DerivedAttribute
       // groups.
       if (members != null)
       {
-        for (final String memberDN : members)
+        Map<DN, SCIMAttributeValue> memberCache = null;
+        if (membersToCachePerRequest > 0)
+        {
+          memberCache = MEMBER_CACHES.get();
+          if (memberCache == null)
+          {
+            memberCache = new LinkedHashMap<DN, SCIMAttributeValue>();
+            MEMBER_CACHES.set(memberCache);
+          }
+        }
+        for (final String memberDNString : members)
         {
           if ((userResolver != null &&
-               userResolver.isDnInScope(memberDN)) ||
-              groupResolver.isDnInScope(memberDN))
+               userResolver.isDnInScope(memberDNString)) ||
+              groupResolver.isDnInScope(memberDNString))
           {
+            DN memberDN = new DN(memberDNString);
+            if (memberCache != null)
+            {
+              SCIMAttributeValue cacheValue = memberCache.get(memberDN);
+              if (cacheValue != null)
+              {
+                values.add(cacheValue);
+                continue;
+              }
+            }
+
             final SearchRequest searchRequest =
-                new SearchRequest(memberDN, SearchScope.BASE,
-                                  OBJECTCLASS_PRESENCE_FILTER, attrsToGet);
+                new SearchRequest(memberDNString, SearchScope.BASE,
+                    OBJECTCLASS_PRESENCE_FILTER, attrsToGet);
             final SearchResult searchResult;
             try
             {
@@ -241,7 +285,7 @@ public class MembersDerivedAttribute extends DerivedAttribute
               continue;
             }
 
-            if(searchResult.getEntryCount() == 1)
+            if (searchResult.getEntryCount() == 1)
             {
               final SearchResultEntry rEntry =
                   searchResult.getSearchEntries().get(0);
@@ -249,6 +293,18 @@ public class MembersDerivedAttribute extends DerivedAttribute
                   createMemberValue(groupResolver, rEntry);
               if (v != null)
               {
+                if (memberCache != null)
+                {
+                  memberCache.put(memberDN, v);
+                  if (memberCache.size() > membersToCachePerRequest)
+                  {
+                    // We have cached too many members for this request, so we
+                    // remove the oldest member from the cache.
+                    Iterator<DN> it = memberCache.keySet().iterator();
+                    it.next();
+                    it.remove();
+                  }
+                }
                 values.add(v);
               }
             }
@@ -287,6 +343,20 @@ public class MembersDerivedAttribute extends DerivedAttribute
       if(o instanceof LDAPSearchResolver)
       {
         userResolver = (LDAPSearchResolver) o;
+      }
+    }
+
+    this.membersToCachePerRequest = 0;
+    Object o = getArguments().get(MAX_MEMBERS_CACHED);
+    if (o != null)
+    {
+      try
+      {
+        membersToCachePerRequest = Integer.valueOf(o.toString());
+      }
+      catch (NumberFormatException nfe)
+      {
+        Debug.debugException(nfe);
       }
     }
   }
@@ -525,5 +595,13 @@ public class MembersDerivedAttribute extends DerivedAttribute
       Debug.debugException(e);
       throw new InvalidResourceException(e.getMessage());
     }
+  }
+
+  /**
+   * Clear the cache.
+   */
+  static void clearRequestCache()
+  {
+    MEMBER_CACHES.remove();
   }
 }
