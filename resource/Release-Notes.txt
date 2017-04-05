@@ -3,9 +3,9 @@ UnboundID SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.?.?? ----------
+---------- SCIM 1.8.18-SNAPSHOT ----------
 
-  * Release Date: ???
+  * Release Date: TBD
 
   * New Features
 
@@ -16,14 +16,6 @@ https://www.unboundid.com/resources/scim
       could be repeated. Also, updated the User groups attribute to be able to
       take advantage of the "isDirectMemberOf" attribute on LDAP servers that
       support it.
-
-  * Resolved Issues
-
----------- SCIM 1.8.17-SNAPSHOT ----------
-
-  * Release Date: TBD
-
-  * New Features
 
   * Resolved Issues
 
