@@ -233,4 +233,32 @@ public class SCIMFilterTestCase
 
     assertFalse(attribute.matchesFilter(filter));
   }
+
+  /**
+   * Test that isQuoteFilterValue returns the correct values.
+   * 
+   * @throws Exception if an exception occurred parsing a filter.
+   */
+  @Test
+  public void testIsQuoteFilterValue() throws Exception
+  {
+    SCIMFilter filter;
+    
+    filter = SCIMFilter.parse("foo eq \"quoted-value\"");
+    assertTrue(filter.isQuoteFilterValue());
+    
+    filter = SCIMFilter.parse("foo eq 123");
+    assertFalse(filter.isQuoteFilterValue());
+ 
+    filter = SCIMFilter.parse("foo eq \"123\"");
+    assertTrue(filter.isQuoteFilterValue());
+
+    filter = SCIMFilter.parse("foo eq false");
+    assertFalse(filter.isQuoteFilterValue());
+ 
+    filter = SCIMFilter.parse("myattribute eq \"quoted-value\" and foo eq false");
+    assertFalse(filter.isQuoteFilterValue());
+
+  }
+
 }
