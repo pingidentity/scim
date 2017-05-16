@@ -3,9 +3,9 @@ UnboundID SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://www.unboundid.com/resources/scim
 
----------- SCIM 1.8.18-SNAPSHOT ----------
+---------- SCIM 1.8.18 ----------
 
-  * Release Date: TBD
+  * Release Date: May 16, 2017
 
   * New Features
 
