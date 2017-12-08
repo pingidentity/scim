@@ -1,15 +1,15 @@
-UnboundID SCIM SDK Release Notes
+Ping Identity SCIM SDK Release Notes
 
 For full information, visit the project homepage:
-https://www.unboundid.com/resources/scim
+https://github.com/PingIdentity/scim
 
----------- SCIM 1.8.19-SNAPSHOT ----------
+---------- SCIM 1.8.19 ----------
 
-  * Release Date: TBD
+  * Release Date: December 8, 2017
 
   * New Features
-
-  * Resolved Issues
+  
+    - Improved group user membership performance.
 
 ---------- SCIM 1.8.18 ----------
 
