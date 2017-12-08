@@ -17,6 +17,7 @@
 
 package com.unboundid.scim.ldap;
 
+import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.DN;
 import com.unboundid.ldap.sdk.Entry;
@@ -230,6 +231,36 @@ public class GroupsDerivedAttribute extends DerivedAttribute
           final String[] attrsToGet =
               attrList.toArray(new String[attrList.size()]);
 
+          Set<DN> isDirectMemberOfDNs = null;
+          if (haveIsDirectMemberOf)
+          {
+            final Attribute isDirectMemberOfAttribute =
+                 entry.getAttribute(ATTR_IS_DIRECT_MEMBER_OF);
+            if (isDirectMemberOfAttribute == null)
+            {
+              isDirectMemberOfDNs = Collections.emptySet();
+            }
+            else
+            {
+              isDirectMemberOfDNs =
+                   new HashSet<DN>(isDirectMemberOfAttribute.size());
+              for (final ASN1OctetString s :
+                   isDirectMemberOfAttribute.getRawValues())
+              {
+                try
+                {
+                  isDirectMemberOfDNs.add(new DN(s.stringValue()));
+                }
+                catch (final Exception e)
+                {
+                  Debug.debugException(e);
+                  isDirectMemberOfDNs = null;
+                  break;
+                }
+              }
+            }
+          }
+
           for (final String dnString :
               entry.getAttributeValues(ATTR_IS_MEMBER_OF))
           {
@@ -286,10 +317,9 @@ public class GroupsDerivedAttribute extends DerivedAttribute
                 // static group and the entry is listed as a member or
                 // uniqueMember of this group (i.e. it's not nested).
                 boolean isDirect = false;
-                if (haveIsDirectMemberOf)
+                if (isDirectMemberOfDNs != null)
                 {
-                  isDirect = entry.hasAttributeValue(
-                      ATTR_IS_DIRECT_MEMBER_OF, dnString);
+                  isDirect = isDirectMemberOfDNs.contains(groupDN);
                 }
                 else
                 {
