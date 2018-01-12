@@ -655,5 +655,5 @@ https://github.com/PingIdentity/scim
     bundled documentation for a complete description.
 
 ---------------------------------
-Copyright 2011-2016 UnboundID Corp. All Rights Reserved.
+Copyright 2011-2018 Ping Identity Corporatio. All Rights Reserved.
 

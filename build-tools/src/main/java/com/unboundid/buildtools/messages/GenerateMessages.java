@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2016 UnboundID Corp.
+ * Copyright 2011-2018 Ping Identity Corporation
  * All Rights Reserved.
  */
 package com.unboundid.buildtools.messages;
@@ -180,7 +180,7 @@ public class GenerateMessages
         // Add the header to the source file.
         String year = new SimpleDateFormat("yyyy").format(new Date());
   w("/*");
-  w(" * Copyright " + year + " UnboundID Corp.");
+  w(" * Copyright " + year + " Ping Identity Corporation");
   w(" *");
   w(" * This program is free software; you can redistribute it and/or modify");
   w(" * it under the terms of the GNU General Public License (GPLv2 only)");
