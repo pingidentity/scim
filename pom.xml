@@ -83,8 +83,8 @@
     </organization>
 
     <scm>
-        <connection>scm:git:https://github.com/UnboundID/scim</connection>
-        <developerConnection>scm:git:https://github.com/UnboundID/scim</developerConnection>
+        <connection>scm:git:https://github.com/pingidentity/scim</connection>
+        <developerConnection>scm:git:https://github.com/pingidentity/scim</developerConnection>
     </scm>
 
     <modules>

@@ -99,8 +99,8 @@
     </dependencies>
 
     <scm>
-      <url>https://github.com/UnboundID/scim</url>
-      <connection>scm:git:https://github.com/UnboundID/scim</connection>
+      <url>https://github.com/pingidentity/scim</url>
+      <connection>scm:git:https://github.com/pingidentity/scim</connection>
     </scm>
 
 </project>

@@ -34,7 +34,7 @@
       effort required for implementation.
     </description>
 
-    <url>https://github.com/UnboundID/scim</url>
+    <url>https://github.com/pingidentity/scim</url>
 
     <inceptionYear>2011</inceptionYear>
 
@@ -81,8 +81,8 @@
     </dependencies>
 
     <scm>
-      <url>https://github.com/UnboundID/scim</url>
-      <connection>scm:git:https://github.com/UnboundID/scim</connection>
+      <url>https://github.com/pingidentity/scim</url>
+      <connection>scm:git:https://github.com/pingidentity/scim</connection>
     </scm>
 
 </project>
