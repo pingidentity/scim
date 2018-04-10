@@ -65,6 +65,10 @@ Check Maven Central for the latest available version of the SCIM 1.1 SDK.
 </dependency>
 ```
 
+# Reporting issues
+
+Please report bug reports and enhancement requests through this project's [issue tracker](https://github.com/pingidentity/scim/issues). See the [contribution guidelines](CONTRIBUTING.md) for more information.
+
 ## License
 
 See the [LICENSE.txt](resource/licenses/LICENSE.txt) file for more info.
