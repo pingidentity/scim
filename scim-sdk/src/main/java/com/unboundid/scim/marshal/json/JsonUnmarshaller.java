@@ -24,6 +24,7 @@ import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.sdk.BulkContentHandler;
 import com.unboundid.scim.sdk.Debug;
+import com.unboundid.scim.sdk.DebugType;
 import com.unboundid.scim.sdk.InvalidResourceException;
 import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMException;
@@ -42,9 +43,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static com.unboundid.scim.marshal.json.JsonParser.makeCaseInsensitive;
-import static com.unboundid.scim.sdk.SCIMConstants.*;
 
 
 
@@ -122,6 +123,34 @@ public class JsonUnmarshaller implements Unmarshaller
                                         schemas);
           resources.add(resource);
         }
+      }
+
+      // Handle an edge case in which the JSON being unmarshalled does not in
+      // fact represent a list of SCIM resources. This can happen, for example,
+      // if a client calls SCIMEndpoint.query(...) for a SCIM service's
+      // "/Schemas" endpoint, and the SCIM service returns a single schema
+      // resource rather than a search response.
+      try
+      {
+        if(resources.isEmpty() &&
+            !jsonObject.has("totalresults") &&
+            !jsonObject.has("startindex"))
+        {
+          Debug.debug(Level.WARNING, DebugType.OTHER,
+              "JSON object is not a SCIM list response");
+          R resource = parser.unmarshal(jsonObject,
+                                        resourceDescriptor,
+                                        resourceFactory,
+                                        schemas);
+          resources = new ArrayList<R>(1);
+          resources.add(resource);
+          totalResults = 1;
+        }
+      }
+      catch(Exception e)
+      {
+        // If this fails, do nothing and return an empty Resources object.
+        Debug.debugException(e);
       }
 
       return new Resources<R>(resources, totalResults, startIndex);

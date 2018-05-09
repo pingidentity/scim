@@ -1,0 +1,449 @@
+{
+  "totalResults": 1,
+  "itemsPerPage": 1,
+  "startIndex": 1,
+  "schemas": ["urn:scim:schemas:core:1.0"],
+  "Resources": [{
+    "name": "User",
+    "description": "SCIM core resource for representing users",
+    "schema": "urn:scim:schemas:core:1.0",
+    "endpoint": "Users",
+    "attributes": [{
+      "name": "id",
+      "type": "string",
+      "multiValued": false,
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": true,
+      "required": true,
+      "caseExact": false
+    }, {
+      "name": "meta",
+      "type": "complex",
+      "multiValued": false,
+      "description": "A complex type containing metadata about the resource",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "created",
+        "type": "datetime",
+        "multiValued": false,
+        "description": "The DateTime the Resource was added to the Service Provider",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "lastModified",
+        "type": "datetime",
+        "multiValued": false,
+        "description": "The most recent DateTime the details of this Resource were updated at the Service Provider",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "location",
+        "type": "string",
+        "multiValued": false,
+        "description": "The URI of the Resource being returned",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "version",
+        "type": "string",
+        "multiValued": false,
+        "description": "The version of the Resource being returned",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "attributes",
+        "type": "string",
+        "multiValued": true,
+        "multiValuedAttributeChildName": "attribute",
+        "description": "The names of the attributes to remove from the Resource during a PATCH operation",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "__diagnostic_info",
+        "type": "string",
+        "multiValued": true,
+        "multiValuedAttributeChildName": "__diagnostic_info",
+        "description": "Diagnostic information associated with the resource",
+        "readOnly": true,
+        "required": false,
+        "caseExact": false
+      }]
+    }, {
+      "name": "userName",
+      "type": "string",
+      "multiValued": false,
+      "description": "Unique identifier for the User, typically used by the user\n        to directly authenticate to the Service Provider",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": true,
+      "caseExact": false
+    }, {
+      "name": "name",
+      "type": "complex",
+      "multiValued": false,
+      "description": "The components of the User's real name",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "formatted",
+        "type": "string",
+        "multiValued": false,
+        "description": "The full name, including all middle names, titles,\n            and suffixes as appropriate, formatted for display (e.g. Ms.\n            Barbara Jane Jensen, III.)",
+        "readOnly": false,
+        "required": true,
+        "caseExact": false
+      }, {
+        "name": "familyName",
+        "type": "string",
+        "multiValued": false,
+        "description": "The family name of the User, or \"Last Name\" in most\n            Western languages (e.g. Jensen given the full name Ms. Barbara\n            Jane Jensen, III.)",
+        "readOnly": false,
+        "required": true,
+        "caseExact": false
+      }, {
+        "name": "middleName",
+        "type": "string",
+        "multiValued": false,
+        "description": "The middle name(s) of the User (e.g. Jane given the full\n            name Ms. Barbara Jane Jensen, III.)",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "givenName",
+        "type": "string",
+        "multiValued": false,
+        "description": "The given name of the User, or \"First Name\" in most\n            Western languages (e.g. Barbara given the full name Ms. Barbara\n            Jane Jensen, III.)",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "honorificPrefix",
+        "type": "string",
+        "multiValued": false,
+        "description": "The honorific prefix(es) of the User, or \"Title\" in most\n            Western languages (e.g. Ms. given the full name Ms. Barbara\n            Jane Jensen, III.)",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "honorificSuffix",
+        "type": "string",
+        "multiValued": false,
+        "description": "The honorific suffix(es) of the User, or \"Suffix\" in most\n            Western languages (e.g. III. given the full name Ms. Barbara\n            Jane Jensen, III.)",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }]
+    }, {
+      "name": "displayName",
+      "type": "string",
+      "multiValued": false,
+      "description": "The name of the User, suitable for display to\n        end-users",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "title",
+      "type": "string",
+      "multiValued": false,
+      "description": "The User's title, such as \"Vice President\"",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "userType",
+      "type": "string",
+      "multiValued": false,
+      "description": "The organization-to-user relationship",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "preferredLanguage",
+      "type": "string",
+      "multiValued": false,
+      "description": "The User's preferred written or spoken language. Generally\n        used for selecting a localized User interface.  Valid values are\n        concatenation of the ISO 639-1 two-letter language code, an\n        underscore, and the ISO 3166-1 two-letter country code; e.g., 'en_US'\n        specifies the language English and country US",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "active",
+      "type": "boolean",
+      "multiValued": false,
+      "description": "A Boolean value indicating the User's administrative\n        status",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "password",
+      "type": "string",
+      "multiValued": false,
+      "description": "The User's clear text password. This attribute is intended\n        to be used as a means to specify an initial password when creating\n        a new User or to reset an existing User's password. This value will\n        never be returned by a Service Provider in any form",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "emails",
+      "type": "complex",
+      "multiValued": true,
+      "multiValuedAttributeChildName": "email",
+      "description": "E-mail addresses for the User",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "value",
+        "type": "string",
+        "multiValued": false,
+        "description": "The attribute's significant value",
+        "readOnly": false,
+        "required": true,
+        "caseExact": false
+      }, {
+        "name": "type",
+        "type": "string",
+        "multiValued": false,
+        "description": "A label indicating the attribute's function; e.g., \"work\" or \"home\"",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false,
+        "canonicalValues": [{
+          "value": "work"
+        }, {
+          "value": "home"
+        }, {
+          "value": "other"
+        }]
+      }]
+    }, {
+      "name": "phoneNumbers",
+      "type": "complex",
+      "multiValued": true,
+      "multiValuedAttributeChildName": "phoneNumber",
+      "description": "Phone numbers for the User",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "value",
+        "type": "string",
+        "multiValued": false,
+        "description": "The attribute's significant value",
+        "readOnly": false,
+        "required": true,
+        "caseExact": false
+      }, {
+        "name": "type",
+        "type": "string",
+        "multiValued": false,
+        "description": "A label indicating the attribute's function; e.g., \"work\" or \"home\"",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false,
+        "canonicalValues": [{
+          "value": "work"
+        }, {
+          "value": "home"
+        }, {
+          "value": "mobile"
+        }, {
+          "value": "fax"
+        }, {
+          "value": "pager"
+        }, {
+          "value": "other"
+        }]
+      }]
+    }, {
+      "name": "addresses",
+      "type": "complex",
+      "multiValued": true,
+      "multiValuedAttributeChildName": "address",
+      "description": "The full mailing address, formatted for display or use with\n        a mailing label",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "formatted",
+        "type": "string",
+        "multiValued": false,
+        "description": "The full street address component, which may include\n            house number, street name, P.O. box, and multi-line extended\n            street address information",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "streetAddress",
+        "type": "string",
+        "multiValued": false,
+        "description": "The full street address component, which may include\n            house number, street name, P.O. box, and multi-line extended\n            street address information",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "locality",
+        "type": "string",
+        "multiValued": false,
+        "description": "The city or locality component",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "region",
+        "type": "string",
+        "multiValued": false,
+        "description": "The state or region component",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "postalCode",
+        "type": "string",
+        "multiValued": false,
+        "description": "The zipcode or postal code component",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "country",
+        "type": "string",
+        "multiValued": false,
+        "description": "The country name component",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false
+      }, {
+        "name": "type",
+        "type": "string",
+        "multiValued": false,
+        "description": "A label indicating the attribute's function; e.g., \"work\" or \"home\"",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false,
+        "canonicalValues": [{
+          "value": "work"
+        }, {
+          "value": "home"
+        }, {
+          "value": "other"
+        }]
+      }]
+    }, {
+      "name": "groups",
+      "type": "complex",
+      "multiValued": true,
+      "multiValuedAttributeChildName": "group",
+      "description": "A list of groups that the user belongs to",
+      "schema": "urn:scim:schemas:core:1.0",
+      "readOnly": true,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "value",
+        "type": "string",
+        "multiValued": false,
+        "description": "The attribute's significant value",
+        "readOnly": false,
+        "required": true,
+        "caseExact": false
+      }, {
+        "name": "type",
+        "type": "string",
+        "multiValued": false,
+        "description": "A label indicating the attribute's function; e.g., \"work\" or \"home\"",
+        "readOnly": false,
+        "required": false,
+        "caseExact": false,
+        "canonicalValues": [{
+          "value": "direct"
+        }, {
+          "value": "indirect"
+        }]
+      }]
+    }, {
+      "name": "employeeNumber",
+      "type": "string",
+      "multiValued": false,
+      "description": "Numeric or alphanumeric identifier assigned to a person,\n        typically based on order of hire or association with an\n        organization",
+      "schema": "urn:scim:schemas:extension:enterprise:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "organization",
+      "type": "string",
+      "multiValued": false,
+      "description": "Identifies the name of an organization",
+      "schema": "urn:scim:schemas:extension:enterprise:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "division",
+      "type": "string",
+      "multiValued": false,
+      "description": "Identifies the name of a division",
+      "schema": "urn:scim:schemas:extension:enterprise:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "department",
+      "type": "string",
+      "multiValued": false,
+      "description": "Identifies the name of a department",
+      "schema": "urn:scim:schemas:extension:enterprise:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false
+    }, {
+      "name": "manager",
+      "type": "complex",
+      "multiValued": false,
+      "description": "The User's manager",
+      "schema": "urn:scim:schemas:extension:enterprise:1.0",
+      "readOnly": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [{
+        "name": "managerId",
+        "type": "string",
+        "multiValued": false,
+        "description": "The id of the SCIM resource representing the User's\n            manager",
+        "readOnly": false,
+        "required": true,
+        "caseExact": false
+      }, {
+        "name": "displayName",
+        "type": "string",
+        "multiValued": false,
+        "description": "The displayName of the User's manager",
+        "readOnly": true,
+        "required": false,
+        "caseExact": false
+      }]
+    }],
+    "id": "urn:scim:schemas:core:1.0:User",
+    "meta": {
+      "location": "https://localhost:1443/scim/v1/Schemas/urn:scim:schemas:core:1.0:User"
+    }
+  }]
+}

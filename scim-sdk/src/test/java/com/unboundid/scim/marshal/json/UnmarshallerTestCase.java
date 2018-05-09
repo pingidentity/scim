@@ -22,7 +22,9 @@ import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.marshal.Unmarshaller;
 import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
+import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.InvalidResourceException;
+import com.unboundid.scim.sdk.Resources;
 import com.unboundid.scim.sdk.SCIMAttribute;
 import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.SCIMConstants;
@@ -34,6 +36,7 @@ import static com.unboundid.scim.sdk.SCIMConstants.SCHEMA_URI_CORE;
 import static org.testng.Assert.*;
 
 import java.io.InputStream;
+import java.util.Iterator;
 
 
 @Test
@@ -260,6 +263,137 @@ public class UnmarshallerTestCase extends SCIMTestCase {
     {
       System.setProperty(SCIMConstants.IMPLICIT_SCHEMA_CHECKING_PROPERTY, "");
     }
+  }
+
+
+  /**
+   * Verify that an empty list response can be unmarshalled to a Resources
+   * object.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testEmptyResources() throws Exception
+  {
+    Debug.setEnabled(true);
+    final ResourceDescriptor userResourceDescriptor =
+        CoreSchema.USER_DESCRIPTOR;
+    InputStream testJson =
+        getResource("/com/unboundid/scim/marshal/empty-list-response.json");
+    final Unmarshaller unmarshaller = new JsonUnmarshaller();
+    final Resources<BaseResource> resources =
+        unmarshaller.unmarshalResources(
+            testJson, userResourceDescriptor,
+            BaseResource.BASE_RESOURCE_FACTORY);
+    assertNotNull(resources);
+    assertEquals(resources.getItemsPerPage(), 0);
+    assertEquals(resources.getTotalResults(), 0);
+    assertEquals(resources.getStartIndex(), 1);
+    final Iterator<BaseResource> iterator = resources.iterator();
+    assertFalse(iterator.hasNext());
+  }
+
+
+  /**
+   * Verify that a SCIM schemas list response can be unmarshalled to a
+   * Resources<ResourceDescriptor> object.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testUnmarshalSchemaResources() throws Exception
+  {
+    Debug.setEnabled(true);
+    final ResourceDescriptor schemaResourceDescriptor =
+        CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR;
+    // This is the output of requesting 'Schemas?filter=name eq "User"' from
+    // a Ping Identity Directory Server.
+    InputStream testJson =
+        getResource("/com/unboundid/scim/marshal/" +
+            "user-schema-resource-list.json");
+    final Unmarshaller unmarshaller = new JsonUnmarshaller();
+    final Resources<ResourceDescriptor> resources =
+        unmarshaller.unmarshalResources(
+            testJson, schemaResourceDescriptor,
+            ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
+    assertNotNull(resources);
+    assertEquals(resources.getTotalResults(), 1);
+    for(final ResourceDescriptor schema : resources)
+    {
+      assertNotNull(schema);
+      assertEquals(schema.getName(), "User");
+      assertEquals(schema.getDescription(),
+          "SCIM core resource for representing users");
+      assertEquals(schema.getEndpoint(), "Users");
+    }
+  }
+
+
+  /**
+   * Verify that a SCIM schema response that is not formatted as a list
+   * response can be unmarshalled to a Resources<ResourceDescriptor> object.
+   * This accommodates SCIM server implementations that respond to a /Schemas
+   * request with a single schema resource.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testUnmarshalResourceToResources() throws Exception
+  {
+    Debug.setEnabled(true);
+    final ResourceDescriptor schemaResourceDescriptor =
+        CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR;
+    // This is the output of requesting 'Schemas?filter=name eq "User"' from
+    // PingFederate.
+    InputStream testJson =
+        getResource("/com/unboundid/scim/marshal/user-schema-resource.json");
+    final Unmarshaller unmarshaller = new JsonUnmarshaller();
+    final Resources<ResourceDescriptor> resources =
+        unmarshaller.unmarshalResources(
+            testJson, schemaResourceDescriptor,
+            ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
+    assertNotNull(resources);
+    assertEquals(resources.getTotalResults(), 1);
+    for(final ResourceDescriptor schema : resources)
+    {
+      assertNotNull(schema);
+      assertEquals(schema.getName(), "User");
+      assertEquals(schema.getDescription(), "Core User");
+      assertEquals(schema.getEndpoint(), "/Users");
+    }
+  }
+
+  /**
+   * Verify that a SCIM schema response that is not formatted as a list
+   * response will be unmarshalled to a Resources object, even if it can
+   * neither be parsed as a list response nor as an expected SCIM resource type.
+   * This is similar to {@link #testUnmarshalResourceToResources()} but
+   * confirms that the failure case is handled gracefully.
+   *
+   * @throws Exception If the test fails.
+   */
+  @Test
+  public void testUnmarshalMalformedResourceToResources() throws Exception
+  {
+    Debug.setEnabled(true);
+    final ResourceDescriptor schemaResourceDescriptor =
+        CoreSchema.RESOURCE_SCHEMA_DESCRIPTOR;
+    // This is a User resource, but the unmarshaller will expect a Schema
+    // resource, so parsing will fail and it will fall back to returning an
+    // empty Resources object.
+    InputStream testJson =
+        getResource("/com/unboundid/scim/marshal/spec/core-user.json");
+    final Unmarshaller unmarshaller = new JsonUnmarshaller();
+    final Resources<ResourceDescriptor> resources =
+        unmarshaller.unmarshalResources(
+            testJson, schemaResourceDescriptor,
+            ResourceDescriptor.RESOURCE_DESCRIPTOR_FACTORY);
+    assertNotNull(resources);
+    assertEquals(resources.getItemsPerPage(), 0);
+    assertEquals(resources.getTotalResults(), 0);
+    assertEquals(resources.getStartIndex(), 1);
+    final Iterator<ResourceDescriptor> iterator = resources.iterator();
+    assertFalse(iterator.hasNext());
   }
 
 }

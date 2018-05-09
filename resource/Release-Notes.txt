@@ -3,6 +3,16 @@ Ping Identity SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://github.com/PingIdentity/scim
 
+---------- SCIM 1.8.20 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
+    - Addressed a compatibility issue in which a call to SCIMEndpoint.query(...)
+      for a PingFederate "/Schemas" endpoint would fail because the server
+      returns a non-list response.
+
 ---------- SCIM 1.8.19 ----------
 
   * Release Date: December 8, 2017
