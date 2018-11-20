@@ -544,6 +544,8 @@ public abstract class LDAPBackend
         SearchResult searchResult = null;
         int startIndex = 1;
         int totalToReturn = maxResults;
+        int totalResults = 0;
+        boolean firstBaseDN = true;
 
         for (DN baseDN : searchBaseDNs)
         {
@@ -591,7 +593,10 @@ public abstract class LDAPBackend
               //handle that internally.
               searchRequest.setSizeLimit(0);
 
-              startIndex = pageParameters.getStartIndex();
+              //Only use the provided startIndex parameter for the first baseDN
+              //the search is performed at; otherwise we'll end up skipping
+              //matches in the other baseDNs we should be returning
+              startIndex = (firstBaseDN) ? pageParameters.getStartIndex() : 0;
               searchRequest.addControl(new VirtualListViewRequestControl(
                   startIndex, 0, numLeftToReturn - 1, 0, null, true));
 
@@ -655,6 +660,22 @@ public abstract class LDAPBackend
             }
           }
 
+          // When returning VLV responses, track the total results count across
+          // loops. This is handled by the resultListener for other searches.
+          final VirtualListViewResponseControl vlvResponseControl =
+                  getVLVResponseControl(searchResult);
+          final SimplePagedResultsControl simplePagedResultsResponseControl =
+                  SimplePagedResultsControl.get(searchResult);
+
+          if (vlvResponseControl != null)
+          {
+            totalResults += vlvResponseControl.getContentCount();
+          }
+          else if (simplePagedResultsResponseControl != null)
+          {
+            totalResults += simplePagedResultsResponseControl.getSize();
+          }
+
           if (searchRequest.getScope() == SearchScope.BASE ||
               resultListener.getTotalResults() >= totalToReturn)
           {
@@ -664,6 +685,8 @@ public abstract class LDAPBackend
           {
             searchRequest = null;
           }
+
+          firstBaseDN = false;
         }
 
         // Prepare the response.
@@ -672,31 +695,10 @@ public abstract class LDAPBackend
         int toIdx = Math.min(scimObjects.size(), totalToReturn);
         scimObjects = scimObjects.subList(0, toIdx);
 
-        final VirtualListViewResponseControl vlvResponseControl =
-            getVLVResponseControl(searchResult);
-        final SimplePagedResultsControl simplePagedResultsResponseControl =
-            SimplePagedResultsControl.get(searchResult);
+        totalResults = Math.max(totalResults, resultListener.getTotalResults());
 
-        if (vlvResponseControl != null)
-        {
-          return new Resources<BaseResource>(scimObjects,
-              vlvResponseControl.getContentCount(), startIndex);
-        }
-        else if (simplePagedResultsResponseControl != null)
-        {
-          // We are only using the control here for an estimate of the total
-          // size and only if it actually reveals more than the resultListener
-          int totalResults = Math.max(
-              simplePagedResultsResponseControl.getSize(),
-              resultListener.getTotalResults());
-          return new Resources<BaseResource>(
-              scimObjects, totalResults, startIndex);
-        }
-        else
-        {
-          return new Resources<BaseResource>(scimObjects,
-              resultListener.getTotalResults(), startIndex);
-        }
+        return new Resources<BaseResource>(scimObjects,
+                totalResults, startIndex);
       }
       catch (LDAPException e)
       {
