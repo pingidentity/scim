@@ -3,12 +3,21 @@ Ping Identity SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://github.com/PingIdentity/scim
 
----------- SCIM 1.8.21 ----------
+---------- SCIM 1.8.22 ----------
 
   * Release Date: TBD
 
   * Resolved Issues
 
+---------- SCIM 1.8.21 ----------
+
+  * Release Date: November 20, 2018
+
+  * Resolved Issues
+
+    - Fixed a bug where the totalResults value for SCIM requests using page
+      parameters would be incorrect if the used LDAPSearch element had more
+      than one baseDN defined in the scim-resources XML file.
 
 ---------- SCIM 1.8.20 ----------
 
