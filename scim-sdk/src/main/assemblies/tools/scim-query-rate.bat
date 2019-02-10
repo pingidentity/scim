@@ -1,5 +1,5 @@
 @echo off
-REM Copyright 2011-2018 Ping Identity Corporation
+REM Copyright 2011-2019 Ping Identity Corporation
 REM All Rights Reserved.
 
 setlocal ENABLEDELAYEDEXPANSION
