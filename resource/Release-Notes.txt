@@ -3,11 +3,20 @@ Ping Identity SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://github.com/PingIdentity/scim
 
----------- SCIM 1.8.22 ----------
+---------- SCIM 1.8.23 ----------
 
   * Release Date: TBD
 
   * Resolved Issues
+
+---------- SCIM 1.8.22 ----------
+
+  * Release Date: April 5, 2019
+
+  * Resolved Issues
+
+    - Fixed a problem in which a member could not be added to a group via
+      SCIM unless the group's object class was "groupOfUniqueNames".
 
 ---------- SCIM 1.8.21 ----------
 

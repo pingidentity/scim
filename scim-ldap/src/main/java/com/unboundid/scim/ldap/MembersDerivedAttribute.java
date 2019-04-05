@@ -70,6 +70,27 @@ public class MembersDerivedAttribute extends DerivedAttribute
 {
 
   /**
+   * An enum for the different possible values of the joinAttribute entry in the
+   * scim-resources.xml file.
+   */
+  public enum LDAPJoinAttribute {
+    /**
+     * Indicates the joinAttribute is set to member.
+     */
+    MEMBER,
+
+    /**
+     * Indicates the joinAttribute is set to uniqueMember.
+     */
+    UNIQUE_MEMBER,
+
+    /**
+     * Indicates the joinAttribute is set to memberURL.
+     */
+    MEMBER_URL
+  }
+
+  /**
    * The name of the argument that indicates whether to cache member data
    * during an HTTP request, and how much data to cache. Values less than one
    * will prevent member caching.
@@ -137,6 +158,12 @@ public class MembersDerivedAttribute extends DerivedAttribute
    * Indicates how many members to cache per request.
    */
   private int membersToCachePerRequest;
+
+  /**
+   * Indicates if the join attribute is a member, uniqueMember, or memberURL.
+   */
+  private LDAPJoinAttribute joinAttribute;
+
 
   /**
    * The set of LDAP attribute types needed in the group entry.
@@ -359,6 +386,24 @@ public class MembersDerivedAttribute extends DerivedAttribute
         Debug.debugException(nfe);
       }
     }
+
+    this.joinAttribute = null;
+    Object j = getArguments().get("joinAttribute");
+    if (j != null)
+    {
+      if (j.toString().equalsIgnoreCase("member"))
+      {
+        joinAttribute = LDAPJoinAttribute.MEMBER;
+      }
+      else if (j.toString().equalsIgnoreCase("uniqueMember"))
+      {
+        joinAttribute = LDAPJoinAttribute.UNIQUE_MEMBER;
+      }
+      else if (j.toString().equalsIgnoreCase("memberURL"))
+      {
+        joinAttribute = LDAPJoinAttribute.MEMBER_URL;
+      }
+    }
   }
 
 
@@ -499,7 +544,29 @@ public class MembersDerivedAttribute extends DerivedAttribute
                 "must be of type 'User' or 'Group'");
           }
 
-          attributes.add(new Attribute(ATTR_UNIQUE_MEMBER, dn));
+          if (joinAttribute == null)
+          {
+            throw new InvalidResourceException(
+                    "Member type is not valid. Member type must be of type " +
+                    "'member', 'uniqueMember', or 'memberURL'");
+          }
+
+          switch (joinAttribute)
+          {
+            case MEMBER:
+              attributes.add(new Attribute(ATTR_MEMBER, dn));
+              break;
+            case UNIQUE_MEMBER:
+              attributes.add(new Attribute(ATTR_UNIQUE_MEMBER, dn));
+              break;
+            case MEMBER_URL:
+              attributes.add(new Attribute(ATTR_MEMBER_URL, dn));
+              break;
+            default:
+              throw new InvalidResourceException(
+                  "Member type is not valid. Member type must be of type " +
+                  "'member', 'uniqueMember', or 'memberURL'");
+          }
         }
         catch (Exception e)
         {
