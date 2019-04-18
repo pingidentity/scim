@@ -18,6 +18,10 @@ https://github.com/PingIdentity/scim
     - Fixed a problem in which a member could not be added to a group via
       SCIM unless the group's object class was "groupOfUniqueNames".
 
+    - Fixed a bug where the startIndex value for SCIM requests would be
+      incorrect if the used LDAPSearch element had more than one baseDN defined
+      in the scim-resources XML file.
+
 ---------- SCIM 1.8.21 ----------
 
   * Release Date: November 20, 2018

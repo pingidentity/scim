@@ -543,6 +543,7 @@ public abstract class LDAPBackend
 
         SearchResult searchResult = null;
         int startIndex = 1;
+        int workingStartIndex = 1;
         int totalToReturn = maxResults;
         int totalResults = 0;
         boolean firstBaseDN = true;
@@ -579,6 +580,15 @@ public abstract class LDAPBackend
               totalToReturn - resultListener.getTotalResults();
           if (pageParameters != null)
           {
+
+            //Store the start index parameter to return in the final result and
+            //initialize workingStartIndex to startIndex
+            if (firstBaseDN)
+            {
+              startIndex = pageParameters.getStartIndex();
+              workingStartIndex = startIndex;
+            }
+
             if (pageParameters.getCount() > 0)
             {
               totalToReturn = pageParameters.getCount();
@@ -593,12 +603,8 @@ public abstract class LDAPBackend
               //handle that internally.
               searchRequest.setSizeLimit(0);
 
-              //Only use the provided startIndex parameter for the first baseDN
-              //the search is performed at; otherwise we'll end up skipping
-              //matches in the other baseDNs we should be returning
-              startIndex = (firstBaseDN) ? pageParameters.getStartIndex() : 0;
               searchRequest.addControl(new VirtualListViewRequestControl(
-                  startIndex, 0, numLeftToReturn - 1, 0, null, true));
+                  workingStartIndex, 0, numLeftToReturn - 1, 0, null, true));
 
               //VLV requires a sort control
               if (!searchRequest.hasControl(
@@ -685,6 +691,11 @@ public abstract class LDAPBackend
           {
             searchRequest = null;
           }
+
+          //Update the workingStartIndex value in order to avoid skipping
+          //too many search results in subsequent baseDN searches. Note that
+          //the minimum startIndex value for a search is 1.
+          workingStartIndex = Math.max(startIndex - totalResults, 1);
 
           firstBaseDN = false;
         }
