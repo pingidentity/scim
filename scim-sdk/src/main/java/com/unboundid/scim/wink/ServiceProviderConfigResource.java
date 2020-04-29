@@ -18,7 +18,6 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.data.ServiceProviderConfig;
-import org.glassfish.jersey.message.internal.Quality;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -56,8 +55,7 @@ public class ServiceProviderConfigResource extends AbstractStaticResource
    * @return  The response to the request.
    */
   @GET
-  @Produces(MediaType.APPLICATION_JSON + ";"
-            + Quality.QUALITY_SOURCE_PARAMETER_NAME + "=1")
+  @Produces(MediaType.APPLICATION_JSON)
   public Response doJsonGet()
   {
     final ServiceProviderConfig config = application.getServiceProviderConfig();
@@ -79,8 +77,7 @@ public class ServiceProviderConfigResource extends AbstractStaticResource
    * @return  The response to the request.
    */
   @GET
-  @Produces(MediaType.APPLICATION_XML + ";"
-            + Quality.QUALITY_SOURCE_PARAMETER_NAME + "=0.5")
+  @Produces(MediaType.APPLICATION_XML)
   public Response doXmlGet()
   {
     final ServiceProviderConfig config = application.getServiceProviderConfig();
