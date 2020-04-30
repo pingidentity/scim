@@ -8,6 +8,9 @@ https://github.com/PingIdentity/scim
   * Release Date: TBD
 
   * Resolved Issues
+  
+    - Made JSON the default response content type for requests that did not 
+      specify an accept content type.
 
 ---------- SCIM 1.8.22 ----------
 
