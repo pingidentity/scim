@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright 2012-2019 Ping Identity Corporation
  *
  * This program is free software; you can redistribute it and/or modify
