@@ -18,6 +18,7 @@
 package com.unboundid.scim.wink;
 
 import com.unboundid.scim.sdk.OAuthTokenHandler;
+import org.glassfish.jersey.message.internal.Quality;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -70,7 +71,8 @@ public class BulkResource extends AbstractBulkResource
    */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON + ";"
+            + Quality.QUALITY_SOURCE_PARAMETER_NAME + "=1")
   public Response doJsonJsonPost(final InputStream inputStream,
                                  @Context final HttpServletRequest request,
                                  @Context final SecurityContext securityContext,
@@ -99,7 +101,8 @@ public class BulkResource extends AbstractBulkResource
    */
   @POST
   @Consumes(MediaType.APPLICATION_XML)
-  @Produces(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_XML + ";"
+            + Quality.QUALITY_SOURCE_PARAMETER_NAME + "=0.5")
   public Response doXmlXmlPost(final InputStream inputStream,
                                @Context final HttpServletRequest request,
                                @Context final SecurityContext securityContext,
@@ -129,7 +132,8 @@ public class BulkResource extends AbstractBulkResource
    */
   @POST
   @Consumes(MediaType.APPLICATION_XML)
-  @Produces(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON + ";"
+            + Quality.QUALITY_SOURCE_PARAMETER_NAME + "=1")
   public Response doXmlJsonPost(final InputStream inputStream,
                                 @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
@@ -159,7 +163,8 @@ public class BulkResource extends AbstractBulkResource
    */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_XML)
+  @Produces(MediaType.APPLICATION_XML + ";"
+            + Quality.QUALITY_SOURCE_PARAMETER_NAME + "=0.5")
   public Response doJsonXmlPost(final InputStream inputStream,
                                 @Context final HttpServletRequest request,
                                 @Context final SecurityContext securityContext,
