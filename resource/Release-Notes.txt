@@ -3,6 +3,12 @@ Ping Identity SCIM SDK Release Notes
 For full information, visit the project homepage:
 https://github.com/PingIdentity/scim
 
+---------- SCIM 1.8.24 ----------
+
+  * Release Date: TBD
+
+  * Resolved Issues
+
 ---------- SCIM 1.8.23 ----------
 
   * Release Date: June 8, 2020
