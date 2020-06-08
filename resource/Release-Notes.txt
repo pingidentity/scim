@@ -5,7 +5,7 @@ https://github.com/PingIdentity/scim
 
 ---------- SCIM 1.8.23 ----------
 
-  * Release Date: TBD
+  * Release Date: June 8, 2020
 
   * Resolved Issues
   
