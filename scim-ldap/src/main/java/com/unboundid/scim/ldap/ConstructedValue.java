@@ -191,7 +191,17 @@ public final class ConstructedValue
 
     for (Chunk chunk : chunks)
     {
-      value.append(chunk.getValue(dnComponents, entry));
+      //If there is a preceding chunk and it ended in an '=', then the current
+      //chunk must be an attribute value in a dn element. Otherwise, the current
+      //chunk represents one or more complete elements.
+      if (value.length() > 0 && value.charAt(value.length()-1) == '=')
+      {
+        value.append(chunk.getValue(dnComponents, entry, true));
+      }
+      else
+      {
+        value.append(chunk.getValue(dnComponents, entry, false));
+      }
     }
 
     return value.toString();
@@ -227,10 +237,16 @@ public final class ConstructedValue
      *
      * @param dnComponents  The DN components.
      * @param entry         The entry.
+     * @param isAttrValue   True if the constructed value will be used
+     *                      as an attribute value of a dn element and
+     *                      should be escaped. False if the constructed
+     *                      value is itself one or more dn elements
+     *                      and does not need to be escaped
      *
      * @return  The value constructed out the specified components.
      */
-    abstract String getValue(List<DN> dnComponents, Entry entry);
+    abstract String getValue(List<DN> dnComponents, Entry entry,
+                             boolean isAttrValue);
   }
 
 
@@ -260,7 +276,8 @@ public final class ConstructedValue
      * {@inheritDoc}
      */
     @Override
-    String getValue(final List<DN> dnComponents, final Entry entry)
+    String getValue(final List<DN> dnComponents, final Entry entry,
+                    final boolean isAttrValue)
     {
       return fixedText;
     }
@@ -332,7 +349,8 @@ public final class ConstructedValue
      * {@inheritDoc}
      */
     @Override
-    String getValue(final List<DN> dnComponents, final Entry entry)
+    String getValue(final List<DN> dnComponents, final Entry entry,
+                    final boolean isAttrValue)
     {
       if (isDnComponent)
       {
@@ -366,7 +384,14 @@ public final class ConstructedValue
                           "is required", attributeName, values.length));
       }
 
-      return getDNValue(values[0]);
+      if (isAttrValue)
+      {
+        return getDNValue(values[0]);
+      }
+      else
+      {
+        return values[0];
+      }
     }
 
 
@@ -550,9 +575,10 @@ public final class ConstructedValue
      * {@inheritDoc}
      */
     @Override
-    String getValue(final List<DN> dnComponents, final Entry entry)
+    String getValue(final List<DN> dnComponents, final Entry entry,
+                    final boolean isAttrValue)
     {
-      String baseValue = super.getValue(dnComponents, entry);
+      String baseValue = super.getValue(dnComponents, entry, isAttrValue);
 
       Matcher matcher = matchingPattern.matcher(baseValue);
 
