@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## v1.8.26 - TBD
+[placeholder for next release]
+
 ## v1.8.25 - 2020-08-24
 Update Release-Notes.txt
 
