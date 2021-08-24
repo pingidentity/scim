@@ -18,7 +18,7 @@
         <project.build.genSourceDirectory>${project.build.directory}/generated-sources</project.build.genSourceDirectory>
         <main.basedir>${project.basedir}</main.basedir>
         <ignore.test.failures>false</ignore.test.failures>
-        <ldapsdk.version>3.2.0</ldapsdk.version>
+        <ldapsdk.version>6.0.0</ldapsdk.version>
     </properties>
 
     <profiles>
