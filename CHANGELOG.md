@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## v1.8.26 - TBD
-[placeholder for next release]
+Updated Apache HttpClient to version 4.5.13 to avoid CVE-2020-13956.
 
 ## v1.8.25 - 2020-08-24
 Update Release-Notes.txt
