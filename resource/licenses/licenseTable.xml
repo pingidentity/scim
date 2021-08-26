@@ -51,13 +51,13 @@
       <LICENSE index="8">
         <GROUPID>org.apache.httpcomponents</GROUPID>
         <ARTIFACTID>httpclient</ARTIFACTID>
-        <VERSION>4.5</VERSION>
+        <VERSION>4.5.13</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="9">
         <GROUPID>org.apache.httpcomponents</GROUPID>
         <ARTIFACTID>httpcore</ARTIFACTID>
-        <VERSION>4.4.1</VERSION>
+        <VERSION>4.4.13</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="10">
@@ -155,6 +155,12 @@
         <ARTIFACTID>jersey-container-servlet-core</ARTIFACTID>
         <VERSION>2.17</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+      <LICENSE index="26">
+        <GROUPID>commons-codec</GROUPID>
+        <ARTIFACTID>commons-codec</ARTIFACTID>
+        <VERSION>1.11</VERSION>
+        <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
       </LICENSE>
     </LICENSES>
   </SCHEME>
