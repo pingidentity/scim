@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## v1.8.26 - TBD
+## v1.8.26 - 2021-09-07
 Updated the LDAPSDK to version 6.0.0 to avoid CVE-2018-1000134.
 
 Updated Apache HttpClient to version 4.5.13 to avoid CVE-2020-13956.
