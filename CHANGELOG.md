@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## v1.8.27 - TBD
+[placeholder for next release]
+
 ## v1.8.26 - 2021-09-07
 Updated the LDAPSDK to version 6.0.0 to avoid CVE-2018-1000134.
 
