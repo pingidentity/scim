@@ -9,8 +9,6 @@
     "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 
 <module name="Checker">
-
-
   <!-- Ensure that there is always a newline at the end of each file. -->
   <module name="NewlineAtEndOfFile" />
 
