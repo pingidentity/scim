@@ -20,8 +20,8 @@ package com.unboundid.scim.facade.org.apache.wink.server.internal.servlet;
 import com.unboundid.scim.facade.org.apache.wink.server.internal.
     DeploymentConfiguration;
 
-import javax.servlet.http.HttpServlet;
-import javax.ws.rs.core.Application;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.ws.rs.core.Application;
 
 /**
  *  Wink compatibility layer class - see Wink docs.

@@ -17,7 +17,7 @@
 
 package com.unboundid.scim.facade.org.apache.wink.common.http;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  *  Wink compatibility layer class - see Wink docs.

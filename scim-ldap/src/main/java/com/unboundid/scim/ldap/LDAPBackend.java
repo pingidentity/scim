@@ -80,8 +80,8 @@ import com.unboundid.scim.sdk.UnsupportedOperationException;
 import com.unboundid.util.StaticUtils;
 import com.unboundid.util.Validator;
 
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.UriBuilder;
 
 import java.text.ParseException;
 import java.util.ArrayList;

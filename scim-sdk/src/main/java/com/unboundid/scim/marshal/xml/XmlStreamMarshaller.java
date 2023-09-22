@@ -30,7 +30,7 @@ import com.unboundid.scim.sdk.SCIMAttributeValue;
 import com.unboundid.scim.sdk.StaticUtils;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
