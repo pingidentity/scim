@@ -717,5 +717,5 @@ https://github.com/PingIdentity/scim
     bundled documentation for a complete description.
 
 ---------------------------------
-Copyright 2011-2019 Ping Identity Corporatio. All Rights Reserved.
+Copyright 2011-2024 Ping Identity Corporatio. All Rights Reserved.
 
