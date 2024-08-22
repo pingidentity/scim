@@ -35,9 +35,9 @@ import com.unboundid.scim.sdk.SCIMException;
 import com.unboundid.scim.sdk.SCIMObject;
 import com.unboundid.scim.sdk.Status;
 
-import jakarta.xml.stream.XMLInputFactory;
-import jakarta.xml.stream.XMLStreamException;
-import jakarta.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;

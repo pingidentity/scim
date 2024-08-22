@@ -41,11 +41,11 @@
                 The SCIM SDK provides a way to create and invoke SCIM bulk
                 operations, in which a single POST operation on the Bulk endpoint
                 specifies a set of resource update operations to be processed.
-                The <tt>com.unboundid.scim.sdk.BulkOperation</tt> class represents
+                The <code>com.unboundid.scim.sdk.BulkOperation</code> class represents
                 an individual operation within a bulk operation request or response.
                 Here is a simple example to create a new User and a new Group
                 containing that user as a member, in a single request. Note how
-                the resource ID of the user is referenced by <tt>bulkId:bulkBob</tt>.
+                the resource ID of the user is referenced by <code>bulkId:bulkBob</code>.
               </p>
 
 <pre>
@@ -86,9 +86,9 @@
 
               <p>
                 If you just want to create content for a bulk request, use either
-                the <tt>bulkMarshal()</tt> method of one of the <tt>Marshaller</tt>
-                implementations, or one of the <tt>StreamMarshaller</tt> implementations.
-                The <tt>Marshaller</tt> method requires that all the bulk operations be in
+                the <code>bulkMarshal()</code> method of one of the <code>Marshaller</code>
+                implementations, or one of the <code>StreamMarshaller</code> implementations.
+                The <code>Marshaller</code> method requires that all the bulk operations be in
                 an in-memory list, which may not be practical for very large
                 requests.
               </p>

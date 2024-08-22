@@ -19,7 +19,7 @@ package com.unboundid.scim.wink;
 
 import com.unboundid.scim.sdk.OAuthTokenHandler;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;

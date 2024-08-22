@@ -24,7 +24,7 @@ import com.unboundid.scim.marshal.xml.XmlStreamMarshaller;
 import com.unboundid.scim.wink.RequestContext;
 import com.unboundid.scim.wink.SCIMApplication;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;

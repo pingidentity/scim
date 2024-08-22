@@ -102,9 +102,9 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
  * be expressed in the configuration file and can not be implemented using
  * custom attribute value transformations and/or attribute derivations.
  * <BR><BR>
- * To use a custom resource mapper class, use the <tt>mapper</tt> attribute to
- * specify the implementation class in any <tt>resource</tt> configuration
- * elements. For example:
+ * To use a custom resource mapper class, use the <code>mapper</code> attribute
+ * to specify the implementation class in any <code>resource</code>
+ * configuration elements. For example:
  * <BR><BR>
  * <PRE>
  * &lt;resource name=&quot;User&quot;

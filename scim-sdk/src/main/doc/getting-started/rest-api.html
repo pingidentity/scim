@@ -39,7 +39,7 @@
 
               <p>
                 The starting point for interacting with a SCIM REST endpoint is the
-                <tt>com.unboundid.scim.sdk.SCIMService</tt> class. This class utilizes the
+                <code>com.unboundid.scim.sdk.SCIMService</code> class. This class utilizes the
                 <a href="http://incubator.apache.org/wink/" target="blank">Apache Wink</a>
                 libraries for building RESTful web services, and provides a simple API to establish
                 a connection and retrieve the different types of endpoints that are available. There
@@ -57,13 +57,13 @@ scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
 </pre>
 
               <p>
-                Creating a <tt>SCIMService</tt> capable of SSL communication is
+                Creating a <code>SCIMService</code> capable of SSL communication is
                 somewhat more involved. Here is an example that configures the SCIM
                 client with the
                 <a href="http://hc.apache.org/httpcomponents-client-ga/" target="blank">Apache HttpClient</a>
                 library. This example also uses UnboundID LDAP SDK
-                <tt>com.unboundid.util.ssl</tt>
-                classes to help create a <tt>SSLSocketFactory</tt>. It also demonstrates
+                <code>com.unboundid.util.ssl</code>
+                classes to help create a <code>SSLSocketFactory</code>. It also demonstrates
                 how to configure the connection manager for preemptive authorization, which
                 can speed up performance.
               </p>
@@ -103,8 +103,8 @@ SCIMService secureScimService = new SCIMService(secureUri, new ApacheHttpClientC
 </pre>
 
               <p>
-                Once you have a <tt>SCIMService</tt> configured, you can retrieve and work with
-                the various SCIM endpoints, using the <tt>com.unboundid.scim.sdk.SCIMEndpoint</tt> class.
+                Once you have a <code>SCIMService</code> configured, you can retrieve and work with
+                the various SCIM endpoints, using the <code>com.unboundid.scim.sdk.SCIMEndpoint</code> class.
                 Here is a simple example of how to print out the phone numbers for a given user:
               </p>
 
@@ -123,15 +123,15 @@ if(phoneNumbers != null)
 </pre>
 
               <p>
-                The <tt>com.unboundid.scim.sdk</tt> package contains several data
+                The <code>com.unboundid.scim.sdk</code> package contains several data
                 types that are useful when working with SCIM resources. Also, the
-                <tt>com.unboundid.scim.sdk.SCIMConstants</tt> class provides several
+                <code>com.unboundid.scim.sdk.SCIMConstants</code> class provides several
                 commonly-used constants such as query parameter names, resource names, and
                 schema endpoint names.
               </p>
 
               <p>
-                The <tt>com.unboundid.scim.sdk.examples</tt> package contains a full client
+                The <code>com.unboundid.scim.sdk.examples</code> package contains a full client
                 example which demonstrates all the CRUD operations, using the SCIM enterprise
                 schema, and extending the out-of-the-box resource types to provide a custom
                 resource. See <a href="creating-resources.html">Creating Custom Resources</a>

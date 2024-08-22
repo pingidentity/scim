@@ -45,7 +45,7 @@
 
               <p>
                 The primary class to use for logging and debugging is the
-                <tt>com.unboundid.scim.sdk.Debug</tt> class. The SDK itself uses this
+                <code>com.unboundid.scim.sdk.Debug</code> class. The SDK itself uses this
                 class extensively to log exceptions and other various conditions. It
                 exposes a number of static methods so that client code can make use of it
                 as well. The following example demonstrates how to enable debugging and
@@ -62,9 +62,9 @@ logger.addHandler(fileHandler);
 </pre>
 
               <p>
-                You can use that same <tt>Debug</tt> class to do any logging from within
-                your application code. There is a generic <tt>debug()</tt> method which can be used
-                in any context, and it has an overloaded version which accepts a <tt>Throwable</tt>
+                You can use that same <code>Debug</code> class to do any logging from within
+                your application code. There is a generic <code>debug()</code> method which can be used
+                in any context, and it has an overloaded version which accepts a <code>Throwable</code>
                 as the last parameter. Using this in your exception handlers will make it
                 much easier to track down problems.
               </p>

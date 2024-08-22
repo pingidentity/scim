@@ -13,7 +13,7 @@ See the [SCIM 1.1 Core Schema](http://www.simplecloud.info/specs/draft-scim-core
 
 ## Getting started
 
-This SDK contains utilities for interacting with different types of SCIM Endpoints, Resources, Schemas, Attributes, Filters, and other objects. The <tt>SCIMService</tt> and <tt>SCIMEndpoint</tt> classes provide a starting point for connecting to a REST endpoint and issuing queries or invoking SCIM operations on existing resources.
+This SDK contains utilities for interacting with different types of SCIM Endpoints, Resources, Schemas, Attributes, Filters, and other objects. The <code>SCIMService</code> and <code>SCIMEndpoint</code> classes provide a starting point for connecting to a REST endpoint and issuing queries or invoking SCIM operations on existing resources.
 
 Release notes can be found in [Release-Notes.txt](resource/Release-Notes.txt).
 

@@ -23,7 +23,7 @@ import com.unboundid.scim.schema.CoreSchema;
 import com.unboundid.scim.schema.ResourceDescriptor;
 import com.unboundid.scim.wink.SCIMApplication;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
