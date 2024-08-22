@@ -60,8 +60,8 @@ public class SCIMException extends Exception implements SCIMResponse
    * @param statusCode    The HTTP status code for this SCIM exception.
    * @param errorMessage  The error message for this SCIM exception.
    * @param cause         The cause (which is saved for later retrieval by the
-   *                      {@link #getCause()} method).  (A <tt>null</tt> value
-   *                      is permitted, and indicates that the cause is
+   *                      {@link #getCause()} method).  (A <code>null</code>
+   *                      value is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    */
   protected SCIMException(final int statusCode, final String errorMessage,
@@ -112,8 +112,8 @@ public class SCIMException extends Exception implements SCIMResponse
    * @param statusCode    The HTTP status code for this SCIM exception.
    * @param errorMessage  The error message for this SCIM exception.
    * @param cause         The cause (which is saved for later retrieval by the
-   *                      {@link #getCause()} method).  (A <tt>null</tt> value
-   *                      is permitted, and indicates that the cause is
+   *                      {@link #getCause()} method).  (A <code>null</code>
+   *                      value is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    * @return The appropriate SCIMException from the provided information.
    */

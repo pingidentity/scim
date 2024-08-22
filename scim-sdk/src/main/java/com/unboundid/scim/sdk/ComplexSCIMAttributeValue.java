@@ -108,8 +108,7 @@ class ComplexSCIMAttributeValue extends SCIMAttributeValue
       return false;
     }
 
-    com.unboundid.scim.sdk.ComplexSCIMAttributeValue that =
-        (com.unboundid.scim.sdk.ComplexSCIMAttributeValue) o;
+    var that = (ComplexSCIMAttributeValue) o;
 
     if (attributes != null ? !attributes.equals(that.attributes) :
         that.attributes != null) {

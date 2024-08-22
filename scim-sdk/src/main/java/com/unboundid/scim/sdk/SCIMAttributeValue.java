@@ -20,7 +20,7 @@ package com.unboundid.scim.sdk;
 import com.unboundid.scim.data.AttributeValueResolver;
 import com.unboundid.scim.schema.AttributeDescriptor;
 
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

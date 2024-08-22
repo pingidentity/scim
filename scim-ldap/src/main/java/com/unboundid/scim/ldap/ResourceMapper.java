@@ -55,10 +55,10 @@ import com.unboundid.scim.sdk.UnauthorizedException;
 import com.unboundid.util.Validator;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.File;
@@ -102,9 +102,9 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
  * be expressed in the configuration file and can not be implemented using
  * custom attribute value transformations and/or attribute derivations.
  * <BR><BR>
- * To use a custom resource mapper class, use the <tt>mapper</tt> attribute to
- * specify the implementation class in any <tt>resource</tt> configuration
- * elements. For example:
+ * To use a custom resource mapper class, use the <code>mapper</code> attribute
+ * to specify the implementation class in any <code>resource</code>
+ * configuration elements. For example:
  * <BR><BR>
  * <PRE>
  * &lt;resource name=&quot;User&quot;

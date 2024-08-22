@@ -22,7 +22,7 @@ import com.unboundid.scim.facade.org.apache.wink.client.ClientResponse;
 import com.unboundid.scim.facade.org.apache.wink.client.handlers.ClientHandler;
 import com.unboundid.scim.facade.org.apache.wink.client.handlers.HandlerContext;
 
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
 
 

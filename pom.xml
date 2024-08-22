@@ -9,16 +9,18 @@
     <artifactId>scim-parent</artifactId>
     <packaging>pom</packaging>
     <name>UnboundID SCIM SDK Parent</name>
-    <version>1.8.27-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <compileSource>1.6</compileSource>
+        <compileSource>11</compileSource>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.genSourceDirectory>${project.build.directory}/generated-sources</project.build.genSourceDirectory>
         <main.basedir>${project.basedir}</main.basedir>
         <ignore.test.failures>false</ignore.test.failures>
-        <ldapsdk.version>6.0.0</ldapsdk.version>
+        <ldapsdk.version>7.0.1</ldapsdk.version>
     </properties>
 
     <profiles>
@@ -98,11 +100,11 @@
             <plugins>
                 <plugin>
                   <artifactId>maven-antrun-plugin</artifactId>
-                  <version>1.6</version>
+                  <version>3.1.0</version>
                 </plugin>
                 <plugin>
                   <artifactId>maven-assembly-plugin</artifactId>
-                  <version>2.4</version>
+                  <version>3.7.1</version>
                 </plugin>
                 <plugin>
                   <artifactId>maven-checkstyle-plugin</artifactId>
@@ -110,23 +112,26 @@
                 </plugin>
                 <plugin>
                   <artifactId>maven-surefire-plugin</artifactId>
-                  <version>2.9</version>
+                  <version>3.3.1</version>
                 </plugin>
                 <plugin>
                   <artifactId>maven-javadoc-plugin</artifactId>
-                  <version>2.10.3</version>
+                  <version>3.6.3</version>
+                    <configuration>
+                        <excludePackageNames>com.unboundid.scim.ldap</excludePackageNames>
+                    </configuration>
                 </plugin>
                 <plugin>
                   <artifactId>maven-jar-plugin</artifactId>
-                  <version>2.3.1</version>
+                  <version>3.4.2</version>
                 </plugin>
                 <plugin>
                   <artifactId>maven-source-plugin</artifactId>
-                  <version>2.1.2</version>
+                  <version>3.3.1</version>
                 </plugin>
                 <plugin>
                   <artifactId>maven-deploy-plugin</artifactId>
-                  <version>2.7</version>
+                  <version>3.1.2</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -271,6 +276,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>enforce-no-snapshots</id>
@@ -296,7 +302,7 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>6.4</version>
+            <version>7.10.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -34,10 +34,10 @@ import com.unboundid.scim.sdk.SCIMResponse;
 import com.unboundid.scim.sdk.ServerErrorException;
 import com.unboundid.scim.sdk.UnauthorizedException;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -19,8 +19,8 @@ package com.unboundid.scim.sdk;
 
 import com.unboundid.scim.schema.ResourceDescriptor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.EntityTag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.EntityTag;
 import java.net.URI;
 
 
