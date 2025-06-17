@@ -23,10 +23,10 @@ import com.unboundid.scim.marshal.xml.XmlMarshaller;
 import com.unboundid.scim.sdk.Debug;
 import com.unboundid.scim.sdk.SCIMResponse;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 

@@ -67,8 +67,8 @@
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="11">
-        <GROUPID>javax.ws.rs</GROUPID>
-        <ARTIFACTID>javax.ws.rs-api</ARTIFACTID>
+        <GROUPID>jakarta.ws.rs</GROUPID>
+        <ARTIFACTID>jakarta.ws.rs-api</ARTIFACTID>
         <VERSION>2.0.1</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
       </LICENSE>

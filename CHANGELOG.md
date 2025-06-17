@@ -3,8 +3,22 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## v1.8.27 - TBD
-[placeholder for next release]
+## v2.0.0 - 2025-06-17
+- The UnboundID SCIM 1.1 SDK now requires Java 11 or a later release.
+
+
+- Migrated `javax.*` namespaces to use `jakarta.*` namespaces from Jakarta EE. If your project uses
+components that reference `javax` objects passed into or received from the SCIM 1.1 SDK, these must
+be updated to use Jakarta instead. The exceptions to this are `javax.xml.stream.XMLStreamException`
+and `javax.xml.stream.XMLStreamWriter`, which come from the Java Development Kit and are not
+associated with Java EE or Jakarta EE.
+
+
+ - Dependency changes:
+   - `com.unboundid:unboundid-ldapsdk` was updated to version 7.0.1
+   - `org.glassfish.jaxb:jaxb-runtime` version 4.0.4 was added
+
+
 
 ## v1.8.26 - 2021-09-07
 Updated the LDAPSDK to version 6.0.0 to avoid CVE-2018-1000134.

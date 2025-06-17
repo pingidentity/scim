@@ -38,12 +38,12 @@
               <h2>Creating Custom Resources</h2>
 
               <p>
-                The <tt>com.unboundid.scim.sdk.data</tt> package contains data types and model
+                The <code>com.unboundid.scim.sdk.data</code> package contains data types and model
                 classes for constructing and working with different resource types.  The package includes
-                <tt>UserResource</tt> and <tt>GroupResource</tt> classes  which correspond to
+                <code>UserResource</code> and <code>GroupResource</code> classes  which correspond to
                 the standard SCIM schema specifications for User and Group defined by the core schema
-                <tt>urn:scim:schemas:core:1.0</tt>.  Also included in this package is the base class
-                from which all SCIM resources are derived, <tt>BaseResource</tt>.
+                <code>urn:scim:schemas:core:1.0</code>.  Also included in this package is the base class
+                from which all SCIM resources are derived, <code>BaseResource</code>.
               </p>
 
               <p>
@@ -52,22 +52,22 @@
 
               <ul>
                   <li>
-                      Use the provided <tt>BaseResource</tt> class and reference custom attributes
-                      using the generic <tt>SimpleValue</tt> and <tt>ComplexValue</tt> types.
+                      Use the provided <code>BaseResource</code> class and reference custom attributes
+                      using the generic <code>SimpleValue</code> and <code>ComplexValue</code> types.
                   </li>
                   <li>
-                      Subclass <tt>BaseResource</tt> to create a strongly-typed resource object for your
+                      Subclass <code>BaseResource</code> to create a strongly-typed resource object for your
                       custom resource.  This option requires more work but may be desirable if the
                       custom resource is to be widely accessed (i.e. by a number of client applications).
                   </li>
               </ul>
 
               <p>
-                The following example defines a custom <tt>Device</tt> SCIM resource type.  This
-                hypothetical Device resource has two custom attributes, <tt>vendorName</tt> and
-                <tt>supportedFormats</tt>, as defined in the SCIM schema specification below.  The
-                required SCIM attributes <tt>id</tt> and <tt>externalId</tt> are also included in
-                the schema definition.  In the interest of brevity, the mandatory <tt>meta</tt>
+                The following example defines a custom <code>Device</code> SCIM resource type.  This
+                hypothetical Device resource has two custom attributes, <code>vendorName</code> and
+                <code>supportedFormats</code>, as defined in the SCIM schema specification below.  The
+                required SCIM attributes <code>id</code> and <code>externalId</code> are also included in
+                the schema definition.  In the interest of brevity, the mandatory <code>meta</code>
                 attribute has been omitted from the example.
               </p>
 
@@ -156,17 +156,17 @@
 
               <p>
                 The quickest way to write code to access one of these device objects is to model a
-                Device object as an instance of <tt>BaseResource</tt> and use the generic attribute
+                Device object as an instance of <code>BaseResource</code> and use the generic attribute
                 types supplied with the SDK to retrieve and/or set the values of custom attributes.
-                The <tt>SimpleValue</tt> type stores the value of a single-valued attribute and provides
-                type-safe accessors and mutators.  The <tt>ComplexValue</tt> type models a complex
+                The <code>SimpleValue</code> type stores the value of a single-valued attribute and provides
+                type-safe accessors and mutators.  The <code>ComplexValue</code> type models a complex
                 attribute as a map of sub-attributes and offers type-safe sub-attribute accessors
                 and mutators.
               </p>
 
               <p>
                 The following code retrieves an instance of a Device object where the device's
-                <tt>id</tt> attribute is mapped to a serial number in the underlying data store.
+                <code>id</code> attribute is mapped to a serial number in the underlying data store.
               </p>
 
 <pre>
@@ -176,8 +176,8 @@ BaseResource device = endpoint.get("SN12589");
 
               <p>
                 The next code snippet displays the device's external Id and vendor name, then
-                checks whether the device supports video.   Since <tt>externalId</tt> is a
-                standard SCIM attribute there is a predefined method on <tt>BaseResource</tt> to
+                checks whether the device supports video.   Since <code>externalId</code> is a
+                standard SCIM attribute there is a predefined method on <code>BaseResource</code> to
                 retrieve it.
               </p>
 
@@ -200,8 +200,8 @@ else {
               <p>
                 If Device resources are going to be used frequently or by a number of
                 different applications, it may be worthwhile to spend the time required to
-                create a subclass of <tt>BaseResource</tt> that specifically implements the
-                Device resource type.  Below is an <tt>DeviceResource</tt> subclass implementation:
+                create a subclass of <code>BaseResource</code> that specifically implements the
+                Device resource type.  Below is an <code>DeviceResource</code> subclass implementation:
               </p>
 
 <pre>
@@ -260,12 +260,12 @@ public class DeviceResource extends BaseResource
 
               <p>
                 Once a custom resource is defined, create a concrete implementation of the
-                SCIM SDK interface <tt>com.unboundid.scim.sdk.data.ResourceFactory</tt> to
-                create instances. A <tt>ResourceFactory</tt> defines how to create custom resources
-                and provides the mechanism for obtaining a <tt>SCIMEndpoint</tt> from
+                SCIM SDK interface <code>com.unboundid.scim.sdk.data.ResourceFactory</code> to
+                create instances. A <code>ResourceFactory</code> defines how to create custom resources
+                and provides the mechanism for obtaining a <code>SCIMEndpoint</code> from
                 the service provider which represents the custom resource type. This
-                is done by passing the <tt>ResourceFactory</tt> into the
-                <tt>SCIMService.getEndpoint(ResourceDescriptor, &lt;ResourceFactory&gt;)</tt> method.
+                is done by passing the <code>ResourceFactory</code> into the
+                <code>SCIMService.getEndpoint(ResourceDescriptor, &lt;ResourceFactory&gt;)</code> method.
                 An example is shown below:
               </p>
 
@@ -287,34 +287,34 @@ SCIMEndpoint&lt;DeviceResource&gt; deviceEndpoint = scimService.getEndpoint(
 </pre>
 
                <p>
-                 At this point, you have a <tt>SCIMEndpoint</tt> for your custom resource type,
+                 At this point, you have a <code>SCIMEndpoint</code> for your custom resource type,
                  with which you can perform queries or add, modify, and delete resources.
                </p>
 
                <h3>Custom Attributes</h3>
 
                <p>
-                There are a set of low-level classes (<tt>SCIMObject</tt>, <tt>SCIMAttribute</tt>, <tt>SCIMAttributeValue</tt>)
+                There are a set of low-level classes (<code>SCIMObject</code>, <code>SCIMAttribute</code>, <code>SCIMAttributeValue</code>)
                 that represent the SCIM data model. These classes are bound to higher-level classes by the
-                use of <tt>com.unboundid.scim.data.ResourceFactory</tt> and <tt>com.unboundid.scim.data.AttributeValueResolver</tt>.
-                The SCIM SDK includes <tt>AttributeValueResolvers</tt> for all simple and complex attribute types
-                defined in the SCIM core schema. You can also implement your own custom <tt>AttributeValueResolver</tt>
+                use of <code>com.unboundid.scim.data.ResourceFactory</code> and <code>com.unboundid.scim.data.AttributeValueResolver</code>.
+                The SCIM SDK includes <code>AttributeValueResolvers</code> for all simple and complex attribute types
+                defined in the SCIM core schema. You can also implement your own custom <code>AttributeValueResolver</code>
                 to handle custom attributes exposed by your service provider.
               </p>
 
               <p>
-                <tt>BaseResource</tt> (and all subclasses) are backed by these lower-level SCIM data classes.
-                <tt>AttributeValueResolver</tt> converts Java objects that represent attribute values to/from the
-                <tt>com.unboundid.scim.sdk.SCIMAttribute</tt> class. Convenience methods are added by
-                subclasses of <tt>BaseResource</tt> so that attributes can be retrieved by schema URN and
-                attribute name, and then converted by an <tt>AttributeResolver</tt> to its Java object.
+                <code>BaseResource</code> (and all subclasses) are backed by these lower-level SCIM data classes.
+                <code>AttributeValueResolver</code> converts Java objects that represent attribute values to/from the
+                <code>com.unboundid.scim.sdk.SCIMAttribute</code> class. Convenience methods are added by
+                subclasses of <code>BaseResource</code> so that attributes can be retrieved by schema URN and
+                attribute name, and then converted by an <code>AttributeResolver</code> to its Java object.
               </p>
 
               <p>
                 For example, suppose the Device resource (from above) had a complex attribute called
                 "SupportedFormats" to determine which types multi-media formats were supported by the device.
-                You would likely define a <tt>SupportedFormats</tt> class to represent this attribute type,
-                and create an <tt>AttributeValueResolver</tt> in that class as follows:
+                You would likely define a <code>SupportedFormats</code> class to represent this attribute type,
+                and create an <code>AttributeValueResolver</code> in that class as follows:
               </p>
 
 <pre>
@@ -365,7 +365,7 @@ public static final AttributeValueResolver&lt;SupportedFormats&gt; SUPPORTED_FOR
 </pre>
 
               <p>
-                The <tt>com.unboundid.scim.data.Manager</tt> class is another good example
+                The <code>com.unboundid.scim.data.Manager</code> class is another good example
                 of how this works.
               </p>
 

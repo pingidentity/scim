@@ -37,13 +37,13 @@ import java.util.Map;
  * the value as is without any alterations.
  * <BR><BR>
  * Transformations are often useful when the syntax of an attribute is different
- * between SCIM and LDAP. The LDAP <tt>GeneralizedTime</tt> attribute syntax is
- * a good example where transformations are necessary when mapping those
+ * between SCIM and LDAP. The LDAP <code>GeneralizedTime</code> attribute syntax
+ * is a good example where transformations are necessary when mapping those
  * attributes.
  * <BR><BR>
- * To use a custom transformation class, use the <tt>transform</tt> attribute to
- * specify the implementation class in any <tt>mapping</tt> or
- * <tt>subMapping</tt> configuration elements. For example:
+ * To use a custom transformation class, use the <code>transform</code>
+ * attribute to specify the implementation class in any <code>mapping</code> or
+ * <code>subMapping</code> configuration elements. For example:
  * <BR><BR>
  * <PRE>
  * &lt;subMapping name=&quot;formatted&quot;

@@ -45,8 +45,8 @@ public class PreconditionFailedException extends SCIMException
    *
    * @param errorMessage  The error message for this SCIM exception.
    * @param cause         The cause (which is saved for later retrieval by the
-   *                      {@link #getCause()} method).  (A <tt>null</tt> value
-   *                      is permitted, and indicates that the cause is
+   *                      {@link #getCause()} method).  (A <code>null</code>
+   *                      value is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    */
   public PreconditionFailedException(final String errorMessage,
@@ -62,8 +62,8 @@ public class PreconditionFailedException extends SCIMException
    * @param errorMessage  The error message for this SCIM exception.
    * @param version       The current version of the Resource.
    * @param cause         The cause (which is saved for later retrieval by the
-   *                      {@link #getCause()} method).  (A <tt>null</tt> value
-   *                      is permitted, and indicates that the cause is
+   *                      {@link #getCause()} method).  (A <code>null</code>
+   *                      value is permitted, and indicates that the cause is
    *                      nonexistent or unknown.)
    */
   public PreconditionFailedException(final String errorMessage,
