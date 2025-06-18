@@ -51,17 +51,17 @@ import java.util.Set;
  * also be used to implement the members SCIM attribute in Group resources for
  * UnboundID dynamic groups.
  * <BR><BR>
- * To use a custom derivation class, include a <tt>derivation</tt> element with
- * the <tt>javaClass</tt> attribute inside a <tt>attribute</tt> element. For
- * example:
+ * To use a custom derivation class, include a <code>derivation</code> element
+ * with the <code>javaClass</code> attribute inside a <code>attribute</code>
+ * element. For example:
  * <BR><BR>
  * <PRE>
  * &lt;attribute name=&quot;exampleAttribute&quot;&gt;
- *   &lt;description&gt;Example Attribute&lt;&#47description&gt;
- *   &lt;derivation javaClass=&quot;com.example.ExampleDerivedAttr&quot;&#47&gt;
- *   &lt;simpleMultiValued childName=&quot;attr&quot;
- *   &nbsp;dataType=&quot;string&quot;/&gt;
- * &lt;&#47attribute&gt;
+ *  &lt;description&gt;Example Attribute&lt;&#47;description&gt;
+ *  &lt;derivation javaClass=&quot;com.example.ExampleDerivedAttr&quot;&#47;&gt;
+ *  &lt;simpleMultiValued childName=&quot;attr&quot;
+ *  &nbsp;dataType=&quot;string&quot;/&gt;
+ * &lt;&#47;attribute&gt;
  * </PRE>
  * <BR><BR>
  * This API is volatile and could change in future releases.

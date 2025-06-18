@@ -17,8 +17,8 @@
 
 package com.unboundid.scim.facade.org.apache.wink.client;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  *  Wink compatibility layer class - see Wink docs.

@@ -64,9 +64,9 @@ import org.glassfish.jersey.client.ClientConfig;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;

@@ -17,7 +17,7 @@
 
 package com.unboundid.scim.sdk;
 
-import javax.xml.bind.DatatypeConverter;
+import jakarta.xml.bind.DatatypeConverter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;

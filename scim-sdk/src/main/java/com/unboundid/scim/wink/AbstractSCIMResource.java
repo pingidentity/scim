@@ -51,10 +51,10 @@ import com.unboundid.scim.sdk.SortParameters;
 import com.unboundid.scim.sdk.UnauthorizedException;
 
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;

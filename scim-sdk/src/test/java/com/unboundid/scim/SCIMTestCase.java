@@ -30,7 +30,7 @@ import java.io.InputStream;
 /**
  * This class provides the superclass for all SCIM test cases.
  */
-@Test(sequential=true)
+@Test()
 public class SCIMTestCase
 {
   /**
