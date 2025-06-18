@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2024 Ping Identity Corporation
+ * Copyright 2011-2025 Ping Identity Corporation
  * All Rights Reserved.
  */
 package com.unboundid.buildtools.messages;
