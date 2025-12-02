@@ -15,7 +15,7 @@
        <LICENSE index="2">
          <GROUPID>org.slf4j</GROUPID>
          <ARTIFACTID>slf4j-api</ARTIFACTID>
-         <VERSION>2.0.9</VERSION>
+         <VERSION>2.0.13</VERSION>
          <LICENSE_COORDINATES>com.unboundid.build.licenses:slf4j-license:txt:license:1.0</LICENSE_COORDINATES>
        </LICENSE>
        <LICENSE index="3">
@@ -63,7 +63,7 @@
       <LICENSE index="10">
         <GROUPID>org.glassfish.jersey.core</GROUPID>
         <ARTIFACTID>jersey-client</ARTIFACTID>
-        <VERSION>3.0.12</VERSION>
+        <VERSION>3.0.18</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="11">
@@ -129,7 +129,7 @@
       <LICENSE index="21">
         <GROUPID>org.glassfish.jersey.core</GROUPID>
         <ARTIFACTID>jersey-server</ARTIFACTID>
-        <VERSION>3.0.12</VERSION>
+        <VERSION>3.0.18</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="22">
@@ -141,13 +141,13 @@
       <LICENSE index="23">
         <GROUPID>jakarta.annotation</GROUPID>
         <ARTIFACTID>jakarta.annotation-api</ARTIFACTID>
-        <VERSION>2.0.0</VERSION>
+        <VERSION>2.1.1</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="24">
         <GROUPID>org.glassfish.jersey.connectors</GROUPID>
         <ARTIFACTID>jersey-apache-connector</ARTIFACTID>
-        <VERSION>3.0.12</VERSION>
+        <VERSION>3.0.18</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="25">
@@ -159,7 +159,7 @@
       <LICENSE index="26">
         <GROUPID>commons-codec</GROUPID>
         <ARTIFACTID>commons-codec</ARTIFACTID>
-        <VERSION>1.11</VERSION>
+        <VERSION>1.18.0</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
       </LICENSE>
       <LICENSE index="27">
@@ -209,6 +209,12 @@
         <ARTIFACTID>istack-commons-runtime</ARTIFACTID>
         <VERSION>4.1.2</VERSION>
         <LICENSE_COORDINATES>com.unboundid.build.licenses:cddl-license:txt:license:1.1</LICENSE_COORDINATES>
+      </LICENSE>
+         <LICENSE index="35">
+         <GROUPID>commons-logging</GROUPID>
+         <ARTIFACTID>commons-logging</ARTIFACTID>
+         <VERSION>1.3.5</VERSION>
+         <LICENSE_COORDINATES>com.unboundid.build.licenses:apache-license:txt:license:2.0</LICENSE_COORDINATES>
       </LICENSE>
     </LICENSES>
   </SCHEME>
