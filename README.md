@@ -1,5 +1,7 @@
 [![Status: Archived](https://img.shields.io/badge/status-archived-red.svg)](#status-archived--superseded-by-scim-20)
 
+<br>
+
 > **Status: Archived – superseded by SCIM 2.0**
 >
 > This project implements the SCIM v1 specification, which has been superseded by the
@@ -7,7 +9,7 @@
 > no longer actively maintained and is kept for historical reference only.
 >
 > If you need an SDK for building SCIM into your application, we recommend
-> using Ping’s SCIM 2.0 SDK at [pingidentity/scim2](https://github.com/pingidentity/scim2).
+> using Ping’s Identity's SCIM 2.0 SDK at [pingidentity/scim2](https://github.com/pingidentity/scim2).
 
 <br>
 
