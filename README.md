@@ -1,4 +1,16 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.unboundid.product.scim/scim-sdk/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.unboundid.product.scim/scim-sdk)
+[![Status: Archived](https://img.shields.io/badge/status-archived-red.svg)](#status-archived--superseded-by-scim-20)
+
+> **Status: Archived – superseded by SCIM 2.0**
+>
+> This project implements the SCIM v1 specification, which has been superseded by the
+> [SCIM 2.0 specification (RFC 7643)](https://www.rfc-editor.org/rfc/rfc7643). This repository is
+> no longer actively maintained and is kept for historical reference only.
+>
+> If you need an SDK for building SCIM into your application, we recommend
+> using Ping’s SCIM 2.0 SDK at [pingidentity/scim2](https://github.com/pingidentity/scim2).
+
+<br>
+
 [![Javadocs](http://javadoc.io/badge/com.unboundid.product.scim/scim-sdk.svg)](http://javadoc.io/doc/com.unboundid.product.scim/scim-sdk)
 
 # SCIM 1.1 SDK for Java
